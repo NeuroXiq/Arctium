@@ -1,0 +1,8 @@
+[Oo]bj/
+[Bb]in/
+[Dd]ebug/
+[Rr]elase/
+*.user
+*.suo
+*.userprefs
+*.sln.ide
