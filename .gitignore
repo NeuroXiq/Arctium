@@ -2,6 +2,7 @@
 [Bb]in/
 [Dd]ebug/
 [Rr]elase/
+IGNORE/
 *.user
 *.suo
 *.userprefs

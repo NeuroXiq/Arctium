@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium
+namespace Arctium.Connection.Tls.HandshakeProtocol
 {
-    public class Class1
+    class Finished
     {
     }
 }
