@@ -41,7 +41,7 @@ namespace Arctium.Connection.Tls.HandshakeProtocol
 
 
         //
-        // Old and deprecated systems. Reserve constant numbers and informational purpose. 
+        // Old and deprecated systems. Reserve constant numbers, informational purpose. 
         // Must not be used by any party of TLS communication.
         //
 

@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arctium.Connection.Tls.Protocol;
 
 namespace Arctium.Connection.Tls.RecordProtocol
 {
     class Record
     {
+        public ContentType Type;
+        public ProtocolVersion Version;
+        ///<summary>Fragment length in bytes</summary>
+        public ushort Length;
+        public byte[] Fragment;
     }
 }

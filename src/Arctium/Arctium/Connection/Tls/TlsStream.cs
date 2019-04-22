@@ -1,4 +1,4 @@
-﻿using Arctium.Connection.Tls.Protocol;
+﻿using Arctium.Connection.Tls.Operator;
 using System;
 using System.IO;
 
@@ -6,11 +6,11 @@ namespace Arctium.Connection.Tls
 {
     public class TlsStream : Stream
     {
-        private TlsSession tlsSession;
+        TlsProtocolOperator tlsOperator;
 
-        internal TlsStream(TlsSession session)
+        internal TlsStream(TlsProtocolOperator tlsOperator)
         {
-            tlsSession = session;
+            this.tlsOperator = tlsOperator;
         }
 
         #region Base Stream abstract

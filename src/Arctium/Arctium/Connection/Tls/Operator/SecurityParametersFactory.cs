@@ -21,6 +21,12 @@ namespace Arctium.Connection.Tls.Operator
             secParams.BulkCipherAlgorithm = BulkCipherAlgorithm.NULL;
             secParams.Entity = entityType;
 
+            secParams.ServerRandom = null;
+            secParams.MasterSecret = null;
+            secParams.KeySize = 0;
+            secParams.KeyMaterialSize = 0;
+            secParams.HashSize = 0;
+
             return secParams;
         }
     }

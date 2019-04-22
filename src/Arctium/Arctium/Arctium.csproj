@@ -43,8 +43,26 @@
     <Compile Include="Connection\Tls\AlertProtocol\Alert.cs" />
     <Compile Include="Connection\Tls\AlertProtocol\Enum\AlertDescription.cs" />
     <Compile Include="Connection\Tls\AlertProtocol\Enum\AlertLevel.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Builder\PlainTextRecordConverter.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\NumberConverter.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Parser\AlertParser.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Parser\ChangeCipherSpecParser.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Parser\Exceptions\MessageFromatException.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Parser\Exceptions\RecordParserException.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Parser\HandshakeParser.cs" />
+    <Compile Include="Connection\Tls\BinaryOps\Parser\RecordParser.cs" />
     <Compile Include="Connection\Tls\ChangeCipherSpecProtocol\ChangeCipherSpec.cs" />
     <Compile Include="Connection\Tls\ChangeCipherSpecProtocol\Enum\ChangeCipherSpecType.cs" />
+    <Compile Include="Connection\Tls\Crypto\DataExpansionFunction.cs" />
+    <Compile Include="Connection\Tls\Crypto\PseudoRandomFunction.cs" />
+    <Compile Include="Connection\Tls\Operator\Exception\InvalidContentTypeException.cs" />
+    <Compile Include="Connection\Tls\Operator\Exception\MessageFromatException.cs" />
+    <Compile Include="Connection\Tls\Operator\HandshakeProtocolReader.cs" />
+    <Compile Include="Connection\Tls\Operator\HighLevelProtocolStream.cs" />
+    <Compile Include="Connection\Tls\Protocol\ProtocolFromatConst.cs" />
+    <Compile Include="Connection\Tls\RecordTransform\RecordBlockCipherCrypto.cs" />
+    <Compile Include="Connection\Tls\RecordTransform\RecordCompression.cs" />
+    <Compile Include="Connection\Tls\RecordTransform\RecordCrypto.cs" />
     <Compile Include="Connection\Tls\HandshakeProtocol\Certificate.cs" />
     <Compile Include="Connection\Tls\HandshakeProtocol\CertificateRequest.cs" />
     <Compile Include="Connection\Tls\HandshakeProtocol\CertificateVerify.cs" />
@@ -65,22 +83,29 @@
     <Compile Include="Connection\Tls\Protocol\Enum\CompressionMethod.cs" />
     <Compile Include="Connection\Tls\Protocol\Enum\ConnectionEnd.cs" />
     <Compile Include="Connection\Tls\Protocol\Enum\MACAlgorithm.cs" />
-    <Compile Include="Connection\Tls\Operator\RecordProtocolOperator.cs" />
+    <Compile Include="Connection\Tls\Operator\RecordProtocolStream.cs" />
     <Compile Include="Connection\Tls\Protocol\SecurityParameters.cs" />
     <Compile Include="Connection\Tls\Operator\SecurityParametersFactory.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
     <Compile Include="Connection\Tls\RecordProtocol\Enum\ContentType.cs" />
     <Compile Include="Connection\Tls\Protocol\Enum\ProtocolVersion.cs" />
     <Compile Include="Connection\Tls\RecordProtocol\Record.cs" />
+    <Compile Include="Connection\Tls\RecordProtocol\TlsCompressed.cs" />
+    <Compile Include="Connection\Tls\RecordProtocol\TlsGenericBlockCipherText.cs" />
+    <Compile Include="Connection\Tls\RecordProtocol\TlsGenericStreamCipherText.cs" />
+    <Compile Include="Connection\Tls\RecordProtocol\TlsPlainText.cs" />
+    <Compile Include="Connection\Tls\RecordTransform\RecordCryptoFactory.cs" />
+    <Compile Include="Connection\Tls\RecordTransform\RecordStreamCipherCrypto.cs" />
     <Compile Include="Connection\Tls\TlsConnection.cs" />
     <Compile Include="Connection\Tls\TlsStream.cs" />
+    <Compile Include="Connection\Tls\Transfer\BufferCache.cs" />
+    <Compile Include="Connection\Tls\Transfer\Exceptions\RecordTransferException.cs" />
+    <Compile Include="Connection\Tls\Transfer\RecordTransfer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rand\RandomGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Connection\Tls\BinaryOps\Builder\" />
     <Folder Include="Connection\Tls\BinaryOps\Formatter\" />
-    <Folder Include="Connection\Tls\Transfer\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
