@@ -1,4 +1,6 @@
-﻿namespace Arctium.Connection.Tls.Protocol
+﻿using Arctium.Connection.Tls.Protocol.RecordProtocol;
+
+namespace Arctium.Connection.Tls.Protocol
 {
     public class SecurityParameters
     {

@@ -1,5 +1,5 @@
 ﻿using Arctium.Connection.Tls.Protocol;
-using Arctium.Connection.Tls.RecordProtocol;
+using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System;
 
 namespace Arctium.Connection.Tls.RecordTransform
