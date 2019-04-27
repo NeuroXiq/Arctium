@@ -2,10 +2,10 @@
 using System;
 using System.Collections.Generic;
 
-namespace Arctium.Connection.Tls.ProtocolStream
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 {
     ///<summary>Contains decrypted,  decompressed fragments with associated <see cref="ContentType"/></summary>
-    class RecordFragmentStream
+    class RecordFragmentReader
     {
 
         public bool CanRead { get { return fragmentsQueueStream.Count > 0; } }
@@ -26,7 +26,7 @@ namespace Arctium.Connection.Tls.ProtocolStream
 
         Queue<ContentFragmentData> fragmentsQueueStream;
 
-        public RecordFragmentStream()
+        public RecordFragmentReader()
         {
             fragmentsQueueStream = new Queue<ContentFragmentData>();
         }

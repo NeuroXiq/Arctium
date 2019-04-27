@@ -28,26 +28,55 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
                     parsedHandshake = BuildClientHello(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.ServerHello:
+                    throw new NotImplementedException();
                     break;
                 case HandshakeType.Certificate:
+                    throw new NotImplementedException();
                     break;
                 case HandshakeType.ServerKeyExchange:
+                    throw new NotImplementedException();
                     break;
                 case HandshakeType.CertificateRequest:
+                    throw new NotImplementedException();
                     break;
                 case HandshakeType.ServerHelloDone:
+                    throw new NotImplementedException();
                     break;
                 case HandshakeType.CertificateVerify:
+                    throw new NotImplementedException();
                     break;
                 case HandshakeType.ClientKeyExchange:
+                    parsedHandshake = GetClientKeyExchange(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.Finished:
+                    throw new NotImplementedException();
                     break;
             }
 
-            parsedHandshake.Length = handshakeContentLength;
+            //parsedHandshake.Length = handshakeContentLength;
 
             return parsedHandshake;
+        }
+
+        private ClientKeyExchange GetClientKeyExchange(byte[] buffer, int messageOffset, int handshakeContentLength)
+        {
+            ClientKeyExchange keyExchange = new ClientKeyExchange();
+            keyExchange.MsgType = HandshakeType.ClientKeyExchange;
+            int encryptedBytesVectorLength = NumberConverter.ToUInt16(buffer, messageOffset);
+
+            int delta = encryptedBytesVectorLength - handshakeContentLength + 2;
+            if (delta != 0)
+            {
+                if (delta > 0) throw new MessageFromatException("Invalid length of vector of ClientKeyExchange encrypted data. Vector is larger than content length");
+                else throw new MessageFromatException("Invalid length of vector of ClientKeyExchange encrypted data. Vector is smaller than content length");
+            }
+
+            int encryptedBytesOffset = messageOffset + 2;
+
+            keyExchange.ExchangeKeys = new byte[encryptedBytesVectorLength];
+            Array.Copy(buffer, encryptedBytesOffset, keyExchange.ExchangeKeys, 0, encryptedBytesVectorLength);
+
+            return keyExchange;
         }
 
         public int GetHandshakeStructLength(byte[] buffer, int offset)

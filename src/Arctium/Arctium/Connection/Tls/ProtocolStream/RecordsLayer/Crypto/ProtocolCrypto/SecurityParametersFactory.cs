@@ -1,7 +1,7 @@
 ﻿using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 
-namespace Arctium.Connection.Tls.Crypto
+namespace Arctium.Connection.Tls.Crypto.ProtocolCrypto
 {
     class SecurityParametersFactory
     {

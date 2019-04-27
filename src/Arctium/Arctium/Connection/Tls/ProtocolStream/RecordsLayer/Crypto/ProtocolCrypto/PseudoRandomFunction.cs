@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium.Connection.Tls.Crypto
+namespace Arctium.Connection.Tls.Crypto.ProtocolCrypto
 {
     class PseudoRandomFunction
     {

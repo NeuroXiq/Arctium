@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Connection.Tls.Crypto
+namespace Arctium.Connection.Tls.Operator
 {
     class HandshakeException : Exception
     {

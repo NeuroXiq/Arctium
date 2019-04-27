@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Connection.Tls.Protocol.RecordProtocol
 {
-    class TlsGenericStreamCipherText : Record
+    class TlsGenericStreamCiphertext : Record
     {
         public byte[] Content;
         public byte[] MAC;

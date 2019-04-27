@@ -47,8 +47,8 @@
 
         public static void FormatUInt16(ushort value, byte[] buffer, int offset)
         {
-            buffer[offset] = (byte)(value >> 8);
-            buffer[offset] = (byte)(value & 0xff);
+            buffer[offset + 0] = (byte)(value >> 8);
+            buffer[offset + 1] = (byte)(value & 0xff);
         }
 
         public static void FormatUInt32(uint value, byte[] buffer, int offset)

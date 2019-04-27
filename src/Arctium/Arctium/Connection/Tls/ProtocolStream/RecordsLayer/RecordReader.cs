@@ -4,7 +4,7 @@ using System.IO;
 using System;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 
-namespace Arctium.Connection.Tls.ProtocolStream
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 {
     class RecordReader
     {
@@ -19,7 +19,7 @@ namespace Arctium.Connection.Tls.ProtocolStream
 
         ///<summary>Loads record bytes from innerStream</summary>
         ///<returns>Whole length of record</returns>
-        ///<remarks>This method ensures, that one record with entire content is successfully readed from inner stream</remarks>
+        ///<remarks>This method ensures, that at least one record with entire content is successfully readed from inner stream</remarks>
         public int LoadRecord()
         {
             LoadRecordHeader();

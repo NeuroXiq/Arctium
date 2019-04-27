@@ -5,8 +5,13 @@ using Arctium.Rand;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.ProtocolStream;
+using Arctium.Connection.Tls.Crypto.ProtocolCrypto;
+using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
+using System.Security.Cryptography.X509Certificates;
+using Arctium.Connection.Tls.ProtocolStream.HighLevelLayer;
+using Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Crypto;
 
-namespace Arctium.Connection.Tls.Crypto
+namespace Arctium.Connection.Tls.Operator
 {
     class TlsProtocolOperator
     {
@@ -43,43 +48,70 @@ namespace Arctium.Connection.Tls.Crypto
         private void HandshakeAsServer()
         {
             ClientHello clientHello = ReadOnlyHandshake() as ClientHello;
-            if (clientHello == null) throw new HandshakeException("Invalid Handshake message order. Expected client hello but received: " + clientHello.MsgType);
+            if (clientHello == null) throw new HandshakeException("Invalid Handshake message order. Expected client hello");
 
-            Handshake serverHello = NegotiateServerHello(clientHello);
+            ServerHello serverHello = NegotiateServerHello(clientHello);
             highLevelProtocolStream.Write(serverHello);
+
+            Certificate certMsg = new Certificate(new X509Certificate2("D:\\test.pfx", "test"));
+            highLevelProtocolStream.Write(certMsg);
+
+            ServerHelloDone serverHelloDone = new ServerHelloDone();
+            highLevelProtocolStream.Write(serverHelloDone);
+
+            ClientKeyExchange clientKeyEx = ReadOnlyHandshake() as ClientKeyExchange;
+            if (clientKeyEx == null) throw new HandshakeException("Invalid Handshake message order. Expected client key exchange");
+
+            KeyExchangeRsaCrypto kxCrypto = new KeyExchangeRsaCrypto();
+            kxCrypto.DecryptClientKeyExchange(clientKeyEx, certMsg.ANS1Certificate);
+
+
+
+            string a = "";
+
             
         }
 
-        private Handshake NegotiateServerHello(ClientHello clientHello)
+        private ServerHello NegotiateServerHello(ClientHello clientHello)
         {
             ServerHello serverHello = new ServerHello();
-            bool ok = false;
 
-            CipherSuite enableCipher = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
-            CompressionMethod enableCompression = CompressionMethod.NULL;
+            CipherSuite[] availableCiphers = RecordLayer.TransformSuite.Ciphers;
+            CompressionMethod[] availableCompressions = RecordLayer.TransformSuite.CompressionMethods;
 
-            foreach (CipherSuite cs in clientHello.CipherSuites)
-            {
-                if (cs == enableCipher)
+            CipherSuite negotiatedCipher = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
+            //CipherSuite negotiatedCipher = CipherSuite.TLS_AES_128_CCM_8_SHA256;
+            CompressionMethod negotiatedCompression = CompressionMethod.NULL;
+
+            bool negotiationOk = false;
+
+            for (int i = 0; i < clientHello.CipherSuites.Length; i++)
+                for (int j = 0; j < availableCiphers.Length; j++)
                 {
-                    ok = true;
-                    break;
+                    if (availableCiphers[j] == clientHello.CipherSuites[i])
+                    {
+                        negotiatedCipher = availableCiphers[j];
+                        negotiationOk = true;
+                        break;
+                    }
                 }
-            }
-            foreach (CompressionMethod cm in clientHello.CompressionMethods)
-            {
-                if (cm == CompressionMethod.NULL)
+
+            for (int i = 0; i < clientHello.CompressionMethods.Length; i++)
+                for (int j = 0; j < availableCompressions.Length; j++)
                 {
-                    ok &= true;
-                    break;
+                    if(availableCompressions[j] == clientHello.CompressionMethods[i])
+                    {
+                        negotiatedCompression = availableCompressions[j];
+                        negotiationOk &= true;
+                        break;
+                    }
                 }
-            }
 
-            if (!ok) throw new Exception("compression or suite not enable");
+            if (!negotiationOk) throw new Exception("Cannot negotiate client hello");
 
 
-            serverHello.CipherSuite = enableCipher;
-            serverHello.CompressionMethod = enableCompression;
+            serverHello.CipherSuite = negotiatedCipher;
+            serverHello.CompressionMethod = negotiatedCompression;
             serverHello.ProtocolVersion = new ProtocolVersion(3, 2);
             serverHello.Random = GenerateHelloRandom();
             serverHello.SessionID = GenerateSessionID();

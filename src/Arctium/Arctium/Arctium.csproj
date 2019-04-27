@@ -40,16 +40,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Connection\Tls\ProtocolStream\RecordFragmentStream.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordReader.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Crypto\KeyExchangeRsaCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Crypto\NotImplementerException.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordTransform\Compression\FragmentCompression.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordTransform\Compression\NullFragmentCompression.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordTransform\Fragmentator.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordFragmentReader.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordLayerTransformSuite.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordReader.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordTransform\Compression\FragmentCompressionFactory.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordWriter.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Alert.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertDescription.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertLevel.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedHandshakeInfo.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedRecordInfo.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\CertificateFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatter.cs" />
-    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\ClientHelloFormatter.cs" />
-    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\ServerHelloFormater.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientHelloFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloDoneFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloFormater.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\NumberConverter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\AlertBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\ChangeCipherSpecBuilder.cs" />
@@ -60,17 +70,16 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\RecordBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\ChangeCipherSpecProtocol\ChangeCipherSpec.cs" />
     <Compile Include="Connection\Tls\Protocol\ChangeCipherSpecProtocol\Enum\ChangeCipherSpecType.cs" />
-    <Compile Include="Connection\Tls\Crypto\DataExpansionFunction.cs" />
-    <Compile Include="Connection\Tls\Crypto\PseudoRandomFunction.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Crypto\ProtocolCrypto\DataExpansionFunction.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Crypto\ProtocolCrypto\PseudoRandomFunction.cs" />
     <Compile Include="Connection\Tls\Operator\Exception\HandshakeException.cs" />
     <Compile Include="Connection\Tls\Operator\Exception\MessageFromatException.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\HighLevelProtocolStream.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HighLevelProtocolStream.cs" />
     <Compile Include="Connection\Tls\Protocol\FormatConsts\HandshakeConst.cs" />
     <Compile Include="Connection\Tls\Protocol\FormatConsts\RecordConst.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\ClientKeyExchangeDecryptedRsa.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\PreMasterSecret.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolFormatConst.cs" />
-    <Compile Include="Connection\Tls\RecordTransform\RecordBlockCipherCrypto.cs" />
-    <Compile Include="Connection\Tls\RecordTransform\RecordCompression.cs" />
-    <Compile Include="Connection\Tls\RecordTransform\RecordCrypto.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Certificate.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\CertificateRequest.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\CertificateVerify.cs" />
@@ -91,26 +100,26 @@
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\CompressionMethod.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\ConnectionEnd.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\MACAlgorithm.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordLayer.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordLayer.cs" />
     <Compile Include="Connection\Tls\Protocol\SecurityParameters.cs" />
-    <Compile Include="Connection\Tls\Crypto\SecurityParametersFactory.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Crypto\ProtocolCrypto\SecurityParametersFactory.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\ContentType.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolVersion.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Record.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsCompressed.cs" />
-    <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsGenericBlockCipherText.cs" />
-    <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsGenericStreamCipherText.cs" />
-    <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsPlainText.cs" />
-    <Compile Include="Connection\Tls\RecordTransform\RecordCryptoFactory.cs" />
-    <Compile Include="Connection\Tls\RecordTransform\RecordStreamCipherCrypto.cs" />
+    <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsGenericBlockCiphertext.cs" />
+    <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsGenericStreamCiphertext.cs" />
+    <Compile Include="Connection\Tls\Protocol\RecordProtocol\TlsPlaintext.cs" />
     <Compile Include="Connection\Tls\TlsConnection.cs" />
     <Compile Include="Connection\Tls\TlsStream.cs" />
     <Compile Include="Connection\Tls\Buffers\BufferCache.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rand\RandomGenerator.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Connection\Tls\ProtocolStream\RecordsLayer\Crypto\RecordCrypto\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

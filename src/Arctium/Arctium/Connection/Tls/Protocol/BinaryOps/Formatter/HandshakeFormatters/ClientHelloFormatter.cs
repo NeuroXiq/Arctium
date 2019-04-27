@@ -1,7 +1,7 @@
 ﻿
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 
-namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
+namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters
 {
     class ClientHelloFormatter
     {

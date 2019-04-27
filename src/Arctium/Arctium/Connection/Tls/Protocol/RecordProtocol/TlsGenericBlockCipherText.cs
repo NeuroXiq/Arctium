@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Connection.Tls.Protocol.RecordProtocol
 {
-    class TlsGenericBlockCipherText : Record
+    class TlsGenericBlockCiphertext : Record
     {
         public byte[] IV;
         public byte[] Content;

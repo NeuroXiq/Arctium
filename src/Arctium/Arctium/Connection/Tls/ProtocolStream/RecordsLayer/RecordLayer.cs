@@ -1,37 +1,36 @@
-﻿using Arctium.Connection.Tls.Crypto;
-using Arctium.Connection.Tls.Protocol;
-using Arctium.Connection.Tls.Protocol.BinaryOps;
+﻿using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
-using Arctium.Connection.Tls.RecordTransform;
-using Arctium.Connection.Tls.Buffers;
 using System;
 using System.IO;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
+using Arctium.Connection.Tls.Crypto.ProtocolCrypto;
+using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordTransform;
+using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordTransform.Compression;
 
-namespace Arctium.Connection.Tls.ProtocolStream
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 {
     ///<summary>Record Layer</summary>
     class RecordLayer
     {
-        RecordCrypto recordCrypto;
-        RecordCompression recordCompression;
+        public static readonly RecordLayerTransformSuite TransformSuite = new RecordLayerTransformSuite();
+
         SecurityParameters currentSecParams;
-        Stream innerStream;
-        RecordFragmentStream fragmentsStream;
+        RecordFragmentReader fragmentsStream;
         RecordReader recordReader;
+        RecordWriter recordWriter;
+        Fragmentator fragmentator;
+        FragmentCompression fragmentCompression;
+
 
         private RecordLayer(Stream innerStream, SecurityParameters secParams)
         {
             currentSecParams = secParams;
-            recordCompression = new RecordCompression(secParams.CompressionAlgorithm);
-
-            RecordCryptoFactory recordCryptoFactory = new RecordCryptoFactory();
-            recordCrypto = recordCryptoFactory.BuildRecordCrypto(secParams);
-
-            this.innerStream = innerStream;
-            fragmentsStream = new RecordFragmentStream();
+            fragmentator = new Fragmentator();
+            fragmentsStream = new RecordFragmentReader();
             recordReader = new RecordReader(innerStream);
+            recordWriter = new RecordWriter(innerStream);
+            ChangeCipherSpec(secParams);
         }
 
 
@@ -39,8 +38,9 @@ namespace Arctium.Connection.Tls.ProtocolStream
         {
             SecurityParametersFactory secParamsFactory = new SecurityParametersFactory();
             SecurityParameters secParams = secParamsFactory.BuildInitialState(connectionEnd);
+            RecordLayer recordLayer = new  RecordLayer(innerStream, secParams);
 
-            return new RecordLayer(innerStream, secParams);
+            return recordLayer;
         }
 
 
@@ -50,6 +50,11 @@ namespace Arctium.Connection.Tls.ProtocolStream
         ///</summary>
         public void ChangeCipherSpec(SecurityParameters newParameters)
         {
+            currentSecParams = newParameters;
+
+            FragmentCompressionFactory fcf = new FragmentCompressionFactory();
+            fragmentCompression = fcf.BuildCompression(newParameters.CompressionAlgorithm); 
+            
 
         }
 
@@ -57,10 +62,23 @@ namespace Arctium.Connection.Tls.ProtocolStream
         ///Divides, compress, encrypt and sends the higher level protocol bytes to the inner stream based on 
         ///the current <see cref="SecurityParameters"/> state.
         ///</summary>
-        public void Write(byte[] buffer,int offset,int count, ContentType type)
+        public void Write(byte[] buffer, int offset, int count, ContentType type)
         {
             if (count == 0) throw new Exception("invalid count param. Must be at least one byte length ");
 
+            // divite to 2^14 blocks
+            // encrypt 
+            // compress
+
+            
+            int[] buffersLengths = fragmentator.SplitToFragments(buffer, offset, count);
+            int curOffset = 0;
+            // encrypt
+            for (int i = 0; i < buffersLengths.Length; i++)
+            {
+                recordWriter.WriteRecord(buffer, curOffset, buffersLengths[i], type);
+                curOffset += buffersLengths[i];
+            }
         }
 
         ///<summary>Reads bytes of the higher level protocol</summary>
@@ -86,20 +104,20 @@ namespace Arctium.Connection.Tls.ProtocolStream
             fragmentsStream.AppendFragment(tempBuf, 0 + RecordConst.HeaderLength, recordLength - 5, FixedRecordInfo.GetContentType(tempBuf, 0));
         }
 
-        private TlsPlainText ReverseRecordProcessing(Record rawRecord)
+        private TlsPlaintext ReverseRecordProcessing(Record rawRecord)
         {
             Record reverseRecord = rawRecord;
             reverseRecord = DecryptRecord(reverseRecord);
             reverseRecord = DecompressRecord(reverseRecord);
-            TlsPlainText plainText = BuildPlainRecord(reverseRecord);
+            TlsPlaintext plainText = BuildPlainRecord(reverseRecord);
 
             return plainText;
         }
 
-        ///<summary>Determine record type based on current security params and convert to plain record</summary>
-        private TlsPlainText BuildPlainRecord(Record decryptedRecord)
+        ///<summary>Determine record type based on the current security params and convert to plain record</summary>
+        private TlsPlaintext BuildPlainRecord(Record decryptedRecord)
         {
-            TlsPlainText plainRecord = new TlsPlainText();
+            TlsPlaintext plainRecord = new TlsPlaintext();
             plainRecord.Type = decryptedRecord.Type;
             plainRecord.Version = decryptedRecord.Version;
 
@@ -110,14 +128,14 @@ namespace Arctium.Connection.Tls.ProtocolStream
             }
             else if (currentSecParams.CipherType == CipherType.Block)
             {
-                TlsGenericBlockCipherText blockRecord = decryptedRecord as TlsGenericBlockCipherText;
+                TlsGenericBlockCiphertext blockRecord = decryptedRecord as TlsGenericBlockCiphertext;
 
                 plainRecord.Fragment = blockRecord.Content;
                 plainRecord.Length = (ushort)blockRecord.Content.Length;
             }
             else if (currentSecParams.CipherType == CipherType.Stream)
             {
-                TlsGenericStreamCipherText streamRecord = decryptedRecord as TlsGenericStreamCipherText;
+                TlsGenericStreamCiphertext streamRecord = decryptedRecord as TlsGenericStreamCiphertext;
 
                 plainRecord.Fragment = streamRecord.Content ;
                 plainRecord.Length =  (ushort)streamRecord.Fragment.Length;
@@ -130,7 +148,7 @@ namespace Arctium.Connection.Tls.ProtocolStream
 
         private Record DecompressRecord(Record reverseRecord)
         {
-            return recordCompression.Decompress(reverseRecord);
+            return reverseRecord;
         }
 
         private Record DecryptRecord(Record reverseRecord)
@@ -143,9 +161,6 @@ namespace Arctium.Connection.Tls.ProtocolStream
         {
 
         }
-
-
-
 
 
     }
