@@ -4,12 +4,12 @@ using System;
 using Arctium.Rand;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
-using Arctium.Connection.Tls.ProtocolStream;
-using Arctium.Connection.Tls.Crypto.ProtocolCrypto;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using System.Security.Cryptography.X509Certificates;
 using Arctium.Connection.Tls.ProtocolStream.HighLevelLayer;
-using Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Crypto;
+using Arctium.Connection.Tls.Crypto;
+using Arctium.Connection.Tls.Protocol.BinaryOps;
+using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 
 namespace Arctium.Connection.Tls.Operator
 {
@@ -28,9 +28,7 @@ namespace Arctium.Connection.Tls.Operator
 
         public static TlsProtocolOperator CreateServerSession(Stream innerStream)
         {
-            SecurityParametersFactory secParamsFactory = new SecurityParametersFactory();
-            SecurityParameters secParams = secParamsFactory.BuildInitialState(ConnectionEnd.Server);
-            RecordLayer recordStream = RecordLayer.Initialize(innerStream, ConnectionEnd.Server);
+            RecordLayer recordStream = RecordLayer.Initialize(innerStream);
             TlsProtocolOperator tlsOperator = new TlsProtocolOperator(recordStream, ConnectionEnd.Server);
 
             return tlsOperator;
@@ -62,22 +60,78 @@ namespace Arctium.Connection.Tls.Operator
             ClientKeyExchange clientKeyEx = ReadOnlyHandshake() as ClientKeyExchange;
             if (clientKeyEx == null) throw new HandshakeException("Invalid Handshake message order. Expected client key exchange");
 
-            KeyExchangeRsaCrypto kxCrypto = new KeyExchangeRsaCrypto();
-            kxCrypto.DecryptClientKeyExchange(clientKeyEx, certMsg.ANS1Certificate);
+            KeyExchangeRsaCrypto rsaDecryp = new KeyExchangeRsaCrypto();
+            ClientKeyExchangeDecryptedRsa clientKX = rsaDecryp.Decrypt(clientKeyEx, certMsg.ANS1Certificate);
+            
+            ChangeCipherSpec ccs = ReadOnlyChangeCipherSpec();
+
+            //SecurityParameters secParams = GetStaticSecParams(clientHello, serverHello, clientKX.PreMasterSecret);
 
 
 
-            string a = "";
+        }
+
+        private SecurityParameters GetStaticSecParams(ClientHello ch, ServerHello sh, PremasterSecret premaster)
+        {
+            SecurityParameters secParams = new SecurityParameters();
+
+            secParams.BulkCipherAlgorithm = BulkCipherAlgorithm.AES;
+            secParams.CipherType = CipherType.Block;
+            secParams.ClientRandom = GetHelloRandom(ch.Random);
+            secParams.ServerRandom = GetHelloRandom(sh.Random);
+            secParams.HashSize = 20;
+            secParams.MACAlgorithm = MACAlgorithm.SHA;
+            secParams.CompressionAlgorithm = CompressionMethod.NULL;
+            secParams.Entity = ConnectionEnd.Server;
+            secParams.KeySize = 16;
+            secParams.KeyMaterialLength = 16;
 
             
+
+            return secParams;
         }
+
+        //
+        // artifacts block start
+        //
+
+
+        private byte[] GetPremasterSecret(ClientKeyExchangeDecryptedRsa decryptedKX)
+        {
+            byte[] bytes = new byte[48];
+            bytes[0] = decryptedKX.PreMasterSecret.ClientVersion.Major;
+            bytes[1] = decryptedKX.PreMasterSecret.ClientVersion.Minor;
+
+            Array.Copy(decryptedKX.PreMasterSecret.Random, 0, bytes, 2, 46);
+
+            return bytes;
+        }
+
+        private byte[] GetHelloRandom(HelloRandom random)
+        {
+            byte[] bytes = new byte[4 + random.RandomBytes.Length];
+
+
+            NumberConverter.FormatUInt32(random.GmtUnixTime, bytes, 0);
+            Array.Copy(random.RandomBytes, 0, bytes, 4, random.RandomBytes.Length);
+
+            return bytes;
+        }
+
+
+
+
+        //
+        // artifacts block end
+        //
+
 
         private ServerHello NegotiateServerHello(ClientHello clientHello)
         {
             ServerHello serverHello = new ServerHello();
 
-            CipherSuite[] availableCiphers = RecordLayer.TransformSuite.Ciphers;
-            CompressionMethod[] availableCompressions = RecordLayer.TransformSuite.CompressionMethods;
+            CipherSuite[] availableCiphers = new CipherSuite[] { CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA };
+            CompressionMethod[] availableCompressions = new CompressionMethod[] { CompressionMethod.NULL };
 
             CipherSuite negotiatedCipher = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
             //CipherSuite negotiatedCipher = CipherSuite.TLS_AES_128_CCM_8_SHA256;
@@ -151,5 +205,12 @@ namespace Arctium.Connection.Tls.Operator
             return (Handshake)obj;
         }
 
+        private ChangeCipherSpec ReadOnlyChangeCipherSpec()
+        {
+            ContentType contentType;
+            object o = highLevelProtocolStream.Read(out contentType);
+
+            return (ChangeCipherSpec)o;
+        }
     }
 }

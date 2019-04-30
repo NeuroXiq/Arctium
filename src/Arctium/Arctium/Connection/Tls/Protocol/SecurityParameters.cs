@@ -10,7 +10,7 @@ namespace Arctium.Connection.Tls.Protocol
         public MACAlgorithm MACAlgorithm;
         
         public byte KeySize;
-        public byte KeyMaterialSize;
+        public byte KeyMaterialLength;
         public byte HashSize;
         public CompressionMethod CompressionAlgorithm;
         public byte[] MasterSecret; // = new byte[48];

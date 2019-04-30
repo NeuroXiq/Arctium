@@ -11,10 +11,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         BufferCache bufferCache;
         Stream innerStream;
 
+        public int SequenceNumber { get; private set; }
+
         public RecordReader(Stream innerStream)
         {
             this.innerStream = innerStream;
             bufferCache = new BufferCache(RecordConst.MaxTlsRecordLength);
+            SequenceNumber = -1;
         }
 
         ///<summary>Loads record bytes from innerStream</summary>
@@ -24,12 +27,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         {
             LoadRecordHeader();
             int contentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);
-            LoadFragmentBytes(contentLength);
+            LoadRemainingFragmentBytes(contentLength);
 
             return contentLength + RecordConst.HeaderLength;
         }
 
-        private void LoadFragmentBytes(int fragmentLength)
+        private void LoadRemainingFragmentBytes(int fragmentLength)
         {
             int fullLength = fragmentLength + RecordConst.HeaderLength;
 
@@ -59,6 +62,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             }
 
             bufferCache.TrimStart(fullLength);
+            SequenceNumber++;
+
             return fullLength;
         }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
@@ -117,7 +116,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
         private HandshakeType ParseHandshakeType(byte[] buffer, int offset)
         {
             byte type = buffer[offset];
-
+            
             if (!Enum.IsDefined(typeof(HandshakeType), type)) ThrowUnrecognizedHandshakeTypeException(type);
 
             return (HandshakeType)type;

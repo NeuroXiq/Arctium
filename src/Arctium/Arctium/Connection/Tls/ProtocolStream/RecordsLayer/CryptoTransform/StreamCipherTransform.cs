@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium.Connection.Tls.Crypto.ProtocolCrypto
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.CryptoTransform
 {
-    class PseudoRandomFunction
+    class StreamCipherTransform
     {
     }
 }

@@ -7,14 +7,13 @@ using Arctium.Connection.Tls.Buffers;
 using System;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
-using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
+using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 
 namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 {
     class HighLevelProtocolStream
     {
-
         RecordLayer recordLayer;
         HandshakeBuilder handshakeBuilder;
         BufferCache bufferCache;
@@ -29,6 +28,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
             bufferCache = new BufferCache(ProtocolFormatConst.HandshakeMaxLength + ProtocolFormatConst.MaxRecordLength);
         }
+
+
+        public void UpdateRecordLayer(SecurityParameters secParams)
+        {
+            recordLayer.ChangeCipherSpec(secParams);
+        }
+
 
         //
         //Read methods
@@ -56,7 +62,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
             switch (currentContentInCache)
             {
                 case ContentType.ChangeCipherSpec:
-                    throw new NotImplementedException();
+                    return ReadChangeCipherSpecFromCache();
                     break;
                 case ContentType.Alert:
                     throw new NotImplementedException();
@@ -71,6 +77,24 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
                     throw new NotImplementedException();
                     break;
             }
+        }
+
+        private object ReadChangeCipherSpecFromCache()
+        {
+            if (bufferCache.DataLength == 1)
+            {
+                if (bufferCache.Buffer[0] == 1)
+                {
+                    ChangeCipherSpec ccs = new ChangeCipherSpec();
+                    ccs.CCSType = ChangeCipherSpecType.ChangeCipherSpec;
+
+                    bufferCache.TrimStart(1);
+
+                    return ccs;
+                }
+                else throw new Exception("chagne cipher spec invalid type");
+            }
+            else throw new Exception("Invalid change cipher spec in cache");
         }
 
         private object LoadHandshakeFromCache()
@@ -98,19 +122,15 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
             int totalHandshakeLen = bodyLength + HandshakeConst.HeaderLength;
             object parsedObj = handshakeBuilder.GetHandshake(bufferCache.Buffer, 0);
-
             
             bufferCache.TrimStart(totalHandshakeLen);
 
             return parsedObj;
         }
 
-
-
         //
         // Write methods
         //
-
 
         public void Write(ServerHello handshakeMessage)
         {

@@ -2,6 +2,11 @@
 {
     class ClientKeyExchangeDecryptedRsa
     {
-        public PreMasterSecret PreMasterSecret;
+        public PremasterSecret PreMasterSecret;
+
+        public ClientKeyExchangeDecryptedRsa(PremasterSecret preMasterSecret)
+        {
+            PreMasterSecret = preMasterSecret;
+        }
     }
 }
