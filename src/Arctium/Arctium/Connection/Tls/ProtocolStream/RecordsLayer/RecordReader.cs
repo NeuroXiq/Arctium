@@ -11,13 +11,19 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         BufferCache bufferCache;
         Stream innerStream;
 
-        public int SequenceNumber { get; private set; }
+        public ulong SequenceNumber { get
+            {
+                if (readedRecordsCount == 0)
+                    throw new InvalidOperationException("Cannot get Sequence number because any record was not readed yet");
+                return readedRecordsCount - 1;
+            } }
+        private ulong readedRecordsCount;
 
         public RecordReader(Stream innerStream)
         {
             this.innerStream = innerStream;
             bufferCache = new BufferCache(RecordConst.MaxTlsRecordLength);
-            SequenceNumber = -1;
+            readedRecordsCount = 0;
         }
 
         ///<summary>Loads record bytes from innerStream</summary>
@@ -62,7 +68,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             }
 
             bufferCache.TrimStart(fullLength);
-            SequenceNumber++;
+            readedRecordsCount++;
 
             return fullLength;
         }

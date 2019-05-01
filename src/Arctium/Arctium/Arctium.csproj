@@ -42,10 +42,13 @@
   <ItemGroup>
     <Compile Include="Connection\Tls\Crypto\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\Crypto\KeyExchangeRsaCrypto.cs" />
+    <Compile Include="Connection\Tls\Crypto\KeyGenerator.cs" />
     <Compile Include="Connection\Tls\Crypto\PseudoRandomFunction.cs" />
+    <Compile Include="Connection\Tls\Crypto\TlsKeys.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\BlockCipherTransform.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\CipherTransform.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\CompressionTransform.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\NullCompressionTransform.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\StreamCipherTransform.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\TlsRecordTransform.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\CryptoTransform\TlsRecordTransformFactory.cs" />
@@ -78,8 +81,10 @@
     <Compile Include="Connection\Tls\Operator\Exception\MessageFromatException.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HighLevelProtocolStream.cs" />
     <Compile Include="Connection\Tls\Protocol\CryptoSuite.cs" />
+    <Compile Include="Connection\Tls\Protocol\CryptoSuites.cs" />
     <Compile Include="Connection\Tls\Protocol\Enum\BlockCipherMode.cs" />
     <Compile Include="Connection\Tls\Protocol\Enum\KeyExchangeAlgorithm.cs" />
+    <Compile Include="Connection\Tls\Protocol\FormatConsts\CryptoConst.cs" />
     <Compile Include="Connection\Tls\Protocol\FormatConsts\HandshakeConst.cs" />
     <Compile Include="Connection\Tls\Protocol\FormatConsts\RecordConst.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\ClientKeyExchangeDecryptedRsa.cs" />

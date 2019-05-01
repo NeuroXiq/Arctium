@@ -1,6 +1,5 @@
 ﻿using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace Arctium.Connection.Tls.Crypto
@@ -9,12 +8,9 @@ namespace Arctium.Connection.Tls.Crypto
     {
         MACAlgorithm macAlgo;
 
-        public DataExpansionFunction() : base()
-        {
-        }
-
         public DataExpansionFunction(MACAlgorithm macAlgo)
-        {        
+        {
+            this.macAlgo = macAlgo;
         }
 
         ///<summary></summary>
@@ -33,51 +29,28 @@ namespace Arctium.Connection.Tls.Crypto
             }
             else throw new NotSupportedException();
 
+            int hashSizeInBytes = hmac.HashSize / 8;
+            int hashesCount = ((length - 1) / hashSizeInBytes) + 1;
+            int nextWriteOffset = 0;
+            byte[] hashesSequence = new byte[hashesCount * hashSizeInBytes];
+
+            //
+            byte[] current = hmac.ComputeHash(Join(secret, seed));
+
+            for (int i = 0; i < hashesCount; i++)
+            {
+                current = hmac.ComputeHash(Join(current, seed));
+                Array.Copy(current, 0, hashesSequence, nextWriteOffset, hashSizeInBytes);
+
+                nextWriteOffset += hashSizeInBytes;
+            }
+
+
+            //trim start to 'length' param
             byte[] result = new byte[length];
-            int writed = 0;
-            byte[] current = hmac.ComputeHash(Join(seed,seed));
-
-            if (current.Length > length)
-            {
-                Array.Copy(current, 0, result, 0, length);
-                writed = length;
-            }
-            else
-            {
-                Array.Copy(current, 0, result, 0, current.Length);
-                writed += current.Length;
-            }
-            
-
-            while (writed < length)
-            {
-                byte[] nextHash = hmac.ComputeHash(Join(current,seed));
-                if (writed + nextHash.Length <= length)
-                {
-                    Array.Copy(nextHash, 0, result, writed, nextHash.Length);
-                    writed += nextHash.Length;
-                }
-                else
-                {
-                    // last copy
-                    int lastCpyCount = length - writed;
-                    Array.Copy(nextHash, 0, result, writed, lastCpyCount);
-                    writed += lastCpyCount;
-                    break;
-                }
-
-                current = nextHash;
-            }
-
-    
-
+            Array.Copy(hashesSequence, 0, result, 0, length);
 
             return result;
-        }
-
-        internal byte[] Generate(byte[] s1, byte[] v)
-        {
-            throw new NotImplementedException();
         }
 
         private byte[] Join(byte[] current, byte[] seed)

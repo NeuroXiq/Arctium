@@ -2,6 +2,7 @@
 {
     enum KeyExchangeAlgorithm
     {
+        NULL,
         RSA,
         DHE_DSS,
         DHE_RSA,

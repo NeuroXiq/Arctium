@@ -41,7 +41,14 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 
         private static SecParams InitSecParams()
         {
-            return new SecParams();
+            SecParams initParams = new SecParams();
+            initParams.KeyReadSecret = new byte[0];
+            initParams.KeyWriteSecret = new byte[0];
+            initParams.MacReadSecret = new byte[0];
+            initParams.MacWriteSecret = new byte[0];
+            initParams.RecordCryptoType = new RecordCryptoType(CipherType.Stream, BlockCipherMode.CBC, BulkCipherAlgorithm.NULL, 0, MACAlgorithm.NULL);
+
+            return initParams;
         }
         
         ///<summary>
@@ -53,7 +60,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             currentSecParams = newParameters;
 
             TlsRecordTransformFactory tctFactory = new TlsRecordTransformFactory();
-            TlsRecordTransform newTransform = tctFactory.BuildTlsRecordTransform(currentSecParams);
+            TlsRecordTransform newTransform = tctFactory.BuildTlsRecordTransform(newParameters);
 
             this.tlsCiphertextTransform = newTransform;
         }
@@ -75,7 +82,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 
             for (int i = 0; i < buffers.Length; i++)
             {
-                byte[] transformedFragment = buffers[i];
+                byte[] transformedFragment = 
+                    tlsCiphertextTransform.ForwardTransform(buffers[i], 0, buffers[i].Length, recordReader.SequenceNumber);
                 recordWriter.WriteRecord(transformedFragment, 0, transformedFragment.Length, type);
             }
         }
@@ -95,16 +103,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             byte[] tempBuf = new byte[recordLength];
 
             recordReader.ReadRecord(tempBuf, 0);
+            tlsCiphertextTransform.ReverseTransform(tempBuf, 5, recordLength - 5, recordReader.SequenceNumber);
 
             fragmentsStream.AppendFragment(tempBuf, 0 + RecordConst.HeaderLength, recordLength - 5, FixedRecordInfo.GetContentType(tempBuf, 0));
         }
-       
-
-        public void Write(Record record)
-        {
-
-        }
-
-
     }
 }

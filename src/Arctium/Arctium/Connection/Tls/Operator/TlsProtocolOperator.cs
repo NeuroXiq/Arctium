@@ -65,66 +65,36 @@ namespace Arctium.Connection.Tls.Operator
             
             ChangeCipherSpec ccs = ReadOnlyChangeCipherSpec();
 
-            //SecurityParameters secParams = GetStaticSecParams(clientHello, serverHello, clientKX.PreMasterSecret);
-
-
-
-        }
-
-        private SecurityParameters GetStaticSecParams(ClientHello ch, ServerHello sh, PremasterSecret premaster)
-        {
-            SecurityParameters secParams = new SecurityParameters();
-
-            secParams.BulkCipherAlgorithm = BulkCipherAlgorithm.AES;
-            secParams.CipherType = CipherType.Block;
-            secParams.ClientRandom = GetHelloRandom(ch.Random);
-            secParams.ServerRandom = GetHelloRandom(sh.Random);
-            secParams.HashSize = 20;
-            secParams.MACAlgorithm = MACAlgorithm.SHA;
-            secParams.CompressionAlgorithm = CompressionMethod.NULL;
-            secParams.Entity = ConnectionEnd.Server;
-            secParams.KeySize = 16;
-            secParams.KeyMaterialLength = 16;
-
             
+            CryptoSuite oopSuite = CryptoSuites.Get(serverHello.CipherSuite);
 
-            return secParams;
+            byte[] premaster = clientKX.PreMasterSecret.RawBytes;
+
+            KeyGenerator keyGenerator = new KeyGenerator();
+            KeyGenerator.KeyGenerationSeed seed = new KeyGenerator.KeyGenerationSeed();
+            seed.ClientRandom = clientHello.Random.RawBytes;
+            seed.ServerRandom = serverHello.Random.RawBytes;
+            seed.PremasterSecret = premaster;
+            seed.RecordCryptoType = oopSuite.RecordCryptoType;
+
+            TlsKeys keys = keyGenerator.GenerateKeys(seed);
+
+            SecParams secParams = new SecParams();
+            secParams.CompressionMethod = serverHello.CompressionMethod;
+
+            //authentication in this method is server side, assign appropriate keys
+            secParams.KeyReadSecret = keys.ClientWriteKey;
+            secParams.KeyWriteSecret = keys.ServerWriteKey;
+            secParams.MacReadSecret = keys.ClientWriteMacSecret;
+            secParams.MacWriteSecret = keys.ServerWriteMacSecret;
+            secParams.RecordCryptoType = oopSuite.RecordCryptoType;
+
+            highLevelProtocolStream.UpdateRecordLayer(secParams);
+
+            ReadOnlyHandshake();
         }
 
-        //
-        // artifacts block start
-        //
-
-
-        private byte[] GetPremasterSecret(ClientKeyExchangeDecryptedRsa decryptedKX)
-        {
-            byte[] bytes = new byte[48];
-            bytes[0] = decryptedKX.PreMasterSecret.ClientVersion.Major;
-            bytes[1] = decryptedKX.PreMasterSecret.ClientVersion.Minor;
-
-            Array.Copy(decryptedKX.PreMasterSecret.Random, 0, bytes, 2, 46);
-
-            return bytes;
-        }
-
-        private byte[] GetHelloRandom(HelloRandom random)
-        {
-            byte[] bytes = new byte[4 + random.RandomBytes.Length];
-
-
-            NumberConverter.FormatUInt32(random.GmtUnixTime, bytes, 0);
-            Array.Copy(random.RandomBytes, 0, bytes, 4, random.RandomBytes.Length);
-
-            return bytes;
-        }
-
-
-
-
-        //
-        // artifacts block end
-        //
-
+        
 
         private ServerHello NegotiateServerHello(ClientHello clientHello)
         {

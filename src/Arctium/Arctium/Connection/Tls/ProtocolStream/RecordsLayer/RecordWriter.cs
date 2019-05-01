@@ -7,6 +7,10 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 {
     public class RecordWriter
     {
+        ///<summary>Current write sequence number</summary>
+        public ulong SequenceNumber { get; private set; }
+
+
         Stream innerStream;
 
         public RecordWriter(Stream innerStream)
@@ -19,11 +23,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         {
             byte[] bytes = BuildRecordBytes(buffer, offset, length, contentType);
 
-
-            //foreach (byte b in bytes)
-            //{
-            //    Console.Write("{0:x2} ", b);
-            //}
+            SequenceNumber++;
         
             innerStream.Write(bytes, 0, bytes.Length);
         }

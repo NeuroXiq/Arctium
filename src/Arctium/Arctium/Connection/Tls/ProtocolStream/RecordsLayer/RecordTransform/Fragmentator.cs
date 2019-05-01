@@ -38,6 +38,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordTransform
             int buffersCount = (count / div) + 1;
             byte[][] splitted = new byte[buffersCount][];
 
+            int bufIndex = 0;
+
             //max copy
             for (int i = 0; i < buffersCount - 1; i++)
             {
@@ -48,8 +50,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordTransform
             }
 
             //last copy
-            int lastBlockOffset = buffersCount * div;
+            int lastBlockOffset = (buffersCount - 1) * div;
             int lastBlockLength = count % div;
+            splitted[buffersCount - 1] = new byte[lastBlockLength];
             Array.Copy(buffer, lastBlockOffset, splitted[buffersCount - 1], 0, lastBlockLength);
 
             return splitted;

@@ -1,5 +1,4 @@
 ﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
-using Arctium.Connection.Tls.Protocol.RecordProtocol;
 
 namespace Arctium.Connection.Tls.Protocol
 {
@@ -10,6 +9,16 @@ namespace Arctium.Connection.Tls.Protocol
 
         public KeyExchangeAlgorithm KeyExchangeAlgorithm;
         public RecordCryptoType RecordCryptoType;
-        public CompressionMethod CompressionMethod;
+
+        public CryptoSuite(
+            CipherSuite baseSuite,
+            KeyExchangeAlgorithm keyExchangeAlgorithm,
+            RecordCryptoType recordCryptoType)
+        {
+            CipherSuiteBase = baseSuite;
+            KeyExchangeAlgorithm = keyExchangeAlgorithm;
+            RecordCryptoType = recordCryptoType;
+        }
+
     }
 }

@@ -30,7 +30,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
         }
 
 
-        public void UpdateRecordLayer(SecurityParameters secParams)
+        public void UpdateRecordLayer(SecParams secParams)
         {
             recordLayer.ChangeCipherSpec(secParams);
         }

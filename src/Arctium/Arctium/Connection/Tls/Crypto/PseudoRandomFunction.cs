@@ -10,14 +10,14 @@ namespace Arctium.Connection.Tls.Crypto
         {
             byte[] labelBytes = GetStringBytes(label);
 
-            byte[] s1, s2;
-            SplitSecret(secret, out s1, out s2);
+            byte[] secretLeft, secretRight;
+            SplitSecret(secret, out secretLeft, out secretRight);
 
             DataExpansionFunction md5Expansion = new DataExpansionFunction(MACAlgorithm.MD5);
             DataExpansionFunction sha1Expansion = new DataExpansionFunction(MACAlgorithm.SHA);
 
-            byte[] md5Stream = md5Expansion.Generate(s1, Join(labelBytes, seed), length);
-            byte[] sha1Stream = sha1Expansion.Generate(s2, Join(labelBytes, seed), length);
+            byte[] md5Stream = md5Expansion.Generate(secretLeft, Join(labelBytes, seed), length);
+            byte[] sha1Stream = sha1Expansion.Generate(secretRight, Join(labelBytes, seed), length);
 
             byte[] result = XorStreams(md5Stream, sha1Stream);
 
@@ -39,37 +39,21 @@ namespace Arctium.Connection.Tls.Crypto
         private void SplitSecret(byte[] secret, out byte[] s1, out byte[] s2)
         {
             int length = (secret.Length) / 2;
-
-            s1 = new byte[length];
-            s2 = new byte[length];
-
             int delta = secret.Length % 2;
+
+            s1 = new byte[length + delta];
+            s2 = new byte[length + delta];
 
             for (int i = 0; i < length + delta; i++)
             {
                 s1[i] = secret[i];
-            }
-
-            for (int i = 0; i < length; i++)
-            {
                 s2[i] = secret[i + length];
             }
-
-
         }
 
         private byte[] GetStringBytes(string label)
         {
             return Encoding.ASCII.GetBytes(label);
-        }
-
-        public byte[] GenerateMasterSecret(byte[] premasterSecret, byte[] clientRandom, byte[] serverRandom)
-        {
-            byte[] seed = Join(clientRandom, serverRandom);
-            string label = "master secret";
-            byte[] secret = premasterSecret;
-
-            return Prf(secret, label, seed, 48);
         }
 
         private byte[] Join(byte[] clientRandom, byte[] serverRandom)
