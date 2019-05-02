@@ -9,6 +9,7 @@ using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
+using Arctium.Connection.Tls.Protocol.AlertProtocol;
 
 namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 {
@@ -65,7 +66,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
                     return ReadChangeCipherSpecFromCache();
                     break;
                 case ContentType.Alert:
-                    throw new NotImplementedException();
+                    return LoadAlertFromCache();
                     break;
                 case ContentType.Handshake:
                     return LoadHandshakeFromCache();
@@ -77,6 +78,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
                     throw new NotImplementedException();
                     break;
             }
+        }
+
+        private object LoadAlertFromCache()
+        {
+            bufferCache.TrimStart(1);
+            AlertBuilder ab = new AlertBuilder();
+            return new Alert();
         }
 
         private object ReadChangeCipherSpecFromCache()

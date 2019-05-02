@@ -27,6 +27,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.CryptoTransform
 
             readCipher.IV = iv;
             readCipher.Padding = PaddingMode.None;
+            readCipher.Mode = CipherMode.CBC;
+            
             
             var decryptor = readCipher.CreateDecryptor(readCipher.Key, iv);
             

@@ -34,11 +34,13 @@ namespace Arctium.Connection.Tls.Crypto
             int nextWriteOffset = 0;
             byte[] hashesSequence = new byte[hashesCount * hashSizeInBytes];
 
+          
             //
             byte[] current = hmac.ComputeHash(Join(secret, seed));
 
             for (int i = 0; i < hashesCount; i++)
             {
+
                 current = hmac.ComputeHash(Join(current, seed));
                 Array.Copy(current, 0, hashesSequence, nextWriteOffset, hashSizeInBytes);
 

@@ -22,15 +22,15 @@ namespace Arctium.Connection.Tls.Crypto
         {
             PseudoRandomFunction prf = new PseudoRandomFunction();
 
-            byte[] randomSeed = Join(keySeed.ClientRandom, keySeed.ServerRandom);
+            //byte[] randomSeed = Join(keySeed.ServerRandom, keySeed.ClientRandom);
 
             int hashSize = GetHashSize(keySeed.RecordCryptoType.MACAlgorithm);
             int keySize = keySeed.RecordCryptoType.KeySize/8;
             int keyBlockSize = (2 * hashSize) + (2 * keySize);
 
-            byte[] masterSecret = prf.Prf(keySeed.PremasterSecret, "master secret", randomSeed, CryptoConst.MasterSecretLength);
-
-            byte[] keyBlock = prf.Prf(masterSecret, "key expansion", randomSeed, keyBlockSize);
+            byte[] masterSecret = prf.Prf(keySeed.PremasterSecret, "master secret", Join(keySeed.ClientRandom,keySeed.ServerRandom), CryptoConst.MasterSecretLength);
+                                                   
+            byte[] keyBlock = prf.Prf(masterSecret, "key expansion", Join(keySeed.ServerRandom,keySeed.ClientRandom), keyBlockSize);
 
             TlsKeys keys = PartitionToKeys(keyBlock, hashSize, keySize);
 
