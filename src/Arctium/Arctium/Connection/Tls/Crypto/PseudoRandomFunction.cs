@@ -56,11 +56,11 @@ namespace Arctium.Connection.Tls.Crypto
             return Encoding.ASCII.GetBytes(label);
         }
 
-        private byte[] Join(byte[] clientRandom, byte[] serverRandom)
+        private byte[] Join(byte[] left, byte[] right)
         {
-            byte[] joined = new byte[clientRandom.Length + serverRandom.Length];
-            Array.Copy(clientRandom, 0, joined, 0, clientRandom.Length);
-            Array.Copy(serverRandom, 0, joined, clientRandom.Length, serverRandom.Length);
+            byte[] joined = new byte[left.Length + right.Length];
+            Array.Copy(left, 0, joined, 0, left.Length);
+            Array.Copy(right, 0, joined, left.Length, right.Length);
 
             return joined;
         }

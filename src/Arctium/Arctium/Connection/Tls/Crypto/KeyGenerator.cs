@@ -2,6 +2,7 @@
 using System;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
+using System.Globalization;
 
 namespace Arctium.Connection.Tls.Crypto
 {
@@ -17,7 +18,7 @@ namespace Arctium.Connection.Tls.Crypto
 
         public KeyGenerator() { }
 
-
+        
         public TlsKeys GenerateKeys(KeyGenerationSeed keySeed)
         {
             PseudoRandomFunction prf = new PseudoRandomFunction();
@@ -28,15 +29,45 @@ namespace Arctium.Connection.Tls.Crypto
             int keySize = keySeed.RecordCryptoType.KeySize/8;
             int keyBlockSize = (2 * hashSize) + (2 * keySize);
 
+
+            //string expectedStr = "d3d4d1e349b5d515044666d51de32bab258cb521b6b053463e354832fd976754443bcf9a296519bc289abcbc1187e4ebd31e602353776c408aafb74cbc85eff69255f9788faa184cbb957a9819d84a5d7eb006eb459d3ae8de9810454b8b2d8f1afbc655a8c9a013";
+            //byte[] expected = HEX(expectedStr);
+            //
+            //byte[] seed = new byte[64];
+            //byte[] secred = new byte[48];
+            //for (int i = 0; i < 64; i++) seed[i] = 0xcd;
+            //for (int i = 0; i < 48; i++) secred[i] = 0xab;
+            //
+            //byte[] master = prf.Prf(secred, "PRF Testvector", seed, 104);
+            //
+            //
+            //for (int i = 0; i < 104; i++)
+            //{
+            //    Console.WriteLine("{0,-3}| {1,-3:X2} {2,-3:X2} {3,-3:X2}", i,expected[i], expected[i] == master[i] ? "=" : "!", master[i]);
+            //}
+            //
+            //return new TlsKeys();
+
             byte[] masterSecret = prf.Prf(keySeed.PremasterSecret, "master secret", Join(keySeed.ClientRandom,keySeed.ServerRandom), CryptoConst.MasterSecretLength);
-                                                   
+            
             byte[] keyBlock = prf.Prf(masterSecret, "key expansion", Join(keySeed.ServerRandom,keySeed.ClientRandom), keyBlockSize);
-
+            
             TlsKeys keys = PartitionToKeys(keyBlock, hashSize, keySize);
-
-
+            
+            
             return keys;
+            
+        }
 
+        private byte[] HEX(string expectedStr)
+        {
+            byte[] res = new byte[expectedStr.Length / 2];
+            for (int i = 0; i < expectedStr.Length/2; i++)
+            {
+                res[i] = Convert.ToByte(expectedStr.Substring(i * 2, 2), 16);
+            }
+
+            return res;
         }
 
         private TlsKeys PartitionToKeys(byte[] keyBlock, int hashSize, int keySize)

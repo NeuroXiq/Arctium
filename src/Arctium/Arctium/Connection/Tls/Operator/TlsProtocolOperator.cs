@@ -77,17 +77,8 @@ namespace Arctium.Connection.Tls.Operator
             seed.PremasterSecret = premaster;
             seed.RecordCryptoType = oopSuite.RecordCryptoType;
 
-            using (FileStream fs = new FileStream("D:\\premaster", FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite))
-            {
-                StreamWriter sw = new StreamWriter(fs);
-                foreach (byte b in premaster)
-                {
-                    sw.Write("{0:X2}", b);
-                }
-                sw.Close();
-            }
 
-                TlsKeys keys = keyGenerator.GenerateKeys(seed);
+            TlsKeys keys = keyGenerator.GenerateKeys(seed);
 
             SecParams secParams = new SecParams();
             secParams.CompressionMethod = serverHello.CompressionMethod;
@@ -182,7 +173,10 @@ namespace Arctium.Connection.Tls.Operator
             ContentType type = ContentType.Alert;
             object obj = null;
             while (type != ContentType.Handshake)
+            {
                 obj = highLevelProtocolStream.Read(out type);
+                if (type == ContentType.Alert) throw new Exception("alert");
+            }
             
             return (Handshake)obj;
         }

@@ -30,12 +30,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.CryptoTransform
             readCipher.Mode = CipherMode.CBC;
             
             
-            var decryptor = readCipher.CreateDecryptor(readCipher.Key, iv);
+            var decryptor = readCipher.CreateDecryptor();
             
             byte[] decryptResult = new byte[length - 16];
             int len = length - 16;
             int iq = decryptor.TransformBlock(buffer, offset + 16, length - 16, decryptResult, 0);
-            
+
             return null;
         }
 

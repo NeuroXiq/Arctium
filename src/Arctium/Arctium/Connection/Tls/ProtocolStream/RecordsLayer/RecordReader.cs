@@ -54,7 +54,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             {
                 while (bufferCache.DataLength < RecordConst.LengthOffset + 2)
                 {
-                    bufferCache.WriteFrom(innerStream);       
+                    int readed = bufferCache.WriteFrom(innerStream);
+                    if (readed < 1) throw new Exception("innerStream returns 0 bytes after read");
                 }
             }
         }

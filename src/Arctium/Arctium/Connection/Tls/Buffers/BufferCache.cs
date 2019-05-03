@@ -48,7 +48,7 @@ namespace Arctium.Connection.Tls.Buffers
         ///<summary>Removes all bytes from start position and shift all remaining to new empty space</summary>
         public void TrimStart(int count)
         {
-            for (int i = count; i < Size; i++)
+            for (int i = count; i < DataLength; i++)
             {
                 Buffer[i - count] = Buffer[i];
             }
