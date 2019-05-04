@@ -5,15 +5,16 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
 {
     class RecordBuilder
     {
-
         public RecordBuilder()
         {
 
         }
+        
+    }
 
-        public Record GetRecord(byte[] buffer, int offset)
+    /*public Record GetRecord(byte[] buffer, int offset)
         {
-            
+
 
             ContentType contentType = GetContentType(buffer, offset);
             ProtocolVersion version = GetVersion(buffer, offset);
@@ -79,6 +80,5 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
             byte minor = buffer[recordOffset + verOffset + 1];
 
             return new ProtocolVersion(major, minor);
-        }
-    }
+        }*/
 }

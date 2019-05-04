@@ -1,5 +1,4 @@
-﻿using Arctium.Connection.Tls.Crypto;
-using Arctium.Connection.Tls.Operator;
+﻿using Arctium.Connection.Tls.Operator;
 using System;
 using System.IO;
 
@@ -23,8 +22,7 @@ namespace Arctium.Connection.Tls
         ///<summary>Accept new connection from specified stream</summary>
         public TlsStream Accept()
         {
-            TlsProtocolOperator protocolOperator = TlsProtocolOperator.CreateServerSession(innerStream);
-            protocolOperator.Handshake();
+            var protocolOperator = TlsProtocolOperatorSwitch.OpenServerSession(innerStream);
 
             return new TlsStream(protocolOperator);
         }

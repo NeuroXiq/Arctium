@@ -1,5 +1,4 @@
-﻿using Arctium.Connection.Tls.Protocol;
-using Arctium.Connection.Tls.Protocol.RecordProtocol;
+﻿using Arctium.Connection.Tls.CryptoConfiguration;
 
 namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {

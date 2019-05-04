@@ -10,18 +10,19 @@ using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
+using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
 
 namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 {
     class HighLevelProtocolStream
     {
-        RecordLayer recordLayer;
+        RecordLayer11 recordLayer;
         HandshakeBuilder handshakeBuilder;
         BufferCache bufferCache;
         ContentType currentContentInCache;
         HandshakeFormatter handshakeFormatter;
 
-        public HighLevelProtocolStream(RecordLayer recordLayer)
+        public HighLevelProtocolStream(RecordLayer11 recordLayer)
         {
             this.recordLayer = recordLayer;
             handshakeBuilder = new HandshakeBuilder();
@@ -31,7 +32,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
         }
 
 
-        public void UpdateRecordLayer(SecParams secParams)
+        public void UpdateRecordLayer(SecParams11 secParams)
         {
             recordLayer.ChangeCipherSpec(secParams);
         }
