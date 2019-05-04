@@ -48,12 +48,12 @@
     <Compile Include="Connection\Tls\CryptoFunctions\Tls11Keys.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11ProtocolOperator.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\BlockCipher.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\Cipher.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\CompressionTransform.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\Compression.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\HmacService.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\NullCompressionTransform.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\StreamCipher.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\NullCompression.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\NullHMAC.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\NullStreamCipher.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\TlsRecordTransform.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\CryptoTransform\TlsRecordTransformFactory.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordIO.cs" />

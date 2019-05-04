@@ -1,4 +1,4 @@
-﻿namespace Arctium.Connection.Tls.Protocol.RecordProtocol
+﻿namespace Arctium.Connection.Tls.CryptoConfiguration
 {
     public enum CipherType
     {

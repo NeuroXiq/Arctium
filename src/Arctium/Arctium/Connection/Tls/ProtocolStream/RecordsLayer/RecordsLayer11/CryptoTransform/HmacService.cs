@@ -10,6 +10,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11.Cryp
     class HmacService
     {
         public MACAlgorithm MacAlgorithm { get; private set; }
+        public int HashSize { get; private set; }
 
         HMAC readHmac;
         HMAC writeHmac;
@@ -18,6 +19,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11.Cryp
         {
             this.readHmac = readHmac;
             this.writeHmac = writeHmac;
+            this.HashSize = readHmac.HashSize;
+
             MacAlgorithm = algorithm;
         }
 

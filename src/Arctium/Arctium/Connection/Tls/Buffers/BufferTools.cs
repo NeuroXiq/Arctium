@@ -37,5 +37,15 @@ namespace Arctium.Connection.Tls.Buffers
 
             return true;
         }
+
+        public static byte[] Substring(byte[] buffer, int offset, int length)
+        {
+            if (length == 0) return new byte[0];
+            byte[] substring = new byte[length];
+
+            Buffer.BlockCopy(buffer, offset, substring, 0, length);
+
+            return substring;
+        }
     }
 }
