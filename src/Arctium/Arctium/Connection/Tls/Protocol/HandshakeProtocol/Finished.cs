@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
+﻿namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
-    class Finished
+    class Finished : Handshake
     {
+        public byte[] VerifyData;
+
+        public Finished(byte[] verifyData)
+        {
+            VerifyData = verifyData;
+        }
     }
 }

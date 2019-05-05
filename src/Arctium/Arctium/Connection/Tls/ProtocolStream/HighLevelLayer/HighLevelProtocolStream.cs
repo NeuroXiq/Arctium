@@ -7,7 +7,6 @@ using Arctium.Connection.Tls.Buffers;
 using System;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
-using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
@@ -31,7 +30,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
             bufferCache = new BufferCache(ProtocolFormatConst.HandshakeMaxLength + ProtocolFormatConst.MaxRecordLength);
         }
 
-
         public void UpdateRecordLayer(SecParams11 secParams)
         {
             recordLayer.ChangeCipherSpec(secParams);
@@ -45,11 +43,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
         public object Read(out ContentType type)
         {
-            if(bufferCache.DataLength == 0)
+            if (bufferCache.DataLength == 0)
             {
                 ContentType msgType;
-                byte[] temp = new byte[128];
-                int readed = recordLayer.Read(temp, 0, 128, out msgType);
+                byte[] temp = new byte[2 << 14 + 2048];
+                int readed = recordLayer.Read(temp, 0, out msgType);
+
                 bufferCache.WriteFrom(temp, 0, readed);
                 currentContentInCache = msgType;
             }
@@ -85,7 +84,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
         {
             bufferCache.TrimStart(2);
             AlertBuilder ab = new AlertBuilder();
-            
+
             var a = new Alert();
             a.Level = (AlertLevel)bufferCache.Buffer[0];
             a.Description = (AlertDescription)bufferCache.Buffer[1];
@@ -113,12 +112,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
         private object LoadHandshakeFromCache()
         {
-            byte[] temp = new byte[1024];
+            byte[] temp = new byte[2 << 14 + 2048];
             ContentType ctype;
             int readed = 0;
             while (bufferCache.DataLength < HandshakeConst.LengthOffset)
             {
-                readed += recordLayer.Read(temp, 0, 1024, out ctype);
+                readed += recordLayer.Read(temp, 0, out ctype);
                 if (ctype != ContentType.Handshake) throw new Exception("Invalid order of record layer messages.");
             }
 
@@ -127,7 +126,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
             while (bufferCache.DataLength - HandshakeConst.HeaderLength < bodyLength)
             {
-                readed = recordLayer.Read(temp, 0, 1024, out ctype);
+                readed = recordLayer.Read(temp, 0, out ctype);
                 if (ctype != ContentType.Handshake) throw new Exception("Invalid order of record layer messages.");
 
                 bufferCache.WriteFrom(temp, 0, readed);
@@ -136,7 +135,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
             int totalHandshakeLen = bodyLength + HandshakeConst.HeaderLength;
             object parsedObj = handshakeBuilder.GetHandshake(bufferCache.Buffer, 0);
-            
+
+
+
             bufferCache.TrimStart(totalHandshakeLen);
 
             return parsedObj;
@@ -145,6 +146,21 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
         //
         // Write methods
         //
+
+        public void Write(Finished finished)
+        {
+            byte[] handshakedBytes = handshakeFormatter.GetBytes(finished);
+
+            recordLayer.Write(handshakedBytes, 0, handshakedBytes.Length, ContentType.Handshake);
+        }
+
+        public void Write(ChangeCipherSpec ccs)
+        {
+            byte[] changeCsBytes = new byte[1];
+            changeCsBytes[0] = (byte)ccs.CCSType;
+
+            recordLayer.Write(changeCsBytes, 0, 1, ContentType.ChangeCipherSpec);
+        }
 
         public void Write(ServerHello handshakeMessage)
         {

@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11.CryptoTransform
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     class NullHMAC : HMAC
     {

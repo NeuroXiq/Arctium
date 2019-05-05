@@ -2,6 +2,7 @@
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters;
+using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
 {
@@ -29,6 +30,13 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
             Array.Copy(innerMsgBytes, 0, handshakeBytes, innerMsgOffset, innerMsgBytes.Length);
 
             return handshakeBytes;
+        }
+
+        public byte[] GetBytes(Finished finished)
+        {
+            byte[] innerMsgBytes = finished.VerifyData;
+            return FormatHandshake(HandshakeType.Finished, innerMsgBytes);
+
         }
 
         public byte[] GetBytes(ServerHello serverHello)

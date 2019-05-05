@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Connection.Tls.CryptoFunctions
 {
-    struct Tls11Keys
+    struct Tls11KeyBlock
     {
         public byte[] ClientWriteMacSecret;
         public byte[] ServerWriteMacSecret;

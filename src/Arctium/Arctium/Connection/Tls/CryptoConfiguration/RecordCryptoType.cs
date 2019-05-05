@@ -6,12 +6,16 @@ namespace Arctium.Connection.Tls.Protocol
     class RecordCryptoType
     {
         public CipherType CipherType;
-        ///<summary>Only for Block ciphers</summary>
-        public BlockCipherMode BlockCipherMode;
+
         public BulkCipherAlgorithm BulkCipherAlgorithm;
         public MACAlgorithm MACAlgorithm;
+
         ///<summary>Key size in bits</summary>
         public int KeySize;
+
+
+        ///<summary>Only for Block ciphers</summary>
+        public BlockCipherMode BlockCipherMode;
 
         public RecordCryptoType(CipherType cipherType,
             BlockCipherMode blockCipherMode,

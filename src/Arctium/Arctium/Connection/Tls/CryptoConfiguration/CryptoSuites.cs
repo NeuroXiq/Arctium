@@ -7,7 +7,7 @@ using Arctium.Connection.Tls.Protocol.RecordProtocol;
 namespace Arctium.Connection.Tls.Protocol
 {
     //
-    // hardcoded object oriented definitons of CipherSuite enum numbers
+    // hardcoded object oriented definitons of CipherSuite enum
     //
 
     static class CryptoSuites

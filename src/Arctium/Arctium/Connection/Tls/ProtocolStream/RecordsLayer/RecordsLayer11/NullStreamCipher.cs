@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11.CryptoTransform
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     class NullCryptoTransform : ICryptoTransform
     {

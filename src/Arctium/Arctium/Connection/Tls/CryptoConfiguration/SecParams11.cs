@@ -1,4 +1,5 @@
 ﻿using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol.RecordProtocol;
 
 namespace Arctium.Connection.Tls.Protocol
 {
@@ -8,9 +9,10 @@ namespace Arctium.Connection.Tls.Protocol
         public RecordCryptoType RecordCryptoType;
         public CompressionMethod CompressionMethod;
 
-        public byte[] MacReadSecret;
-        public byte[] MacWriteSecret;
-        public byte[] KeyReadSecret;
-        public byte[] KeyWriteSecret;
+        public byte[] MacReadKey;
+        public byte[] MacWriteKey;
+        public byte[] BulkReadKey;
+        public byte[] BulkWriteKey;
+        public byte[] MasterSecret;
     }
 }

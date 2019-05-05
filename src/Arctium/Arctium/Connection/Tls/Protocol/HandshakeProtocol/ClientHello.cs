@@ -9,6 +9,5 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
         public SessionID SessionID;
         public CipherSuite[] CipherSuites;
         public CompressionMethod[] CompressionMethods;
-
     }
 }

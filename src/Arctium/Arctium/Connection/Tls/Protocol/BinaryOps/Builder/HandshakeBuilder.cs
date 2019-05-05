@@ -1,5 +1,6 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+using Arctium.Connection.Tls.Protocol.FormatConsts;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
 {
@@ -48,13 +49,28 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
                     parsedHandshake = GetClientKeyExchange(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.Finished:
-                    throw new NotImplementedException();
+                    parsedHandshake = GetFinished(buffer, messageOffset, handshakeContentLength);
                     break;
             }
 
             //parsedHandshake.Length = handshakeContentLength;
 
+            
+            
+
             return parsedHandshake;
+        }
+
+        private Handshake GetFinished(byte[] buffer, int messageOffset, int handshakeContentLength)
+        {
+            if (handshakeContentLength != 12) throw new MessageFromatException("Finished Handshake: Content length mu be equal to 12 but current value is: " + handshakeContentLength);
+
+            byte[] verifyData = new byte[12];
+            Buffer.BlockCopy(buffer, messageOffset, verifyData, 0, 12);
+
+            Finished finished = new Finished(verifyData);
+
+            return finished;
         }
 
         private ClientKeyExchange GetClientKeyExchange(byte[] buffer, int messageOffset, int handshakeContentLength)

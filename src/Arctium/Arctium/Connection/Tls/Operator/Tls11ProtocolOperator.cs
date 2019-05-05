@@ -11,6 +11,9 @@ using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
 using Arctium.Connection.Tls.CryptoFunctions;
 using Arctium.Connection.Tls.CryptoConfiguration;
 using Arctium.CryptoFunctions;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
+using Arctium.Connection.Tls.Buffers;
+using System.Security.Cryptography;
 
 namespace Arctium.Connection.Tls.Operator
 {
@@ -52,7 +55,6 @@ namespace Arctium.Connection.Tls.Operator
             //
             //
 
-
             ClientHello clientHello = ReadOnlyHandshake() as ClientHello;
             if (clientHello == null) throw new HandshakeException("Invalid Handshake message order. Expected client hello");
 
@@ -73,37 +75,34 @@ namespace Arctium.Connection.Tls.Operator
 
             ChangeCipherSpec ccs = ReadOnlyChangeCipherSpec();
 
-
             CryptoSuite oopSuite = CryptoSuites.Get(serverHello.CipherSuite);
 
             byte[] premaster = clientKX.PreMasterSecret.RawBytes;
 
-            KeyGenerator keyGenerator = new KeyGenerator();
-            KeyGenerator.KeyGenerationSeed seed = new KeyGenerator.KeyGenerationSeed();
-            seed.ClientRandom = clientHello.Random.RawBytes;
-            seed.ServerRandom = serverHello.Random.RawBytes;
-            seed.PremasterSecret = premaster;
-            seed.RecordCryptoType = oopSuite.RecordCryptoType;
+            SecretGenerator g = new SecretGenerator();
+            SecretGenerator.SecParams11Seed sps = new SecretGenerator.SecParams11Seed();
+            sps.ClientRandom = clientHello.Random.RawBytes;
+            sps.ServerRandom = serverHello.Random.RawBytes;
+            sps.CompressionMethod = CompressionMethod.NULL;
+            sps.HostType = ConnectionEnd.Server;
+            sps.Premaster = clientKX.PreMasterSecret.RawBytes;
+            sps.RecordCryptoType = oopSuite.RecordCryptoType;
 
+            SecParams11 secParams = g.GenerateSecParams11(sps);
 
-            Tls11Keys keys = keyGenerator.GenerateKeys(seed);
-
-            SecParams11 secParams = new SecParams11();
-            secParams.CompressionMethod = serverHello.CompressionMethod;
-
-            //authentication in this method is server side, assign appropriate keys
-            secParams.KeyReadSecret = keys.ClientWriteKey;
-            secParams.KeyWriteSecret = keys.ServerWriteKey;
-            secParams.MacReadSecret = keys.ClientWriteMacSecret;
-            secParams.MacWriteSecret = keys.ServerWriteMacSecret;
-            secParams.RecordCryptoType = oopSuite.RecordCryptoType;
-
+            highLevelProtocolStream.Write(new ChangeCipherSpec() { CCSType = ChangeCipherSpecType.ChangeCipherSpec });
             highLevelProtocolStream.UpdateRecordLayer(secParams);
 
+            Finished finished = (Finished)ReadOnlyHandshake();
+            
+
+            HandshakeFormatter formatter = new HandshakeFormatter();
+
+            Finished f = new Finished(new byte[12]);
+
+            highLevelProtocolStream.Write(f);
             ReadOnlyHandshake();
         }
-
-
 
         private ServerHello NegotiateServerHello(ClientHello clientHello)
         {

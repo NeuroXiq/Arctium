@@ -79,7 +79,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 
             while (bufferCache.DataLength < fullLength)
             {
-                bufferCache.WriteFrom(innerStream);
+                int writed = bufferCache.WriteFrom(innerStream);
+                if (writed < 1) throw new Exception("Cannot read from inner stream. Stream returns 0 bytes after read");
             }
         }
 
@@ -97,16 +98,16 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 
         public int ReadFragment(byte[] buffer, int offset)
         {
-            int fullLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0) + RecordConst.HeaderLength;
-            for (int i = 0; i < fullLength; i++)
+            int fragmentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);// + RecordConst.HeaderLength;
+            for (int i = 0; i < fragmentLength; i++)
             {
-                buffer[i] = bufferCache.Buffer[i];
+                buffer[i] = bufferCache.Buffer[i + RecordConst.HeaderLength];
             }
 
-            bufferCache.TrimStart(fullLength);
+            bufferCache.TrimStart(fragmentLength + RecordConst.HeaderLength);
             ReadCount++;
 
-            return fullLength;
+            return fragmentLength;
         }
 
         public void WriteFragment(byte[] buffer, int offset, int length, ContentType contentType)
@@ -114,10 +115,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             if (length > MaxFragmentLength) throw new Exception("record fragment length exceed 'MaxFragmentLength'");
 
             byte[] bytes = BuildRecordBytes(buffer, offset, length, contentType);
-
-            ReadCount++;
-
+            
             innerStream.Write(bytes, 0, bytes.Length);
+            WriteCount++;
         }
 
         private byte[] BuildRecordBytes(byte[] buffer, int offset, int length, ContentType contentType)

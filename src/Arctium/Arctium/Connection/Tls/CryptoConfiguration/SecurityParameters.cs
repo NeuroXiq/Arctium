@@ -1,8 +1,10 @@
 ﻿using Arctium.Connection.Tls.CryptoConfiguration;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
+using System;
 
 namespace Arctium.Connection.Tls.Protocol
 {
+    [Obsolete("",true)]
     public class SecurityParameters
     {
         public ConnectionEnd Entity;
