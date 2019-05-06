@@ -82,13 +82,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
         private object LoadAlertFromCache()
         {
-            bufferCache.TrimStart(2);
+            
             AlertBuilder ab = new AlertBuilder();
 
             var a = new Alert();
             a.Level = (AlertLevel)bufferCache.Buffer[0];
             a.Description = (AlertDescription)bufferCache.Buffer[1];
-
+            bufferCache.TrimStart(2);
             return a;
         }
 

@@ -28,13 +28,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         ///</summary>
         public ProtocolVersion RecordVersion { get; set; }
 
-        ///<summary>Returns readed records count</summary>
-        public ulong ReadCount { get; private set; }
-        ///<summary>Returns writed records count</summary>
-        public ulong WriteCount { get; private set; }
-
-
-        
         ///<summary>Returns <see cref="RecordHeader"/> of the loaded record.</summary>
         ///<exception cref="InvalidOperationException">If record are not already loaded into memory.</exception>
         public RecordHeader RecordHeader { get { return GetRecordHeader(); } }
@@ -51,8 +44,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         {
             this.innerStream = innerStream;
             bufferCache = new BufferCache(RecordConst.MaxTlsRecordLength);
-            ReadCount = 0;
-            WriteCount = 0;
             MaxFragmentLength = RecordConst.MaxFragmentLength;
             RecordVersion = new ProtocolVersion(0, 0);
         }
@@ -105,7 +96,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             }
 
             bufferCache.TrimStart(fragmentLength + RecordConst.HeaderLength);
-            ReadCount++;
 
             return fragmentLength;
         }
@@ -117,7 +107,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             byte[] bytes = BuildRecordBytes(buffer, offset, length, contentType);
             
             innerStream.Write(bytes, 0, bytes.Length);
-            WriteCount++;
         }
 
         private byte[] BuildRecordBytes(byte[] buffer, int offset, int length, ContentType contentType)
@@ -137,6 +126,5 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             return temp;
 
         }
-
     }
 }

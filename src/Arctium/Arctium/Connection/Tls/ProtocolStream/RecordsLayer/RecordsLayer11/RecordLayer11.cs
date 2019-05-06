@@ -3,6 +3,8 @@ using Arctium.Connection.Tls.CryptoConfiguration;
 using Arctium.Connection.Tls.Protocol;
 using System.Security.Cryptography;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
+using System.IO;
+using Arctium.Connection.Tls.Protocol.BinaryOps;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 {
@@ -25,6 +27,18 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
                 MACAlgorithm.NULL)
         };
 
+        struct ReadedRecord
+        {
+            public byte[] Fragment;
+            public RecordHeader RecordHeader;
+
+            public ReadedRecord(byte[] fragmnet, RecordHeader header)
+            {
+                Fragment = fragmnet;
+                RecordHeader = header;
+            }
+        }
+
         const int FragmentWriteLength = 100;
 
         SecParams11 currentSecParams;
@@ -34,6 +48,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         byte[] BulkReadKey { get { return currentSecParams.BulkReadKey; } }
         byte[] BulkWriteKey { get { return currentSecParams.BulkWriteKey; } }
+        byte[] MacReadKey { get { return currentSecParams.MacReadKey; } }
+        byte[] MacWriteKey { get { return currentSecParams.MacWriteKey; } }
 
         //public int FragmentWriteLength { get; private set; }
 
@@ -44,7 +60,17 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         RecordIO recordIO;
 
-        private RecordLayer11(RecordIO recordIO) { this.recordIO = recordIO; }
+        private ulong readSequenceNumber;
+        private ulong writeSequenceNumber;
+
+
+
+        private RecordLayer11(RecordIO recordIO)
+        {
+            this.recordIO = recordIO;
+            readSequenceNumber = 0xffffffffffffffff;
+            writeSequenceNumber = 0xffffffffffffffff;
+        }
 
 
         ///<summary>Creates initial state of the RecordLayerv11</summary>
@@ -64,6 +90,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             writeHMAC = RecordLayer11CryptoFactory.GetWriteHMAC(newSecParams11);
             readCipher = RecordLayer11CryptoFactory.GetReadCipher(newSecParams11);
             writeCipher = RecordLayer11CryptoFactory.GetWriteCipher(newSecParams11);
+
+            readSequenceNumber = 0;
+            writeSequenceNumber = 0;
         }
 
         public void Write(byte[] buffer, int offset, int length, ContentType contentType)
@@ -116,12 +145,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         private byte[] ComputeWriteHMAC(byte[] buffer, int offset, int length)
         {
-            byte[] hmac = new byte[readHMAC.HashSize / 8];
+            byte[] hmac =  new byte[readHMAC.HashSize / 8];
+
             for (int i = 0; i < hmac.Length; i++)
             {
                 hmac[i] = (byte)i;
             }
-
+            
             return hmac;
         }
 
@@ -129,7 +159,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
         {
             int blockSize = readCipher.BlockSize / 8;
             int ivLength = readCipher.KeySize / 8;
-            int macLength = readHMAC.HashSize / 8;
+            int macLength = CryptoConst.HashSize(MacAlgorithm) / 8;
 
             int totalLength = (length + ivLength + macLength + 1);
 
@@ -217,28 +247,34 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
         //  xx xx ==  last two bytes of the mac
         private int ReadAsGenericBlockCipher(byte[] buffer, int offset)
         {
-            byte[] fragment = ReadFragment();
+            ReadedRecord record = ReadNext();
+            byte[] fragment = record.Fragment;
             int macLength = CryptoConst.HashSize(MacAlgorithm) / 8;
             byte[] iv = GetIV(fragment);
-
+            
             int encryptedSegmentOffset = iv.Length;
             int encryptedSegmentLength = fragment.Length - iv.Length;
+            byte[] decryptedBytes = new byte[encryptedSegmentLength];
+
 
             var decryptor = readCipher.CreateDecryptor(BulkReadKey, iv);
-            int decryptedBytes = decryptor.TransformBlock(fragment, encryptedSegmentOffset, encryptedSegmentLength, buffer, offset);
+            int decryptedBytesCount = decryptor.TransformBlock(fragment, encryptedSegmentOffset, encryptedSegmentLength, decryptedBytes, 0);
 
-            int paddingLength = buffer[decryptedBytes - 1 + offset] + 1;
-            int decryptedMacOffset = offset + (fragment.Length - paddingLength - macLength);
+            int paddingLength = decryptedBytes[encryptedSegmentLength - 1] + 1;
+            int decryptedMacOffset = (encryptedSegmentLength - paddingLength - macLength);
 
-            int dataLength = fragment.Length - iv.Length - paddingLength - macLength;
+            int decryptedContentLength = encryptedSegmentLength - paddingLength - macLength; //fragment.Length - iv.Length - paddingLength - macLength;
 
             byte[] decryptedMac = new byte[macLength];
-            Buffer.BlockCopy(buffer, decryptedMacOffset, decryptedMac, 0, macLength);
+            Buffer.BlockCopy(decryptedBytes, decryptedMacOffset, decryptedMac, 0, macLength);
 
-            ValidateReadHmacs(buffer, offset, dataLength, decryptedMac);
+            ValidateReadHmacs(decryptedBytes, 0, decryptedContentLength, decryptedMac);
+
+            
 
 
-            return dataLength;
+
+            return decryptedContentLength;
         }
 
         private bool ValidateReadHmacs(byte[] buffer, int offset, int dataLength, byte[] decryptedMac)
@@ -250,9 +286,34 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
                 else return false;
             }
 
+            readHMAC.Initialize();
+            readHMAC.Key = MacReadKey;
+
+            byte[] seqNumBytes = new byte[8];
+            byte[] type = new byte[] { (byte)ContentType.Handshake }; // contenttype
+            byte[] version = new byte[] { 3, 2 };
+            byte[] lengthBytes = new byte[2]; 
+
+            NumberConverter.FormatUInt64(0,seqNumBytes,0);
+            NumberConverter.FormatUInt16((ushort)dataLength, lengthBytes, 0);
+
+            readHMAC.TransformBlock(seqNumBytes, 0, 8, null, 0);
+            readHMAC.TransformBlock(type, 0, 1, null, 0);
+            readHMAC.TransformBlock(version, 0, 2, null, 0);
+            readHMAC.TransformBlock(lengthBytes, 0, 2, null, 0);
+
+            int hashed = 0;
+            while (hashed + macLength < dataLength)
+            {
+                readHMAC.TransformBlock(buffer, offset + hashed, macLength, null, 0);
+                hashed += macLength;
+            }
+
+            readHMAC.TransformFinalBlock(buffer, offset + hashed, dataLength - hashed);
+
+            byte[] calculated = readHMAC.Hash;
+
             return true;
-
-
         }
 
         private byte[] GetIV(byte[] fragment)
@@ -263,12 +324,16 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             return iv;
         }
 
-        private byte[] ReadFragment()
+        private ReadedRecord ReadNext()
         {
-            byte[] fragment = new byte[recordIO.RecordHeader.FragmentLength];
+            recordIO.LoadRecord();
+            RecordHeader header = recordIO.RecordHeader;
+            byte[] fragment = new byte[header.FragmentLength];
             recordIO.ReadFragment(fragment, 0);
 
-            return fragment;
+            ReadedRecord readedRecord = new ReadedRecord(fragment, header);
+
+            return readedRecord;
         }
 
 
@@ -278,17 +343,16 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
         //
         private int ReadAsGenericStreamCipher(byte[] buffer, int offset)
         {
-            byte[] fragment = ReadFragment();
-            int macLength = CryptoConst.HashSize(MacAlgorithm);//GetMacLength();
-            byte[] mac = new byte[macLength];
+            ReadedRecord readedRecord = ReadNext();
+            byte[] fragment = readedRecord.Fragment;
 
+            int macLength = CryptoConst.HashSize(MacAlgorithm);
+            byte[] mac = new byte[macLength];
 
             Buffer.BlockCopy(buffer, offset, mac, 0, macLength);
             var readDecryptor = readCipher.CreateDecryptor();
 
             return readDecryptor.TransformBlock(fragment, macLength, fragment.Length - macLength, buffer, offset);
         }
-
-        
     }
 }
