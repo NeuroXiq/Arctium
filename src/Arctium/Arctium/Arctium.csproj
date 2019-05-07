@@ -49,6 +49,8 @@
     <Compile Include="Connection\Tls\CryptoFunctions\Tls11KeyBlock.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11ProtocolOperator.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\BlockFragmentOffsets.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\LoadedFragmentState.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\NullHMAC.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\NullStreamCipher.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordIO.cs" />

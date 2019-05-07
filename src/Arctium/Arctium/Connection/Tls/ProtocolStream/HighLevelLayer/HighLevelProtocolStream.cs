@@ -47,7 +47,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
             {
                 ContentType msgType;
                 byte[] temp = new byte[2 << 14 + 2048];
-                int readed = recordLayer.Read(temp, 0, out msgType);
+                msgType = recordLayer.LoadFragment().ContentType;
+                int readed = recordLayer.Read(temp, 0).Length;
 
                 bufferCache.WriteFrom(temp, 0, readed);
                 currentContentInCache = msgType;
@@ -117,7 +118,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
             int readed = 0;
             while (bufferCache.DataLength < HandshakeConst.LengthOffset)
             {
-                readed += recordLayer.Read(temp, 0, out ctype);
+                ctype = recordLayer.LoadFragment().ContentType;
+                readed += recordLayer.Read(temp, 0).Length;
                 if (ctype != ContentType.Handshake) throw new Exception("Invalid order of record layer messages.");
             }
 
@@ -126,7 +128,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 
             while (bufferCache.DataLength - HandshakeConst.HeaderLength < bodyLength)
             {
-                readed = recordLayer.Read(temp, 0, out ctype);
+                ctype = recordLayer.LoadFragment().ContentType;
+                readed = recordLayer.Read(temp, 0).Length;
                 if (ctype != ContentType.Handshake) throw new Exception("Invalid order of record layer messages.");
 
                 bufferCache.WriteFrom(temp, 0, readed);

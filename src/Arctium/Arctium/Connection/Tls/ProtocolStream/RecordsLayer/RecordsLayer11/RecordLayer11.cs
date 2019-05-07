@@ -5,11 +5,28 @@ using System.Security.Cryptography;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System.IO;
 using Arctium.Connection.Tls.Protocol.BinaryOps;
+using Arctium.Connection.Tls.Buffers;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     class RecordLayer11
     {
+        public LoadedFragment LoadedFragmentInfo
+        {
+            get
+            {
+                if (!LoadedDecryptedFragmentState.IsLoaded) throw new InvalidOperationException("Cannot get info because fragment is not already loaded and decrypted. Load fragent first calling 'Load()' method");
+                return LoadedDecryptedFragmentState.FragmentInfo;
+            }
+        }
+
+        public struct LoadedFragment
+        {
+            public int Length;
+            public ContentType ContentType;
+        }
+        
+
         static readonly SecParams11 InitialSecParams11 = new SecParams11()
         {
             BulkReadKey = new byte[0],
@@ -51,8 +68,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
         byte[] MacReadKey { get { return currentSecParams.MacReadKey; } }
         byte[] MacWriteKey { get { return currentSecParams.MacWriteKey; } }
 
-        //public int FragmentWriteLength { get; private set; }
-
         HMAC readHMAC;
         HMAC writeHMAC;
         SymmetricAlgorithm readCipher;
@@ -60,18 +75,19 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         RecordIO recordIO;
 
-        private ulong readSequenceNumber;
-        private ulong writeSequenceNumber;
+        ulong readSequenceNumber;
+        ulong writeSequenceNumber;
 
-
+        LoadedFragmentState LoadedDecryptedFragmentState;
 
         private RecordLayer11(RecordIO recordIO)
         {
             this.recordIO = recordIO;
             readSequenceNumber = 0xffffffffffffffff;
             writeSequenceNumber = 0xffffffffffffffff;
-        }
 
+            LoadedDecryptedFragmentState = LoadedFragmentState.InitializeUnloaded();
+        }
 
         ///<summary>Creates initial state of the RecordLayerv11</summary>
         public static RecordLayer11 Initialize(RecordIO innerRecordIO)
@@ -104,6 +120,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
                 default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
             }
+
+            writeSequenceNumber++;
         }
 
         private void WriteAsGenericBlockCipher(byte[] buffer, int offset, int length, ContentType contentType)
@@ -225,77 +243,113 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             }
         }
 
-        public int Read(byte[] buffer, int offset, out ContentType contentType)
+
+        public LoadedFragment LoadFragment()
         {
-            recordIO.LoadRecord();
-            contentType = recordIO.RecordHeader.ContentType;
+            //fragment is already loaded. Whet fragment is loaded and this method is invoked, its do nothig (just return info about internal fragment state)
+            if (LoadedDecryptedFragmentState.IsLoaded) return LoadedDecryptedFragmentState.FragmentInfo;
 
             switch (currentCipherType)
             {
-                case CipherType.Stream: return ReadAsGenericStreamCipher(buffer, offset);
-                case CipherType.Block:  return ReadAsGenericBlockCipher(buffer, offset);
+                case CipherType.Stream: LoadAsGenericStreamCipher(); break;
+                case CipherType.Block: LoadAsGenericBlockCipher(); break;
 
                 default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
             }
+
+
+            if (!LoadedDecryptedFragmentState.IsLoaded || LoadedDecryptedFragmentState.FragmentInfo.Length == 0)
+            {
+                throw new Exception("Internal Error. Loaded fragment but is empty or set as unloaded");
+            }
+
+            return LoadedDecryptedFragmentState.FragmentInfo;
+        }
+
+        
+        public LoadedFragment Read(byte[] buffer, int offset)
+        {
+            if (!LoadedDecryptedFragmentState.IsLoaded) throw new InvalidOperationException("Cannot read fragment because is not already loaded and decrypted. Load and decrypt fragmnet first calling 'Load()'");
+
+            byte[] toCopy = LoadedDecryptedFragmentState.DecryptedContentBuffer;
+            int toCopyLength = LoadedDecryptedFragmentState.FragmentInfo.Length;
+            Buffer.BlockCopy(toCopy, 0, buffer, offset, toCopyLength);
+
+            LoadedFragment readingNow = LoadedDecryptedFragmentState.FragmentInfo;
+
+            LoadedDecryptedFragmentState.ResetToUnloaded();
+            readSequenceNumber++;
+
+            return readingNow;
         }
 
         //Fragment format:
         //    [x x x ENCRYPTED x x x]
         //[IV][Content][MAC][Padding]
         //
-        //[Padding] e.g. xx xx 06 06 06 06 06 06 06    (7 x 06 not 6 x 06 !)
+        //[Padding] e.g. xx xx 06 06 06 06 06 06 06    (7 x 06 not 6 x 06! Last value indicates length of the padding but internally is treated as a padding)
         //  xx xx ==  last two bytes of the mac
-        private int ReadAsGenericBlockCipher(byte[] buffer, int offset)
+        private void LoadAsGenericBlockCipher()
         {
-            ReadedRecord record = ReadNext();
+            ReadedRecord record = ReadNextRecord();
             byte[] fragment = record.Fragment;
-            int macLength = CryptoConst.HashSize(MacAlgorithm) / 8;
-            byte[] iv = GetIV(fragment);
             
-            int encryptedSegmentOffset = iv.Length;
-            int encryptedSegmentLength = fragment.Length - iv.Length;
-            byte[] decryptedBytes = new byte[encryptedSegmentLength];
+            DecryptFragmentAsBlockCipher(fragment, 0, fragment.Length);
+            ThrowIfInvalidBlockCiphertextFragmentFormat(fragment, 0, fragment.Length);
+            BlockFragmentOffsets offsets = CalculateBlockFragmentOffsets(fragment, 0, fragment.Length);
+
+            byte[] receivedHmac = new byte[offsets.HmacLength];
+            Buffer.BlockCopy(fragment, offsets.HmacOffset, receivedHmac, 0, offsets.HmacLength);
+
+            byte[] computedHmac = ComputeReadHMAC(fragment, offsets.ContentOffset, offsets.ContentLength, record.RecordHeader.ContentType);
+
+            bool hmacsEquals = BufferTools.IsContentEqual(receivedHmac, computedHmac);
+
+            if(!hmacsEquals)
+                throw new Exception("invalid HMAC");
+
+            byte[] contentBytes = new byte[offsets.ContentLength];
+            Buffer.BlockCopy(fragment, offsets.ContentOffset, contentBytes, 0, offsets.ContentLength);
 
 
-            var decryptor = readCipher.CreateDecryptor(BulkReadKey, iv);
-            int decryptedBytesCount = decryptor.TransformBlock(fragment, encryptedSegmentOffset, encryptedSegmentLength, decryptedBytes, 0);
-
-            int paddingLength = decryptedBytes[encryptedSegmentLength - 1] + 1;
-            int decryptedMacOffset = (encryptedSegmentLength - paddingLength - macLength);
-
-            int decryptedContentLength = encryptedSegmentLength - paddingLength - macLength; //fragment.Length - iv.Length - paddingLength - macLength;
-
-            byte[] decryptedMac = new byte[macLength];
-            Buffer.BlockCopy(decryptedBytes, decryptedMacOffset, decryptedMac, 0, macLength);
-
-            ValidateReadHmacs(decryptedBytes, 0, decryptedContentLength, decryptedMac);
-
-            
-
-
-
-            return decryptedContentLength;
+            LoadedDecryptedFragmentState.SetAsLoaded(contentBytes, contentBytes.Length, record.RecordHeader.ContentType);
         }
 
-        private bool ValidateReadHmacs(byte[] buffer, int offset, int dataLength, byte[] decryptedMac)
+        private void ThrowIfInvalidBlockCiphertextFragmentFormat(byte[] fragment, int offset, int length)
         {
-            int macLength = CryptoConst.HashSize(MacAlgorithm);
-            if (macLength == 0)
-            {
-                if (decryptedMac.Length == 0) return true;
-                else return false;
-            }
+            
+        }
 
+        private BlockFragmentOffsets CalculateBlockFragmentOffsets(byte[] fragment, int offset, int length)
+        {
+            BlockFragmentOffsets offsets = new BlockFragmentOffsets();
+            offsets.IVOffset = offset;
+            offsets.IVLength = readCipher.KeySize / 8;
+            offsets.PaddingLength = fragment[offset + length - 1] + 1;
+            offsets.PaddingOffset = length - offsets.PaddingLength;
+            offsets.HmacOffset = offsets.PaddingOffset - (readHMAC.HashSize / 8);
+            offsets.HmacLength = CryptoConst.HashSize(MacAlgorithm)/8;
+
+            offsets.ContentLength = length - offsets.PaddingLength - offsets.HmacLength - offsets.IVLength;
+            offsets.ContentOffset = offsets.HmacOffset - offsets.ContentLength;
+
+
+            return offsets;
+        }
+
+        private byte[] ComputeReadHMAC(byte[] buffer, int offset, int length, ContentType contentType)
+        {
             readHMAC.Initialize();
             readHMAC.Key = MacReadKey;
+            int macLength = CryptoConst.HashSize(MacAlgorithm);
 
             byte[] seqNumBytes = new byte[8];
-            byte[] type = new byte[] { (byte)ContentType.Handshake }; // contenttype
+            byte[] type = new byte[] { (byte)contentType };
             byte[] version = new byte[] { 3, 2 };
-            byte[] lengthBytes = new byte[2]; 
+            byte[] lengthBytes = new byte[2];
 
-            NumberConverter.FormatUInt64(0,seqNumBytes,0);
-            NumberConverter.FormatUInt16((ushort)dataLength, lengthBytes, 0);
+            NumberConverter.FormatUInt64(readSequenceNumber, seqNumBytes, 0);
+            NumberConverter.FormatUInt16((ushort)length, lengthBytes, 0);
 
             readHMAC.TransformBlock(seqNumBytes, 0, 8, null, 0);
             readHMAC.TransformBlock(type, 0, 1, null, 0);
@@ -303,28 +357,38 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             readHMAC.TransformBlock(lengthBytes, 0, 2, null, 0);
 
             int hashed = 0;
-            while (hashed + macLength < dataLength)
+            while (hashed + macLength < length)
             {
                 readHMAC.TransformBlock(buffer, offset + hashed, macLength, null, 0);
                 hashed += macLength;
             }
+            readHMAC.TransformFinalBlock(buffer, offset+ hashed, length - hashed);
 
-            readHMAC.TransformFinalBlock(buffer, offset + hashed, dataLength - hashed);
+            byte[] calculatedHmac = readHMAC.Hash;
 
-            byte[] calculated = readHMAC.Hash;
-
-            return true;
+            return calculatedHmac;
         }
 
-        private byte[] GetIV(byte[] fragment)
+        private void DecryptFragmentAsBlockCipher(byte[] fragmentBuffer, int offset, int fragmentLength)
+        {
+            byte[] iv = GetIV(fragmentBuffer,offset);
+
+            int encryptedSegmentOffset = iv.Length + offset;
+            int encryptedSegmentLength = fragmentLength - iv.Length;
+
+            var decryptor = readCipher.CreateDecryptor(BulkReadKey, iv);
+            int decryptedBytesCount = decryptor.TransformBlock(fragmentBuffer, encryptedSegmentOffset, encryptedSegmentLength, fragmentBuffer, encryptedSegmentOffset);
+        }
+
+        private byte[] GetIV(byte[] fragment, int offset)
         {
             byte[] iv = new byte[readCipher.KeySize / 8];
-            Buffer.BlockCopy(fragment, 0, iv, 0, iv.Length);
+            Buffer.BlockCopy(fragment, offset, iv, 0, iv.Length);
 
             return iv;
         }
 
-        private ReadedRecord ReadNext()
+        private ReadedRecord ReadNextRecord()
         {
             recordIO.LoadRecord();
             RecordHeader header = recordIO.RecordHeader;
@@ -336,23 +400,27 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             return readedRecord;
         }
 
-
         //Fragment format:
         //[xxencryptedx]
         //[Content][MAC]
         //
-        private int ReadAsGenericStreamCipher(byte[] buffer, int offset)
+        private void LoadAsGenericStreamCipher()
         {
-            ReadedRecord readedRecord = ReadNext();
+            ReadedRecord readedRecord = ReadNextRecord();
             byte[] fragment = readedRecord.Fragment;
 
             int macLength = CryptoConst.HashSize(MacAlgorithm);
-            byte[] mac = new byte[macLength];
+            byte[] hmac = new byte[macLength];
+            byte[] decryptedContent = new byte[fragment.Length - hmac.Length];
 
-            Buffer.BlockCopy(buffer, offset, mac, 0, macLength);
+            //Buffer.BlockCopy(buffer, offset, hmac, 0, macLength);
             var readDecryptor = readCipher.CreateDecryptor();
 
-            return readDecryptor.TransformBlock(fragment, macLength, fragment.Length - macLength, buffer, offset);
+            readDecryptor.TransformBlock(fragment, macLength, fragment.Length - macLength, decryptedContent, 0);
+
+            //hmac validiation
+
+            LoadedDecryptedFragmentState.SetAsLoaded(decryptedContent, decryptedContent.Length, readedRecord.RecordHeader.ContentType);
         }
     }
 }
