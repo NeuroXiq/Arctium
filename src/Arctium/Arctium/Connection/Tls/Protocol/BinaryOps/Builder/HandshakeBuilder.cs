@@ -54,7 +54,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
             }
 
             //parsedHandshake.Length = handshakeContentLength;
-
+            parsedHandshake.MsgType = handshakeType;
             
             
 

@@ -47,7 +47,8 @@
     <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\SecretGenerator.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\Tls11KeyBlock.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11ProtocolOperator.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11HandshakeState.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ProtocolOperator.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\BlockFragmentOffsets.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\LoadedFragmentState.cs" />

@@ -89,6 +89,11 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             LoadedDecryptedFragmentState = LoadedFragmentState.InitializeUnloaded();
         }
 
+        //
+        // Public Methods 
+        //
+
+
         ///<summary>Creates initial state of the RecordLayerv11</summary>
         public static RecordLayer11 Initialize(RecordIO innerRecordIO)
         {
@@ -96,6 +101,44 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             recordLayer.ChangeCipherSpec(InitialSecParams11);
 
             return recordLayer;
+        }
+
+        public LoadedFragment LoadFragment()
+        {
+            //fragment is already loaded. Whet fragment is loaded and this method is invoked, its do nothig (just return info about internal fragment state)
+            if (LoadedDecryptedFragmentState.IsLoaded) return LoadedDecryptedFragmentState.FragmentInfo;
+
+            switch (currentCipherType)
+            {
+                case CipherType.Stream: LoadAsGenericStreamCipher(); break;
+                case CipherType.Block: LoadAsGenericBlockCipher(); break;
+
+                default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
+            }
+
+
+            if (!LoadedDecryptedFragmentState.IsLoaded || LoadedDecryptedFragmentState.FragmentInfo.Length == 0)
+            {
+                throw new Exception("Internal Error. Loaded fragment but is empty or set as unloaded");
+            }
+
+            return LoadedDecryptedFragmentState.FragmentInfo;
+        }
+
+        public LoadedFragment Read(byte[] buffer, int offset)
+        {
+            if (!LoadedDecryptedFragmentState.IsLoaded) throw new InvalidOperationException("Cannot read fragment because is not already loaded and decrypted. Load and decrypt fragmnet first calling 'Load()'");
+
+            byte[] toCopy = LoadedDecryptedFragmentState.DecryptedContentBuffer;
+            int toCopyLength = LoadedDecryptedFragmentState.FragmentInfo.Length;
+            Buffer.BlockCopy(toCopy, 0, buffer, offset, toCopyLength);
+
+            LoadedFragment readingNow = LoadedDecryptedFragmentState.FragmentInfo;
+
+            LoadedDecryptedFragmentState.ResetToUnloaded();
+            readSequenceNumber++;
+
+            return readingNow;
         }
 
         public void ChangeCipherSpec(SecParams11 newSecParams11)
@@ -113,22 +156,47 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         public void Write(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            switch (currentCipherType)
-            {
-                case CipherType.Stream: WriteAsGenericStreamCipher(buffer, offset, length, contentType); break;
-                case CipherType.Block: WriteAsGenericBlockCipher(buffer, offset, length, contentType);   break;
+            int chunkSize = 100;
+            int writed = 0;
 
-                default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
+            while(writed + chunkSize < length)
+            {
+                switch (currentCipherType)
+                {
+                    case CipherType.Stream: WriteAsGenericStreamCipher(buffer, offset + writed, chunkSize, contentType); break;
+                    case CipherType.Block: WriteAsGenericBlockCipher(buffer, offset + writed, chunkSize, contentType); break;
+
+                    default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
+                }
+
+                writed += chunkSize;
+                writeSequenceNumber++;
             }
 
-            writeSequenceNumber++;
+            if (length - writed > 0)
+            {
+                switch (currentCipherType)
+                {
+                    case CipherType.Stream: WriteAsGenericStreamCipher(buffer, offset + writed, length - writed, contentType); break;
+                    case CipherType.Block: WriteAsGenericBlockCipher(buffer, offset + writed, length - writed, contentType); break;
+
+                    default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
+                }
+
+                writeSequenceNumber++;
+            }
+
         }
+
+        //
+        // Private methods
+        //
 
         private void WriteAsGenericBlockCipher(byte[] buffer, int offset, int length, ContentType contentType)
         {
             byte[] iv = CreateIV();
             byte[] padding = CreatePadding(length);
-            byte[] hmac = ComputeWriteHMAC(buffer, offset, length);
+            byte[] hmac = ComputeWriteHMAC(buffer, offset, length, contentType);
 
             int fragmentLength = iv.Length + padding.Length + length + hmac.Length;
             byte[] ciphertextFragment = new byte[fragmentLength];
@@ -161,16 +229,43 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             recordIO.WriteFragment(encrypted, 0, encrypted.Length, contentType);
         }
 
-        private byte[] ComputeWriteHMAC(byte[] buffer, int offset, int length)
+       
+
+        private byte[] ComputeWriteHMAC(byte[] buffer, int offset, int length, ContentType contentType)
         {
             byte[] hmac =  new byte[readHMAC.HashSize / 8];
 
-            for (int i = 0; i < hmac.Length; i++)
-            {
-                hmac[i] = (byte)i;
-            }
+            writeHMAC.Initialize();
+            writeHMAC.Key = currentSecParams.MacWriteKey;
+
             
-            return hmac;
+            //int blockLength = writeHMAC. / 8;
+
+            byte[] writeHmacPrefix = CreateHmacPrefix(writeSequenceNumber, contentType, (ushort)length);
+            writeHMAC.TransformBlock(writeHmacPrefix, 0, writeHmacPrefix.Length, null, 0);
+
+            //int hashedCountFromBuffer = 0;
+            //while (hashedCountFromBuffer + blockLength < length)
+            {
+                //writeHMAC.TransformBlock(buffer, offset, length, null, 0);
+            }
+            //writeHMAC.TransformFinalBlock(buffer, hashedCountFromBuffer + offset, length - hashedCountFromBuffer);
+            writeHMAC.TransformFinalBlock(buffer, offset, length);
+
+
+            return writeHMAC.Hash;
+        }
+
+        private byte[] CreateHmacPrefix(ulong seqNum, ContentType contentType, ushort fragmentLength)
+        {
+            byte[] hashPrefix = new byte[8 + 1 + 2 + 2];
+            NumberConverter.FormatUInt64(seqNum, hashPrefix, 0);
+            hashPrefix[8] = (byte)contentType;
+            hashPrefix[9] = 3;
+            hashPrefix[10] = 2;
+            NumberConverter.FormatUInt16(fragmentLength, hashPrefix, 11);
+
+            return hashPrefix;
         }
 
         private byte[] CreatePadding(int length)
@@ -243,45 +338,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             }
         }
 
-
-        public LoadedFragment LoadFragment()
-        {
-            //fragment is already loaded. Whet fragment is loaded and this method is invoked, its do nothig (just return info about internal fragment state)
-            if (LoadedDecryptedFragmentState.IsLoaded) return LoadedDecryptedFragmentState.FragmentInfo;
-
-            switch (currentCipherType)
-            {
-                case CipherType.Stream: LoadAsGenericStreamCipher(); break;
-                case CipherType.Block: LoadAsGenericBlockCipher(); break;
-
-                default: throw new Exception("Internal error, cipher type unrecognized (should never throw), improve secparam11 validation process");
-            }
-
-
-            if (!LoadedDecryptedFragmentState.IsLoaded || LoadedDecryptedFragmentState.FragmentInfo.Length == 0)
-            {
-                throw new Exception("Internal Error. Loaded fragment but is empty or set as unloaded");
-            }
-
-            return LoadedDecryptedFragmentState.FragmentInfo;
-        }
-
-        
-        public LoadedFragment Read(byte[] buffer, int offset)
-        {
-            if (!LoadedDecryptedFragmentState.IsLoaded) throw new InvalidOperationException("Cannot read fragment because is not already loaded and decrypted. Load and decrypt fragmnet first calling 'Load()'");
-
-            byte[] toCopy = LoadedDecryptedFragmentState.DecryptedContentBuffer;
-            int toCopyLength = LoadedDecryptedFragmentState.FragmentInfo.Length;
-            Buffer.BlockCopy(toCopy, 0, buffer, offset, toCopyLength);
-
-            LoadedFragment readingNow = LoadedDecryptedFragmentState.FragmentInfo;
-
-            LoadedDecryptedFragmentState.ResetToUnloaded();
-            readSequenceNumber++;
-
-            return readingNow;
-        }
 
         //Fragment format:
         //    [x x x ENCRYPTED x x x]

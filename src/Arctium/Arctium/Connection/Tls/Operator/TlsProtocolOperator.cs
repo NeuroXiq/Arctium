@@ -2,8 +2,8 @@
 {
     abstract class TlsProtocolOperator
     {
-        public abstract void WriteApplicationData(byte[] buffer, int offset, int length);
+        public abstract void WriteApplicationData(byte[] buffer, int offset, int count);
 
-        public abstract void ReadApplicationData(byte[] buffer, int offset, int length);
+        public abstract int ReadApplicationData(byte[] buffer, int offset, int count);
     }
 }

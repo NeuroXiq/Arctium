@@ -1,4 +1,5 @@
-﻿using Arctium.Connection.Tls.Protocol.RecordProtocol;
+﻿using Arctium.Connection.Tls.Operator.Tls11Operator;
+using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using System;
 using System.IO;

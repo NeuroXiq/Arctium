@@ -67,7 +67,7 @@ namespace Arctium.Connection.Tls
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            return tlsOperator.ReadApplicationData(buffer, offset, count);
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -82,7 +82,7 @@ namespace Arctium.Connection.Tls
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            tlsOperator.WriteApplicationData(buffer, offset, count);
         }
 
         #endregion Base Stream abstract
