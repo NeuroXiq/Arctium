@@ -20,22 +20,6 @@ namespace IgnoreConsoleApp
 
         static void OpenSocketStream()
         {
-			
-			// FIRST WORKIGN EXAMPLE WITH APPLICATION DATA EXCHANGE
-			// Tls implementation usese only TLS_RSA_WITH_AES_128_CBC_SHA
-			// Assume: 
-			// in D:\VINCA_TEST_WEBSITE path is some website files
-			// in D:\test.pfx is certificate protected by "test" password with RSA private and public key
-			//
-			// if above condidtions are fulfilled, code below should work and send http website over TLS
-			// this is first example with working application data exchange.
-			// this means that:
-			// RecordLayer11 work file (large amount of data to send):
-			//  * all encryption components works fine
-			//  * HMAC calculation works file
-			// ProtocolOperator11 can process sending and receiving decrypted bytes 
-			
-			
             Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             s.Bind(new IPEndPoint(IPAddress.Any, 1234));
             s.Listen(123);
@@ -49,6 +33,12 @@ namespace IgnoreConsoleApp
                     var client = s.Accept();
                     Task.Factory.StartNew(() =>
                     {
+                        try
+                        {
+
+                        
+
+
                         TlsConnection tlsConnection = new TlsConnection(new NetworkStream(client));
 
                         TlsStream tlsStream = tlsConnection.Accept();
@@ -99,12 +89,16 @@ namespace IgnoreConsoleApp
 
                             fs.Close();
                         }
+                    }
+                        catch (Exception)
+                        {
 
+                            
+                        }
                     });
 
                     //it works !
-                    //Console.ReadLine();
-                }
+                    //Console.ReadLine();asdasd
                 //catch (Exception)
                 {
                     //client.Close();
