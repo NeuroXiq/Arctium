@@ -9,3 +9,4 @@ Implemented standards (or not implemented yet):
 |Status|Not implemented|Not implemented|Not implemented|Not implemented|
 
  
+**Currently working on:** TLS 1.1
