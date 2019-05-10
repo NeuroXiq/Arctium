@@ -1,22 +1,22 @@
 ﻿using Arctium.Connection.Tls.Operator;
 using System;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls
 {
-    public class TlsConnection
+    public class TlsServerConnection
     {
         private Stream innerStream;
-
-        public TlsConnection(Stream innerStream)
+        
+        public TlsServerConnection(Stream innerStream, X509Certificate2 x509cert)
         {
             this.innerStream = innerStream;
         }
 
-        ///<summary>Establish new connection on specified stream</summary>
-        public TlsStream Connect()
+        public TlsServerConnection(Stream innerStream, X509Certificate2 cert, TlsType types)
         {
-            throw new NotSupportedException("Connection is not supported");
+
         }
 
         ///<summary>Accept new connection from specified stream</summary>

@@ -56,8 +56,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             LoadRecordHeader();
             int contentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);
 
-            if (contentLength > MaxFragmentLength) throw new Exception("Record fragment length exceed 'MaxFragmentLength'");
-            if (contentLength < 1) throw new Exception("readed record with empty fragment (fragment length is 0)");
+            if (contentLength > MaxFragmentLength) throw new RecordIOException("Record fragment length exceed 'MaxFragmentLength'");
+            if (contentLength < 1) throw new RecordIOException("readed record with empty fragment (fragment length is 0)");
 
             LoadRemainingFragmentBytes(contentLength);
 
@@ -71,7 +71,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             while (bufferCache.DataLength < fullLength)
             {
                 int writed = bufferCache.WriteFrom(innerStream);
-                if (writed < 1) throw new Exception("Cannot read from inner stream. Stream returns 0 bytes after read");
+                if (writed < 1) throw new Exception("Cannot read from inner stream. Stream returns 0 bytes after");
             }
         }
 
@@ -90,6 +90,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
         public int ReadFragment(byte[] buffer, int offset)
         {
             int fragmentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);// + RecordConst.HeaderLength;
+
             for (int i = 0; i < fragmentLength; i++)
             {
                 buffer[i] = bufferCache.Buffer[i + RecordConst.HeaderLength];
@@ -102,7 +103,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 
         public void WriteFragment(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            if (length > MaxFragmentLength) throw new Exception("record fragment length exceed 'MaxFragmentLength'");
+            if (length > MaxFragmentLength)
+            {
+                string msg = string.Format("Fragment length exceed setted limit." +
+                    "Current MaxFragmentLength: {0}, but tried to writes {1} bytes", MaxFragmentLength, length);
+
+                throw new RecordIOException(msg);
+            }
 
             byte[] bytes = BuildRecordBytes(buffer, offset, length, contentType);
             
@@ -111,11 +118,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
 
         private byte[] BuildRecordBytes(byte[] buffer, int offset, int length, ContentType contentType)
         {
+            
+
             byte[] temp = new byte[length + 2 + 1 + 2];
 
             temp[0] = (byte)contentType;
-            temp[1] = 3;
-            temp[2] = 2;
+            temp[1] = RecordVersion.Major;
+            temp[2] = RecordVersion.Minor;
             NumberConverter.FormatUInt16((ushort)length, temp, 3);
 
             for (int i = 0; i < length; i++)

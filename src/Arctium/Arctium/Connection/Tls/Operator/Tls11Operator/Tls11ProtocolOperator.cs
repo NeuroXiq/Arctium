@@ -234,7 +234,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             CipherSuite[] availableCiphers = new CipherSuite[] { CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA };
             CompressionMethod[] availableCompressions = new CompressionMethod[] { CompressionMethod.NULL };
-
+            //CipherSuite.TLS_DHE_RSA_WITH_A
             CipherSuite negotiatedCipher = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
             //CipherSuite negotiatedCipher = CipherSuite.TLS_AES_128_CCM_8_SHA256;
             CompressionMethod negotiatedCompression = CompressionMethod.NULL;

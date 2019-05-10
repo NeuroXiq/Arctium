@@ -49,7 +49,7 @@ namespace Arctium.Connection.Tls.Protocol
                 0,
                 MACAlgorithm.NULL);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.NULL, recordCryptoType);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, recordCryptoType);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
         }

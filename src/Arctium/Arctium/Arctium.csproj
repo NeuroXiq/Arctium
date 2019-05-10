@@ -42,6 +42,11 @@
   <ItemGroup>
     <Compile Include="Connection\Tls\Buffers\BufferTools.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\Configuration\Tls11ServerConfiguration.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\Configuration\Tls12ServerConfiguration.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\Configuration\Tls13ServerConfiguration.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\Configuration\TlsProtocolType.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\KeyExchangeRsaCrypto.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />
@@ -55,7 +60,6 @@
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\NullHMAC.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\NullStreamCipher.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordIO.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Fragmentator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordFragmentReader.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\Exceptions\InvalidSecParams11Exception.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\RecordLayer11.cs" />
@@ -118,13 +122,14 @@
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\_RecordLayer11.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\RecordHeader.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\SecParams11.cs" />
-    <Compile Include="Connection\Tls\CryptoConfiguration\SecurityParameters.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperatorSwitch.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\ContentType.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolVersion.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Record.cs" />
-    <Compile Include="Connection\Tls\TlsConnection.cs" />
-    <Compile Include="Connection\Tls\TlsStream.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\Configuration\TlsServerConfiguration.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\Configuration\TlsConfigDefaults.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\TlsServerConnection.cs" />
+    <Compile Include="Connection\Tls\PublicAPI\TlsStream.cs" />
     <Compile Include="Connection\Tls\Buffers\BufferCache.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\RandomGenerator.cs" />

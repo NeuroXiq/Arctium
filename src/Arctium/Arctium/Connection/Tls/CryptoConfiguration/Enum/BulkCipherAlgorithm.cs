@@ -9,6 +9,10 @@
         TDES,
         DES40,
         AES,
-        IDEA
+        IDEA,
+        ARIA,
+        Camellia,
+        ChaCha20,
+        Poly1305,
     }
 }

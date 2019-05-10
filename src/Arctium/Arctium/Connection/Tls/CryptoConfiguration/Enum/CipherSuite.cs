@@ -2,6 +2,7 @@
 
 namespace Arctium.Connection.Tls.CryptoConfiguration
 {
+    ///<summary>Cipher suited used by TLS v1.1</summary>
     public enum CipherSuite : ushort
     {
         

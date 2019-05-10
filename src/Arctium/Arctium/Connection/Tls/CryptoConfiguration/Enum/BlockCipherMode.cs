@@ -7,6 +7,7 @@
         PCBC,
         CFB,
         OFB,
-        CTR
+        CTR,
+        GCM,
     }
 }

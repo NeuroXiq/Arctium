@@ -97,6 +97,7 @@ namespace Arctium.Connection.Tls.CryptoFunctions
         }
     }
 }
+//TLS1.1::::
 //string expectedStr = "d3d4 d1e3 49b5 d515 0446 66d5 1de3 2bab 258cb521b6b053463e354832fd976754443bcf9a296519bc289abcbc1187e4ebd31e602353776c408aafb74cbc85eff69255f9788faa184cbb957a9819d84a5d7eb006eb459d3ae8de9810454b8b2d8f1afbc655a8c9a013";
 //byte[] expected = HEX(expectedStr);
 //
