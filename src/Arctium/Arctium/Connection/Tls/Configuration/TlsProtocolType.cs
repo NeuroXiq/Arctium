@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace Arctium.Connection
+namespace Arctium.Connection.Tls.Configuration
 {
     [Flags]
-    public enum TlsType
+    public enum TlsProtocolType
     {
         Tls11,
         Tls12,

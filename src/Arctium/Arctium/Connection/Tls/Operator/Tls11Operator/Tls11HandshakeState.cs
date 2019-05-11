@@ -1,6 +1,7 @@
 ﻿using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+using Arctium.Connection.Tls.ProtocolStream.HighLevelLayer;
 using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Operator.Tls11Operator
@@ -26,6 +27,11 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         public HandshakeType NextExpectedRead;
         public bool HandshakeEnd;
         public SecParams11 SecParams;
+        //
+        //public HighLevelProtocolStream.ReadedAlertCallback AlertHandler;
+        //public HighLevelProtocolStream.ReadedApplicationDataCallback ApplicationDataHandler;
+        //public HighLevelProtocolStream.ReadedChangecipherSpecCallback ChangeCipherSpecHandler;
+        //public HighLevelProtocolStream.ReadedHandshakeCallback HandshakeHandler;
 
         public Tls11HandshakeState()
         {
@@ -53,6 +59,12 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             ServerFinished = null;
 
             AllHandshakedMessagesBytes.Clear();
+
+            //AlertHandler = null;
+            //ApplicationDataHandler = null;
+            //ChangeCipherSpecHandler = null;
+            //HandshakeHandler = null;
+
             HandshakeEnd = false;
         }
     }

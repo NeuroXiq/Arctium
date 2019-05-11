@@ -44,7 +44,7 @@ namespace Arctium.Connection.Tls.Protocol
 
             RecordCryptoType recordCryptoType = new RecordCryptoType(
                 CipherType.Stream,
-                BlockCipherMode.CBC,
+                BlockCipherMode.NULL,
                 BulkCipherAlgorithm.NULL,
                 0,
                 MACAlgorithm.NULL);
@@ -63,7 +63,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.AES,
                 128,
-                MACAlgorithm.SHA);
+                MACAlgorithm.SHA1);
 
             
 
@@ -71,5 +71,8 @@ namespace Arctium.Connection.Tls.Protocol
 
             cryptoSuitesDefinitions[baseSuite] = suiteDefinition;
         }
+
+
+
     }
 }

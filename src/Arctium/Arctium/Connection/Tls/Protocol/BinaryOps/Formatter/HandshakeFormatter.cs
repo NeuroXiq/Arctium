@@ -32,6 +32,37 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
             return handshakeBytes;
         }
 
+        public byte[] GetBytes(Handshake handshake)
+        {
+            byte[] innerBytes;
+
+            switch (handshake.MsgType)
+            {
+                case HandshakeType.ServerHello:
+                    innerBytes = serverHelloFormatter.GetBytes(handshake as ServerHello);
+                    break;
+                case HandshakeType.Certificate:
+                    innerBytes = certificateFormatter.GetBytes(handshake as Certificate);
+                    break;
+                case HandshakeType.ServerHelloDone:
+                    innerBytes = serverHelloDoneFormatter.GetBytes(handshake as ServerHelloDone);
+                    break;
+                case HandshakeType.Finished:
+                    return FormatHandshake(HandshakeType.Finished, (handshake as Finished).VerifyData);
+                case HandshakeType.ServerKeyExchange:
+                case HandshakeType.CertificateRequest:
+                case HandshakeType.HelloRequest:
+                case HandshakeType.ClientHello:
+                case HandshakeType.CertificateVerify:
+                case HandshakeType.ClientKeyExchange:
+                
+                default:
+                    throw new NotImplementedException();
+            }
+
+            return FormatHandshake(handshake.MsgType, innerBytes);
+        }
+
         public byte[] GetBytes(Finished finished)
         {
             byte[] innerMsgBytes = finished.VerifyData;

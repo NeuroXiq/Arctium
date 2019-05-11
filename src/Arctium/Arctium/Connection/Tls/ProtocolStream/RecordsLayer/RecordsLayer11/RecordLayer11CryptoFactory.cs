@@ -27,7 +27,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             {
                 case MACAlgorithm.NULL: return new NullHMAC();
                 case MACAlgorithm.MD5: return new HMACMD5(key);
-                case MACAlgorithm.SHA: return new HMACSHA1(key);
+                case MACAlgorithm.SHA1: return new HMACSHA1(key);
                 default: throw new Exception("Internal excepion RecordLayer11CryptoFactory undefined mac algorithm, improve validation!");
             }
         }

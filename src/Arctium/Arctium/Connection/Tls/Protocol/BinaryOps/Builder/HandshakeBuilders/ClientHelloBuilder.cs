@@ -1,10 +1,8 @@
 ﻿using Arctium.Connection.Tls.CryptoConfiguration;
-using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
-using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System;
 
-namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
+namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {
     class ClientHelloBuilder
     {

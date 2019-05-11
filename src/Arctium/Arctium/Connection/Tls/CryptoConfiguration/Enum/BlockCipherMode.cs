@@ -2,6 +2,7 @@
 {
     enum BlockCipherMode
     {
+        NULL,
         ECB,
         CBC,
         PCBC,

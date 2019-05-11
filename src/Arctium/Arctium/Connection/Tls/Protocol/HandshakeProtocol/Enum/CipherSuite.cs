@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Connection.Tls.CryptoConfiguration
+namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
     ///<summary>Cipher suited used by TLS v1.1</summary>
     public enum CipherSuite : ushort

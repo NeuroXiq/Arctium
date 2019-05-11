@@ -1,9 +1,8 @@
 ﻿namespace Arctium.Connection.Tls.CryptoConfiguration
 {
-    public enum MACAlgorithm
+    public enum SigningAlgorithm
     {
-        NULL,
-        MD5,
-        SHA1
+        RSA,
+        DSS
     }
 }

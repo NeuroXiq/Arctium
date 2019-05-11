@@ -1,4 +1,4 @@
-﻿namespace Arctium.Connection.Tls.CryptoConfiguration
+﻿namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
     public enum CompressionMethod : byte
     {

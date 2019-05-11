@@ -2,7 +2,7 @@
 
 namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
-    class Certificate
+    class Certificate : Handshake
     {
         public X509Certificate2 ANS1Certificate;
 

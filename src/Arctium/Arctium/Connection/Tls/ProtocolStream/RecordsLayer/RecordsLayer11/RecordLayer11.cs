@@ -6,6 +6,7 @@ using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System.IO;
 using Arctium.Connection.Tls.Protocol.BinaryOps;
 using Arctium.Connection.Tls.Buffers;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 {

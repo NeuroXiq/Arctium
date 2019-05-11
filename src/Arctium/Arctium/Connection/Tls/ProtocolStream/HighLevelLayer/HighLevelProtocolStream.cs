@@ -172,38 +172,18 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
             recordLayer.Write(buffer, offset, count, ContentType.ApplicationData);
         }
 
-        public void Write(Finished finished)
+        public void Write(Handshake handshakeMessage)
         {
-            byte[] handshakedBytes = handshakeFormatter.GetBytes(finished);
-
-            recordLayer.Write(handshakedBytes, 0, handshakedBytes.Length, ContentType.Handshake);
+            byte[] bytes = handshakeFormatter.GetBytes(handshakeMessage);
+            recordLayer.Write(bytes, 0, bytes.Length, ContentType.Handshake);
         }
-
+     
         public void Write(ChangeCipherSpec ccs)
         {
             byte[] changeCsBytes = new byte[1];
             changeCsBytes[0] = (byte)ccs.CCSType;
 
             recordLayer.Write(changeCsBytes, 0, 1, ContentType.ChangeCipherSpec);
-        }
-
-        public void Write(ServerHello handshakeMessage)
-        {
-            byte[] handshakeBytes = handshakeFormatter.GetBytes(handshakeMessage);
-
-            recordLayer.Write(handshakeBytes, 0, handshakeBytes.Length, ContentType.Handshake);
-        }
-
-        public void Write(Certificate certificate)
-        {
-            byte[] handshakebytes = handshakeFormatter.GetBytes(certificate);
-            recordLayer.Write(handshakebytes, 0, handshakebytes.Length, ContentType.Handshake);
-        }
-
-        public void Write(ServerHelloDone serverHelloDone)
-        {
-            byte[] handshakeBytes = handshakeFormatter.GetBytes(serverHelloDone);
-            recordLayer.Write(handshakeBytes, 0, handshakeBytes.Length, ContentType.Handshake);
         }
     }
 }

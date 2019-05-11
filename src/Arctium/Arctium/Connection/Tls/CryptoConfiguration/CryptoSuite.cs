@@ -9,6 +9,7 @@ namespace Arctium.Connection.Tls.Protocol
         public CipherSuite CipherSuiteBase;
 
         public KeyExchangeAlgorithm KeyExchangeAlgorithm;
+        public SigningAlgorithm SigningAlgorithm;
         public RecordCryptoType RecordCryptoType;
 
         public CryptoSuite(

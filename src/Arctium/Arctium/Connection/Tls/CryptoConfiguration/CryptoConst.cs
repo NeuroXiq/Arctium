@@ -13,7 +13,7 @@ namespace Arctium.Connection.Tls.CryptoConfiguration
             {
                 case MACAlgorithm.NULL: return 0;
                 case MACAlgorithm.MD5: return 128;
-                case MACAlgorithm.SHA: return 160;
+                case MACAlgorithm.SHA1: return 160;
                 default: throw new NotImplementedException("Hash nof found internal error");
             }
         }

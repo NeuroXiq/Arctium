@@ -24,7 +24,7 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             {
                 hmac = new HMACMD5(secret);
             }
-            else if (macAlgo == MACAlgorithm.SHA)
+            else if (macAlgo == MACAlgorithm.SHA1)
             {
                 hmac = new HMACSHA1(secret);
             }

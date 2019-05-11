@@ -1,6 +1,7 @@
 ﻿using Arctium.Connection.Tls.Buffers;
 using Arctium.Connection.Tls.CryptoConfiguration;
 using Arctium.Connection.Tls.Protocol;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System;
 
