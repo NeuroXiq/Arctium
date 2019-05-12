@@ -10,3 +10,4 @@ Implemented standards (or not implemented yet):
 
  
 **Currently working on:** TLS 1.1
+**First example of server side connection, see: ** /sample
