@@ -9,13 +9,10 @@ namespace Arctium.Connection.Tls.Configuration
         public delegate bool ClientAuthenticationDelegate(X509Certificate2[] certChain);
 
         public X509Certificate2 Certificate;
-        public ProtectedStruct RsaPrivateKey;
 
         public bool AuthenticateClient;
         public ClientAuthenticationDelegate ClientAuthenticationHandler;
 
         public CipherSuite[] EnableCipherSuites;
-
-       
     }
 }

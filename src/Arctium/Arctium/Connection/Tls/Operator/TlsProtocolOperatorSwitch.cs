@@ -21,8 +21,6 @@ namespace Arctium.Connection.Tls.Operator
                 {
                     Tls11ServerConfig tls11Config = serverConfig.Tls11ServerConfig;
 
-                    //return _Tls11ServerOperator.Initialize(recordIO, tls11Config);
-
                     return Tls11ServerOperator.CreateServerSession(recordIO, tls11Config);
                 }
                 else throw new NotSupportedException("Version not supported by this implemnetation of tls");

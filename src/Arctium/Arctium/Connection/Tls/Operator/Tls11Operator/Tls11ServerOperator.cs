@@ -31,6 +31,8 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         byte[] internalApplicationDataBuffer = new byte[123];
         int applicationDataLength = 0;
 
+        private ECDiffieHellman ecDiffieHellman;
+
         Tls11ServerOperator(RecordLayer11 recordProtocolStream, Tls11ServerConfig config)
         {
             this.recordProtocolStream = recordProtocolStream;
@@ -83,8 +85,6 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             //highLevelProtocolStream.Read();
 
             highLevelProtocolStream.ApplicationDataHandler += LoadApplicationData;
-
-
         }
 
         private void LoadApplicationData(byte[] buffer, int offset, int length)
@@ -101,14 +101,13 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         {
             CryptoSuite oopSuite = CryptoSuites.Get(handshakeState.ServerHello.CipherSuite);
 
-            //KeyExchangeRsaCrypto rsaDecryp = new KeyExchangeRsaCrypto();
-            //ClientKeyExchangeDecryptedRsa clientKX = rsaDecryp.Decrypt(handshakeState.ClientKeyExchange, handshakeState.ServerCertificate.ANS1Certificate);
+            byte[] premaster = null;
 
-            if (CryptoSuites.Get(handshakeState.ServerHello.CipherSuite).KeyExchangeAlgorithm != KeyExchangeAlgorithm.RSA) throw new Exception("Internal error, key exchange must be rsa. Tls11ServerOperator");
+            if (oopSuite.KeyExchangeAlgorithm == KeyExchangeAlgorithm.RSA)
+                premaster = DecryptPremasterFromClientKeyExchange();
+            else if (oopSuite.KeyExchangeAlgorithm == KeyExchangeAlgorithm.DHE)
+                premaster = GetPremasterFromDHE();
 
-
-            byte[] premaster = DecryptPremasterFromClientKeyExchange();
-   
             SecretGenerator g = new SecretGenerator();
             SecretGenerator.SecParams11Seed sps = new SecretGenerator.SecParams11Seed();
             sps.ClientRandom = handshakeState.ClientHello.Random.RawBytes;
@@ -125,38 +124,17 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             handshakeState.SecParams = secParams;
         }
 
+        private byte[] GetPremasterFromDHE()
+        {
+            throw new NotImplementedException();
+        }
+
         private byte[] DecryptPremasterFromClientKeyExchange()
         {
+            RSA decryptor = config.Certificate.GetRSAPrivateKey();
 
-            RSA rsaWithPublicKey = (RSA)config.Certificate.GetRSAPrivateKey();
-
-            RSAParameters p = rsaWithPublicKey.ExportParameters(true);
-            
-
-            RSAParameters rsaParams = rsaWithPublicKey.ExportParameters(false);
-
-            
-            
-
-
-            byte[] decryptedRsaPrivateKey = config.RsaPrivateKey.GetDecrypted();
-
-            rsaParams.D = decryptedRsaPrivateKey;
-
-            //rsaParams.D = decryptedRsaPrivateKey;
-            //RSACryptoServiceProvider rsaDecrypt = new RSACryptoServiceProvider();
-            //rsaDecrypt.ImportParameters(rsaParams);
-
-
-            byte[] encryptedPremaster = handshakeState.ClientKeyExchange.ExchangeKeys;
-            //byte[] decryptedPremaster = (config.Certificate.PrivateKey as RSA).Decrypt(encryptedPremaster, RSAEncryptionPadding.Pkcs1);//rsaDecrypt.Decrypt(encryptedPremaster, RSAEncryptionPadding.Pkcs1);
-
-            byte[] decryptedPremaster = rsaWithPublicKey.Decrypt(encryptedPremaster, RSAEncryptionPadding.Pkcs1);
-
-
-            //rsaDecrypt.Dispose();
-
-            ProtectedStruct.Clear(decryptedRsaPrivateKey);
+            byte[] enctyptedPremaster = handshakeState.ClientKeyExchange.ExchangeKeys;
+            byte[] decryptedPremaster = decryptor.Decrypt(enctyptedPremaster, RSAEncryptionPadding.Pkcs1);
 
             return decryptedPremaster;
         }
@@ -266,7 +244,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         {
             ServerHello serverHello = new ServerHello();
 
-            CipherSuite[] availableCiphers = new CipherSuite[] { CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA };
+            CipherSuite[] availableCiphers = config.EnableCipherSuites;
             CompressionMethod[] availableCompressions = new CompressionMethod[] { CompressionMethod.NULL };
             //CipherSuite.TLS_DHE_RSA_WITH_A
             CipherSuite negotiatedCipher = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;

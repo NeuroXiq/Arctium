@@ -1,6 +1,7 @@
 ﻿using Arctium.Connection.Tls.Configuration;
 using Arctium.Connection.Tls.Operator;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls
 {
@@ -8,17 +9,16 @@ namespace Arctium.Connection.Tls
     {
         TlsServerConfig config;
 
-        public TlsServerConnection(TlsServerConfig config)
+        public TlsServerConnection(X509Certificate2 cert)
         {
-            this.config = config;
+            this.config = new TlsServerConfig();
+            config.Tls11ServerConfig = DefaultConfigurations.CreateDefaultTls11ServerConfig();
+            config.Tls11ServerConfig.Certificate = cert;
         }
-
-   
 
         ///<summary>Accept new connection from specified stream</summary>
         public TlsStream Accept(Stream innerStream)
         {
-
             var protocolOperator = TlsProtocolOperatorSwitch.OpenServerSession(innerStream, config);
 
             return new TlsStream(protocolOperator);

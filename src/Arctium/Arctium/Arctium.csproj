@@ -48,11 +48,8 @@
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SigningAlgorithm.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
-    <Compile Include="Connection\Tls\Operator\Exception\TlsProtocolOperatorAlertException.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11Operator\_Tls11ServerOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
-    <Compile Include="Connection\Tls\CryptoFunctions\KeyExchangeRsaCrypto.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\SecretGenerator.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\Tls11KeyBlock.cs" />
@@ -133,7 +130,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\RandomGenerator.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Connection\Tls\Operator\Exception\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
