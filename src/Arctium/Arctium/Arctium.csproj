@@ -48,7 +48,8 @@
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SigningAlgorithm.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ServerOperator.cs" />
+    <Compile Include="Connection\Tls\Operator\Exception\TlsProtocolOperatorAlertException.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\_Tls11ServerOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\KeyExchangeRsaCrypto.cs" />
@@ -56,8 +57,9 @@
     <Compile Include="Connection\Tls\CryptoFunctions\SecretGenerator.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\Tls11KeyBlock.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11HandshakeState.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ProtocolOperator.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ServerOperator.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordLayerAlertException.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\BlockFragmentOffsets.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\LoadedFragmentState.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\NullHMAC.cs" />
@@ -86,8 +88,6 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ClientHelloBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\ChangeCipherSpecProtocol\ChangeCipherSpec.cs" />
     <Compile Include="Connection\Tls\Protocol\ChangeCipherSpecProtocol\Enum\ChangeCipherSpecType.cs" />
-    <Compile Include="Connection\Tls\Operator\Exception\HandshakeException.cs" />
-    <Compile Include="Connection\Tls\Operator\Exception\MessageFromatException.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HighLevelProtocolStream.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoSuite.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoSuites.cs" />

@@ -36,6 +36,82 @@ namespace Arctium.Connection.Tls.Protocol
             Add_TLS_NULL_WITH_NULL_NULL();
 
             Add_TLS_RSA_WITH_AES_128_CBC_SHA();
+            
+            Add_TLS_RSA_WITH_3DES_EDE_CBC_SHA();
+
+            Add_TLS_RSA_WITH_AES_128_CBC_SHA();
+
+            Add_TLS_RSA_WITH_AES_256_CBC_SHA();
+
+            Add_TLS_DHE_RSA_WITH_AES_128_CBC_SHA();
+
+            Add_TLS_DHE_RSA_WITH_AES_256_CBC_SHA();
+
+        }
+
+        private static void Add_TLS_DHE_RSA_WITH_AES_256_CBC_SHA()
+        {
+            CipherSuite baseSuite = CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA;
+
+            RecordCryptoType recordCrypto = new RecordCryptoType(
+                CipherType.Block,
+                BlockCipherMode.CBC,
+                BulkCipherAlgorithm.AES,
+                256,
+                MACAlgorithm.SHA1);
+
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SigningAlgorithm.RSA, recordCrypto);
+
+            cryptoSuitesDefinitions[baseSuite] = suite;
+
+        }
+
+        private static void Add_TLS_DHE_RSA_WITH_AES_128_CBC_SHA()
+        {
+            CipherSuite baseSuite = CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA;
+
+            RecordCryptoType recordCrypto = new RecordCryptoType(
+                CipherType.Block,
+                BlockCipherMode.CBC,
+                BulkCipherAlgorithm.AES,
+                128,
+                MACAlgorithm.SHA1);
+
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SigningAlgorithm.RSA, recordCrypto);
+
+            cryptoSuitesDefinitions[baseSuite] = suite;
+        }
+
+        private static void Add_TLS_RSA_WITH_AES_256_CBC_SHA()
+        {
+            CipherSuite baseSuite = CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA;
+
+            RecordCryptoType recordCrypto = new RecordCryptoType(
+                CipherType.Block,
+                BlockCipherMode.CBC,
+                BulkCipherAlgorithm.AES,
+                256,
+                MACAlgorithm.SHA1);
+
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCrypto);
+
+            cryptoSuitesDefinitions[baseSuite] = suite;
+        }
+
+        private static void Add_TLS_RSA_WITH_3DES_EDE_CBC_SHA()
+        {
+            CipherSuite baseSuite = CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA;
+
+            RecordCryptoType recordCryptoType = new RecordCryptoType(
+                CipherType.Block,
+                BlockCipherMode.CBC,
+                BulkCipherAlgorithm.TDES,
+                24 * 8,
+                MACAlgorithm.SHA1);
+
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
+
+            cryptoSuitesDefinitions[baseSuite] = suite;
         }
 
         private static void Add_TLS_NULL_WITH_NULL_NULL()
@@ -49,7 +125,7 @@ namespace Arctium.Connection.Tls.Protocol
                 0,
                 MACAlgorithm.NULL);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, recordCryptoType);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
         }
@@ -67,12 +143,9 @@ namespace Arctium.Connection.Tls.Protocol
 
             
 
-            CryptoSuite suiteDefinition = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, recordCryptoType);
+            CryptoSuite suiteDefinition = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
 
             cryptoSuitesDefinitions[baseSuite] = suiteDefinition;
         }
-
-
-
     }
 }

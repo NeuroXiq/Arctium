@@ -2,6 +2,7 @@
 {
     public enum SigningAlgorithm
     {
+        NULL,
         RSA,
         DSS
     }

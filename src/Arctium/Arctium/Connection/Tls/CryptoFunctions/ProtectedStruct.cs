@@ -9,83 +9,99 @@ namespace Arctium.Connection.Tls.CryptoFunctions
     /// Instead of usign hardcoded, platform-dependent 'MemoryProtection' in code this wrapper can be changed in time 
     /// to the different crypto-libs but currently it using funtions form windows crypto lib
     ///</summary>
-    sealed class ProtectedStruct
+    public sealed class ProtectedStruct
     {
-        private bool isNowProtected;
-        private object lockObjectInstance;
+        private readonly object lockObjectInstance;
         private byte[] secretBytes;
-
-        public bool IsNowProtected
-        {
-            get
-            {
-                bool isProtected = false;
-                lock (lockObjectInstance)
-                {
-                    isProtected =  isNowProtected;
-                }
-
-                return isProtected;
-            }
-        }
+        private int paddingLength;
+        private bool isCleared;
 
         private ProtectedStruct(byte[] toProtect)
         {
-            isNowProtected = false;
             lockObjectInstance = new object();
             secretBytes = toProtect;
+            isCleared = false;
+            CreateEncryptedBytes(toProtect);
         }
 
-        ///<summary>After creating protector ALWAYS call <see cref="ToProtected"/> method</summary>
+        private void CreateEncryptedBytes(byte[] toProtect)
+        {
+            paddingLength = 16 - (toProtect.Length % 16);
+            secretBytes = new byte[toProtect.Length + paddingLength];
+
+            for (int i = 0; i < toProtect.Length; i++)
+            {
+                secretBytes[i] = toProtect[i];
+            }
+            for (int i = 0; i < paddingLength; i++)
+            {
+                secretBytes[i + toProtect.Length] = (byte)paddingLength;
+            }
+
+            ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
+        }
+
         public static ProtectedStruct CreateProtector(byte[] source)
         {
+            if (source == null)
+                throw new ArgumentNullException("source");
+            if (source.Length == 0)
+                throw new ArgumentException("source buffer must contain at least one byte");
+
+
             return new ProtectedStruct(source);
         }
 
-        ///<summary>Decrypts stored bytes and returns reference to pain memory</summary>
-        public void ToUnprotected(out byte[] decryptedReference)
+        ///<summary>Sets all bytes in specified buffer to 0</summary>
+        public static void Clear(byte[] decryptedSecret)
         {
-            bool invalidIsUnprotected = false;
-
-            lock (lockObjectInstance)
+            for (int i = 0; i < decryptedSecret.Length; i++)
             {
-                if (isNowProtected)
-                {
-                    ProtectedMemory.Unprotect(secretBytes, MemoryProtectionScope.SameLogon);
-                    isNowProtected = false;
-                    invalidIsUnprotected = false;
-                    decryptedReference = secretBytes;
-                }
-                else invalidIsUnprotected = true;
+                decryptedSecret[i] = 0;
             }
-
-            if (invalidIsUnprotected) throw new InvalidOperationException("Memory is already unprotected");
-
-            decryptedReference = null;
         }
 
-     
-        ///<summary>Encrypt stored bytes</summary>
-        public void ToProtected()
+        public byte[] GetDecrypted()
         {
+            ThrowIfCleared();
+            byte[] decrypted = new byte[secretBytes.Length - paddingLength];
 
-            bool invalidIsProtected = false;
             lock (lockObjectInstance)
             {
-                if (!isNowProtected)
-                {
-                    ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
-                    isNowProtected = true;
-                    invalidIsProtected = false;
-                }
-                else invalidIsProtected = true;
+                ProtectedMemory.Unprotect(secretBytes, MemoryProtectionScope.SameLogon);
+
+                for (int i = 0; i < decrypted.Length; i++)
+                    decrypted[i] = secretBytes[i];
+
+                ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
             }
 
-            if (invalidIsProtected)
+            return decrypted;
+        }
+
+        private void ThrowIfCleared()
+        {
+            if (isCleared)
             {
-                throw new InvalidOperationException("Cannot protect memory because is alredy encrypted");
+                throw new InvalidOperationException("memory is cleared, object is destroyed");
             }
+        }
 
+        ///<summary>Clear stored memory. This operation cannot be undone. Object is destroyed</summary>
+        public void Clear()
+        {
+            ThrowIfCleared();
+
+            lock (lockObjectInstance)
+            {
+                for (int i = 0; i < secretBytes.Length; i++)
+                {
+                    secretBytes[i] = (byte)i;
+                }
+
+                secretBytes = null;
+                isCleared = true;
+            }
         }
     }
 }

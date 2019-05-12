@@ -1,6 +1,7 @@
 ﻿namespace Arctium.Connection.Tls.Configuration
 {
-    class TlsServerConfig
+    public class TlsServerConfig
     {
+        public Tls11ServerConfig Tls11ServerConfig;
     }
 }

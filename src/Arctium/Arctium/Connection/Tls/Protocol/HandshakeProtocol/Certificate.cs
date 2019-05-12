@@ -8,6 +8,7 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 
         public Certificate(X509Certificate2 cert)
         {
+            base.MsgType = HandshakeType.Certificate;
             this.ANS1Certificate = cert;
         }
     }

@@ -6,6 +6,7 @@
 
         public Finished(byte[] verifyData)
         {
+            MsgType = HandshakeType.Finished;
             VerifyData = verifyData;
         }
     }

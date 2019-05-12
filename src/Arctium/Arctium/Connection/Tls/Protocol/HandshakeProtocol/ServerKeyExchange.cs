@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
+﻿namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
-    class ServerKeyExchange
+    class ServerKeyExchange : Handshake
     {
+        public ServerKeyExchange()
+        {
+            base.MsgType = HandshakeType.ServerKeyExchange;
+        }
     }
 }

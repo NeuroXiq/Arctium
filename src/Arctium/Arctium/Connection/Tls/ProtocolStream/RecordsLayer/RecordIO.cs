@@ -1,5 +1,6 @@
 ﻿using Arctium.Connection.Tls.Buffers;
 using Arctium.Connection.Tls.Protocol;
+using Arctium.Connection.Tls.Protocol.AlertProtocol;
 using Arctium.Connection.Tls.Protocol.BinaryOps;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
@@ -56,7 +57,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             LoadRecordHeader();
             int contentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);
 
-            if (contentLength > MaxFragmentLength) throw new RecordIOException("Record fragment length exceed 'MaxFragmentLength'");
+            
+            if (contentLength > MaxFragmentLength) new RecordLayerAlertException(AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
             if (contentLength < 1) throw new RecordIOException("readed record with empty fragment (fragment length is 0)");
 
             LoadRemainingFragmentBytes(contentLength);

@@ -2,5 +2,9 @@
 {
     class CertificateVerify : Handshake
     {
+        public CertificateVerify()
+        {
+            base.MsgType = HandshakeType.CertificateVerify;
+        }
     }
 }
