@@ -10,4 +10,6 @@ Implemented standards (or not implemented yet):
 
  
 **Currently working on:** TLS 1.1
-**First example of server side connection, see: ** /sample
+
+
+**First example of server side connection, see:** [samples](https://github.com/NeuroXiq/Arctium/blob/master/samples/Tls%20Server%20Connection.cs)
