@@ -48,6 +48,12 @@
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SigningAlgorithm.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\HandshakeMessages11.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientActionType.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientOperator.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientSendAction.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientWaitAction.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\SubprotocolHandler.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />
