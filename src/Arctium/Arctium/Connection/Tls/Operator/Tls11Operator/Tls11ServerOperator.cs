@@ -131,7 +131,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         private byte[] DecryptPremasterFromClientKeyExchange()
         {
-            RSA decryptor = config.Certificate.GetRSAPrivateKey();
+            RSA decryptor = config.Certificates[0].GetRSAPrivateKey();
 
             byte[] enctyptedPremaster = handshakeState.ClientKeyExchange.ExchangeKeys;
             byte[] decryptedPremaster = decryptor.Decrypt(enctyptedPremaster, RSAEncryptionPadding.Pkcs1);
@@ -227,7 +227,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             handshakeState.AllHandshakedMessagesBytes.Add(handshakeFormatter.GetBytes(serverHello));
 
 
-            Certificate certMsg = new Certificate(config.Certificate);
+            Certificate certMsg = new Certificate(config.Certificates);
             highLevelProtocolStream.Write(certMsg);
             handshakeState.ServerCertificate = certMsg;
             handshakeState.AllHandshakedMessagesBytes.Add(handshakeFormatter.GetBytes(certMsg));

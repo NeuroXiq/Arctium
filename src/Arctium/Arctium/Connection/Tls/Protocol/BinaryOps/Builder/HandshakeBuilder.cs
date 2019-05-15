@@ -10,6 +10,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
         public HandshakeBuilder() { }
 
         ServerHelloBuilder serverHelloBuilder = new ServerHelloBuilder();
+        CertificateBuilder certificateBuilder = new CertificateBuilder();
 
 
         public Handshake GetHandshake(byte[] buffer, int offset)
@@ -34,7 +35,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
                     parsedHandshake = serverHelloBuilder.BuildFromBytes(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.Certificate:
-                    throw new NotImplementedException();
+                    parsedHandshake = certificateBuilder.BuildFromBytes(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.ServerKeyExchange:
                     throw new NotImplementedException();
@@ -43,7 +44,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
                     throw new NotImplementedException();
                     break;
                 case HandshakeType.ServerHelloDone:
-                    throw new NotImplementedException();
+                    return new ServerHelloDone();
                     break;
                 case HandshakeType.CertificateVerify:
                     throw new NotImplementedException();

@@ -57,11 +57,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             }
         }
 
-        const int FragmentWriteLength = 100;
+        const int FragmentWriteLength = 2<<14;
 
         SecParams11 currentSecParams;
 
-        CipherType currentCipherType { get { return currentSecParams.RecordCryptoType.CipherType; } }
+        CipherType currentWriteCipherType;// { get { return currentSecParams.RecordCryptoType.CipherType; } }
+        CipherType currentReadCipherType; // { get { return currentSecParams.RecordCryptoType.CipherType; } }
         MACAlgorithm MacAlgorithm { get { return currentSecParams.RecordCryptoType.MACAlgorithm; } }
 
         byte[] BulkReadKey { get { return currentSecParams.BulkReadKey; } }
@@ -109,7 +110,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             //fragment is already loaded. Whet fragment is loaded and this method is invoked, its do nothig (just return info about internal fragment state)
             if (LoadedDecryptedFragmentState.IsLoaded) return LoadedDecryptedFragmentState.FragmentInfo;
 
-            switch (currentCipherType)
+            switch (currentReadCipherType)
             {
                 case CipherType.Stream: LoadAsGenericStreamCipher(); break;
                 case CipherType.Block: LoadAsGenericBlockCipher(); break;
@@ -153,16 +154,37 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
             readSequenceNumber = 0;
             writeSequenceNumber = 0;
+
+            currentReadCipherType = CipherType.Stream;
+            currentWriteCipherType = CipherType.Stream;
+        }
+
+        public void ChangeWriteCipherSpec(SecParams11 newSecParams11)
+        {
+            writeSequenceNumber = 0;
+            writeHMAC = RecordLayer11CryptoFactory.GetWriteHMAC(newSecParams11);
+            writeCipher = RecordLayer11CryptoFactory.GetWriteCipher(newSecParams11);
+            currentWriteCipherType = newSecParams11.RecordCryptoType.CipherType;
+
+            
+        }
+
+        public void ChangeReadCipherSpec(SecParams11 newSecParams11)
+        {
+            readSequenceNumber = 0;
+            readHMAC = RecordLayer11CryptoFactory.GetReadHMAC(newSecParams11);
+            readCipher = RecordLayer11CryptoFactory.GetReadCipher(newSecParams11);
+            currentReadCipherType = newSecParams11.RecordCryptoType.CipherType;
         }
 
         public void Write(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            int chunkSize = 100;
+            int chunkSize = (2<<14);
             int writed = 0;
 
             while(writed + chunkSize < length)
             {
-                switch (currentCipherType)
+                switch (currentWriteCipherType)
                 {
                     case CipherType.Stream: WriteAsGenericStreamCipher(buffer, offset + writed, chunkSize, contentType); break;
                     case CipherType.Block: WriteAsGenericBlockCipher(buffer, offset + writed, chunkSize, contentType); break;
@@ -176,7 +198,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
             if (length - writed > 0)
             {
-                switch (currentCipherType)
+                switch (currentWriteCipherType)
                 {
                     case CipherType.Stream: WriteAsGenericStreamCipher(buffer, offset + writed, length - writed, contentType); break;
                     case CipherType.Block: WriteAsGenericBlockCipher(buffer, offset + writed, length - writed, contentType); break;
@@ -219,7 +241,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             Buffer.BlockCopy(hmac, 0, ciphertextFragment, hmacOffset, hmac.Length);
             Buffer.BlockCopy(padding, 0, ciphertextFragment, paddingOffset, padding.Length);
 
-            var encryptor = writeCipher.CreateEncryptor(BulkWriteKey, iv);
+            var encryptor = writeCipher.CreateEncryptor(writeCipher.Key, iv);
 
 
             byte[] encrypted = new byte[ciphertextFragment.Length];
@@ -232,10 +254,10 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         private byte[] ComputeWriteHMAC(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            byte[] hmac =  new byte[readHMAC.HashSize / 8];
+            byte[] hmac =  new byte[writeHMAC.HashSize / 8];
 
-            writeHMAC.Initialize();
-            writeHMAC.Key = currentSecParams.MacWriteKey;
+            //writeHMAC.Initialize();
+            //writeHMAC.Key = currentSecParams.MacWriteKey;
 
             
             //int blockLength = writeHMAC. / 8;
@@ -269,9 +291,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         private byte[] CreatePadding(int length)
         {
-            int blockSize = readCipher.BlockSize / 8;
-            int ivLength = readCipher.KeySize / 8;
-            int macLength = CryptoConst.HashSize(MacAlgorithm) / 8;
+            int blockSize = writeCipher.BlockSize / 8;
+            int ivLength = writeCipher.BlockSize / 8;
+            int macLength = writeHMAC.HashSize / 8;
 
             int totalLength = (length + ivLength + macLength + 1);
 
@@ -287,7 +309,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         private byte[] CreateIV()
         {
-            int length = readCipher.KeySize / 8;
+            int length = writeCipher.BlockSize / 8;
             byte[] iv = new byte[length];
             for (int i = 0; i < length; i++)
             {
@@ -379,11 +401,11 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
         {
             BlockFragmentOffsets offsets = new BlockFragmentOffsets();
             offsets.IVOffset = offset;
-            offsets.IVLength = readCipher.KeySize / 8;
+            offsets.IVLength = readCipher.BlockSize / 8;
             offsets.PaddingLength = fragment[offset + length - 1] + 1;
             offsets.PaddingOffset = length - offsets.PaddingLength;
             offsets.HmacOffset = offsets.PaddingOffset - (readHMAC.HashSize / 8);
-            offsets.HmacLength = CryptoConst.HashSize(MacAlgorithm)/8;
+            offsets.HmacLength = readHMAC.HashSize / 8;
 
             offsets.ContentLength = length - offsets.PaddingLength - offsets.HmacLength - offsets.IVLength;
             offsets.ContentOffset = offsets.HmacOffset - offsets.ContentLength;
@@ -394,9 +416,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         private byte[] ComputeReadHMAC(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            readHMAC.Initialize();
-            readHMAC.Key = MacReadKey;
-            int macLength = CryptoConst.HashSize(MacAlgorithm);
+            //readHMAC.Initialize();
+            //readHMAC.Key = MacReadKey;
+            int macLength = readHMAC.HashSize / 8;
 
             byte[] seqNumBytes = new byte[8];
             byte[] type = new byte[] { (byte)contentType };
@@ -431,13 +453,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             int encryptedSegmentOffset = iv.Length + offset;
             int encryptedSegmentLength = fragmentLength - iv.Length;
 
-            var decryptor = readCipher.CreateDecryptor(BulkReadKey, iv);
+            var decryptor = readCipher.CreateDecryptor(readCipher.Key, iv);
             int decryptedBytesCount = decryptor.TransformBlock(fragmentBuffer, encryptedSegmentOffset, encryptedSegmentLength, fragmentBuffer, encryptedSegmentOffset);
         }
 
         private byte[] GetIV(byte[] fragment, int offset)
         {
-            byte[] iv = new byte[readCipher.KeySize / 8];
+            byte[] iv = new byte[readCipher.BlockSize / 8];
             Buffer.BlockCopy(fragment, offset, iv, 0, iv.Length);
 
             return iv;

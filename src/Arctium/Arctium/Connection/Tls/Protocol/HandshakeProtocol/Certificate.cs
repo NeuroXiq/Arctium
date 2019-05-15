@@ -4,12 +4,12 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
     class Certificate : Handshake
     {
-        public X509Certificate2 ANS1Certificate;
+        public X509Certificate2[] ANS1Certificates;
 
-        public Certificate(X509Certificate2 cert)
+        public Certificate(X509Certificate2[] cert)
         {
             base.MsgType = HandshakeType.Certificate;
-            this.ANS1Certificate = cert;
+            this.ANS1Certificates = cert;
         }
     }
 }

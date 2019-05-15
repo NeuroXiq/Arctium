@@ -12,6 +12,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
         CertificateFormatter certificateFormatter;
         ServerHelloDoneFormatter serverHelloDoneFormatter;
         ClientHelloFormatter clientHelloFormatter;
+        ClientKeyExchangeFormatter clientKeyExchangeFormatter = new ClientKeyExchangeFormatter();
 
         public HandshakeFormatter()
         {
@@ -60,7 +61,9 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
                     break;
                 case HandshakeType.CertificateVerify:
                 case HandshakeType.ClientKeyExchange:
-                
+                    innerBytes = new byte[clientKeyExchangeFormatter.GetLength(handshake)];
+                    clientKeyExchangeFormatter.FormatBytes(handshake, innerBytes, 0);
+                    break; 
                 default:
                     throw new NotImplementedException();
             }

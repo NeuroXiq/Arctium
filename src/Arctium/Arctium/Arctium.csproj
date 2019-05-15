@@ -73,11 +73,14 @@
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertDescription.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertLevel.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\ClientKeyExchangeDecryptedRsaBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\CertificateBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ServerHelloBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedHandshakeInfo.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedRecordInfo.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\CertificateFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientHelloFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientKeyExchangeFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\HandshakeFormatterBase.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloDoneFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloFormater.cs" />

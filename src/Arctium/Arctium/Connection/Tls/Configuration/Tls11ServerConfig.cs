@@ -8,7 +8,7 @@ namespace Arctium.Connection.Tls.Configuration
     {
         public delegate bool ClientAuthenticationDelegate(X509Certificate2[] certChain);
 
-        public X509Certificate2 Certificate;
+        public X509Certificate2[] Certificates;
 
         public bool AuthenticateClient;
         public ClientAuthenticationDelegate ClientAuthenticationHandler;

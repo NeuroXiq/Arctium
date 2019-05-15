@@ -17,7 +17,7 @@ namespace Arctium.Connection.Tls.Configuration
 
             tls11ServerConfig.AuthenticateClient = false;
             tls11ServerConfig.ClientAuthenticationHandler = null;
-            tls11ServerConfig.Certificate = null;
+            tls11ServerConfig.Certificates = null;
 
             tls11ServerConfig.EnableCipherSuites = new CipherSuite[]
             {

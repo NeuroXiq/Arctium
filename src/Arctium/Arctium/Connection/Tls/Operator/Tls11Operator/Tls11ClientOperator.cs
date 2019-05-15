@@ -1,4 +1,7 @@
-﻿using Arctium.Connection.Tls.Protocol.AlertProtocol;
+﻿using Arctium.Connection.Tls.Buffers;
+using Arctium.Connection.Tls.CryptoFunctions;
+using Arctium.Connection.Tls.Protocol;
+using Arctium.Connection.Tls.Protocol.AlertProtocol;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
@@ -7,6 +10,8 @@ using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
 using Arctium.CryptoFunctions;
 using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace Arctium.Connection.Tls.Operator.Tls11Operator
 {
@@ -18,12 +23,14 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         Handshake currentHandshakeMessage;
         HandshakeMessages11 allMessages;
+        SecParams11 secParams;
 
         private Tls11ClientOperator(RecordIO recordIO)
         {
             recordLayer = RecordLayer11.Initialize(recordIO);
             protocol = new HighLevelProtocolStream(recordLayer);
             handshakeStack = new HandshakeStack();
+            allMessages = new HandshakeMessages11();
         }
 
         public static Tls11ClientOperator Initialize(RecordIO recordIO)
@@ -35,6 +42,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         private void FatalAlert(Alert a) { throw new Exception("Alert fatal"); }
         private void FatalApplicationData(byte[] buffer, int offset, int length) { throw new Exception("fatal app data"); }
         private void FatalCCS(ChangeCipherSpec ccs) { throw new Exception("fatal ccs"); }
+        private void FatalHandshake(Handshake h, byte[] b) { throw new Exception("unexpected hanbdshake msg"); }
 
         public void OpenNewSession()
         {
@@ -45,21 +53,55 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             SendClientHello();
 
+            //start reading process
             protocol.Read();
+
             GetServerHello();
             GetCertifiate();
             GetServerKeyExchange();
-            GetCertifiateExchange();
+            GetCertifiateRequest();
+
+            //
+            // Only check if server hello done was received
             GetServerHelloDone();
 
             SendCertifiate();
             SendClientKeyExchange();
             SendCertifiateVerify();
             SendChangeCipherSpec();
+
+            
+            // change cipher spec in own record layer
+            recordLayer.ChangeWriteCipherSpec(secParams);
             SendFinished();
 
+            protocol.ChangeCipherSpecHandler -= FatalCCS;
+            protocol.HandshakeHandler -= ReadHandshakeAndCache;
+
+            protocol.ChangeCipherSpecHandler += ExpectedChangeCipherSpec;
+            protocol.HandshakeHandler += FatalHandshake;
+
+            protocol.Read();
+
+            // back to handshake, now connection is encrypted
+            protocol.ChangeCipherSpecHandler -= ExpectedChangeCipherSpec;
+            protocol.ChangeCipherSpecHandler += FatalCCS;
+
+            protocol.HandshakeHandler -= FatalHandshake;
+            protocol.HandshakeHandler += ReadHandshakeAndCache;
+
+
+            
+            // start reading process
+            protocol.Read();
             GetFinished();
+
             ExchangeApplicationData();
+        }
+
+        private void ExpectedChangeCipherSpec(ChangeCipherSpec changeCipherSpec)
+        {
+            recordLayer.ChangeReadCipherSpec(secParams);
         }
 
         private void ReadHandshakeAndCache(Handshake message, byte[] rawBytes)
@@ -97,47 +139,158 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         private void GetFinished()
         {
-            throw new NotImplementedException();
+            if (currentHandshakeMessage.MsgType != HandshakeType.Finished) throw new Exception("expected finished but something else received");
+
+            PseudoRandomFunction prf = new PseudoRandomFunction();
+
+
+            MD5 md5 = MD5.Create();
+            SHA1 sha1 = SHA1.Create();
+
+            var stack = handshakeStack.GetStack();
+
+            for (int i = 0; i < stack.Length - 2; i++)
+            {
+                //if (stack[i].HandshakeMsgType == HandshakeType.Finished && stack[i].Transmit == HandshakeStack.TransmitType.Received) continue;
+                md5.TransformBlock(stack[i].TransmittedBytes, 0, stack[i].TransmittedBytes.Length, null, 0);
+                sha1.TransformBlock(stack[i].TransmittedBytes, 0, stack[i].TransmittedBytes.Length, null, 0);
+            }
+
+            md5.TransformFinalBlock(stack[stack.Length - 2].TransmittedBytes, 0, stack[stack.Length - 2].TransmittedBytes.Length);
+            sha1.TransformFinalBlock(stack[stack.Length - 2].TransmittedBytes, 0, stack[stack.Length - 2].TransmittedBytes.Length);
+
+            byte[] hashes = BufferTools.Join(md5.Hash, sha1.Hash);
+
+            byte[] finishedContent = prf.Prf(secParams.MasterSecret, "server finished", hashes, 12);
+
+            Finished f = (Finished)currentHandshakeMessage;
+            string a = ""; 
         }
 
         private void SendFinished()
         {
-            throw new NotImplementedException();
+            PseudoRandomFunction prf = new PseudoRandomFunction();
+            
+
+            MD5 md5 = MD5.Create();
+            SHA1 sha1 = SHA1.Create();
+
+            var stack = handshakeStack.GetStack();
+
+            for (int i = 0; i < stack.Length - 1; i++)
+            {
+                md5.TransformBlock(stack[i].TransmittedBytes, 0, stack[i].TransmittedBytes.Length, null, 0);
+                sha1.TransformBlock(stack[i].TransmittedBytes, 0, stack[i].TransmittedBytes.Length, null, 0);
+            }
+
+            md5.TransformFinalBlock(stack[stack.Length - 1].TransmittedBytes, 0, stack[stack.Length - 1].TransmittedBytes.Length);
+            sha1.TransformFinalBlock(stack[stack.Length - 1].TransmittedBytes, 0, stack[stack.Length - 1].TransmittedBytes.Length);
+
+            byte[] hashes = BufferTools.Join(md5.Hash, sha1.Hash);
+
+            byte[] finishedContent = prf.Prf(secParams.MasterSecret, "client finished", hashes, 12);
+
+            Finished f = new Finished(finishedContent);
+
+            WriteAndCacheMessage(f);
         }
 
         private void SendChangeCipherSpec()
         {
-            throw new NotImplementedException();
+            protocol.Write(new ChangeCipherSpec() { CCSType = ChangeCipherSpecType.ChangeCipherSpec });
         }
 
         private void SendCertifiateVerify()
         {
-            throw new NotImplementedException();
+            //process sending cert verify
         }
 
         private void SendClientKeyExchange()
         {
-            throw new NotImplementedException();
+            ClientKeyExchange kkx = new ClientKeyExchange();
+            byte[] premaster = GeneratePremasterSecret();
+            byte[] encrypted = EncryptPremasterSecret(premaster);
+
+            kkx.ExchangeKeys = encrypted;
+
+            WriteAndCacheMessage(kkx);
+
+            SecretGenerator secGenerator = new SecretGenerator();
+            SecretGenerator.SecParams11Seed seed = new SecretGenerator.SecParams11Seed();
+
+            seed.ClientRandom = allMessages.ClientHello.Random;
+            seed.CompressionMethod = allMessages.ServerHello.CompressionMethod;
+            seed.HostType = Protocol.RecordProtocol.ConnectionEnd.Client;
+            seed.Premaster = premaster;
+            seed.RecordCryptoType = CryptoSuites.Get(allMessages.ServerHello.CipherSuite).RecordCryptoType;
+            seed.ServerRandom = allMessages.ServerHello.Random;
+
+            secParams = secGenerator.GenerateSecParams11(seed);
+
+
+        }
+
+        private byte[] EncryptPremasterSecret(byte[] premaster)
+        {
+            RSACryptoServiceProvider pubKey = (RSACryptoServiceProvider)allMessages.ServerCertificate.ANS1Certificates[0].PublicKey.Key;
+            byte[] encrypted = pubKey.Encrypt(premaster, false);
+
+            return encrypted;
+        }
+
+        private byte[] GeneratePremasterSecret()
+        {
+            Random r = new Random();
+            byte[] premaster = new byte[48];
+
+            for (int i = 2; i < 48; i++)
+            {
+                premaster[i] = (byte)r.Next();
+            }
+            premaster[0] = 3;
+            premaster[1] = 2;
+
+            return premaster;
         }
 
         private void SendCertifiate()
         {
-            throw new NotImplementedException();
+            //send certificate process
         }
 
         private void GetServerHelloDone()
         {
-            throw new NotImplementedException();
+            if (currentHandshakeMessage.MsgType != HandshakeType.ServerHelloDone)
+            {
+                throw new Exception("Expected server hello done ");
+            }
+
+            currentHandshakeMessage = null;
+
+            //expect something after hello done ? NO, now client sends data
+            // protocol.Read();
         }
 
-        private void GetCertifiateExchange()
+        private void GetCertifiateRequest()
         {
-            throw new NotImplementedException();
+            if (currentHandshakeMessage.MsgType == HandshakeType.CertificateRequest)
+            {
+                //do some processing with certificate request
+                throw new NotImplementedException("certificate request not implemented");
+                protocol.Read();
+            }
         }
 
         private void GetServerKeyExchange()
         {
-            throw new NotImplementedException();
+            if (currentHandshakeMessage.MsgType == HandshakeType.ClientKeyExchange)
+            {
+                //do something with this message.
+                
+                throw new NotImplementedException("Server key exchange not implemented");
+                // always expect server hello done OR next conditional message
+                protocol.Read();   
+            }
         }
 
         private void GetCertifiate()
@@ -145,6 +298,9 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             if (currentHandshakeMessage.MsgType != HandshakeType.Certificate)
                 throw new Exception("expected certificate");
 
+            allMessages.ServerCertificate = (Certificate)currentHandshakeMessage;
+
+            // expecte somethind AFTER certificate ? Yes, always server hello done OR conditional messages
             protocol.Read();
         }
 
@@ -153,6 +309,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             if (currentHandshakeMessage.MsgType != HandshakeType.ServerHello) throw new Exception("expected server hello");
             allMessages.ServerHello = (ServerHello)currentHandshakeMessage;
 
+            //Expect something after server hello  ? Yes certificate or serverhellodone
             protocol.Read();
         }
 
@@ -169,6 +326,8 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             RandomGenerator rg = new RandomGenerator();
             rg.GenerateBytes(hello.Random, 0, 32);
             rg.GenerateBytes(hello.SessionID, 0, 32);
+
+            allMessages.ClientHello = hello;
 
             WriteAndCacheMessage(hello);
         }

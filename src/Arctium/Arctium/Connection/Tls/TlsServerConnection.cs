@@ -13,7 +13,7 @@ namespace Arctium.Connection.Tls
         {
             this.config = new TlsServerConfig();
             config.Tls11ServerConfig = DefaultConfigurations.CreateDefaultTls11ServerConfig();
-            config.Tls11ServerConfig.Certificate = cert;
+            config.Tls11ServerConfig.Certificates = new X509Certificate2[] { cert };
         }
 
         ///<summary>Accept new connection from specified stream</summary>
