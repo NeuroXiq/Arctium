@@ -110,8 +110,8 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             SecretGenerator g = new SecretGenerator();
             SecretGenerator.SecParams11Seed sps = new SecretGenerator.SecParams11Seed();
-            sps.ClientRandom = handshakeState.ClientHello.Random.RawBytes;
-            sps.ServerRandom = handshakeState.ServerHello.Random.RawBytes;
+            sps.ClientRandom = handshakeState.ClientHello.Random;//.RawBytes;
+            sps.ServerRandom = handshakeState.ServerHello.Random;//.RawBytes;
             sps.CompressionMethod = CompressionMethod.NULL;
             sps.HostType = ConnectionEnd.Server;
             sps.Premaster = premaster;
@@ -288,26 +288,27 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             return serverHello;
         }
 
-        private SessionID GenerateSessionID()
+        private byte[] GenerateSessionID()
         {
             RandomGenerator rg = new RandomGenerator();
 
             byte[] sidBytes = new byte[32];
             rg.GenerateBytes(sidBytes, 0, 32);
-
-            return new SessionID(sidBytes);
+            return sidBytes;
+            //return new SessionID(sidBytes);
 
         }
 
-        private HelloRandom GenerateHelloRandom()
+        private byte[] GenerateHelloRandom()
         {
-            byte[] randomBytes = new byte[28];
+            byte[] randomBytes = new byte[32];
             RandomGenerator rg = new RandomGenerator();
-            rg.GenerateBytes(randomBytes, 0, 28);
+            rg.GenerateBytes(randomBytes, 0, 32);
+            return randomBytes;
 
-            uint unixTime = (uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            return new HelloRandom(unixTime, randomBytes);
+            //uint unixTime = (uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            //
+            //return new HelloRandom(unixTime, randomBytes);
         }
 
         public override void WriteApplicationData(byte[] buffer, int offset, int length)

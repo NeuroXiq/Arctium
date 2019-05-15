@@ -230,8 +230,6 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             recordIO.WriteFragment(encrypted, 0, encrypted.Length, contentType);
         }
 
-       
-
         private byte[] ComputeWriteHMAC(byte[] buffer, int offset, int length, ContentType contentType)
         {
             byte[] hmac =  new byte[readHMAC.HashSize / 8];

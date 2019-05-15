@@ -11,12 +11,14 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
         ServerHelloFormater serverHelloFormatter;
         CertificateFormatter certificateFormatter;
         ServerHelloDoneFormatter serverHelloDoneFormatter;
+        ClientHelloFormatter clientHelloFormatter;
 
         public HandshakeFormatter()
         {
             serverHelloFormatter = new ServerHelloFormater();
             certificateFormatter = new CertificateFormatter();
             serverHelloDoneFormatter = new ServerHelloDoneFormatter();
+            clientHelloFormatter = new ClientHelloFormatter();
         }
 
         private byte[] FormatHandshake(HandshakeType type, byte[] innerMsgBytes)
@@ -53,6 +55,9 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
                 case HandshakeType.CertificateRequest:
                 case HandshakeType.HelloRequest:
                 case HandshakeType.ClientHello:
+                    innerBytes = new byte[clientHelloFormatter.GetLength(handshake)];
+                    clientHelloFormatter.FormatBytes(handshake, innerBytes, 0);
+                    break;
                 case HandshakeType.CertificateVerify:
                 case HandshakeType.ClientKeyExchange:
                 

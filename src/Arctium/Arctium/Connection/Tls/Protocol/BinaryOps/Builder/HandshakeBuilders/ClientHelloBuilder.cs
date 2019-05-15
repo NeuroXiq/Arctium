@@ -42,7 +42,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             ClientHello clientHello = new ClientHello();
             clientHello.ClientVersion = new ProtocolVersion(majorVersion, minorVersion);
             clientHello.Random = GetHelloRandom(buffer, clientHelloOffset + 2);
-            clientHello.SessionID = new SessionID(sessionIdBytes);
+            clientHello.SessionID = sessionIdBytes ;//new SessionID(sessionIdBytes);
             clientHello.CipherSuites = GetCipherSuite(buffer, cipherSuiteLength, cipherSuiteLengthOffset + 2);
             clientHello.CompressionMethods = BuildCompressionMethods(buffer, compressionMethodLengthOffset + 1, compressionMethodsLength);
 
@@ -82,22 +82,26 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             return ciphersSuite;
         }
 
-        private HelloRandom GetHelloRandom(byte[] buffer, int offset)
+        private byte[] GetHelloRandom(byte[] buffer, int offset)
         {
-            byte[] randomBytes = new byte[28];
+            byte[] random = new byte[32];
+            Buffer.BlockCopy(buffer, offset, random, 0, 32);
+            return random;
             
-            uint gmtUnixTime = (uint)(buffer[offset + 0] << 24 |
-                            buffer[offset + 1] << 16 |
-                            buffer[offset + 2] << 8 |
-                            buffer[offset + 3] << 0);
-            for (int i = 0; i < 28; i++)
-            {
-                randomBytes[i] = buffer[4 + offset + i];
-            }
+            //byte[] randomBytes = new byte[28];
+            
+            //uint gmtUnixTime = (uint)(buffer[offset + 0] << 24 |
+            //                buffer[offset + 1] << 16 |
+            //                buffer[offset + 2] << 8 |
+            //                buffer[offset + 3] << 0);
+            //for (int i = 0; i < 28; i++)
+            //{
+            //    randomBytes[i] = buffer[4 + offset + i];
+            //}
 
 
 
-            return new HelloRandom(gmtUnixTime, randomBytes);
+            //return new HelloRandom(gmtUnixTime, randomBytes);
         }
     }
 }

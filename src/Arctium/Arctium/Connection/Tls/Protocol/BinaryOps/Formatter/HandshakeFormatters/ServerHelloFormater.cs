@@ -27,34 +27,35 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             fBuffer[offsets.MajorVersion] = serverHello.ProtocolVersion.Major;
             fBuffer[offsets.MinorVersion] = serverHello.ProtocolVersion.Minor;
 
-            FormatRandom(fBuffer, offsets.Random, serverHello.Random);
-            FormatSessionId(fBuffer, offsets.SessionIdLength, serverHello.SessionID);
-
+            //FormatRandom(fBuffer, offsets.Random, serverHello.Random);
+            Buffer.BlockCopy(serverHello.Random, 0, fBuffer, offsets.Random, serverHello.Random.Length);
+            //FormatSessionId(fBuffer, offsets.SessionIdLength, serverHello.SessionID);
+            Buffer.BlockCopy(serverHello.SessionID, 0, fBuffer, offsets.SessionId, serverHello.SessionID.Length);
             NumberConverter.FormatUInt16((ushort)serverHello.CipherSuite, fBuffer, offsets.CipherSuite);
             fBuffer[offsets.CompressionMethod] = (byte)serverHello.CompressionMethod;
 
             return fBuffer;
         }
 
-        private void FormatSessionId(byte[] fBuffer, int sesIdLengthOffset, SessionID sessionID)
-        {
-            fBuffer[sesIdLengthOffset] = sessionID.Length;
+        //private void FormatSessionId(byte[] fBuffer, int sesIdLengthOffset, SessionID sessionID)
+        //{
+        //    fBuffer[sesIdLengthOffset] = sessionID.Length;
 
-            for (int i = 0; i < sessionID.Length; i++)
-            {
-                fBuffer[sesIdLengthOffset + 1 + i] = sessionID.ID[i];
-            }
-        }
+        //    for (int i = 0; i < sessionID.Length; i++)
+        //    {
+        //        fBuffer[sesIdLengthOffset + 1 + i] = sessionID.ID[i];
+        //    }
+        //}
 
-        private void FormatRandom(byte[] fBuffer, int offset, HelloRandom random)
-        {
-            NumberConverter.FormatUInt32(random.GmtUnixTime, fBuffer, offset);
+        //private void FormatRandom(byte[] fBuffer, int offset, HelloRandom random)
+        //{
+        //    NumberConverter.FormatUInt32(random.GmtUnixTime, fBuffer, offset);
 
-            for (int i = 0; i < 28; i++)
-            {
-                fBuffer[i + offset + 4] = random.RandomBytes[i];
-            }
-        }
+        //    for (int i = 0; i < 28; i++)
+        //    {
+        //        fBuffer[i + offset + 4] = random.RandomBytes[i];
+        //    }
+        //}
 
         private SHOffsets CalculateOffsets(ServerHello serverHello)
         {
@@ -79,7 +80,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             int versionLength = 2;
             int randomLength = 32;
             int sessionIdLengthByte = 1;
-            int sessionId = serverHello.SessionID.ID.Length;
+            int sessionId = serverHello.SessionID.Length;
             int cipherSuite = 2;
             int compressionMethod = 1;
 

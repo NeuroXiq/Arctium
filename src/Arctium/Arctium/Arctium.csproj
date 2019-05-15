@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connection\Tls\Buffers\BufferTools.cs" />
+    <Compile Include="Connection\Tls\Buffers\FragmentsBuffer.cs" />
     <Compile Include="Connection\Tls\Configuration\DefaultConfigurations.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls11ServerConfig.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsServerConfig.cs" />
@@ -49,11 +50,8 @@
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SigningAlgorithm.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\HandshakeMessages11.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientActionType.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientOperator.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientSendAction.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientWaitAction.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\SubprotocolHandler.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HandshakeStack.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />
@@ -80,6 +78,7 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\CertificateFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientHelloFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\HandshakeFormatterBase.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloDoneFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloFormater.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\NumberConverter.cs" />
@@ -106,7 +105,6 @@
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\CertificateRequest.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\CertificateVerify.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\ClientHello.cs" />
-    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\HelloRandom.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\ClientKeyExchange.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Enum\CipherSuite.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Finished.cs" />
@@ -130,6 +128,7 @@
     <Compile Include="Connection\Tls\Protocol\ProtocolVersion.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Record.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsProtocolType.cs" />
+    <Compile Include="Connection\Tls\TlsClientConnection.cs" />
     <Compile Include="Connection\Tls\TlsServerConnection.cs" />
     <Compile Include="Connection\Tls\TlsStream.cs" />
     <Compile Include="Connection\Tls\Buffers\BufferCache.cs" />
@@ -138,6 +137,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Connection\Tls\Operator\Exception\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connection\Tls\Operator\Tls11Operator\README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

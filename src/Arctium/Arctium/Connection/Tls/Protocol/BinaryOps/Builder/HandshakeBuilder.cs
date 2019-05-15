@@ -9,6 +9,8 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
     {
         public HandshakeBuilder() { }
 
+        ServerHelloBuilder serverHelloBuilder = new ServerHelloBuilder();
+
 
         public Handshake GetHandshake(byte[] buffer, int offset)
         {
@@ -29,7 +31,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
                     parsedHandshake = BuildClientHello(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.ServerHello:
-                    throw new NotImplementedException();
+                    parsedHandshake = serverHelloBuilder.BuildFromBytes(buffer, messageOffset, handshakeContentLength);
                     break;
                 case HandshakeType.Certificate:
                     throw new NotImplementedException();
@@ -64,10 +66,10 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
 
         private Handshake GetFinished(byte[] buffer, int messageOffset, int handshakeContentLength)
         {
-            if (handshakeContentLength != 12) throw new MessageFromatException("Finished Handshake: Content length mu be equal to 12 but current value is: " + handshakeContentLength);
+            //if (handshakeContentLength != 12) throw new MessageFromatException("Finished Handshake: Content length mu be equal to 12 but current value is: " + handshakeContentLength);
 
-            byte[] verifyData = new byte[12];
-            Buffer.BlockCopy(buffer, messageOffset, verifyData, 0, 12);
+            byte[] verifyData = new byte[handshakeContentLength];
+            Buffer.BlockCopy(buffer, messageOffset, verifyData, 0, handshakeContentLength);
 
             Finished finished = new Finished(verifyData);
 

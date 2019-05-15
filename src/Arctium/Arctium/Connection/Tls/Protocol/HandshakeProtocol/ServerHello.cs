@@ -13,8 +13,9 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
         }
 
         public ProtocolVersion ProtocolVersion;
-        public HelloRandom Random;
-        public SessionID SessionID;
+        public byte[] Random;
+        //public SessionID SessionID;
+        public byte[] SessionID;
         public CipherSuite CipherSuite;
         public CompressionMethod CompressionMethod;
     }
