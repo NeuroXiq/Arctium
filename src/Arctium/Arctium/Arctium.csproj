@@ -53,7 +53,7 @@
     <Compile Include="Connection\Tls\Operator\Tls11Operator\HandshakeMessages11.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HandshakeStack.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentData.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\FragmentData.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentHandler.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentReader.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
@@ -73,7 +73,8 @@
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\Exceptions\InvalidSecParams11Exception.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\RecordLayer11.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\RecordLayer11CryptoFactory.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\FragmentCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordCryptoFactory.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Alert.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertDescription.cs" />
@@ -129,7 +130,7 @@
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\CipherType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Enum\CompressionMethod.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\ConnectionEnd.cs" />
-    <Compile Include="Connection\Tls\CryptoConfiguration\Enum\MACAlgorithm.cs" />
+    <Compile Include="Connection\Tls\CryptoConfiguration\Enum\HashAlgorithmType.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\RecordHeader.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\SecParams11.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperatorSwitch.cs" />

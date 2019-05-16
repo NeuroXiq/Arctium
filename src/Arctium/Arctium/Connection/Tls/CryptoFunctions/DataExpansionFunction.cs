@@ -7,9 +7,9 @@ namespace Arctium.Connection.Tls.CryptoFunctions
 {
     class DataExpansionFunction
     {
-        MACAlgorithm macAlgo;
+        CryptoConfiguration.HashAlgorithmType macAlgo;
 
-        public DataExpansionFunction(MACAlgorithm macAlgo)
+        public DataExpansionFunction(CryptoConfiguration.HashAlgorithmType macAlgo)
         {
             this.macAlgo = macAlgo;
         }
@@ -20,11 +20,11 @@ namespace Arctium.Connection.Tls.CryptoFunctions
         public byte[] Generate(byte[] secret, byte[] seed, int length)
         {
             HMAC hmac;
-            if (macAlgo == MACAlgorithm.MD5)
+            if (macAlgo == CryptoConfiguration.HashAlgorithmType.MD5)
             {
                 hmac = new HMACMD5(secret);
             }
-            else if (macAlgo == MACAlgorithm.SHA1)
+            else if (macAlgo == CryptoConfiguration.HashAlgorithmType.SHA1)
             {
                 hmac = new HMACSHA1(secret);
             }

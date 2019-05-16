@@ -14,8 +14,8 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             byte[] secretLeft, secretRight;
             SplitSecret(secret, out secretLeft, out secretRight);
 
-            DataExpansionFunction md5Expansion = new DataExpansionFunction(MACAlgorithm.MD5);
-            DataExpansionFunction sha1Expansion = new DataExpansionFunction(MACAlgorithm.SHA1);
+            DataExpansionFunction md5Expansion = new DataExpansionFunction(HashAlgorithmType.MD5);
+            DataExpansionFunction sha1Expansion = new DataExpansionFunction(HashAlgorithmType.SHA1);
 
             byte[] md5Stream = md5Expansion.Generate(secretLeft, Join(labelBytes, seed), length);
             byte[] sha1Stream = sha1Expansion.Generate(secretRight, Join(labelBytes, seed), length);

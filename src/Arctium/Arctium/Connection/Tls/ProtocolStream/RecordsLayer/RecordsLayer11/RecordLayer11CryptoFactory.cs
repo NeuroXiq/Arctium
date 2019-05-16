@@ -21,13 +21,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             return CreateHMAC(secParams11.RecordCryptoType.MACAlgorithm, secParams11.MacWriteKey);
         }
 
-        private static HMAC CreateHMAC(MACAlgorithm mACAlgorithm, byte[] key)
+        private static HMAC CreateHMAC(CryptoConfiguration.HashAlgorithmType mACAlgorithm, byte[] key)
         {
             switch (mACAlgorithm)
             {
-                case MACAlgorithm.NULL: return new NullHMAC();
-                case MACAlgorithm.MD5: return new HMACMD5(key);
-                case MACAlgorithm.SHA1: return new HMACSHA1(key);
+                case CryptoConfiguration.HashAlgorithmType.NULL: return new NullHMAC();
+                case CryptoConfiguration.HashAlgorithmType.MD5: return new HMACMD5(key);
+                case CryptoConfiguration.HashAlgorithmType.SHA1: return new HMACSHA1(key);
                 default: throw new Exception("Internal excepion RecordLayer11CryptoFactory undefined mac algorithm, improve validation!");
             }
         }

@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Connection.Tls.CryptoConfiguration
 {
-    public enum MACAlgorithm
+    public enum HashAlgorithmType
     {
         NULL,
         MD5,

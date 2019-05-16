@@ -1,4 +1,5 @@
 ﻿using Arctium.Connection.Tls.Buffers;
+using Arctium.Connection.Tls.CryptoConfiguration;
 using Arctium.Connection.Tls.CryptoFunctions;
 using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;

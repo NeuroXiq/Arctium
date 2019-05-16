@@ -1,8 +1,9 @@
 ﻿using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 
-namespace Arctium.Connection.Tls.Protocol
+namespace Arctium.Connection.Tls.CryptoConfiguration
 {
     ///<summary>security parameters TLS 1.1</summary>
     struct SecParams11

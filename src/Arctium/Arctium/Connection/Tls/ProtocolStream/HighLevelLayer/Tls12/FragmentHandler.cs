@@ -1,4 +1,6 @@
-﻿namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Tls12
+﻿using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
+
+namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Tls12
 {
     abstract class FragmentHandler
     {

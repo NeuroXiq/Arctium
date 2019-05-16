@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Arctium.Connection.Tls.Protocol.RecordProtocol;
+using System;
 
-namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Tls12
+namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     ///<summary>Encapsulates inner buffer and provides only copy capability from inner buffer.</summary>
     class FragmentData

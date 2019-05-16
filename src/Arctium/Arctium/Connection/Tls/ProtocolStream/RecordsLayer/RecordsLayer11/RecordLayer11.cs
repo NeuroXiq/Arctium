@@ -42,7 +42,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.NULL,
                 0,
-                MACAlgorithm.NULL)
+                CryptoConfiguration.HashAlgorithmType.NULL)
         };
 
         struct ReadedRecord
@@ -63,7 +63,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         CipherType currentWriteCipherType;// { get { return currentSecParams.RecordCryptoType.CipherType; } }
         CipherType currentReadCipherType; // { get { return currentSecParams.RecordCryptoType.CipherType; } }
-        MACAlgorithm MacAlgorithm { get { return currentSecParams.RecordCryptoType.MACAlgorithm; } }
+        CryptoConfiguration.HashAlgorithmType MacAlgorithm { get { return currentSecParams.RecordCryptoType.MACAlgorithm; } }
 
         byte[] BulkReadKey { get { return currentSecParams.BulkReadKey; } }
         byte[] BulkWriteKey { get { return currentSecParams.BulkWriteKey; } }

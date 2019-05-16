@@ -1,54 +1,74 @@
 ﻿using Arctium.Connection.Tls.Buffers;
 using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
+using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using System.IO;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class RecordLayer12
     {
-        RecordsBuffer recordsBuffer;
+        RecordsBuffer recordsReadBuffer;
 
-        private byte[] WriteBuffer;
+        RecordCrypto writeCrypto;
+        RecordCrypto readCrypto;
 
-        FragmentCrypto writeCrypto;
-        FragmentCrypto readCrypto;
+        ulong readSeqNum;
+        ulong writeSeqNum;
+
+        byte[] sendReusableBuffer;
 
         RecordLayer12(Stream innerStream)
         {
-            recordsBuffer = new RecordsBuffer();
+            recordsReadBuffer = new RecordsBuffer();
+            sendReusableBuffer = new byte[0];
         }
 
         public RecordLayer12 Initialize(Stream innerStream)
         {
-            return new RecordLayer12(innerStream);
+            RecordLayer12 recordLayer =  new RecordLayer12(innerStream);
+
+            recordLayer.ChangeReadCipherSpec(RecordCryptoFactory.InitReadSecParams);
+            recordLayer.ChangeWriteCipherSpec(RecordCryptoFactory.InitWriteSecParams);
+
+            return recordLayer;
         }
 
-        public int LoadFragment(out ContentType contentType)
+        public FragmentData LoadFragment(out ContentType type)
         {
-            contentType = ContentType.Alert;
+            recordsReadBuffer.GoToNextRecord();
 
-            //recordsBuffer.EnsureRecord();
-            
+            //decryption info
+            RecordCrypto.RecordData data = new RecordCrypto.RecordData();
+            data.Buffer = recordsReadBuffer.DataBuffer;
+            data.RecordOffset = recordsReadBuffer.Cursor.RecordOffset;
+            data.SeqNum = readSeqNum;
 
+            int contentOffset;
+            // decrypt bytes in buffer
+            int contentLength = readCrypto.Decrypt(data, out contentOffset);
 
+            // now fragmentsBuffer contains decrpyted fragment
 
-            return 1;
-        }
+            FragmentData resultData = new FragmentData(recordsReadBuffer.DataBuffer, contentOffset, contentLength);
+            readSeqNum++;
 
-        public void ReadFragment(byte[] buffer, int offset)
-        {
+            type = recordsReadBuffer.Cursor.Header.ContentType;
 
+            return resultData;
         }
 
         public void ChangeWriteCipherSpec(SecParams12 secParams)
         {
-
+            writeSeqNum = 0;
+            writeCrypto = RecordCryptoFactory.CreateRecordCrypto(secParams);
         }
 
         public void ChangeReadCipherSpec(SecParams12 secParams)
         {
-
+            readSeqNum = 0;
+            readCrypto = RecordCryptoFactory.CreateRecordCrypto(secParams);
         }
     }
 }

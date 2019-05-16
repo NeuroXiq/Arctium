@@ -1,5 +1,5 @@
 ﻿using Arctium.Connection.Tls.Protocol.RecordProtocol;
-using System;
+using System.IO;
 
 namespace Arctium.Connection.Tls.Buffers
 {
@@ -8,6 +8,7 @@ namespace Arctium.Connection.Tls.Buffers
     {
         public struct RecordCursor
         {
+            public RecordHeader Header;
             public int RecordOffset;
         }
 
@@ -19,9 +20,9 @@ namespace Arctium.Connection.Tls.Buffers
 
         }
 
-        public void EnsureRecord() { }
-
-        public void MoveCursor() { }
-
+        public void GoToNextRecord(Stream readStream)
+        {
+            
+        }
     }
 }

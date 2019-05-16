@@ -8,7 +8,7 @@ namespace Arctium.Connection.Tls.Protocol
         public CipherType CipherType;
 
         public BulkCipherAlgorithm BulkCipherAlgorithm;
-        public MACAlgorithm MACAlgorithm;
+        public HashAlgorithmType MACAlgorithm;
 
         ///<summary>Key size in bits</summary>
         public int KeySize;
@@ -21,7 +21,7 @@ namespace Arctium.Connection.Tls.Protocol
             BlockCipherMode blockCipherMode,
             BulkCipherAlgorithm bulkCipherAlgorithm,
             int keySize,
-            MACAlgorithm macAlgorithm)
+            HashAlgorithmType macAlgorithm)
         {
             CipherType = cipherType;
             BlockCipherMode = blockCipherMode;

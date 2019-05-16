@@ -58,7 +58,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.AES,
                 256,
-                MACAlgorithm.SHA1);
+                HashAlgorithmType.SHA1);
 
             CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SigningAlgorithm.RSA, recordCrypto);
 
@@ -75,7 +75,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.AES,
                 128,
-                MACAlgorithm.SHA1);
+                HashAlgorithmType.SHA1);
 
             CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SigningAlgorithm.RSA, recordCrypto);
 
@@ -91,7 +91,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.AES,
                 256,
-                MACAlgorithm.SHA1);
+                HashAlgorithmType.SHA1);
 
             CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCrypto);
 
@@ -107,7 +107,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.TDES,
                 24 * 8,
-                MACAlgorithm.SHA1);
+                HashAlgorithmType.SHA1);
 
             CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
 
@@ -123,7 +123,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.NULL,
                 BulkCipherAlgorithm.NULL,
                 0,
-                MACAlgorithm.NULL);
+                HashAlgorithmType.NULL);
 
             CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
 
@@ -139,7 +139,7 @@ namespace Arctium.Connection.Tls.Protocol
                 BlockCipherMode.CBC,
                 BulkCipherAlgorithm.AES,
                 128,
-                MACAlgorithm.SHA1);
+                HashAlgorithmType.SHA1);
 
             
 
