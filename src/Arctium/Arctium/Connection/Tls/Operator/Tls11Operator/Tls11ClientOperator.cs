@@ -25,6 +25,10 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         HandshakeMessages11 allMessages;
         SecParams11 secParams;
 
+        private byte[] appDataBuffer;
+        private int appDataOffset;
+        private int appDataLength;
+
         private Tls11ClientOperator(RecordIO recordIO)
         {
             recordLayer = RecordLayer11.Initialize(recordIO);
@@ -89,14 +93,14 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             protocol.HandshakeHandler -= FatalHandshake;
             protocol.HandshakeHandler += ReadHandshakeAndCache;
-
-
             
             // start reading process
             protocol.Read();
             GetFinished();
 
-            ExchangeApplicationData();
+            protocol.ApplicationDataHandler -= FatalApplicationData;
+            protocol.ApplicationDataHandler += UpdateAppDataBuffer;
+            //ExchangeApplicationData();
         }
 
         private void ExpectedChangeCipherSpec(ChangeCipherSpec changeCipherSpec)
@@ -110,9 +114,22 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             currentHandshakeMessage = message;
         }
 
-        private void ExchangeApplicationData()
+        private void UpdateAppDataBuffer(byte[] buf, int offset, int len)
         {
-            
+            if (appDataBuffer == null)
+            {
+                appDataBuffer = new byte[len];
+                Buffer.BlockCopy(buf, offset, appDataBuffer, 0, len);
+                appDataOffset = 0;
+                appDataLength = len;
+            }
+            else
+            {
+                if (len > appDataBuffer.Length)
+                {
+
+                }
+            }
         }
 
         private byte[] GetSessionID()
@@ -164,7 +181,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             byte[] finishedContent = prf.Prf(secParams.MasterSecret, "server finished", hashes, 12);
 
             Finished f = (Finished)currentHandshakeMessage;
-            string a = ""; 
+            //string a = ""; 
         }
 
         private void SendFinished()
@@ -344,12 +361,21 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         public override void WriteApplicationData(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            protocol.Read();
+            //recordLayer.Write(buffer, offset, count, Protocol.RecordProtocol.ContentType.ApplicationData);
         }
 
         public override int ReadApplicationData(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            return -1;
+            if (appDataOffset < appDataLength)
+            {
+
+            }
+            else
+            {
+                protocol.Read();
+            }
         }
     }
 }
