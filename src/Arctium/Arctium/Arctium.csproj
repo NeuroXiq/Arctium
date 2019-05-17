@@ -45,14 +45,18 @@
     <Compile Include="Connection\Tls\Buffers\RecordsBuffer.cs" />
     <Compile Include="Connection\Tls\Configuration\DefaultConfigurations.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls11ServerConfig.cs" />
+    <Compile Include="Connection\Tls\Configuration\Tls12ServerConfig.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsServerConfig.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
-    <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SigningAlgorithm.cs" />
+    <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SignatureAlgorithm.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\SecParams12.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\HandshakeMessages11.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientOperator.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ServerOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HandshakeStack.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\AeadRecordCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\BlockRecordCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\FragmentData.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentHandler.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentReader.cs" />
@@ -73,14 +77,17 @@
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\Exceptions\InvalidSecParams11Exception.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\RecordLayer11.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\RecordLayer11CryptoFactory.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\NullHMAC.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\NullStreamCipherAlgorithm.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordCryptoFactory.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\StreamRecordCrypto.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Alert.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertDescription.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertLevel.cs" />
-    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\ClientKeyExchangeDecryptedRsaBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\CertificateBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ServerHelloBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedHandshakeInfo.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedRecordInfo.cs" />
@@ -88,6 +95,7 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientHelloFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientKeyExchangeFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\ExtensionFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\HandshakeFormatterBase.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloDoneFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ServerHelloFormater.cs" />
@@ -147,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Connection\Tls\Operator\Exception\" />
+    <Folder Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connection\Tls\Operator\Tls11Operator\README.md" />

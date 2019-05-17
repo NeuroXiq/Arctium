@@ -60,7 +60,7 @@ namespace Arctium.Connection.Tls.Protocol
                 256,
                 HashAlgorithmType.SHA1);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SigningAlgorithm.RSA, recordCrypto);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SignatureAlgorithm.RSA, recordCrypto);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
 
@@ -77,7 +77,7 @@ namespace Arctium.Connection.Tls.Protocol
                 128,
                 HashAlgorithmType.SHA1);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SigningAlgorithm.RSA, recordCrypto);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.DHE, SignatureAlgorithm.RSA, recordCrypto);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
         }
@@ -93,7 +93,7 @@ namespace Arctium.Connection.Tls.Protocol
                 256,
                 HashAlgorithmType.SHA1);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCrypto);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SignatureAlgorithm.NULL, recordCrypto);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
         }
@@ -109,7 +109,7 @@ namespace Arctium.Connection.Tls.Protocol
                 24 * 8,
                 HashAlgorithmType.SHA1);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SignatureAlgorithm.NULL, recordCryptoType);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
         }
@@ -125,7 +125,7 @@ namespace Arctium.Connection.Tls.Protocol
                 0,
                 HashAlgorithmType.NULL);
 
-            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
+            CryptoSuite suite = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SignatureAlgorithm.NULL, recordCryptoType);
 
             cryptoSuitesDefinitions[baseSuite] = suite;
         }
@@ -143,7 +143,7 @@ namespace Arctium.Connection.Tls.Protocol
 
             
 
-            CryptoSuite suiteDefinition = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SigningAlgorithm.NULL, recordCryptoType);
+            CryptoSuite suiteDefinition = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SignatureAlgorithm.NULL, recordCryptoType);
 
             cryptoSuitesDefinitions[baseSuite] = suiteDefinition;
         }

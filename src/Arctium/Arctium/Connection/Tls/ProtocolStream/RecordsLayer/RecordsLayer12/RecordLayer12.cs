@@ -1,8 +1,6 @@
 ﻿using Arctium.Connection.Tls.Buffers;
 using Arctium.Connection.Tls.CryptoConfiguration;
-using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
-using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using System.IO;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
@@ -11,8 +9,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
     {
         RecordsBuffer recordsReadBuffer;
 
-        RecordCrypto writeCrypto;
-        RecordCrypto readCrypto;
+        RecordCrypto writeRecordCrypto;
+        RecordCrypto readRecordCrypto;
 
         ulong readSeqNum;
         ulong writeSeqNum;
@@ -25,7 +23,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             sendReusableBuffer = new byte[0];
         }
 
-        public RecordLayer12 Initialize(Stream innerStream)
+        public static RecordLayer12 Initialize(Stream innerStream)
         {
             RecordLayer12 recordLayer =  new RecordLayer12(innerStream);
 
@@ -37,7 +35,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public FragmentData LoadFragment(out ContentType type)
         {
-            recordsReadBuffer.GoToNextRecord();
+            recordsReadBuffer.GoToNextRecord(null);
 
             //decryption info
             RecordCrypto.RecordData data = new RecordCrypto.RecordData();
@@ -47,9 +45,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
             int contentOffset;
             // decrypt bytes in buffer
-            int contentLength = readCrypto.Decrypt(data, out contentOffset);
+            int contentLength = readRecordCrypto.Decrypt(data, out contentOffset);
 
-            // now fragmentsBuffer contains decrpyted fragment
+            // now fragmentsBuffer contains decrypted fragment
 
             FragmentData resultData = new FragmentData(recordsReadBuffer.DataBuffer, contentOffset, contentLength);
             readSeqNum++;
@@ -62,13 +60,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         public void ChangeWriteCipherSpec(SecParams12 secParams)
         {
             writeSeqNum = 0;
-            writeCrypto = RecordCryptoFactory.CreateRecordCrypto(secParams);
+            writeRecordCrypto = RecordCryptoFactory.CreateRecordCrypto(secParams);
         }
 
         public void ChangeReadCipherSpec(SecParams12 secParams)
         {
             readSeqNum = 0;
-            readCrypto = RecordCryptoFactory.CreateRecordCrypto(secParams);
+            readRecordCrypto = RecordCryptoFactory.CreateRecordCrypto(secParams);
         }
     }
 }

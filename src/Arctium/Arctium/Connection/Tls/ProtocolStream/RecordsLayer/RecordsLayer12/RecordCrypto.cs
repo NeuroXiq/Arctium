@@ -8,15 +8,19 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         {
             public ulong SeqNum;
             public byte[] Buffer;
-            public int RecordOffset;
+            public int FragmentOffset;
+            public RecordHeader Header;
         }
 
-        public abstract void Encrypt(RecordData recordData, byte[] outBuffer, int outOffset);
+
+        ///<return>tls ciphertext fragment length</return>
+        public abstract int Encrypt(RecordData recordData, byte[] outBuffer, int outOffset);
         
         ///<summary></summary>
-        ///<returns>Content length</returns>
-        public abstract int Decrypt(RecordData recordData, out int contentOffset);
+        ///<returns>decrypted content length</returns>
+        public abstract int Decrypt(RecordData recordData, byte[] outBuffer, int outOffset);
 
         public abstract int GetEncryptedLength(int contentPlaintextLength);
+        public abstract int GetDecryptedLength(int ciphertextFragmentLength);
     }
 }

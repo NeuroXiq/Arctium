@@ -3,6 +3,7 @@
     public enum CipherType
     {
         Stream,
-        Block
+        Block,
+        Aead
     }
 }

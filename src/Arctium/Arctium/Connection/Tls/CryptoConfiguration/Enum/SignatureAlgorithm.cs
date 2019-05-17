@@ -1,9 +1,10 @@
 ﻿namespace Arctium.Connection.Tls.CryptoConfiguration
 {
-    public enum SigningAlgorithm
+    public enum SignatureAlgorithm
     {
         NULL,
         RSA,
-        DSS
+        DSS,
+        ECDSA
     }
 }
