@@ -1,4 +1,5 @@
 ﻿using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 
 namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
 {
@@ -11,6 +12,8 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol
         public byte[] SessionID;
         public CipherSuite[] CipherSuites;
         public CompressionMethod[] CompressionMethods;
+
+        public HandshakeExtension[] Extensions;
 
         public ClientHello()
         {

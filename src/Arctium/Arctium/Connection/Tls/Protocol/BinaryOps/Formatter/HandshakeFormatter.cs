@@ -2,10 +2,10 @@
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters;
-using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
 {
+    ///<summary>Handshake formatter changes object representation of handshake message to bytes of the handshake structure</summary>
     class HandshakeFormatter
     {
         ServerHelloFormater serverHelloFormatter;

@@ -1,14 +1,16 @@
-﻿using Arctium.Connection.Tls.CryptoConfiguration;
+﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls.Configuration
 {
-    class Tls12ServerConfig
+    public class Tls12ServerConfig
     {
-        public object SessionCache;
-        public X509Certificate[] Certificates;
+        public X509Certificate2[] Certificates;
+        public CipherSuite[] EnableCipherSuites;
 
-        ///<summary>Indicates signature algorithm that can use key in certificate</summary>
-        SignatureAlgorithm SignatureAlgorithm;
+        //TODO tls12serverconfig
+        public object clientVerification;
+        public object extensions;
+        public object SessionCache;
     }
 }

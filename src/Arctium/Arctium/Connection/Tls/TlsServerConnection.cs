@@ -11,7 +11,8 @@ namespace Arctium.Connection.Tls
 
         public TlsServerConnection(X509Certificate2 cert)
         {
-            this.config = new TlsServerConfig();
+            //this.config = DefaultConfigurations.CreateDefaultTls12ServerConfig();
+            //config.Tls11ServerConfig.
         }
 
         ///<summary>Accept new connection from specified stream</summary>

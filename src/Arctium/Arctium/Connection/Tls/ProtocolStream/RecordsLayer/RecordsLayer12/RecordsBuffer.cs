@@ -46,6 +46,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             //shift offset, preparing to next read
             //internal state about currently readed record (in this method) is lost
             dataOffset += fragmentLength + RecordConst.HeaderLength;
+            dataLength -= fragmentLength + RecordConst.HeaderLength;
 
             return currentRecordOffset;
         }

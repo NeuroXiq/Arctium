@@ -1,12 +1,11 @@
-﻿using Arctium.Connection.Tls.Protocol.RecordProtocol;
-using System;
+﻿using System;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     ///<summary>Encapsulates inner buffer and provides only copy capability from inner buffer.</summary>
     class FragmentData
     {
-        public int Length { get; private set; }
+        public int Length { get { return fragmentLength; } }
 
         private byte[] fragmentBuffer;
         private int fragmentOffset;
@@ -17,6 +16,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             fragmentBuffer = sourceBuff;
             fragmentOffset = offset;
             fragmentLength = length;
+
         }
 
         ///<summary>Copy all fragment bytes of <see cref="Length"/>

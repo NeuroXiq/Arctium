@@ -19,13 +19,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         ulong readSeqNum;
         ulong writeSeqNum;
 
-        byte[] sendReusableBuffer;
+        byte[] reusableEncryptBuffer;
         Stream innerStream;
 
         RecordLayer12(Stream innerStream)
         {
             recordsReadBuffer = new RecordsBuffer(innerStream, RecordConst.MaxTlsRecordLength);
-            sendReusableBuffer = new byte[0];
+            reusableEncryptBuffer = new byte[0];
             this.innerStream = innerStream;
         }
 
@@ -51,6 +51,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             // decryption info
             RecordCrypto.RecordData data = new RecordCrypto.RecordData();
             data.Buffer = recordsReadBuffer.DataBuffer;
+            data.Header = FixedRecordInfo.GetHeader(recordsReadBuffer.DataBuffer, recordOffset);
             data.FragmentOffset = fragmentOffset;
             data.SeqNum = readSeqNum;
 
@@ -67,16 +68,16 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public void WriteFragment(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            if (writeRecordCrypto.GetEncryptedLength(length) < sendReusableBuffer.Length - RecordConst.HeaderLength)
+            if (writeRecordCrypto.GetEncryptedLength(length) < reusableEncryptBuffer.Length - RecordConst.HeaderLength)
             {
-                sendReusableBuffer = new byte[writeRecordCrypto.GetEncryptedLength(length) + RecordConst.HeaderLength];
+                reusableEncryptBuffer = new byte[writeRecordCrypto.GetEncryptedLength(length) + RecordConst.HeaderLength];
             }
 
-            sendReusableBuffer[0] = (byte)contentType;
-            sendReusableBuffer[1] = 3;
-            sendReusableBuffer[2] = 3;
+            reusableEncryptBuffer[0] = (byte)contentType;
+            reusableEncryptBuffer[1] = 3;
+            reusableEncryptBuffer[2] = 3;
 
-            NumberConverter.FormatUInt16((ushort)length, sendReusableBuffer, 3);
+            NumberConverter.FormatUInt16((ushort)length, reusableEncryptBuffer, 3);
 
             RecordCrypto.RecordData data = new RecordCrypto.RecordData();
             data.Buffer = buffer;
@@ -85,9 +86,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             data.FragmentOffset = offset;
             data.Header = new RecordHeader(contentType, new ProtocolVersion(3, 3), length);
 
-            int encryptedLength = writeRecordCrypto.Encrypt(data, sendReusableBuffer, 5);
+            int encryptedLength = writeRecordCrypto.Encrypt(data, reusableEncryptBuffer, 5);
 
-            innerStream.Write(sendReusableBuffer, 0, encryptedLength + RecordConst.HeaderLength);
+            innerStream.Write(reusableEncryptBuffer, 0, encryptedLength + RecordConst.HeaderLength);
 
         }
 

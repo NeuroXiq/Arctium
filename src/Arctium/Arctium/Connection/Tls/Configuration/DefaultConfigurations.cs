@@ -1,5 +1,4 @@
 ﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
-using System;
 
 namespace Arctium.Connection.Tls.Configuration
 {
@@ -9,6 +8,26 @@ namespace Arctium.Connection.Tls.Configuration
 
         static DefaultConfigurations()
         {
+        }
+
+        public static Tls12ServerConfig CreateDefaultTls12ServerConfig()
+        {
+            Tls12ServerConfig config = new Tls12ServerConfig();
+
+            config.EnableCipherSuites = new CipherSuite[]
+            {
+                //RSA Key Exchange
+                CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+                //CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+                //CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+                //CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
+                //
+                ////ECDH Key exchange
+                //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+                //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+            };
+
+            return config;
         }
 
         public static Tls11ServerConfig CreateDefaultTls11ServerConfig()
