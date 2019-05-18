@@ -2,16 +2,17 @@
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 using System;
 
-namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Tls12
+namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
     class FragmentReader
     {
-        FragmentHandler handler;
         RecordLayer12 recordLayer;
+        FragmentHandler handler;
 
-        public FragmentReader(RecordLayer12 recordLayer, FragmentHandler initHandler)
+
+        public FragmentReader(RecordLayer12 recordLayer)
         {
-            handler = initHandler;
+            
             this.recordLayer = recordLayer;
         }
 
@@ -23,7 +24,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer.Tls12
         public void Read()
         {
             ContentType type;
-            FragmentData data = recordLayer.LoadFragment(out type);
+            FragmentData data = recordLayer.ReadFragment(out type);
 
             switch (type)
             {

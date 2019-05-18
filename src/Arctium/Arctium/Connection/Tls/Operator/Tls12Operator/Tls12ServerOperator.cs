@@ -1,10 +1,12 @@
 ﻿using Arctium.Connection.Tls.Configuration;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 using System.IO;
+using System;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
-    class Tls12ServerOperator
+    class Tls12ServerOperator : TlsProtocolOperator
     {
         Tls12ServerConfig config;
         RecordLayer12 recordLayer;
@@ -36,7 +38,22 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         public void OpenSession()
         {
+            FragmentReader reader = new FragmentReader(recordLayer);
+            HandshakeHandler handshakeFragmentsHandler = new HandshakeHandler(reader);
 
+
+
+            Handshake msg = handshakeFragmentsHandler.Read();
+        }
+
+        public override int ReadApplicationData(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void WriteApplicationData(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
         }
     }
 }

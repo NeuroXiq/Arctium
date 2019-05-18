@@ -42,7 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connection\Tls\Buffers\BufferTools.cs" />
-    <Compile Include="Connection\Tls\Buffers\RecordsBuffer.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeHandler.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordsBuffer.cs" />
     <Compile Include="Connection\Tls\Configuration\DefaultConfigurations.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls11ServerConfig.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls12ServerConfig.cs" />
@@ -58,8 +59,8 @@
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\AeadRecordCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\BlockRecordCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\FragmentData.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentHandler.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\Tls12\FragmentReader.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\FragmentHandler.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\FragmentReader.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />

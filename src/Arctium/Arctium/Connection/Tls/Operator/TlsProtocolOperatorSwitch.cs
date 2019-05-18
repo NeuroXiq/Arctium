@@ -1,5 +1,6 @@
 ﻿using Arctium.Connection.Tls.Configuration;
 using Arctium.Connection.Tls.Operator.Tls11Operator;
+using Arctium.Connection.Tls.Operator.Tls12Operator;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using System;
@@ -11,21 +12,10 @@ namespace Arctium.Connection.Tls.Operator
     {
         public static TlsProtocolOperator OpenServerSession(Stream innerStream, TlsServerConfig serverConfig)
         {
-            RecordIO recordIO = new RecordIO(innerStream);
-            recordIO.LoadRecord();
-            RecordHeader recordHeader = recordIO.RecordHeader;
+            Tls12ServerOperator o = Tls12ServerOperator.OpenNewSession(null, innerStream);
 
-            if (recordHeader.Version.Major == 3)
-            {
-                if (recordHeader.Version.Minor >= 1)
-                {
-                    Tls11ServerConfig tls11Config = serverConfig.Tls11ServerConfig;
-
-                    return Tls11ServerOperator.CreateServerSession(recordIO, tls11Config);
-                }
-                else throw new NotSupportedException("Version not supported by this implemnetation of tls");
-            }
-            else throw new System.Exception("unknow Major version");
+            o.OpenSession();
+            return o;
         }
     }
 }
