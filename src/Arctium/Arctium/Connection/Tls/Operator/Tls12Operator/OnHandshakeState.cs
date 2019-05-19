@@ -13,35 +13,49 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
     class OnHandshakeState
     {
+        public struct MsgData
+        {
+            public byte[] RawBytes;
+            public HandshakeType Type;
+
+            public MsgData(byte[] rawBytes, HandshakeType type)
+            {
+                RawBytes = rawBytes;
+                Type = type;
+            }
+        }
+
+        public MsgData[] ExchangeStack { get { return fragmentsExchangeStack.ToArray(); } }
+
         RecordLayer12 recordLayer;
         ChunkedDataBuffer buffer;
         HandshakeBuilder builder;
 
-        List<byte[]> fragmentsExchangeStack;
+        List<MsgData> fragmentsExchangeStack;
 
         public OnHandshakeState(RecordLayer12 recordLayer)
         {
             this.recordLayer = recordLayer;
             buffer = new ChunkedDataBuffer();
             builder = new HandshakeBuilder();
-            fragmentsExchangeStack = new List<byte[]>();
+            fragmentsExchangeStack = new List<MsgData>();
+
         }
-
-
-
-        //
-        // end callbacks from FramgentReader
-        //
 
         public Handshake Read()
         {
             LoadMessageToBuffer();
 
-            int msgLength = FixedHandshakeInfo.Length(buffer.DataBuffer, buffer.DataOffset);
+            int contentLength = FixedHandshakeInfo.Length(buffer.DataBuffer, buffer.DataOffset);
+            int totalLength = contentLength + HandshakeConst.HeaderLength;
 
             Handshake msgObject = builder.GetHandshake(buffer.DataBuffer, buffer.DataOffset);
 
-            buffer.Remove(msgLength);
+            byte[] rawFragment = new byte[totalLength];
+            Buffer.BlockCopy(buffer.DataBuffer, buffer.DataOffset, rawFragment, 0, totalLength);
+            fragmentsExchangeStack.Add(new MsgData(rawFragment, msgObject.MsgType));
+
+            buffer.Remove(totalLength);
 
             return msgObject;
         }
@@ -51,7 +65,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             HandshakeFormatter formatter = new HandshakeFormatter();
 
             byte[] fragmentBytes = formatter.GetBytes(message);
-            fragmentsExchangeStack.Add(fragmentBytes);
+            fragmentsExchangeStack.Add(new MsgData(fragmentBytes, message.MsgType));
+            recordLayer.WriteFragment(fragmentBytes, 0, fragmentBytes.Length, ContentType.Handshake);
         }
 
         private void LoadMessageToBuffer()
@@ -62,7 +77,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             }
 
             int msgLength = FixedHandshakeInfo.Length(buffer.DataBuffer, buffer.DataOffset);
-
+           
             while (msgLength > buffer.DataLength - HandshakeConst.HeaderLength)
             {
                 LoadHandshakeFragment();
@@ -78,13 +93,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             buffer.PrepareToAppend(data.Length);
             data.Copy(buffer.DataBuffer, buffer.DataOffset + buffer.DataLength);
-
             buffer.DataLength += data.Length;
 
-            byte[] rawBytes = new byte[data.Length];
-            data.Copy(rawBytes, 0);
-
-            fragmentsExchangeStack.Add(rawBytes);
         }
     }
 }

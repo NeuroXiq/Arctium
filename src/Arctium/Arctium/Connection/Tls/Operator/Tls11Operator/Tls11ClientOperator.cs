@@ -159,7 +159,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         {
             if (currentHandshakeMessage.MsgType != HandshakeType.Finished) throw new Exception("expected finished but something else received");
 
-            PseudoRandomFunction prf = new PseudoRandomFunction();
+            PRF prf = new PRF();
 
 
             MD5 md5 = MD5.Create();
@@ -179,7 +179,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             byte[] hashes = BufferTools.Join(md5.Hash, sha1.Hash);
 
-            byte[] finishedContent = prf.Prf(secParams.MasterSecret, "server finished", hashes, 12);
+            byte[] finishedContent = prf.Prf11(secParams.MasterSecret, "server finished", hashes, 12);
 
             Finished f = (Finished)currentHandshakeMessage;
             //string a = ""; 
@@ -187,7 +187,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         private void SendFinished()
         {
-            PseudoRandomFunction prf = new PseudoRandomFunction();
+            PRF prf = new PRF();
             
 
             MD5 md5 = MD5.Create();
@@ -206,7 +206,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             byte[] hashes = BufferTools.Join(md5.Hash, sha1.Hash);
 
-            byte[] finishedContent = prf.Prf(secParams.MasterSecret, "client finished", hashes, 12);
+            byte[] finishedContent = prf.Prf11(secParams.MasterSecret, "client finished", hashes, 12);
 
             Finished f = new Finished(finishedContent);
 

@@ -7,22 +7,24 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class RecordCryptoFactory
     {
-        public static SecParams12 InitReadSecParams { get
+        public static RecordLayer12Params InitReadSecParams { get
             {
-                return new SecParams12()
+                return new RecordLayer12Params()
                 {
                     RecordCryptoType = new RecordCryptoType(CipherType.Stream, BlockCipherMode.NULL, BulkCipherAlgorithm.NULL, 0, HashAlgorithmType.NULL),
-                    BulkReadKey = new byte[0],
-                    BulkWriteKey = new byte[0],
-                    MacReadSecret = new byte[0],
-                    MacWriteSecret = new byte[0],
-                    MasterSecret = null
+                    BulkKey = new byte[0],
+                    MacKey = new byte[0]
                 };
             } }
 
-        public static SecParams12 InitWriteSecParams { get { return InitReadSecParams; } }
-                 
-        public static RecordCrypto CreateRecordCrypto(SecParams12 secParams)
+        public static RecordLayer12Params InitWriteSecParams { get { return InitReadSecParams; } }
+
+        public static IFragmentDecryptor CreateDecryptor(RecordLayer12Params secParams)
+        {
+            return (IFragmentDecryptor)(CreateEncryptor(secParams));
+        }
+
+        public static IFragmentEncryptor CreateEncryptor(RecordLayer12Params secParams)
         {
             switch (secParams.RecordCryptoType.CipherType)
             {
@@ -33,73 +35,66 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             }
         }
 
-        private static RecordCrypto BuildAeadRecordCrypto(SecParams12 secParams)
+        private static IFragmentEncryptor BuildAeadRecordCrypto(RecordLayer12Params secParams)
         {
             throw new NotImplementedException("aead not supported");
         }
 
-        private static RecordCrypto BuildBlockRecordCrypto(SecParams12 secParams)
+        private static IFragmentEncryptor BuildBlockRecordCrypto(RecordLayer12Params secParams)
         {
-            HMAC encryptHmac, decryptHmac;
-            SymmetricAlgorithm encryptCipher, DecryptCipher;
-
-            BuildHmacs(secParams, out encryptHmac, out decryptHmac);
-
+            HMAC hmac = BuildHmac(secParams);
             switch (secParams.RecordCryptoType.BulkCipherAlgorithm)
             {
-                case BulkCipherAlgorithm.NULL:
+                case BulkCipherAlgorithm.AES:
+                    return new BlockFragmentCrypto(hmac, new AesCryptoServiceProvider() { Key = secParams.BulkKey });
                 default: throw new NotSupportedException("Intenral error Tls12 algorithm not supported");
             }
-
         }
 
-        private static RecordCrypto BuildStreamRecordCrypto(SecParams12 secParams)
+        private static IFragmentEncryptor BuildStreamRecordCrypto(RecordLayer12Params secParams)
         {
-            HMAC encryptHmac, decryptHmac;
-            SymmetricAlgorithm encryptCipher, decryptCipher;
-            BuildHmacs(secParams, out encryptHmac, out decryptHmac);
+            HMAC hmac = BuildHmac(secParams);
+            SymmetricAlgorithm cipher;
 
             switch (secParams.RecordCryptoType.BulkCipherAlgorithm)
             {
                 case BulkCipherAlgorithm.NULL:
-                    encryptCipher = decryptCipher = new NullStreamCipherAlgorithm();
+                    cipher = new NullStreamCipherAlgorithm();
                     break;
                 default: throw new NotSupportedException("not stream algo or not supported");
             }
 
-            return new StreamRecordCrypto(encryptHmac, decryptHmac, encryptCipher, decryptCipher);
+            return new StreamFragmentCrypto(hmac, cipher);
         }
 
-        private static void BuildHmacs(SecParams12 secParams, out HMAC encryptHmac, out HMAC decryptHmac)
+        private static HMAC BuildHmac(RecordLayer12Params secParams)
         {
+            HMAC resultHMac;
+
             switch (secParams.RecordCryptoType.MACAlgorithm)
             {
-                case HashAlgorithmType.NULL: encryptHmac = decryptHmac = new NullHMAC(); break;
+                case HashAlgorithmType.NULL:
+                    resultHMac = new NullHMAC();
+                    break;
                 case HashAlgorithmType.MD5:
-                    encryptHmac = new HMACMD5();
-                    decryptHmac = new HMACMD5();
+                    resultHMac = new HMACMD5(secParams.MacKey);
                     break;
                 case HashAlgorithmType.SHA1:
-                    encryptHmac = new HMACSHA1();
-                    decryptHmac = new HMACSHA1();
+                    resultHMac = new HMACSHA1(secParams.MacKey);
                     break;
                 case HashAlgorithmType.SHA256:
-                    encryptHmac = new HMACSHA256();
-                    decryptHmac = new HMACSHA256();
+                    resultHMac = new HMACSHA256(secParams.MacKey);
                     break;
                 case HashAlgorithmType.SHA384:
-                    encryptHmac = new HMACSHA384();
-                    decryptHmac = new HMACSHA384();
+                    resultHMac = new HMACSHA384(secParams.MacKey);
                     break;
                 case HashAlgorithmType.SHA512:
-                    encryptHmac = new HMACSHA512();
-                    decryptHmac = new HMACSHA512();
+                    resultHMac = new HMACSHA512(secParams.MacKey);
                     break;
                 default: throw new NotSupportedException("Mac algorithm in TLS12 factory is not supporter or invalid");
             }
 
-            encryptHmac.Key = secParams.MacWriteSecret;
-            decryptHmac.Key = secParams.MacReadSecret;
+            return resultHMac;
         }
     }
 }

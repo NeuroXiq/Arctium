@@ -21,6 +21,36 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             public ConnectionEnd HostType;
         }
 
+
+        public static Tls12Secrets GenerateTls12Secrets(RecordCryptoType cryptoType, byte[] premaster, byte[] clientRandom, byte[] serverRandom)
+        {
+            int macKeySize = CryptoConst.HashSize(cryptoType.MACAlgorithm) / 8;
+            int keySize = cryptoType.KeySize / 8;
+            int ivSize = cryptoType.KeySize / 8;
+            int keyBlockSize = 2 * (macKeySize + keySize + ivSize);
+
+            byte[] masterSecret = PRF.Prf12(premaster, "master secret", BufferTools.Join(clientRandom, serverRandom), 48);
+            byte[] keyBlock = PRF.Prf12(masterSecret, "key expansion", BufferTools.Join(serverRandom, clientRandom), keyBlockSize);
+
+            Tls12Secrets secrets = new Tls12Secrets();
+
+            secrets.ClientIV = new byte[ivSize];
+            secrets.ServerIV = new byte[ivSize];
+            secrets.ClientWriteKey = new byte[keySize];
+            secrets.ServerWriteKey = new byte[keySize];
+            secrets.ClientWriteMacKey = new byte[macKeySize];
+            secrets.ServerWriteMacKey = new byte[macKeySize];
+
+            Buffer.BlockCopy(keyBlock, 0, secrets.ClientWriteMacKey, 0, macKeySize);
+            Buffer.BlockCopy(keyBlock, macKeySize, secrets.ServerWriteMacKey, 0, macKeySize);
+            Buffer.BlockCopy(keyBlock, 2 * macKeySize, secrets.ClientWriteKey, 0, keySize);
+            Buffer.BlockCopy(keyBlock, (2 * macKeySize) + keySize, secrets.ServerWriteKey, 0, keySize);
+            Buffer.BlockCopy(keyBlock, 2 * (macKeySize + keySize), secrets.ClientIV, 0, ivSize);
+            Buffer.BlockCopy(keyBlock, (2  * (macKeySize + keySize)) + ivSize, secrets.ServerIV, 0, ivSize);
+
+            return secrets;
+        }
+
         private byte[] Join(byte[] clientRandom, byte[] serverRandom)
         {
             byte[] result = new byte[clientRandom.Length + serverRandom.Length];
@@ -31,9 +61,10 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             return result;
         }
 
+
         public SecParams11 GenerateSecParams11(SecParams11Seed seed)
         {
-            PseudoRandomFunction prf = new PseudoRandomFunction();
+            PRF prf = new PRF();
 
             int hashSize = CryptoConst.HashSize(seed.RecordCryptoType.MACAlgorithm) / 8;
             int keySize = seed.RecordCryptoType.KeySize / 8;
@@ -45,9 +76,9 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             //byte[] masterSecret = prf.Prf(seed.Premaster, "master secret", masterSeed, CryptoConst.Tls11MasterSecretLength);
             //byte[] keyBlock = prf.Prf(masterSecret, "key expansion", keyBlockSeed, keyBlockSize);
 
-            byte[] masterSecret = prf.Prf(seed.Premaster, "master secret", Join(seed.ClientRandom, seed.ServerRandom), CryptoConst.Tls11MasterSecretLength);
+            byte[] masterSecret = prf.Prf11(seed.Premaster, "master secret", Join(seed.ClientRandom, seed.ServerRandom), CryptoConst.Tls11MasterSecretLength);
 
-            byte[] keyBlock = prf.Prf(masterSecret, "key expansion", Join(seed.ServerRandom, seed.ClientRandom), keyBlockSize);
+            byte[] keyBlock = prf.Prf11(masterSecret, "key expansion", Join(seed.ServerRandom, seed.ClientRandom), keyBlockSize);
 
 
 

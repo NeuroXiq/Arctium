@@ -16,11 +16,17 @@ namespace Arctium.Connection.Tls
         }
 
         ///<summary>Accept new connection from specified stream</summary>
-        public TlsStream Accept(Stream innerStream)
+        public TlsConnectionResult Accept(Stream innerStream)
         {
             var protocolOperator = TlsProtocolOperatorSwitch.OpenServerSession(innerStream, config);
 
-            return new TlsStream(protocolOperator);
+            TlsStream s =  new TlsStream(protocolOperator);
+            TlsConnectionResult result = new TlsConnectionResult();
+
+            result.TlsStream = s;
+            result.Extensions = null;
+
+            return result;
         }
     }
 }

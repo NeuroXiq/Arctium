@@ -31,61 +31,79 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             this.innerStream = innerStream;
         }
 
-        public int Read()
+        ///<summary>Returns current offset of the loaded record in DataBuffer</summary>
+        public int ReadNext()
         {
-            EnsureDataLength(RecordConst.HeaderLength);
-
+            BufferLoad(RecordConst.HeaderLength);
             int fragmentLength = FixedRecordInfo.FragmentLength(DataBuffer, dataOffset);
+            BufferLoad(fragmentLength + RecordConst.HeaderLength);
 
-            //if(fragmentLength > maxFragmentLength) 
-
-            EnsureDataLength(fragmentLength);
-
-            int currentRecordOffset = dataOffset;
-
-            //shift offset, preparing to next read
-            //internal state about currently readed record (in this method) is lost
+            int currentHeaderOffset = dataOffset;
             dataOffset += fragmentLength + RecordConst.HeaderLength;
             dataLength -= fragmentLength + RecordConst.HeaderLength;
 
-            return currentRecordOffset;
+            return currentHeaderOffset;
         }
 
-        private void EnsureDataLength(int count)
+        ///<summary>Ensures that in buffer is at least minDataLength bytes</summary>
+        private void BufferLoad(int minDataLength)
         {
-            if (count > dataLength)
+            //already contains, nothing to do
+            if(minDataLength <= dataLength) return;
+
+            int totalFreeSpace = DataBuffer.Length  - dataLength;
+            int appendFreeSpace = DataBuffer.Length - dataOffset - dataLength;
+            int toReadLength = minDataLength - dataLength;
+
+            //can append bytes without shifting anything ?
+            if(appendFreeSpace < minDataLength)
             {
-                EnsureWriteSize(count);
-
-                while (count > dataLength)
+                //not enough space to append bytes/
+                
+                //need to extend buffer ? 
+                if (totalFreeSpace >= minDataLength)
                 {
-                    int appendMaxSize = DataBuffer.Length - dataOffset - dataLength;
-                    int readedFromStream = innerStream.Read(DataBuffer, dataOffset + dataLength, appendMaxSize);
-                    dataLength += readedFromStream;
-                }
-            }
-        }
-
-        private void EnsureWriteSize(int writeCount)
-        {
-            if (writeCount + dataOffset >= DataBuffer.Length)
-            {
-                int freeSpaceInBuffer = DataBuffer.Length - dataLength;
-
-                if (freeSpaceInBuffer < writeCount)
-                {
-                    byte[] newBuf = new byte[writeCount - freeSpaceInBuffer + dataLength];
-                    Buffer.BlockCopy(DataBuffer, dataOffset, newBuf, 0, dataLength);
-
-                    dataOffset = 0;
-                    DataBuffer = newBuf;
+                    ShiftDataToLeft();
                 }
                 else
                 {
-                    Buffer.BlockCopy(DataBuffer, dataOffset, DataBuffer, 0, dataLength);
-                    dataOffset = 0;
+                    //yes, expand buffer and bytes
+                    int toExpandLength = minDataLength - dataLength;
+                    ExpandBuffer(DataBuffer.Length + toExpandLength - totalFreeSpace);
+                    ShiftDataToLeft();
                 }
+                
             }
+            AppendBytes(toReadLength);
+        }
+
+        private void AppendBytes(int minAppendCount)
+        {
+            int totalReaded = 0;
+
+            while (minAppendCount > totalReaded)
+            {
+                int readed = innerStream.Read(DataBuffer, dataOffset + dataLength, minAppendCount - totalReaded);
+
+                totalReaded += readed;
+                dataLength += readed;
+            }
+        }
+
+        private void ExpandBuffer(int newSize)
+        {
+            byte[] newBuf = new byte[newSize];
+            Buffer.BlockCopy(DataBuffer, dataOffset, newBuf, 0, dataLength);
+            DataBuffer = newBuf;
+            dataOffset = 0;
+        }
+
+        private void ShiftDataToLeft()
+        {
+            if (dataOffset == 0) return;
+
+            Buffer.BlockCopy(DataBuffer, dataOffset, DataBuffer, 0, dataLength);
+            dataOffset = 0;
         }
     }
 }

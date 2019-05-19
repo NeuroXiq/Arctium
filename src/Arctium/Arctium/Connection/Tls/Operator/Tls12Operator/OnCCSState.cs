@@ -33,5 +33,12 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             return new ChangeCipherSpec() { CCSType = ChangeCipherSpecType.ChangeCipherSpec };
         }
+
+        public void Write()
+        {
+            //formatting is so simple (is only 1 bytes of value 1) that can be hardcoded
+            byte[] ccsBytes = new byte[] { 1 };
+            recordLayer.WriteFragment(ccsBytes, 0, 1, ContentType.ChangeCipherSpec);
+        }
     }
 }

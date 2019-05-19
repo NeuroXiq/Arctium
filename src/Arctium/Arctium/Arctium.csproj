@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Connection\Tls\Buffers\BufferTools.cs" />
     <Compile Include="Connection\Tls\Buffers\ChunkedDataBuffer.cs" />
+    <Compile Include="Connection\Tls\CryptoConfiguration\Tls12Secrets.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\ClientAuthService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\OnAppDataState.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\OnHandshakeState.cs" />
@@ -50,6 +51,10 @@
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HelloExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\KeyExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\OnCCSState.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IFragmentDecryptor.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IFragmentEncryptor.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordData.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordsBuffer.cs" />
     <Compile Include="Connection\Tls\Configuration\DefaultConfigurations.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls11ServerConfig.cs" />
@@ -57,18 +62,17 @@
     <Compile Include="Connection\Tls\Configuration\TlsServerConfig.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SignatureAlgorithm.cs" />
-    <Compile Include="Connection\Tls\CryptoConfiguration\SecParams12.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\HandshakeMessages11.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ClientOperator.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ServerOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HandshakeStack.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\AeadRecordCrypto.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\BlockRecordCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\AeadFragmentCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\BlockFragmentCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\FragmentData.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
-    <Compile Include="Connection\Tls\CryptoFunctions\PseudoRandomFunction.cs" />
+    <Compile Include="Connection\Tls\CryptoFunctions\PRF.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\SecretGenerator.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\Tls11KeyBlock.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11HandshakeState.cs" />
@@ -85,10 +89,9 @@
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\RecordLayer11CryptoFactory.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\NullHMAC.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\NullStreamCipherAlgorithm.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordCryptoFactory.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\StreamRecordCrypto.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\StreamFragmentCrypto.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Alert.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertDescription.cs" />
     <Compile Include="Connection\Tls\Protocol\AlertProtocol\Enum\AlertLevel.cs" />
@@ -124,7 +127,7 @@
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\ClientKeyExchangeDecryptedRsa.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Enum\ClientCertificateType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ALPN.cs" />
-    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ExtensionType.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\ExtensionType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\HandshakeExtension.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\PreMasterSecret.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolFormatConst.cs" />
@@ -156,6 +159,7 @@
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Record.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsProtocolType.cs" />
     <Compile Include="Connection\Tls\TlsClientConnection.cs" />
+    <Compile Include="Connection\Tls\TlsConnectionResult.cs" />
     <Compile Include="Connection\Tls\TlsServerConnection.cs" />
     <Compile Include="Connection\Tls\TlsStream.cs" />
     <Compile Include="Connection\Tls\Buffers\BufferCache.cs" />

@@ -1,13 +1,22 @@
-﻿using Arctium.Connection.Tls.CryptoConfiguration;
-using Arctium.Connection.Tls.Protocol.RecordProtocol;
+﻿using Arctium.Connection.Tls.Buffers;
+using Arctium.Connection.Tls.CryptoConfiguration;
 using System;
 using System.Text;
 
 namespace Arctium.Connection.Tls.CryptoFunctions
 {
-    class PseudoRandomFunction
+    class PRF
     {
-        public byte[] Prf(byte[] secret, string label, byte[] seed, int length)
+
+        public static byte[] Prf12(byte[] secret, string label, byte[] seed, int length)
+        {
+            DataExpansionFunction def = new DataExpansionFunction(HashAlgorithmType.SHA256);
+
+            byte[] phashSeed = BufferTools.Join(GetStringBytes(label), seed);
+            return def.Generate(secret, phashSeed, length);
+        }
+
+        public byte[] Prf11(byte[] secret, string label, byte[] seed, int length)
         {
             byte[] labelBytes = GetStringBytes(label);
 
@@ -52,7 +61,7 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             }
         }
 
-        private byte[] GetStringBytes(string label)
+        private static byte[] GetStringBytes(string label)
         {
             return Encoding.ASCII.GetBytes(label);
         }

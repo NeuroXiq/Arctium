@@ -5,6 +5,9 @@ using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using System.Security.Cryptography.X509Certificates;
 using Arctium.Connection.Tls.Protocol;
+using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.CryptoFunctions;
+using System.Security.Cryptography;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -56,6 +59,14 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         RecordLayer12 recordLayer;
         HandshakeMessages12 messagesContext;
 
+        //TODO this should be some 'context'
+        OnHandshakeState handshakeState;
+        OnCCSState ccsState;
+        OnAppDataState appDataState;
+        KeyExchangeService keyExchangeService;
+        Tls12Secrets secrets;
+        //TODO end 
+
         Tls12ServerOperator(Tls12ServerConfig config, Stream innerStream)
         {
             this.config = config;
@@ -65,6 +76,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             //plain data exchange at this moment
 
             this.recordLayer = RecordLayer12.Initialize(innerStream);
+
         }
 
         //
@@ -80,7 +92,6 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             throw new NotImplementedException();
         }
-
 
         public static Tls12ServerOperator OpenNewSession(Tls12ServerConfig config, Stream innerStream)
         {
@@ -98,14 +109,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         public void OpenSession()
         {
-            OnHandshakeState handshakeRW = new OnHandshakeState(recordLayer);
-            OnCCSState ccsState = new OnCCSState(recordLayer);
-            OnAppDataState appDataState = new OnAppDataState(recordLayer);
-
             messagesContext = new HandshakeMessages12();
-            HelloExchangeService helloExchangeService = new HelloExchangeService(handshakeRW, config.EnableCipherSuites);
-            ClientAuthService clientAuthService = new ClientAuthService(handshakeRW);
-
+            handshakeState = new OnHandshakeState(recordLayer);
+            ccsState = new OnCCSState(recordLayer);
+            appDataState = new OnAppDataState(recordLayer);
+            
+            HelloExchangeService helloExchangeService = new HelloExchangeService(handshakeState, config.EnableCipherSuites);
+            ClientAuthService clientAuthService = new ClientAuthService(handshakeState);
 
 
             //Client hello + server hello exchange
@@ -113,22 +123,21 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             //send mandatory certificates (this implementation never assume that cert is not present)
             Certificate certificate = new Certificate(config.Certificates);
-            handshakeRW.Write(certificate);
+            handshakeState.Write(certificate);
 
             //key exchange service
             CryptoSuite suite = CryptoSuites.Get(messagesContext.ServerHello.CipherSuite);
-            KeyExchangeService keyExchangeService = new KeyExchangeService(suite.KeyExchangeAlgorithm, suite.SigningAlgorithm, handshakeRW);
+            keyExchangeService = new KeyExchangeService(suite.KeyExchangeAlgorithm, suite.SigningAlgorithm, config.Certificates[0], handshakeState);
 
             //this is a conditional send based on parameters given in ctor above
             keyExchangeService.SendServerKeyExchange(messagesContext);
 
             //client authentication
             //do nothing but is present for future update how should it work
-
             clientAuthService.SendCertificateRequest( messagesContext);
 
             //done
-            handshakeRW.Write(new ServerHelloDone());
+            handshakeState.Write(new ServerHelloDone());
 
             //conditional certifiacate receive.
             clientAuthService.ReceiveCertificate(messagesContext);
@@ -136,19 +145,95 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             //mandatory step
             keyExchangeService.ReceiveClientKeyExchange(messagesContext);
 
-            //conditional receive
+            //conditional receive (currently do nothing)
             clientAuthService.ReceiveCertificateVerify(messagesContext);
 
-          
+            ProcessFinished();
 
-            
+        }
+
+        private void ProcessFinished()
+        {
+            UpdateSecrets();
+            RecordLayer12Params readParams, writeParams;
+
+            GetSecParams(out readParams, out writeParams);
+
+            // write mandatory Change cipher space (ignore result, is only 1 possible)
+            ccsState.Read();
+            //change write state of record layer 
+            recordLayer.ChangeReadCipherSpec(readParams);
+
+            ReadAndValidateFinished();
+
+            //read ccs from client
+            ccsState.Write();
+            //change read state in record layer
+            recordLayer.ChangeReadCipherSpec(writeParams);
+
+            SendFinished();
+        }
+
+        private void GetSecParams(out RecordLayer12Params writeParams, out RecordLayer12Params readParams)
+        {
+            readParams =  new RecordLayer12Params();
+            writeParams = new RecordLayer12Params();
+            RecordCryptoType commonCryptoType = CryptoSuites.Get(messagesContext.ServerHello.CipherSuite).RecordCryptoType;
+
+            readParams.BulkKey = secrets.ClientWriteKey;
+            readParams.MacKey = secrets.ClientWriteMacKey;
+            readParams.RecordCryptoType = commonCryptoType;
+
+            writeParams.BulkKey = secrets.ServerWriteKey;
+            writeParams.MacKey = secrets.ServerWriteMacKey;
+            writeParams.RecordCryptoType = commonCryptoType;
+        }
+
+        private void UpdateSecrets()
+        {
+            byte[] premaster = keyExchangeService.GetPremasterAsServer(messagesContext);
+            byte[] clientRandom = messagesContext.ClientHello.Random;
+            byte[] serverRandom = messagesContext.ServerHello.Random;
+            RecordCryptoType recordCryptoType = CryptoSuites.Get(messagesContext.ServerHello.CipherSuite).RecordCryptoType;
+
+            secrets = SecretGenerator.GenerateTls12Secrets(recordCryptoType, premaster, clientRandom, serverRandom);
+        }
+
+        private void ReadAndValidateFinished()
+        {
+            byte[] verifyData = ComputeCurrentVerifyData();
+            Handshake msg = handshakeState.Read();
+            string a = "";
+        }
+
+        private byte[] ComputeCurrentVerifyData()
+        {
+            OnHandshakeState.MsgData[] allMsg = handshakeState.ExchangeStack;
+
+            HMAC hmac = new HMACSHA256(secrets.MasterSecret);
+
+            for (int i = 0; i < allMsg.Length - 1; i++)
+            {
+                if (allMsg[i].Type == HandshakeType.HelloRequest || allMsg[i].Type == HandshakeType.CertificateVerify) continue;
+
+                hmac.TransformBlock(allMsg[i].RawBytes, 0, allMsg[i].RawBytes.Length, null, 0);
+            }
+
+            hmac.TransformFinalBlock(allMsg[allMsg.Length - 1].RawBytes, 0, allMsg[allMsg.Length - 1].RawBytes.Length);
+
+            byte[] hashSeed = hmac.Hash;
+            byte[] verifyData = PRF.Prf12(secrets.MasterSecret, "server finished", hashSeed, 12);
 
 
+            return verifyData;
+        }
 
+        private void SendFinished()
+        {
+            byte[] verifyData = ComputeCurrentVerifyData();
+            Finished finished = new Finished(verifyData);
 
-
-
-            
+            handshakeState.Write(finished);
         }
     }
 }

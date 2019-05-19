@@ -14,6 +14,8 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
         {
             //X509Chain ch = new X509Chain();
             //ch.Build(certificate.ANS1Certificate);
+
+
             List<byte[]> certBytes = new List<byte[]>();
             int certsLength = 0;
             foreach (var c in certificate.ANS1Certificates)
@@ -25,7 +27,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             byte[] result = new byte[(3 * certificate.ANS1Certificates.Length) + certsLength + 3];
             NumberConverter.FormatUInt24(result.Length - 3, result, 0);
 
-            int curWrite = 0;
+            int curWrite = 3;
 
             foreach (var c in certBytes)
             {

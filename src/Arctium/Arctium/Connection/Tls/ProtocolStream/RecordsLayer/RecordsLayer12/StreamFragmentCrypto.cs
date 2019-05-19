@@ -4,28 +4,23 @@ using Arctium.Connection.Tls.Protocol.BinaryOps;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
-    class StreamRecordCrypto : RecordCrypto
+    class StreamFragmentCrypto : IFragmentDecryptor, IFragmentEncryptor
     {
-        HMAC encryptHmac;
-        HMAC decryptHmac;
-        SymmetricAlgorithm encryptCipher;
-        SymmetricAlgorithm decryptCipher;
-        
+        HMAC hmac;
+        SymmetricAlgorithm cipher;
 
-        public StreamRecordCrypto(HMAC encryptHmac, HMAC decryptHmac, SymmetricAlgorithm encryptAlgo, SymmetricAlgorithm decryptAlgo)
+        public StreamFragmentCrypto(HMAC hmac, SymmetricAlgorithm symmetricAlgorithm)
         {
-            this.encryptHmac = encryptHmac;
-            this.decryptHmac = decryptHmac;
-            this.encryptCipher = encryptAlgo;
-            this.decryptCipher = decryptAlgo;
+            this.hmac = hmac;
+            this.cipher = symmetricAlgorithm;
         }
 
-        public override int Encrypt(RecordData recordData, byte[] outBuffer, int outOffset)
+        public int Encrypt(RecordData recordData, byte[] outBuffer, int outOffset)
         {
             byte[] hmac = ComputeEncryptHmac(recordData);
             Buffer.BlockCopy(hmac, 0, outBuffer, outOffset + recordData.Header.FragmentLength, hmac.Length);
 
-            ICryptoTransform encryptor = decryptCipher.CreateEncryptor();
+            ICryptoTransform encryptor = cipher.CreateEncryptor();
 
             encryptor.TransformBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength, outBuffer, outOffset);
 
@@ -46,19 +41,19 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             NumberConverter.FormatUInt24(recordData.Header.FragmentLength, seedBlock, 11);
 
 
-            encryptHmac.TransformBlock(seedBlock, 0, seedBlock.Length, null, 0);
-            encryptHmac.TransformFinalBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength);
+            hmac.TransformBlock(seedBlock, 0, seedBlock.Length, null, 0);
+            hmac.TransformFinalBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength);
 
-            return encryptHmac.Hash;
+            return hmac.Hash;
         }
 
-        public override int Decrypt(RecordData recordData, byte[] outBuffer, int outOffset)
+        public int Decrypt(RecordData recordData, byte[] outBuffer, int outOffset)
         {
-            ICryptoTransform decryptor = decryptCipher.CreateDecryptor();
+            ICryptoTransform decryptor = cipher.CreateDecryptor();
             int contentLength = decryptor.TransformBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength, outBuffer, outOffset);
 
 
-            byte[] hmac = ComputeDecryptHmac(outBuffer, outOffset, contentLength, recordData);
+            byte[] hmac = Computehmac(outBuffer, outOffset, contentLength, recordData);
 
             //validate hmac
 
@@ -66,7 +61,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             return contentLength;
         }
 
-        private byte[] ComputeDecryptHmac(byte[] contentBuffer, int contentOffset, int contentLength, RecordData recordData)
+        private byte[] Computehmac(byte[] contentBuffer, int contentOffset, int contentLength, RecordData recordData)
         {
             byte[] seedBlock = new byte[14];
 
@@ -78,20 +73,20 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
             NumberConverter.FormatUInt24(recordData.Header.FragmentLength, seedBlock, 11);
 
-            decryptHmac.TransformBlock(seedBlock, 0, seedBlock.Length, null, 0);
-            decryptHmac.TransformFinalBlock(contentBuffer, contentOffset, contentLength);
+            hmac.TransformBlock(seedBlock, 0, seedBlock.Length, null, 0);
+            hmac.TransformFinalBlock(contentBuffer, contentOffset, contentLength);
 
-            return decryptHmac.Hash;
+            return hmac.Hash;
         }
 
-        public override int GetEncryptedLength(int contentPlaintextLength)
+        public int GetEncryptedLength(int contentPlaintextLength)
         {
-            return contentPlaintextLength + (encryptHmac.HashSize / 8);
+            return contentPlaintextLength + (hmac.HashSize / 8);
         }
 
-        public override int GetDecryptedLength(int ciphertextFragmentLength)
+        public int GetDecryptedLength(int ciphertextFragmentLength)
         {
-            int length = ciphertextFragmentLength - (decryptHmac.HashSize / 8);
+            int length = ciphertextFragmentLength - (hmac.HashSize / 8) - (cipher.BlockSize / 8);
 
             if (length < 0) throw new InvalidOperationException("ciphertext fragment length is less than possible");
 

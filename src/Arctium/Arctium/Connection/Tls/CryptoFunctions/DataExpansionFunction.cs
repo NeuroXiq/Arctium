@@ -19,16 +19,8 @@ namespace Arctium.Connection.Tls.CryptoFunctions
         ///<remarks></remarks>
         public byte[] Generate(byte[] secret, byte[] seed, int length)
         {
-            HMAC hmac;
-            if (macAlgo == CryptoConfiguration.HashAlgorithmType.MD5)
-            {
-                hmac = new HMACMD5(secret);
-            }
-            else if (macAlgo == CryptoConfiguration.HashAlgorithmType.SHA1)
-            {
-                hmac = new HMACSHA1(secret);
-            }
-            else throw new NotSupportedException();
+            HMAC hmac = BuildHmac(secret);
+            
 
             int hashSizeInBytes = hmac.HashSize / 8;
             int hashesCount = ((length - 1) / hashSizeInBytes) + 1;
@@ -55,6 +47,19 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             Array.Copy(hashesSequence, 0, result, 0, length);
 
             return result;
+        }
+
+        private HMAC BuildHmac(byte[] secret)
+        {
+            switch (macAlgo)
+            {
+                case HashAlgorithmType.MD5: return new HMACMD5(secret);
+                case HashAlgorithmType.SHA1: return new HMACSHA1(secret);
+                case HashAlgorithmType.SHA256: return new HMACSHA256(secret);
+                case HashAlgorithmType.SHA384: return new HMACSHA384(secret);
+                case HashAlgorithmType.SHA512: return new HMACSHA512(secret);
+                default: throw new InvalidOperationException("not implemented hmac ??");
+            }
         }
 
         private byte[] Join(byte[] current, byte[] seed)

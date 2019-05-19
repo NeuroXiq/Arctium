@@ -29,6 +29,7 @@ namespace Arctium.Connection.Tls.Buffers
             if (appendFreeSpace < appendLength)
             {
                 Buffer.BlockCopy(DataBuffer, DataOffset, DataBuffer, 0, DataLength);
+                DataOffset = 0;
             }
         }
 
@@ -39,6 +40,7 @@ namespace Arctium.Connection.Tls.Buffers
             Buffer.BlockCopy(DataBuffer, DataOffset, newBuf, 0, DataLength);
 
             DataBuffer = newBuf;
+            DataOffset = 0;
         }
 
         public void Remove(int count)

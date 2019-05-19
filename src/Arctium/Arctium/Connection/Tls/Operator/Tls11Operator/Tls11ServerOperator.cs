@@ -170,7 +170,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             handshakeState.HandshakeEnd = true;
 
             //work to this point
-            PseudoRandomFunction prf = new PseudoRandomFunction();
+            PRF prf = new PRF();
             MD5 md5 = MD5.Create();
             SHA1 sha1 = SHA1.Create();
 
@@ -187,7 +187,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             byte[] hashesSeed = BufferTools.Join(md5ReceivedHash, sha1ReceivedHash);
 
-            byte[] res = prf.Prf(handshakeState.SecParams.MasterSecret, "client finished", hashesSeed, 12);
+            byte[] res = prf.Prf11(handshakeState.SecParams.MasterSecret, "client finished", hashesSeed, 12);
 
             if (!BufferTools.IsContentEqual(res, finished.VerifyData)) throw new Exception("Invalid finished messages");
 
@@ -197,7 +197,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             byte[] prfToSendSeed = BufferTools.Join(md5ToSendSeed, sha1ToSendSeed);
 
-            byte[] toSendVerifyData = prf.Prf(handshakeState.SecParams.MasterSecret, "server finished", prfToSendSeed, 12);
+            byte[] toSendVerifyData = prf.Prf11(handshakeState.SecParams.MasterSecret, "server finished", prfToSendSeed, 12);
 
             Finished toSendFinished = new Finished(toSendVerifyData);
 
