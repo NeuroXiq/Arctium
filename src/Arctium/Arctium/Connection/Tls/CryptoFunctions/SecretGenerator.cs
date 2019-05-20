@@ -26,16 +26,18 @@ namespace Arctium.Connection.Tls.CryptoFunctions
         {
             int macKeySize = CryptoConst.HashSize(cryptoType.MACAlgorithm) / 8;
             int keySize = cryptoType.KeySize / 8;
-            int ivSize = cryptoType.KeySize / 8;
-            int keyBlockSize = 2 * (macKeySize + keySize + ivSize);
+            //int ivSize = cryptoType.KeySize / 8;
+            int keyBlockSize = 2 * (macKeySize + keySize);
 
             byte[] masterSecret = PRF.Prf12(premaster, "master secret", BufferTools.Join(clientRandom, serverRandom), 48);
             byte[] keyBlock = PRF.Prf12(masterSecret, "key expansion", BufferTools.Join(serverRandom, clientRandom), keyBlockSize);
 
+
             Tls12Secrets secrets = new Tls12Secrets();
 
-            secrets.ClientIV = new byte[ivSize];
-            secrets.ServerIV = new byte[ivSize];
+            secrets.MasterSecret = masterSecret;
+            //secrets.ClientIV = new byte[ivSize];
+            //secrets.ServerIV = new byte[ivSize];
             secrets.ClientWriteKey = new byte[keySize];
             secrets.ServerWriteKey = new byte[keySize];
             secrets.ClientWriteMacKey = new byte[macKeySize];
@@ -45,8 +47,8 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             Buffer.BlockCopy(keyBlock, macKeySize, secrets.ServerWriteMacKey, 0, macKeySize);
             Buffer.BlockCopy(keyBlock, 2 * macKeySize, secrets.ClientWriteKey, 0, keySize);
             Buffer.BlockCopy(keyBlock, (2 * macKeySize) + keySize, secrets.ServerWriteKey, 0, keySize);
-            Buffer.BlockCopy(keyBlock, 2 * (macKeySize + keySize), secrets.ClientIV, 0, ivSize);
-            Buffer.BlockCopy(keyBlock, (2  * (macKeySize + keySize)) + ivSize, secrets.ServerIV, 0, ivSize);
+            //Buffer.BlockCopy(keyBlock, 2 * (macKeySize + keySize), secrets.ClientIV, 0, ivSize);
+            //Buffer.BlockCopy(keyBlock, (2  * (macKeySize + keySize)) + ivSize, secrets.ServerIV, 0, ivSize);
 
             return secrets;
         }
@@ -147,3 +149,30 @@ namespace Arctium.Connection.Tls.CryptoFunctions
 //}
 //
 //return new TlsKeys();
+
+
+//     """
+//        Generate 100 bytes of pseudo-randomness using TLS1.2PRF-SHA256
+//        """
+//        secret = (
+//            b'\x9b\xbe\x43\x6b\xa9\x40\xf0\x17\xb1\x76\x52\x84\x9a\x71\xdb\x35'
+//        )
+//        seed = (
+//            b'\xa0\xba\x9f\x93\x6c\xda\x31\x18\x27\xa6\xf7\x96\xff\xd5\x19\x8c'
+//        )
+//        label = b'test label'
+//        expected_output = (
+//            b'\xe3\xf2\x29\xba\x72\x7b\xe1\x7b'
+//            b'\x8d\x12\x26\x20\x55\x7c\xd4\x53'
+//            b'\xc2\xaa\xb2\x1d\x07\xc3\xd4\x95'
+//            b'\x32\x9b\x52\xd4\xe6\x1e\xdb\x5a'
+//            b'\x6b\x30\x17\x91\xe9\x0d\x35\xc9'
+//            b'\xc9\xa4\x6b\x4e\x14\xba\xf9\xaf'
+//            b'\x0f\xa0\x22\xf7\x07\x7d\xef\x17'
+//            b'\xab\xfd\x37\x97\xc0\x56\x4b\xab'
+//            b'\x4f\xbc\x91\x66\x6e\x9d\xef\x9b'
+//            b'\x97\xfc\xe3\x4f\x79\x67\x89\xba'
+//            b'\xa4\x80\x82\xd1\x22\xee\x42\xc5'
+//            b'\xa7\x2e\x5a\x51\x10\xff\xf7\x01'
+//            b'\x87\x34\x7b\x66'
+//)

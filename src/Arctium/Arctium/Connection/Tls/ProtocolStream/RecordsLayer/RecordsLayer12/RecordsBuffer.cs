@@ -42,6 +42,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             dataOffset += fragmentLength + RecordConst.HeaderLength;
             dataLength -= fragmentLength + RecordConst.HeaderLength;
 
+            if (dataLength == 0) dataOffset = 0;
+
             return currentHeaderOffset;
         }
 

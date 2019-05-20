@@ -46,8 +46,20 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             switch (secParams.RecordCryptoType.BulkCipherAlgorithm)
             {
                 case BulkCipherAlgorithm.AES:
-                    return new BlockFragmentCrypto(hmac, new AesCryptoServiceProvider() { Key = secParams.BulkKey });
+                    CipherMode mode = GetBlockCipherMode(secParams);
+                    return new BlockFragmentCrypto(hmac, new AesCryptoServiceProvider() { Key = secParams.BulkKey, Padding = PaddingMode.None, Mode = mode });
                 default: throw new NotSupportedException("Intenral error Tls12 algorithm not supported");
+            }
+        }
+
+        private static CipherMode GetBlockCipherMode(RecordLayer12Params secParams)
+        {
+            switch (secParams.RecordCryptoType.BlockCipherMode)
+            {
+                case BlockCipherMode.ECB: return CipherMode.ECB;
+                case BlockCipherMode.CBC:  return CipherMode.CBC;
+                case BlockCipherMode.OFB: return CipherMode.OFB;
+                default: throw new Exception("internal error, cipher mode not currently defined in cryptofactory");
             }
         }
 

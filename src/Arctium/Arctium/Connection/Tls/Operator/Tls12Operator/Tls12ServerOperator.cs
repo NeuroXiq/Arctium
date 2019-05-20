@@ -150,6 +150,10 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             ProcessFinished();
 
+
+            handshakeState.Read();
+
+            string a = "";
         }
 
         private void ProcessFinished()
@@ -157,7 +161,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             UpdateSecrets();
             RecordLayer12Params readParams, writeParams;
 
-            GetSecParams(out readParams, out writeParams);
+            GetSecParams(out writeParams, out readParams);
 
             // write mandatory Change cipher space (ignore result, is only 1 possible)
             ccsState.Read();
@@ -166,10 +170,10 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             ReadAndValidateFinished();
 
-            //read ccs from client
+            
             ccsState.Write();
             //change read state in record layer
-            recordLayer.ChangeReadCipherSpec(writeParams);
+            recordLayer.ChangeWriteCipherSpec(writeParams);
 
             SendFinished();
         }
@@ -201,36 +205,56 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void ReadAndValidateFinished()
         {
-            byte[] verifyData = ComputeCurrentVerifyData();
-            Handshake msg = handshakeState.Read();
-            string a = "";
-        }
+            
 
-        private byte[] ComputeCurrentVerifyData()
-        {
             OnHandshakeState.MsgData[] allMsg = handshakeState.ExchangeStack;
 
-            HMAC hmac = new HMACSHA256(secrets.MasterSecret);
+            SHA256 sha256c = SHA256.Create();
 
             for (int i = 0; i < allMsg.Length - 1; i++)
             {
                 if (allMsg[i].Type == HandshakeType.HelloRequest || allMsg[i].Type == HandshakeType.CertificateVerify) continue;
 
-                hmac.TransformBlock(allMsg[i].RawBytes, 0, allMsg[i].RawBytes.Length, null, 0);
+                sha256c.TransformBlock(allMsg[i].RawBytes, 0, allMsg[i].RawBytes.Length, null, 0);
             }
 
-            hmac.TransformFinalBlock(allMsg[allMsg.Length - 1].RawBytes, 0, allMsg[allMsg.Length - 1].RawBytes.Length);
+            sha256c.TransformFinalBlock(allMsg[allMsg.Length - 1].RawBytes, 0, allMsg[allMsg.Length - 1].RawBytes.Length);
 
-            byte[] hashSeed = hmac.Hash;
-            byte[] verifyData = PRF.Prf12(secrets.MasterSecret, "server finished", hashSeed, 12);
+            Finished finished = (Finished)handshakeState.Read();
+
+            byte[] hashSeed = sha256c.Hash;
+            byte[] verifyData = PRF.Prf12(secrets.MasterSecret, "client finished", hashSeed, 12);
+
+            for (int i = 0; i < verifyData.Length; i++)
+            {
+                if (verifyData[i] != finished.VerifyData[i]) throw new Exception("inalid finished");
+            }
 
 
-            return verifyData;
         }
+
+     
 
         private void SendFinished()
         {
-            byte[] verifyData = ComputeCurrentVerifyData();
+            OnHandshakeState.MsgData[] allMsg = handshakeState.ExchangeStack;
+
+            SHA256 sha256c = SHA256.Create();
+
+            for (int i = 0; i < allMsg.Length - 1; i++)
+            {
+                if (allMsg[i].Type == HandshakeType.HelloRequest || allMsg[i].Type == HandshakeType.CertificateVerify) continue;
+
+                sha256c.TransformBlock(allMsg[i].RawBytes, 0, allMsg[i].RawBytes.Length, null, 0);
+            }
+
+            sha256c.TransformFinalBlock(allMsg[allMsg.Length - 1].RawBytes, 0, allMsg[allMsg.Length - 1].RawBytes.Length);
+
+            byte[] hashSeed = sha256c.Hash;
+            byte[] verifyData = PRF.Prf12(secrets.MasterSecret, "server finished", hashSeed, 12);
+
+
+            
             Finished finished = new Finished(verifyData);
 
             handshakeState.Write(finished);

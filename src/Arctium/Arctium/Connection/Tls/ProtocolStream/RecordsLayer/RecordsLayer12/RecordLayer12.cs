@@ -77,25 +77,28 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             reusableEncryptBuffer[1] = 3;
             reusableEncryptBuffer[2] = 3;
 
-            NumberConverter.FormatUInt16((ushort)length, reusableEncryptBuffer, 3);
+            //NumberConverter.FormatUInt16((ushort)length, reusableEncryptBuffer, 3);
 
             RecordData data = new RecordData();
             data.Buffer = buffer;
-            data.FragmentOffset = 5;
-            data.SeqNum = writeSeqNum;
             data.FragmentOffset = offset;
+            data.SeqNum = writeSeqNum;
             data.Header = new RecordHeader(contentType, new ProtocolVersion(3, 3), length);
 
             int encryptedLength = writeRecordCrypto.Encrypt(data, reusableEncryptBuffer, 5);
 
+            NumberConverter.FormatUInt16((ushort)encryptedLength, reusableEncryptBuffer, 3);
+
             innerStream.Write(reusableEncryptBuffer, 0, encryptedLength + RecordConst.HeaderLength);
 
+            writeSeqNum++;
         }
 
         public void ChangeWriteCipherSpec(RecordLayer12Params secParams)
         {
             writeSeqNum = 0;
             writeRecordCrypto = RecordCryptoFactory.CreateEncryptor(secParams);
+           
         }
 
         public void ChangeReadCipherSpec(RecordLayer12Params secParams)
