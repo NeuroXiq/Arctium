@@ -9,6 +9,6 @@ Implemented standards (or not implemented yet):
 |Status|Not implemented|Not implemented|Not implemented|Not implemented|
 
  
-**Currently working on:** TLS 1.
+**Currently working on:** TLS 1.2** 
 
-2**First example of server side connection, see:** [samples](https://github.com/NeuroXiq/Arctium/blob/master/samples/Tls%20Server%20Connection.cs)
+First example of server side connection, see:** [samples](https://github.com/NeuroXiq/Arctium/blob/master/samples/Tls%20Server%20Connection.cs)
