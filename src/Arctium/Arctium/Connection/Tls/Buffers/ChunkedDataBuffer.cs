@@ -2,7 +2,7 @@
 
 namespace Arctium.Connection.Tls.Buffers
 {
-    ///<summary>Utility buffers to work with chunked data</summary>
+    ///<summary>buffer helps working with chunked data</summary>
     class ChunkedDataBuffer
     {
         public int DataOffset { get; private set; }
@@ -17,7 +17,14 @@ namespace Arctium.Connection.Tls.Buffers
             DataLength = 0;
         }
 
-        public void PrepareToAppend(int appendLength)
+        public void Append(byte[] buffer, int offset, int length)
+        {
+            PrepareToAppend(length);
+            Buffer.BlockCopy(buffer, offset, DataBuffer, DataLength + DataOffset, length);
+            DataLength += length;
+        }
+
+        private void PrepareToAppend(int appendLength)
         {
             if (totalFreeSpace < appendLength)
             {

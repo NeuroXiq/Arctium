@@ -19,12 +19,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public static RecordLayer12Params InitWriteSecParams { get { return InitReadSecParams; } }
 
-        public static IFragmentDecryptor CreateDecryptor(RecordLayer12Params secParams)
-        {
-            return (IFragmentDecryptor)(CreateEncryptor(secParams));
-        }
-
-        public static IFragmentEncryptor CreateEncryptor(RecordLayer12Params secParams)
+        public static IRecordCryptoFilter CreateRecordCryptoFilter(RecordLayer12Params secParams)
         {
             switch (secParams.RecordCryptoType.CipherType)
             {
@@ -35,12 +30,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             }
         }
 
-        private static IFragmentEncryptor BuildAeadRecordCrypto(RecordLayer12Params secParams)
+        private static IRecordCryptoFilter BuildAeadRecordCrypto(RecordLayer12Params secParams)
         {
             throw new NotImplementedException("aead not supported");
         }
 
-        private static IFragmentEncryptor BuildBlockRecordCrypto(RecordLayer12Params secParams)
+        private static IRecordCryptoFilter BuildBlockRecordCrypto(RecordLayer12Params secParams)
         {
             HMAC hmac = BuildHmac(secParams);
             switch (secParams.RecordCryptoType.BulkCipherAlgorithm)
@@ -63,7 +58,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             }
         }
 
-        private static IFragmentEncryptor BuildStreamRecordCrypto(RecordLayer12Params secParams)
+        private static IRecordCryptoFilter BuildStreamRecordCrypto(RecordLayer12Params secParams)
         {
             HMAC hmac = BuildHmac(secParams);
             SymmetricAlgorithm cipher;

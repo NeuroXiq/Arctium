@@ -33,6 +33,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         List<MsgData> fragmentsExchangeStack;
 
+        byte[] readBuffer = new byte[0x48 + 2048];
+
         public OnHandshakeState(RecordLayer12 recordLayer)
         {
             this.recordLayer = recordLayer;
@@ -66,7 +68,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             byte[] fragmentBytes = formatter.GetBytes(message);
             fragmentsExchangeStack.Add(new MsgData(fragmentBytes, message.MsgType));
-            recordLayer.WriteFragment(fragmentBytes, 0, fragmentBytes.Length, ContentType.Handshake);
+            recordLayer.Write(fragmentBytes, 0, fragmentBytes.Length, ContentType.Handshake);
         }
 
         private void LoadMessageToBuffer()
@@ -87,14 +89,11 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         private void LoadHandshakeFragment()
         {
             ContentType type;
-            FragmentData data = recordLayer.ReadFragment(out type);
+            int readed = recordLayer.ReadFragment(readBuffer, 0, out type);
 
             if (type != ContentType.Handshake) throw new Exception("invalid fragment");
 
-            buffer.PrepareToAppend(data.Length);
-            data.Copy(buffer.DataBuffer, buffer.DataOffset + buffer.DataLength);
-            buffer.DataLength += data.Length;
-
+            buffer.Append(readBuffer, 0, readed);
         }
     }
 }

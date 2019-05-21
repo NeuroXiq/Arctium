@@ -9,6 +9,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
     class OnCCSState
     {
         RecordLayer12 recordLayer;
+        byte[] readBuffer = new byte[0x4800 + 2048];
 
         public OnCCSState(RecordLayer12 recordLayer)
         {
@@ -18,18 +19,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         public ChangeCipherSpec Read()
         {
             ContentType type;
-            FragmentData data = recordLayer.ReadFragment(out type);
+            int readed = recordLayer.ReadFragment(readBuffer,0,out type);
 
             if (type != ContentType.ChangeCipherSpec) throw new Exception("expected change cipher spec");
 
-            if (data.Length != 1) throw new Exception("invalid length of ccs fragment message");
+            if (readed != 1) throw new Exception("invalid length of ccs fragment message");
 
-            byte[] buf = new byte[1];
-            data.Copy(buf, 0);
-
-
-
-            if (((byte)ChangeCipherSpecType.ChangeCipherSpec != buf[0])) throw new Exception("Invalid change cipher spec value");
+            if (((byte)ChangeCipherSpecType.ChangeCipherSpec != readBuffer[0])) throw new Exception("Invalid change cipher spec value");
 
             return new ChangeCipherSpec() { CCSType = ChangeCipherSpecType.ChangeCipherSpec };
         }
@@ -38,7 +34,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             //formatting is so simple (is only 1 bytes of value 1) that can be hardcoded
             byte[] ccsBytes = new byte[] { 1 };
-            recordLayer.WriteFragment(ccsBytes, 0, 1, ContentType.ChangeCipherSpec);
+            recordLayer.Write(ccsBytes, 0, 1, ContentType.ChangeCipherSpec);
         }
     }
 }

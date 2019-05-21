@@ -11,7 +11,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
 
     ///<summary>This class facilitate work with tls records</summary>
-    class RecordsBuffer
+    class RecordReader
     {
         public byte[] DataBuffer { get; private set; }
 
@@ -22,9 +22,9 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         int maxFragmentLength;
 
 
-        public RecordsBuffer(Stream innerStream, int maxFragmentLength)
+        public RecordReader(Stream innerStream, int maxFragmentLength)
         {
-            DataBuffer = new byte[0x100];
+            DataBuffer = new byte[0x4800];
             dataLength = 0;
             dataOffset = 0;
             this.maxFragmentLength = maxFragmentLength;
@@ -34,11 +34,12 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         ///<summary>Returns current offset of the loaded record in DataBuffer</summary>
         public int ReadNext()
         {
-            BufferLoad(RecordConst.HeaderLength);
+            ReachDataLength(RecordConst.HeaderLength);
             int fragmentLength = FixedRecordInfo.FragmentLength(DataBuffer, dataOffset);
-            BufferLoad(fragmentLength + RecordConst.HeaderLength);
+            ReachDataLength(fragmentLength + RecordConst.HeaderLength);
 
             int currentHeaderOffset = dataOffset;
+            
             dataOffset += fragmentLength + RecordConst.HeaderLength;
             dataLength -= fragmentLength + RecordConst.HeaderLength;
 
@@ -48,7 +49,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         }
 
         ///<summary>Ensures that in buffer is at least minDataLength bytes</summary>
-        private void BufferLoad(int minDataLength)
+        private void ReachDataLength(int minDataLength)
         {
             //already contains, nothing to do
             if(minDataLength <= dataLength) return;

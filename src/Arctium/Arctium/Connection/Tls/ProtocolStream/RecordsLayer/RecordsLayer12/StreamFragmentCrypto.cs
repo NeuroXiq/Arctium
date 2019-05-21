@@ -1,96 +1,120 @@
 ﻿using System.Security.Cryptography;
 using System;
 using Arctium.Connection.Tls.Protocol.BinaryOps;
+using Arctium.Connection.Tls.Protocol.RecordProtocol;
+using System.IO;
+using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
+using Arctium.Connection.Tls.Protocol.FormatConsts;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
-    class StreamFragmentCrypto : IFragmentDecryptor, IFragmentEncryptor
+    class StreamFragmentCrypto : IRecordCryptoFilter
     {
         HMAC hmac;
         SymmetricAlgorithm cipher;
 
+        int macSize;
+
+        RecordReader recordReader;
+        Stream writeStream;
+
+        ulong writeSeqNum;
+        ulong readSeqNum;
+
+        //resuable write record buffer
+        byte[] recordWriteBuffer;
+
         public StreamFragmentCrypto(HMAC hmac, SymmetricAlgorithm symmetricAlgorithm)
         {
             this.hmac = hmac;
-            this.cipher = symmetricAlgorithm;
+            macSize = hmac.HashSize / 8;
+            cipher = symmetricAlgorithm;
+            writeSeqNum = readSeqNum = 0;
+            recordWriteBuffer = new byte[0];
         }
 
-        public int Encrypt(RecordData recordData, byte[] outBuffer, int outOffset)
+        public void SetRecordReader(RecordReader recordReader)
         {
-            byte[] hmac = ComputeEncryptHmac(recordData);
-            Buffer.BlockCopy(hmac, 0, outBuffer, outOffset + recordData.Header.FragmentLength, hmac.Length);
-
-            ICryptoTransform encryptor = cipher.CreateEncryptor();
-
-            encryptor.TransformBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength, outBuffer, outOffset);
-
-            return hmac.Length + recordData.Header.FragmentLength;
+            this.recordReader = recordReader;
         }
 
-        private byte[] ComputeEncryptHmac(RecordData recordData)
+        public void SetWriteStream(Stream writeStream)
         {
+            this.writeStream = writeStream;
+        }
 
-            byte[] seedBlock = new byte[14];
+        public void SetReadSequenceNumber(ulong seqNum)
+        {
+            readSeqNum = seqNum;
+        }
 
-            NumberConverter.FormatUInt64(recordData.SeqNum, seedBlock, 0);
+        public void SetWriteSequenceNumber(ulong seqNum)
+        {
+            writeSeqNum = seqNum;
+        }
 
-            seedBlock[8] =  (byte)recordData.Header.ContentType;
-            seedBlock[9] = (byte)recordData.Header.Version.Major;
-            seedBlock[10] = (byte)recordData.Header.Version.Minor;
+        public int ReadFragment(byte[] buffer, int offset, out ContentType contentType)
+        {
+            int recordOffset = recordReader.ReadNext();
+            RecordHeader header = FixedRecordInfo.GetHeader(recordReader.DataBuffer, recordOffset);
 
-            NumberConverter.FormatUInt24(recordData.Header.FragmentLength, seedBlock, 11);
+            var decryptor = cipher.CreateDecryptor();
+            int decryptedCount = 
+                decryptor.TransformBlock(recordReader.DataBuffer, recordOffset + RecordConst.HeaderLength, header.FragmentLength - macSize, buffer, offset);
+
+            contentType = header.ContentType;
+
+            readSeqNum++;
+            return decryptedCount;
+        }
+
+        public void WriteFragment(byte[] buffer, int offset, int length, ContentType contentType)
+        {
+            if (length > RecordConst.MaxTlsPlaintextFramentLength) throw new Exception("Length exceed record fragment length limit. Partition data first");
+
+            int totalRecordLength = length + RecordConst.HeaderLength + macSize;
+            if (totalRecordLength > recordWriteBuffer.Length) recordWriteBuffer = new byte[totalRecordLength];
+            int ciphertextFragmentLength = length + macSize;
 
 
-            hmac.TransformBlock(seedBlock, 0, seedBlock.Length, null, 0);
-            hmac.TransformFinalBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength);
+            //record formatting
+            recordWriteBuffer[0] = (byte)contentType;
+            recordWriteBuffer[1] = 3;
+            recordWriteBuffer[2] = 3;
+            NumberConverter.FormatUInt16((ushort)ciphertextFragmentLength, recordWriteBuffer, 3);
+
+            var encryptor = cipher.CreateEncryptor();
+
+            int encryptedCount = encryptor.TransformBlock(buffer, offset, length, recordWriteBuffer, 5);
+
+            byte[] mac = ComputeHmac(writeSeqNum, contentType, buffer, offset, length);
+
+            Buffer.BlockCopy(mac, 0, recordWriteBuffer, RecordConst.HeaderLength + encryptedCount, mac.Length);
+
+            writeStream.Write(recordWriteBuffer, 0, totalRecordLength);
+
+            writeSeqNum++;   
+        }
+
+        private byte[] ComputeHmac(ulong seqNum, ContentType contentType, byte[] buffer, int offset, int length)
+        {
+            if (macSize == 0) return new byte[0];
+
+            byte[] prefix = new byte[13];
+            NumberConverter.FormatUInt64(seqNum, prefix, 0);
+            prefix[8] = (byte)contentType;
+            prefix[9] = 3;
+            prefix[10] = 3;
+            NumberConverter.FormatUInt16((ushort)length, prefix, 11);
+
+            byte[] holdKey = hmac.Key;
+            hmac.Initialize();
+            hmac.Key = holdKey;
+
+            hmac.TransformBlock(prefix, 0, prefix.Length, null, 0);
+            hmac.TransformFinalBlock(buffer, offset, length);
 
             return hmac.Hash;
-        }
-
-        public int Decrypt(RecordData recordData, byte[] outBuffer, int outOffset)
-        {
-            ICryptoTransform decryptor = cipher.CreateDecryptor();
-            int contentLength = decryptor.TransformBlock(recordData.Buffer, recordData.FragmentOffset, recordData.Header.FragmentLength, outBuffer, outOffset);
-
-
-            byte[] hmac = Computehmac(outBuffer, outOffset, contentLength, recordData);
-
-            //validate hmac
-
-
-            return contentLength;
-        }
-
-        private byte[] Computehmac(byte[] contentBuffer, int contentOffset, int contentLength, RecordData recordData)
-        {
-            byte[] seedBlock = new byte[14];
-
-            NumberConverter.FormatUInt64(recordData.SeqNum, seedBlock, 0);
-
-            seedBlock[8] = (byte)recordData.Header.ContentType;
-            seedBlock[9] = (byte)recordData.Header.Version.Major;
-            seedBlock[10] = (byte)recordData.Header.Version.Minor;
-
-            NumberConverter.FormatUInt24(recordData.Header.FragmentLength, seedBlock, 11);
-
-            hmac.TransformBlock(seedBlock, 0, seedBlock.Length, null, 0);
-            hmac.TransformFinalBlock(contentBuffer, contentOffset, contentLength);
-
-            return hmac.Hash;
-        }
-
-        public int GetEncryptedLength(int contentPlaintextLength)
-        {
-            return contentPlaintextLength + (hmac.HashSize / 8);
-        }
-
-        public int GetDecryptedLength(int ciphertextFragmentLength)
-        {
-            int length = ciphertextFragmentLength - (hmac.HashSize / 8) - (cipher.BlockSize / 8);
-
-            if (length < 0) throw new InvalidOperationException("ciphertext fragment length is less than possible");
-
-            return length;
         }
     }
 }

@@ -12,5 +12,6 @@ namespace Arctium.Connection.Tls.Configuration
         public object clientVerification;
         public object extensions;
         public object SessionCache;
+        
     }
 }

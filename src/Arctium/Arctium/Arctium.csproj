@@ -51,11 +51,10 @@
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HelloExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\KeyExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\OnCCSState.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IFragmentDecryptor.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IFragmentEncryptor.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordData.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordFormatException.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IRecordCryptoFilter.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordsBuffer.cs" />
+    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordReader.cs" />
     <Compile Include="Connection\Tls\Configuration\DefaultConfigurations.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls11ServerConfig.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls12ServerConfig.cs" />
@@ -69,7 +68,6 @@
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HandshakeStack.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\AeadFragmentCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\BlockFragmentCrypto.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\FragmentData.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PRF.cs" />
