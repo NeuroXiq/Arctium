@@ -2,7 +2,7 @@
 
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 {
-    class AlpnExtension : TlsHandshakeExtension
+    public class AlpnExtension : TlsHandshakeExtension
     {
         public AlpnExtension() : base(HandshakeExtensionType.ALPN) { }
     }

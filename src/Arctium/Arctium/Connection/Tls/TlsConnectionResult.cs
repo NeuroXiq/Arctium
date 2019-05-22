@@ -5,8 +5,6 @@ namespace Arctium.Connection.Tls
 {
     public class TlsConnectionResult
     {
-        ///<summary>Indicates on which version of TLS connection was established.</summary>
-        public TlsProtocolType ProtocolType;
         public HandshakeExtension[] Extensions;
         public TlsStream TlsStream;
     }

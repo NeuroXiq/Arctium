@@ -1,9 +1,4 @@
 ﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 {
@@ -11,7 +6,7 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
     // Hides internal representation of the handshake extensions to public usage
     //
 
-    class TlsHandshakeExtension
+    public class TlsHandshakeExtension
     {
         HandshakeExtensionType internalExtensionType;
 

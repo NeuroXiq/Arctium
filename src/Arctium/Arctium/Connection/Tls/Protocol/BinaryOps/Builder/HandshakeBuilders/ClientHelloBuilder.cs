@@ -16,6 +16,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             public int CipSuiteLen;
             public int CipSuite;
             public int ComprMeth;
+            public int ComprMethLen;
             public int Exts;
             public int ExtsLen;
         }
@@ -28,7 +29,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 
         public ClientHello BuildClientHello(byte[] buffer, int clientHelloOffset, int bytesInMessage)
         {
-            //Format format = GetFormat(buffer, clientHelloOffset, bytesInMessage);
+            Format format = GetFormat(buffer, clientHelloOffset, bytesInMessage);
 
             int sessionIdLength = -1;
             int cipherSuiteLength = -1;
@@ -88,10 +89,13 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             //offset of the cipher suites
             fmt.CipSuite = fmt.SesId + fmt.SesIdLen + 2;
 
-            fmt.ComprMeth = fmt.CipSuite + fmt.CipSuiteLen;
+
+            if (fmt.CipSuite + fmt.CipSuiteLen > maxOffset) throw new Exception("invalid foramt");
+            fmt.ComprMethLen = buffer[fmt.CipSuite + fmt.CipSuiteLen];
+            fmt.ComprMeth = fmt.CipSuite + fmt.CipSuiteLen + 1;
 
             fmt.Exts = fmt.ComprMeth + 1;
-            fmt.ExtsLen = length - fmt.ComprMeth - offset + 1;
+            fmt.ExtsLen = length - (fmt.ComprMeth - offset) + 1;
 
             return fmt;
         }

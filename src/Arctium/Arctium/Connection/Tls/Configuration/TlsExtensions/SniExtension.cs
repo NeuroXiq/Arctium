@@ -2,7 +2,7 @@
 
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 {
-    class SniExtension : TlsHandshakeExtension
+    public class SniExtension : TlsHandshakeExtension
     {
         public SniExtension() : base(HandshakeExtensionType.ServerName)
         {

@@ -75,6 +75,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void LoadMessageToBuffer()
         {
+                   
             while (buffer.DataLength < HandshakeConst.HeaderLength)
             {
                 LoadHandshakeFragment();

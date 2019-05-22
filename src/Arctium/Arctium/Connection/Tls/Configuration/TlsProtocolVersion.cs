@@ -3,7 +3,7 @@
 namespace Arctium.Connection.Tls.Configuration
 {
     [Flags]
-    public enum TlsProtocolType
+    public enum TlsProtocolVersion
     {
         Tls11,
         Tls12,

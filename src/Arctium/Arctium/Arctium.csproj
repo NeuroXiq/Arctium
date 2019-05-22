@@ -59,7 +59,6 @@
     <Compile Include="Connection\Tls\Configuration\DefaultConfigurations.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls11ServerConfig.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls12ServerConfig.cs" />
-    <Compile Include="Connection\Tls\Configuration\TlsServerConfig.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\CryptoConst.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Enum\SignatureAlgorithm.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\ProtectedStruct.cs" />
@@ -157,7 +156,7 @@
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Enum\ContentType.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolVersion.cs" />
     <Compile Include="Connection\Tls\Protocol\RecordProtocol\Record.cs" />
-    <Compile Include="Connection\Tls\Configuration\TlsProtocolType.cs" />
+    <Compile Include="Connection\Tls\Configuration\TlsProtocolVersion.cs" />
     <Compile Include="Connection\Tls\TlsClientConnection.cs" />
     <Compile Include="Connection\Tls\TlsConnectionResult.cs" />
     <Compile Include="Connection\Tls\TlsServerConnection.cs" />

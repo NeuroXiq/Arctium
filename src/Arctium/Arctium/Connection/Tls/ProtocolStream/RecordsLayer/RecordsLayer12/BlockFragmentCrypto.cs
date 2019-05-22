@@ -37,7 +37,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
             //padding include 
             int minFragmentLen = macSize + blockSize;
-            minimumFragmentLength = minFragmentLen + blockSize - (minimumFragmentLength % blockSize);
+            minimumFragmentLength = minFragmentLen + blockSize - (minFragmentLen % blockSize);
 
             //max padding length included
             int maxFragmLen = RecordConst.MaxTlsPlaintextFramentLength + macSize + blockSize;

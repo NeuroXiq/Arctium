@@ -2,13 +2,29 @@
 Arctium will be a simple TLS protocol implementation written in C#. 
 Implemented standards (or not implemented yet):
 
+|Version | TLS 1.1 | TLS 1.2 |TLS 1.2 Extensions| TLS 1.3|
+|:--------:|:---------:|:-----------------:|:-------------:|:--------:|
+|Standard |[RFC 4346]  |[RFC 5246]         |[RFC 6066]     |[RFC 8446]|
+|Status|Not implemented|Partial implemented|Not implemented|Not implemented|
 
-|Version| TLS 1.1 | TLS 1.2 |TLS 1.2 Extensions| TLS 1.3|
-|--|--|--|--|--|
-|Standard|[RFC 4346](https://www.ietf.org/rfc/rfc4346.txt)|[RFC 5246](https://www.ietf.org/rfc/rfc5246.txt) |[RFC 6066](https://tools.ietf.org/html/rfc6066)|[RFC 8446](https://tools.ietf.org/html/rfc8446)|
-|Status|Not implemented|Not implemented|Not implemented|Not implemented|
+- **Tls v1.1:** Not working code, 'handshake' on server side works to 'finished' (including sending/receiving this message)
 
- 
-**Currently working on:** TLS 1.2** 
+- **Tls v1.2:** Connection can be established on server side, client authentication and extensions are not available.
+  
+- **Tls v1.3:  Not implemented**
 
-First example of server side connection, see:** [samples](https://github.com/NeuroXiq/Arctium/blob/master/samples/Tls%20Server%20Connection.cs)
+TLS v1.2
+ todo notes:
+  - working on client connection
+  - updating alert-exceptions response
+  - working on client authentication
+  - others key-exchange algorithms support
+  - other than AES symmetric-encryption support
+
+For more informations about TLS connection see: [Readme.md]
+
+[RFC 4346]:<https://www.ietf.org/rfc/rfc4346.txt>
+[RFC 5246]:<https://www.ietf.org/rfc/rfc5246.txt>
+[RFC 6066]:<https://tools.ietf.org/html/rfc6066>
+[RFC 8446]:<https://tools.ietf.org/html/rfc8446>
+[Readme.md]:<../docs/Tls/Connection>
