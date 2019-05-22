@@ -2,7 +2,7 @@
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.Exceptions
 {
-    class RecordFormatException : RecordLayerAlertException
+    class RecordFormatException : RecordLayerFatalAlertException
     {
         public RecordFormatException(AlertDescription alertDescription, string message) : base(alertDescription, message)
         {

@@ -329,5 +329,10 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             return toRead;
         }
+
+        public override void CloseNotify()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

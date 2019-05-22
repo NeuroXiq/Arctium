@@ -7,16 +7,22 @@ namespace Arctium.Connection.Tls.Operator
 {
     class TlsProtocolOperatorSwitch
     {
-        public static TlsProtocolOperator OpenServerSession(Stream innerStream, TlsServerConfig serverConfig)
+        public static TlsConnectionResult OpenServerSession(Stream innerStream, TlsServerConfig serverConfig)
         {
             Tls12ServerConfig config = DefaultConfigurations.CreateDefaultTls12ServerConfig();
             config.Certificates = new X509Certificate2[] { new X509Certificate2("D:\\test.pfx", "test") };
 
 
-            Tls12ServerOperator o = Tls12ServerOperator.OpenNewSession(config, innerStream);
-
+            Tls12ServerOperator o = new Tls12ServerOperator(config, innerStream);
             o.OpenSession();
-            return o;
+
+
+            TlsConnectionResult result = new TlsConnectionResult();
+            result.Extensions = null;
+            result.ProtocolType = TlsProtocolType.Tls12;
+            result.TlsStream = new TlsStream(o);
+
+            return result;
         }
     }
 }

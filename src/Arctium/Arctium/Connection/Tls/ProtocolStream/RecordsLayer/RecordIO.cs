@@ -58,7 +58,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             int contentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);
 
             
-            if (contentLength > MaxFragmentLength) new RecordLayerAlertException(AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
+            if (contentLength > MaxFragmentLength) new RecordLayerFatalAlertException(AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
             if (contentLength < 1) throw new RecordIOException("readed record with empty fragment (fragment length is 0)");
 
             LoadRemainingFragmentBytes(contentLength);

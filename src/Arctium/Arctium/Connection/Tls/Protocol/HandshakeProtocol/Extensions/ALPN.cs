@@ -4,6 +4,6 @@
     {
         public string[] ProtocolNameList;
 
-        public ALPN() { base.Type = ExtensionType.ALPN; }
+        public ALPN() { base.Type = HandshakeExtensionType.ALPN; }
     }
 }

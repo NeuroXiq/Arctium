@@ -85,6 +85,12 @@ namespace Arctium.Connection.Tls
             tlsOperator.WriteApplicationData(buffer, offset, count);
         }
 
+        public override void Close()
+        {
+            tlsOperator.CloseNotify();
+        }
+
         #endregion Base Stream abstract
+
     }
 }

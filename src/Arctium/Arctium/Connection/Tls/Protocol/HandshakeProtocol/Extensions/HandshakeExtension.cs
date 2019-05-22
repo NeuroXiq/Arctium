@@ -2,6 +2,6 @@
 {
     public class HandshakeExtension
     {
-        public ExtensionType Type;
+        public HandshakeExtensionType Type;
     }
 }

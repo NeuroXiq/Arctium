@@ -6,6 +6,20 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {
     class ClientHelloBuilder
     {
+        struct Format
+        {
+            public int majVer;
+            public int minVer;
+            public int Rand;
+            public int SesIdLen;
+            public int SesId;
+            public int CipSuiteLen;
+            public int CipSuite;
+            public int ComprMeth;
+            public int Exts;
+            public int ExtsLen;
+        }
+
         public ClientHelloBuilder()
         {
 
@@ -14,6 +28,8 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 
         public ClientHello BuildClientHello(byte[] buffer, int clientHelloOffset, int bytesInMessage)
         {
+            //Format format = GetFormat(buffer, clientHelloOffset, bytesInMessage);
+
             int sessionIdLength = -1;
             int cipherSuiteLength = -1;
             int compressionMethodsLength = -1;
@@ -49,6 +65,36 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             return clientHello;
         }
 
+
+        private Format GetFormat(byte[] buffer, int offset, int length)
+        {
+            Format fmt = new Format();
+
+            int maxOffset = length + offset;
+
+            fmt.majVer = offset;
+            fmt.minVer = offset + 1;
+            fmt.Rand = offset + 2;
+
+            if (fmt.Rand + 32 > maxOffset) throw new Exception("invalid format");
+
+            fmt.SesIdLen = buffer[fmt.Rand + 32];
+            fmt.SesId = fmt.Rand + 32 + 1;
+
+            if (fmt.SesId + fmt.SesIdLen + 1 > maxOffset) throw new Exception("invalid format");
+
+            //length of the cipher suies
+            fmt.CipSuiteLen = NumberConverter.ToUInt16(buffer, fmt.SesId + fmt.SesIdLen);
+            //offset of the cipher suites
+            fmt.CipSuite = fmt.SesId + fmt.SesIdLen + 2;
+
+            fmt.ComprMeth = fmt.CipSuite + fmt.CipSuiteLen;
+
+            fmt.Exts = fmt.ComprMeth + 1;
+            fmt.ExtsLen = length - fmt.ComprMeth - offset + 1;
+
+            return fmt;
+        }
 
         private CompressionMethod[] BuildCompressionMethods(byte[] buffer, int methodsOffset, int compressionMethodsLength)
         {

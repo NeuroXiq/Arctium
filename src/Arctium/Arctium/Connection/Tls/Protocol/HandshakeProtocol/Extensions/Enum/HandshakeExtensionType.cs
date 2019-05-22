@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
 {
-    public enum ExtensionType : ushort
+    public enum HandshakeExtensionType : ushort
     { 
         ServerName = 0,
         MaxFragmentLength = 1,

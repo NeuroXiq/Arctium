@@ -6,7 +6,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
     // Copy-paste from tls11operator
     //
     
-    class HandshakeMessages12
+    class HandshakeMessages
     {
         public ClientHello ClientHello;
         public ServerHello ServerHello;

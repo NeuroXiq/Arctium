@@ -1,4 +1,5 @@
-﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+﻿using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls.Configuration
@@ -12,6 +13,8 @@ namespace Arctium.Connection.Tls.Configuration
         public object clientVerification;
         public object extensions;
         public object SessionCache;
+        public object enableRenegotiation;
+        
         
     }
 }
