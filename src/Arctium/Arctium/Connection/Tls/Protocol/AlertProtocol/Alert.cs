@@ -4,5 +4,11 @@
     {
         public AlertLevel Level;
         public AlertDescription Description;
+
+        public Alert(AlertLevel level, AlertDescription description)
+        {
+            Description = description;
+            Level = level;
+        }
     }
 }

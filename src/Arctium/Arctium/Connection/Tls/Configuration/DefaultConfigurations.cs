@@ -21,9 +21,9 @@ namespace Arctium.Connection.Tls.Configuration
                 
                 //- AES
                 CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-                //CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-                //CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
-                //CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
+                CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+                CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
                 
                 
                 

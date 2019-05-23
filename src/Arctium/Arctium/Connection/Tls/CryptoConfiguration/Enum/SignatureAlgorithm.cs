@@ -4,7 +4,7 @@
     {
         NULL,
         RSA,
-        DSS,
+        DSA,
         ECDSA
     }
 }

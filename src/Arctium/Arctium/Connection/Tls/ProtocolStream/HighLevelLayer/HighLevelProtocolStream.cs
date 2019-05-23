@@ -98,9 +98,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
             
             AlertBuilder ab = new AlertBuilder();
 
-            var a = new Alert();
-            a.Level = (AlertLevel)bufferCache.Buffer[0];
-            a.Description = (AlertDescription)bufferCache.Buffer[1];
+            var a = new Alert((AlertLevel)bufferCache.Buffer[0], (AlertDescription)bufferCache.Buffer[1]);
 
             AlertHandler?.Invoke(a);
 

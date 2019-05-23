@@ -8,6 +8,7 @@ using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
 using System.Collections.Generic;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
+using Arctium.Connection.Tls.Protocol.AlertProtocol;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -25,7 +26,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             }
         }
 
-        ///<summary>Gets *all* sended and received bytes of the handshake messages. Order in array  matches the order of the read/write operations</summary>
+        ///<summary>Gets *all* sended and received bytes of the handshake messages. Order in the array matches order of the read/write operations</summary>
         ///<remarks>Cache contains all messages, also this messages  which should not be included in Finished message calculations</remarks>
         public HandshakeMessageData[] HandshakeTransmissionCache { get { return messagesTransmissionCache.ToArray(); } }
 
@@ -94,7 +95,19 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             ContentType type;
             int readed = recordLayer.ReadFragment(readBuffer, 0, out type);
 
-            if (type != ContentType.Handshake) throw new Exception("invalid fragment");
+            if (type != ContentType.Handshake)
+            {
+                if (type == ContentType.Alert)
+                {
+                    Alert receivedAlert = AlertBuilder.FromBytes(readBuffer, 0, readed);
+
+                    throw new OperatorReceivedAlertException(
+                        receivedAlert.Level,
+                        receivedAlert.Description, 
+                        "received aler instead of expected handshake message");    
+                }
+                throw new Exception("Received unrecognized fragment instead of handshake fragment");
+            }
 
             buffer.Append(readBuffer, 0, readed);
         }

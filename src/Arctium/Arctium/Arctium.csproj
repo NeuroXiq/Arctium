@@ -43,15 +43,18 @@
   <ItemGroup>
     <Compile Include="Connection\Tls\Buffers\BufferTools.cs" />
     <Compile Include="Connection\Tls\Buffers\ChunkedDataBuffer.cs" />
+    <Compile Include="Connection\Tls\Configuration\Tls12ClientConfig.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\AlpnExtension.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\SniExtension.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\TlsHandshakeExtension.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Tls12Secrets.cs" />
     <Compile Include="Connection\Tls\Operator\Exception\OperatorFatalAlertException.cs" />
+    <Compile Include="Connection\Tls\Operator\Exception\OperatorReceivedAlertException.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\AppDataIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Context.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeMessages.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ClientOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordFormatException.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IRecordCryptoFilter.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />
@@ -111,7 +114,6 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\AlertBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\ChangeCipherSpecBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\Exceptions\MessageFromatException.cs" />
-    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\Exceptions\RecordParserException.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ClientHelloBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\ChangeCipherSpecProtocol\ChangeCipherSpec.cs" />
@@ -127,7 +129,9 @@
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Enum\ClientCertificateType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ALPN.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\HandshakeExtensionType.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionsBuildConsts.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\HandshakeExtension.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\SignatureAlgorithms.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\PreMasterSecret.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolFormatConst.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Certificate.cs" />

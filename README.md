@@ -13,18 +13,11 @@ Implemented standards (or not implemented yet):
   
 - **Tls v1.3:  Not implemented**
 
-TLS v1.2
- todo notes:
-  - working on client connection
-  - updating alert-exceptions response
-  - working on client authentication
-  - others key-exchange algorithms support
-  - other than AES symmetric-encryption support
 
-For more informations about TLS connection see: [Readme.md]
+For more informations about TLS connection see: [Tls docs]
 
 [RFC 4346]:<https://www.ietf.org/rfc/rfc4346.txt>
 [RFC 5246]:<https://www.ietf.org/rfc/rfc5246.txt>
 [RFC 6066]:<https://tools.ietf.org/html/rfc6066>
 [RFC 8446]:<https://tools.ietf.org/html/rfc8446>
-[Readme.md]:<../docs/Tls/Connection>
+[Tls docs]:<Arctium/docs/Tls/Connection>

@@ -13,6 +13,5 @@
         ARIA,
         Camellia,
         ChaCha20,
-        Poly1305,
     }
 }

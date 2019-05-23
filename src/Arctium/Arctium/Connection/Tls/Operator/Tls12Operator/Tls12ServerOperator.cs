@@ -23,7 +23,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         RecordLayer12 recordLayer;
         Context currentContext;
 
-        bool canExchangeAppData;
+        bool isSessionOpened;
+        bool closeNotifySended;
         AppDataIO appDataIO;
 
         //TODO end 
@@ -31,51 +32,61 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         public Tls12ServerOperator(Tls12ServerConfig config, Stream innerStream)
         {
             this.config = config;
-            canExchangeAppData = false;
+            isSessionOpened = false;
+            closeNotifySended = false;
 
             //create initial state of the record layer
             //this initialization means that record layer algo is TLS_NULL_WITH_NULL_NULL
             //plain data exchange at this moment
 
             this.recordLayer = RecordLayer12.Initialize(innerStream);
+            
         }
 
         //
         // public methods
         //
 
+        ///<summary>Reads application data application data to the specified</summary>
+        ///<param name="buffer">Buffer to write application data bytes</param>
+        ///<param name="count">Bytes length to write</param>
+        ///<param name="offset">Offset in buffer to write data</param>
         public override int ReadApplicationData(byte[] buffer, int offset, int count)
         {
-            if (!canExchangeAppData) throw new InvalidOperationException("Cannot read applicaiton data because session is not opened");
+            if (!isSessionOpened || closeNotifySended) throw new InvalidOperationException("Cannot read applicaiton data because session is not opened is closed");
 
             appDataIO.PrepareToRead();
 
             if (appDataIO.CurrentContentType != ContentType.ApplicationData)
-                throw new Exception("Internal error TLS 1.2. Received other content type than Application data. Current implementation do not handle this state.");
+                throw new Exception("Internal error TLS 1.2. Received other content type than Application data. Current implementation do not handle this state");
 
             return appDataIO.Read(buffer, offset, count);
         }
 
+        ///<summary>Writes application data from specified buffer and sends to client</summary>
         public override void WriteApplicationData(byte[] buffer, int offset, int count)
         {
-            if (!canExchangeAppData) throw new InvalidOperationException("Cannot write applicaiton data because session is not opened");
+            if (!isSessionOpened || closeNotifySended) throw new InvalidOperationException("Cannot write applicaiton data because session is not opened or is closed");
 
             appDataIO.Write(buffer, offset, count);
         }
 
         public override void CloseNotify()
         {
-            if (!canExchangeAppData)
+            if (!isSessionOpened)
                 throw new InvalidOperationException("Cannot send close notify because session is not opened");
+            if (closeNotifySended) throw new InvalidOperationException("Cannot send close notify because it was sended");
 
             byte[] closeBytes = AlertFormatter.FormatAlert(AlertDescription.CloseNotify, AlertLevel.Warning);
             recordLayer.Write(closeBytes,0,closeBytes.Length, ContentType.Alert);
 
+            closeNotifySended = true;
         }
 
         public void OpenSession()
         {
-            if (canExchangeAppData) throw new InvalidOperationException("Cannot open session because is already opened");
+            if (isSessionOpened) throw new InvalidOperationException("Cannot open session because is already opened");
+            if (closeNotifySended) throw new InvalidOperationException("Cannot open session because close notify was sended.");
 
             currentContext = new Context(recordLayer);
 
@@ -84,7 +95,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 GetClientHello();
                 ProcessSessionOpenAfterClientHello();
 
-                canExchangeAppData = true;
+                isSessionOpened = true;
             }
             catch (OperatorFatalAlertException e)
             {
@@ -161,7 +172,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         private void ActionOnHandshakeEndSuccess()
         {
             appDataIO = new AppDataIO(recordLayer);
-            canExchangeAppData = true;
+            isSessionOpened = true;
         }
 
         private void SendFinished()
@@ -353,7 +364,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             if (expected != received)
             {
-                string message = string.Format("Expected: {0} Received: {1}", expected, received);
+                string message = string.Format("Unexpected handshake message: Expected: {0} Received: {1}", expected, received);
                 throw new OperatorFatalAlertException(AlertDescription.UnexpectedMessage, message);
             }
         }
