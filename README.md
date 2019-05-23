@@ -20,4 +20,4 @@ For more informations about TLS connection see: [Tls docs]
 [RFC 5246]:<https://www.ietf.org/rfc/rfc5246.txt>
 [RFC 6066]:<https://tools.ietf.org/html/rfc6066>
 [RFC 8446]:<https://tools.ietf.org/html/rfc8446>
-[Tls docs]:<docs/Tls/Connection>
+[Tls docs]:<docs/Connection/Tls/>
