@@ -130,7 +130,11 @@
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ALPN.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\HandshakeExtensionType.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionsBuildConsts.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\MaxFragmentLength.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\NameType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\HandshakeExtension.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\MaximumFragmentLength.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ServerName.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\SignatureAlgorithms.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\PreMasterSecret.cs" />
     <Compile Include="Connection\Tls\Protocol\ProtocolFormatConst.cs" />

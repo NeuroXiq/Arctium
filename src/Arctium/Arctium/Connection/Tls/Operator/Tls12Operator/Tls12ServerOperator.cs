@@ -26,7 +26,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         bool isSessionOpened;
         bool closeNotifySended;
         AppDataIO appDataIO;
-
+            
         //TODO end 
 
         public Tls12ServerOperator(Tls12ServerConfig config, Stream innerStream)

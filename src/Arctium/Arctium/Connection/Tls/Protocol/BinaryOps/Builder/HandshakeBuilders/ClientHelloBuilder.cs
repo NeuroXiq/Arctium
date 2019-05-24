@@ -93,6 +93,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
                 extensions = BuildExtensions(buffer, format.ComprMeth + format.ComprMethLen, extensionsBlockLength);
             }
 
+            clientHello.Extensions = extensions;
 
             return clientHello;
         }

@@ -8,6 +8,12 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
         {
             public HashAlgorithmType HashAlgorithm;
             public SignatureAlgorithm SignatureAlgorithm;
+
+            public SignatureAndHashAlgorithm(HashAlgorithmType hashType, SignatureAlgorithm signatureType)
+            {
+                HashAlgorithm = hashType;
+                SignatureAlgorithm = signatureType;
+            }
         }
 
         public SignatureAndHashAlgorithm[] SignatureAndHashAlgorithmList;

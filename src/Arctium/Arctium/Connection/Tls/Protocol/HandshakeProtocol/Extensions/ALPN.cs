@@ -4,6 +4,9 @@
     {
         public string[] ProtocolNameList;
 
-        public ALPN() { base.Type = HandshakeExtensionType.ApplicationLayerProtocolNegotiation; }
+        public ALPN(string[] nameList) : base(HandshakeExtensionType.ApplicationLayerProtocolNegotiation)
+        {
+            ProtocolNameList = nameList;
+        }
     }
 }
