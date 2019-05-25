@@ -1,4 +1,5 @@
 ﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
+using System;
 
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 {
@@ -8,11 +9,20 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 
     public class TlsHandshakeExtension
     {
+        public enum ConnectionEnd
+        {
+            Client = 0,
+            Server = 1
+        }
+
         HandshakeExtensionType internalExtensionType;
 
-        protected TlsHandshakeExtension(HandshakeExtensionType type)
+        public ConnectionEnd ConnectionEndType;
+
+        protected TlsHandshakeExtension(HandshakeExtensionType msgType, ConnectionEnd connectionType)
         {
-            internalExtensionType = type;
+            internalExtensionType = msgType;
+            ConnectionEndType = connectionType;
         }
     }
 }

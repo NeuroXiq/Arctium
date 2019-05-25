@@ -2,13 +2,6 @@
 Arctium will be a simple TLS protocol implementation written in C#. 
 Implemented standards (or not implemented yet):
 
-|Version | TLS 1.1 | TLS 1.2 |TLS 1.2 Extensions| TLS 1.3|
-|:--------:|:---------:|:-----------------:|:-------------:|:--------:|
-|Standard |[RFC 4346]  |[RFC 5246]         |[RFC 6066]     |[RFC 8446]|
-|Status|Not implemented|Partial implemented|Not implemented|Not implemented|
-
-
-
 |Name           |   Status     | Standard   |
 |:-------------:|:------------:|:----------:|
 | TLS 1.1       |     X        |[RFC 4346]  |

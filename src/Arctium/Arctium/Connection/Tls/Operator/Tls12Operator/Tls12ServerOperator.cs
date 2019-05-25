@@ -404,6 +404,5 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             return rsa.Decrypt(currentContext.allHandshakeMessages.ClientKeyExchange.ExchangeKeys, RSAEncryptionPadding.Pkcs1);
         }
 
-       
     }
 }

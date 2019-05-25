@@ -173,7 +173,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\RandomGenerator.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Connection\Tls\Exceptions\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Connection\Tls\Operator\Tls11Operator\README.md" />
   </ItemGroup>
