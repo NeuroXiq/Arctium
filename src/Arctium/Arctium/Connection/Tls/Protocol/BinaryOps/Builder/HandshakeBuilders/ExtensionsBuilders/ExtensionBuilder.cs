@@ -92,12 +92,12 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
             string name = Encoding.ASCII.GetString(buffer, extData.DataOffset + 2 + 2 + 1, extData.Length - 5);
 
 
-            ServerName sName = new ServerName(name);
+            ServerNameExtension sName = new ServerNameExtension(name);
 
             return sName;
         }
 
-        private SignatureAlgorithms BuildSignatureAlgorithms(ExtData extData, byte[] buffer)
+        private SignatureAlgorithmsExtension BuildSignatureAlgorithms(ExtData extData, byte[] buffer)
         {
             //validate length, 
             // signature and hash algo is a byte pair, first byte indicates hash, second sign.
@@ -106,7 +106,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
             if (extData.Length == 0) throw new Exception("Not sure to throw this but something is wrong that in SignatureAlgorithms extension sign/hash pair is emtpy");
 
             int pairsCount = extData.Length / 2;
-            SignatureAlgorithms.SignatureAndHashAlgorithm[] hashSignPairs = new SignatureAlgorithms.SignatureAndHashAlgorithm[pairsCount];
+            SignatureAlgorithmsExtension.SignatureAndHashAlgorithm[] hashSignPairs = new SignatureAlgorithmsExtension.SignatureAndHashAlgorithm[pairsCount];
 
             int next = 0;
 
@@ -116,7 +116,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
                 next++;
             }
 
-            return new SignatureAlgorithms(hashSignPairs);
+            return new SignatureAlgorithmsExtension(hashSignPairs);
         }
 
         private HandshakeExtension BuildALPN(ExtData extData, byte[] buffer)
@@ -130,7 +130,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
 
             if (protocolNameListLength == 0)
             {
-                return new ALPN(new string[0]);
+                return new ALPNExtension(new string[0]);
             }
 
             //2 == protocol_name_list length + 1 length byte of at least 1 protocol presented (protocolNameListLength is not 0)
@@ -161,7 +161,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
 
             string[] allNames = protocolNames.ToArray();
 
-            return new ALPN(allNames);
+            return new ALPNExtension(allNames);
         }
 
         private ExtData[] GetExtensionData(byte[] buffer, int firstExtensionOffset, int allExtsLength)

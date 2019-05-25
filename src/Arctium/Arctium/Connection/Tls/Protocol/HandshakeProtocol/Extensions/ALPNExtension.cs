@@ -1,10 +1,10 @@
 ﻿namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
 {
-    class ALPN : HandshakeExtension
+    class ALPNExtension : HandshakeExtension
     {
         public string[] ProtocolNameList;
 
-        public ALPN(string[] nameList) : base(HandshakeExtensionType.ApplicationLayerProtocolNegotiation)
+        public ALPNExtension(string[] nameList) : base(HandshakeExtensionType.ApplicationLayerProtocolNegotiation)
         {
             ProtocolNameList = nameList;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters.ExtensionsFormatters;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters
 {
@@ -14,9 +15,15 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             public int SessionId;
             public int CipherSuite;
             public int CompressionMethod;
+            public int ExtensionsOffset;
         }
 
-        public ServerHelloFormater() { }
+        ExtensionsFormatter extensionsFormatter;
+
+        public ServerHelloFormater()
+        {
+            extensionsFormatter = new ExtensionsFormatter();
+        }
 
         public byte[] GetBytes(ServerHello serverHello)
         {
@@ -34,8 +41,10 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
                 Buffer.BlockCopy(serverHello.SessionID, 0, fBuffer, offsets.SessionId, serverHello.SessionID.Length);
                 NumberConverter.FormatUInt16((ushort)serverHello.CipherSuite, fBuffer, offsets.CipherSuite);
                 fBuffer[offsets.CompressionMethod] = (byte)serverHello.CompressionMethod;
-
             }
+
+            extensionsFormatter.FormatExtensions(fBuffer, offsets.ExtensionsOffset, serverHello.Extensions);
+
 
             return fBuffer;
         }
@@ -68,13 +77,15 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             int sessionId = serverHello.SessionID.Length;
             int cipherSuite = 2;
             int compressionMethod = 1;
+            int extensionsLength = extensionsFormatter.GetLength(serverHello.Extensions);
 
             fullLength = versionLength +
                 randomLength +
                 sessionIdLengthByte + 
                 sessionId +
                 cipherSuite +
-                compressionMethod;
+                compressionMethod + 
+                extensionsLength;
 
             return fullLength;
         }

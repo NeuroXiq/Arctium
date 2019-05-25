@@ -2,11 +2,11 @@
 
 namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
 {
-    class MaximumFragmentLength
+    class MaximumFragmentLengthExtension
     {
         public int Length;
 
-        public MaximumFragmentLength(MaxFragmentLength maxLength)
+        public MaximumFragmentLengthExtension(MaxFragmentLength maxLength)
         {
             switch (maxLength)
             {

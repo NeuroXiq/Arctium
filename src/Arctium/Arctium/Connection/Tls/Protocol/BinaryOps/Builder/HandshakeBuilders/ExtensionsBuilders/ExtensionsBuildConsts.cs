@@ -5,7 +5,7 @@ namespace Arctium.Connection.Tls.Protocol.BinarOps.HandshakeBuilders.ExtensionsB
 {
     static class ExtensionsBuildConsts
     {
-        public static SignatureAlgorithms.SignatureAndHashAlgorithm GetSignatureHashAlgoPair(byte hashAlgoByte, byte signAlgoByte)
+        public static SignatureAlgorithmsExtension.SignatureAndHashAlgorithm GetSignatureHashAlgoPair(byte hashAlgoByte, byte signAlgoByte)
         {
             SignatureAlgorithm signAlgo = SignatureAlgorithm.NULL;
             HashAlgorithmType hashAlgo = HashAlgorithmType.NULL;
@@ -26,7 +26,7 @@ namespace Arctium.Connection.Tls.Protocol.BinarOps.HandshakeBuilders.ExtensionsB
                 case 5: hashAlgo = HashAlgorithmType.SHA384; break;
                 case 6: hashAlgo = HashAlgorithmType.SHA512; break;
             }
-            return new SignatureAlgorithms.SignatureAndHashAlgorithm(hashAlgo, signAlgo);
+            return new SignatureAlgorithmsExtension.SignatureAndHashAlgorithm(hashAlgo, signAlgo);
         }
     }
 }

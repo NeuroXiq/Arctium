@@ -11,20 +11,11 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 
     public class TlsHandshakeExtension
     {
-        public enum ConnectionEnd
-        {
-            Client = 0,
-            Server = 1
-        }
+        internal HandshakeExtensionType internalExtensionType;
 
-        HandshakeExtensionType internalExtensionType;
-
-        public ConnectionEnd ConnectionEndType;
-
-        protected TlsHandshakeExtension(HandshakeExtensionType msgType, ConnectionEnd connectionType)
+        protected TlsHandshakeExtension(HandshakeExtensionType msgType)
         {
             internalExtensionType = msgType;
-            ConnectionEndType = connectionType;
         }
     }
 }

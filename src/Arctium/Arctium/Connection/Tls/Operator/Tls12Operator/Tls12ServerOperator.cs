@@ -14,6 +14,8 @@ using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using System.Collections.Generic;
 using Arctium.Connection.Tls.Exceptions;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -22,6 +24,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
     {
         Tls12ServerConfig config;
         RecordLayer12 recordLayer;
+        ExtensionsHandler extensionsHandler;
         Context currentContext;
 
         bool isSessionOpened;
@@ -84,7 +87,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             closeNotifySended = true;
         }
 
-        public void OpenSession()
+        public HandshakeMessages OpenSession()
         {
             if (isSessionOpened) throw new InvalidOperationException("Cannot open session because is already opened");
             if (closeNotifySended) throw new InvalidOperationException("Cannot open session because close notify was sended.");
@@ -111,6 +114,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 ActionOnFatalException();
                 throw e;
             }
+
+            return currentContext.allHandshakeMessages;
         }
 
         //
@@ -332,10 +337,25 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             serverHello.ProtocolVersion = new ProtocolVersion(3, 3);
             serverHello.Random = GenerateRandom();
             serverHello.SessionID = GenerateSessionID();
-
+            serverHello.Extensions = BuildServerHelloExtensions();
 
             currentContext.handshakeIO.Write(serverHello);
             currentContext.allHandshakeMessages.ServerHello = serverHello;
+        }
+
+        private HandshakeExtension[] BuildServerHelloExtensions()
+        {
+            TlsHandshakeExtension[] configExtensions  = config.HandshakeExtensions;
+            HandshakeExtension[] extensionsFromClient = currentContext.allHandshakeMessages.ClientHello.Extensions;
+
+            HandshakeExtension[] serverExtensions = extensionsHandler.BuildAllHandshakeExtensionsOnServer(extensionsFromClient, configExtensions);
+
+            return serverExtensions;
+        }
+
+        private void ThrowIfInvalidClientExtensions()
+        {
+            return;
         }
 
         private byte[] GenerateSessionID()

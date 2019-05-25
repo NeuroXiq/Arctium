@@ -1,5 +1,4 @@
 ﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
-using System;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
@@ -10,58 +9,26 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
         {
             public X509Certificate2 Certificate;
             public string ServerName;
-        }
 
-        //
-        // fields used by server side
-        //
+            public CertNamePair(X509Certificate2 cert, string name)
+            {
+                Certificate = cert;
+                ServerName = name;
+            }
+        }
 
         CertNamePair[] certNamePairs;
 
-        public CertNamePair[] CertNamePairs
-        {
-            get
-            {
-                if (ConnectionEndType == ConnectionEnd.Client)
-                    throw new InvalidOperationException("Cannot get CertNamePairs because SniExtension is created as client request");
-                return certNamePairs;
-            }
-        }
-
-        //
-        // fields used by client side
-        //
-
-        string serverName;
-
-        public string ServerName
-        {
-            get
-            {
-                if (ConnectionEndType == ConnectionEnd.Server)
-                    throw new InvalidOperationException("Cannot get ServerName because SniExtenions is create as server response");
-                return serverName;
-            }
-        }
+        public string ServerName;
         
-        private SniExtension(string serverName) : base(HandshakeExtensionType.ServerName, ConnectionEnd.Client)
+        public SniExtension(string serverName) : base(HandshakeExtensionType.ServerName)
         {
-            this.serverName = serverName;
+            ServerName = serverName;
         }
 
-        private SniExtension(CertNamePair[] certNamePairs) : base(HandshakeExtensionType.ServerName, ConnectionEnd.Server)
+        public SniExtension(CertNamePair[] certNamePairs) : base(HandshakeExtensionType.ServerName)
         {
             this.certNamePairs = certNamePairs; 
-        }
-
-        public static SniExtension CreateAsClient(string serverNameToRequest)
-        {
-            return new SniExtension(serverNameToRequest);
-        }
-
-        public static SniExtension CreateAsServer(CertNamePair[] certNamePairs)
-        {
-            return new SniExtension(certNamePairs);
         }
     }
 }

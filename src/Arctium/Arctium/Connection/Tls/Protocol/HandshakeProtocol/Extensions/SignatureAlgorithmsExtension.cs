@@ -2,7 +2,7 @@
 
 namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
 {
-    class SignatureAlgorithms : HandshakeExtension
+    class SignatureAlgorithmsExtension : HandshakeExtension
     {
         public struct SignatureAndHashAlgorithm
         {
@@ -18,7 +18,7 @@ namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
 
         public SignatureAndHashAlgorithm[] SignatureAndHashAlgorithmList;
 
-        public SignatureAlgorithms(SignatureAndHashAlgorithm[] signAndHashList) : base(HandshakeExtensionType.SignatureAlgorithms)
+        public SignatureAlgorithmsExtension(SignatureAndHashAlgorithm[] signAndHashList) : base(HandshakeExtensionType.SignatureAlgorithms)
         {
             SignatureAndHashAlgorithmList = signAndHashList;
         }
