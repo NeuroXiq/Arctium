@@ -9,6 +9,7 @@ using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
 using System.Collections.Generic;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
+using Arctium.Connection.Tls.Exceptions;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -100,16 +101,26 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 if (type == ContentType.Alert)
                 {
                     Alert receivedAlert = AlertBuilder.FromBytes(readBuffer, 0, readed);
-
-                    throw new OperatorReceivedAlertException(
-                        receivedAlert.Level,
-                        receivedAlert.Description, 
-                        "received aler instead of expected handshake message");    
+                    ThrowReceivedAlertException(receivedAlert);
                 }
-                throw new Exception("Received unrecognized fragment instead of handshake fragment");
+                throw new FatalAlertException("HandshakeIO","On reading handshake",(int)(AlertDescription.UnexpectedMessage) ,"Received unrecognized fragment instead of handshake fragment");
             }
 
             buffer.Append(readBuffer, 0, readed);
+        }
+
+        private void ThrowReceivedAlertException(Alert alert)
+        {
+            int num = (int)alert.Description;
+            string where = "HandshakIO";
+            string when = "On reading handshake message";
+            string description = "Expected to read handshake message but received alert";
+
+            if (alert.Level == AlertLevel.Warning)
+                throw new ReceivedWarningAlertException(num, when, where, description);
+            else if (alert.Level == AlertLevel.Fatal) throw new ReceivedFatalAlertException(num, where, when, description);
+
+            throw new Exception("Internal error unhandler alert exception in HandshakeIO, unrecognized alert");
         }
     }
 }

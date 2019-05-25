@@ -48,14 +48,14 @@
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\SniExtension.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\TlsHandshakeExtension.cs" />
     <Compile Include="Connection\Tls\CryptoConfiguration\Tls12Secrets.cs" />
-    <Compile Include="Connection\Tls\Operator\Exception\OperatorFatalAlertException.cs" />
-    <Compile Include="Connection\Tls\Operator\Exception\OperatorReceivedAlertException.cs" />
+    <Compile Include="Connection\Tls\Exceptions\ReceivedFatalAlertException.cs" />
+    <Compile Include="Connection\Tls\Exceptions\FatalAlertException.cs" />
+    <Compile Include="Connection\Tls\Exceptions\ReceivedWarningAlertException.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\AppDataIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Context.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeMessages.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ClientOperator.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordFormatException.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IRecordCryptoFilter.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordReader.cs" />
@@ -71,7 +71,6 @@
     <Compile Include="Connection\Tls\ProtocolStream\HighLevelLayer\HandshakeStack.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\AeadFragmentCrypto.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\BlockFragmentCrypto.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordIOException.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\DataExpansionFunction.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\PRF.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\SecretGenerator.cs" />
@@ -79,7 +78,6 @@
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11HandshakeState.cs" />
     <Compile Include="Connection\Tls\Operator\Tls11Operator\Tls11ServerOperator.cs" />
     <Compile Include="Connection\Tls\Operator\TlsProtocolOperator.cs" />
-    <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\Exceptions\RecordLayerFatalAlertException.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\BlockFragmentOffsets.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\LoadedFragmentState.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer11\NullHMAC.cs" />
@@ -173,9 +171,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Connection\Tls\CryptoFunctions\RandomGenerator.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Connection\Tls\Exceptions\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="Connection\Tls\Operator\Tls11Operator\README.md" />
   </ItemGroup>

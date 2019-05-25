@@ -13,6 +13,7 @@ using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using System.Collections.Generic;
+using Arctium.Connection.Tls.Exceptions;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -97,16 +98,10 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
                 isSessionOpened = true;
             }
-            catch (OperatorFatalAlertException e)
-            {
-                SendFatalAlert(e.Description);
-                ActionOnFatalException();
-                throw e;
-            }
-            catch (RecordLayerFatalAlertException e)
+            catch (FatalAlertException e)
             {
                 ActionOnFatalException();
-                SendFatalAlert(e.AlertMessageDescription);
+                SendFatalAlert((AlertDescription)e.AlertDescriptionNumber);
                 throw e;
             }
             catch (Exception e)
@@ -213,11 +208,21 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             {
                 if (expectedHash[i] != receivedHash[i])
                 {
-                    throw new OperatorFatalAlertException(AlertDescription.DecryptError, "Received invalid finished message.");
+                    ThrowInvalidFinishedContentAlertException();
+
+                    
                 }
             }
         }
 
+        private void ThrowInvalidFinishedContentAlertException()
+        {
+            string when = "On processing finished message";
+            string where = "Tls12ServerOperator";
+            string description = "Finished message contains invalid data";
+
+            throw new FatalAlertException(where,when,(int)AlertDescription.DecryptError, description);
+        }
 
         private byte[] ComputeCurrentFinished(string label)
         {
@@ -258,11 +263,11 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 recordLayer.ReadFragment(ccsBytes, 0, out contentType);
 
                 if (contentType != ContentType.ChangeCipherSpec)
-                    throw new OperatorFatalAlertException(AlertDescription.UnexpectedMessage, "Expected to receive change cipher spec");
+                    throw new FatalAlertException("","",(int)AlertDescription.UnexpectedMessage, "Expected to receive change cipher spec");
             }
             catch (Exception e)
             {
-                throw new OperatorFatalAlertException(AlertDescription.UnexpectedMessage, "Expected to receive change cipher spec");
+                throw new FatalAlertException("","",(int)AlertDescription.UnexpectedMessage, "Expected to receive change cipher spec");
             }
 
             RecordLayer12Params readParams = new RecordLayer12Params();
@@ -364,8 +369,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             if (expected != received)
             {
-                string message = string.Format("Unexpected handshake message: Expected: {0} Received: {1}", expected, received);
-                throw new OperatorFatalAlertException(AlertDescription.UnexpectedMessage, message);
+                string description = string.Format("Unexpected handshake message: Expected: {0} Received: {1}", expected, received);
+                throw new FatalAlertException("Tls12ServerOperator","After read handshake message",(int)AlertDescription.UnexpectedMessage, description);
             }
         }
 
@@ -385,7 +390,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 }
             }
 
-            throw new OperatorFatalAlertException(AlertDescription.HandshakeFailure, 
+            throw new FatalAlertException("Tls12ServerOperator", "On processing client hello", (int)AlertDescription.HandshakeFailure, 
                 "Any client cipher suite do not match currently available server cipher suite");
         }
 

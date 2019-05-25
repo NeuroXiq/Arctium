@@ -1,4 +1,5 @@
 ﻿using Arctium.Connection.Tls.Buffers;
+using Arctium.Connection.Tls.Exceptions;
 using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
 using Arctium.Connection.Tls.Protocol.BinaryOps;
@@ -58,8 +59,8 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
             int contentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);
 
             
-            if (contentLength > MaxFragmentLength) new RecordLayerFatalAlertException(AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
-            if (contentLength < 1) throw new RecordIOException("readed record with empty fragment (fragment length is 0)");
+            if (contentLength > MaxFragmentLength) new FatalAlertException("RecordLayer12","On reading record", (int)AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
+            if (contentLength < 1) throw new FatalAlertException("Record Layer 12", "On reading record", (int)AlertDescription.BadRecordMac, "Record length is 0");
 
             LoadRemainingFragmentBytes(contentLength);
 
@@ -110,7 +111,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer
                 string msg = string.Format("Fragment length exceed setted limit." +
                     "Current MaxFragmentLength: {0}, but tried to writes {1} bytes", MaxFragmentLength, length);
 
-                throw new RecordIOException(msg);
+                //throw new RecordIOException(msg);
             }
 
             byte[] bytes = BuildRecordBytes(buffer, offset, length, contentType);

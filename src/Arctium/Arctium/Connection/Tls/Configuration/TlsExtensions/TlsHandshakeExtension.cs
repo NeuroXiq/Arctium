@@ -4,7 +4,9 @@ using System;
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 {
     //
-    // Hides internal representation of the handshake extensions to public usage
+    // Encapsulates internal representation of the handshake extensions to public usage.
+    // Not all extensions should be defined for public usage, e.g. padding extension
+    // and thats why only several can be configurable by the user
     //
 
     public class TlsHandshakeExtension

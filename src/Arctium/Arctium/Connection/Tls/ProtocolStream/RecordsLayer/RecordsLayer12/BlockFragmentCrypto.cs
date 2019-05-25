@@ -6,6 +6,8 @@ using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using System.IO;
 using Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
+using Arctium.Connection.Tls.Exceptions;
+using Arctium.Connection.Tls.Protocol.AlertProtocol;
 
 namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 {
@@ -122,9 +124,7 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             int recordOffset = recordReader.ReadNext();
             RecordHeader recordHeader = FixedRecordInfo.GetHeader(recordReader.DataBuffer, recordOffset);
 
-            if (minimumFragmentLength > recordHeader.FragmentLength) throw new Exception("Invalid fragment length, minimum not reached");
-            if (maximumFragmentLength < recordHeader.FragmentLength) throw new Exception("Fragment length exceed possible limit for this instance of the record layer in block mode");
-            if (recordHeader.FragmentLength % blockSize != 0) throw new Exception("Length of the received fragment is not a multiple of the block size");
+            ThrowIfInvalidFragmentLength(recordHeader.FragmentLength);
 
             int ivOffset = recordOffset + RecordConst.HeaderLength;
             int encryptedContentOffset = ivOffset + blockSize;
@@ -146,6 +146,13 @@ namespace Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             readSeqNum++;
 
             return plainContentLength;
+        }
+
+        private void ThrowIfInvalidFragmentLength(int fragmentLength)
+        {
+            if (minimumFragmentLength > fragmentLength) throw new FatalAlertException("RecordLayer12.BlockFragmentCrypto", "After read record", (int)AlertDescription.BadRecordMac, "Invalid fragment length, minimum not reached");
+            if (maximumFragmentLength < fragmentLength) throw new FatalAlertException("RecordLayer12.BlockFragmentCrypto", "After read record", (int)AlertDescription.BadRecordMac, "Length of the fragment do not reach minimum value");
+            if (fragmentLength % blockSize != 0) throw new FatalAlertException("RecordLayer12.BlockFragmentCrypto", "After read record", (int)AlertDescription.BadRecordMac, "Length of the received fragment is not a multiple of the block size");
         }
 
         //decrypted fragment (content + mac + padding), iv must not be included
