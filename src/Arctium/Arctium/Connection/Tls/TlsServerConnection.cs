@@ -29,7 +29,7 @@ namespace Arctium.Connection.Tls
             if (cert == null) throw new ArgumentNullException("cert");
             if (version != TlsProtocolVersion.Tls12)
                 throw new NotSupportedException("Current implementation supprots only Tls12");
-            if (extensionsList != null) throw new NotSupportedException("Extensions not supported yet (must be set to null) ");
+            //if (extensionsList != null) throw new NotSupportedException("Extensions not supported yet (must be set to null) ");
 
             if (!cert.HasPrivateKey) throw new ArgumentException("certificate must contain private key");
             if (cert.GetRSAPrivateKey() == null) throw new ArgumentException("certificate must contain RSA private key");

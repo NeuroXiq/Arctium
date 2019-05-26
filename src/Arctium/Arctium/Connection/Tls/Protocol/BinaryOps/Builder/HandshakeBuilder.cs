@@ -15,7 +15,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
 
         public Handshake GetHandshake(byte[] buffer, int offset)
         {
-            HandshakeType handshakeType = ParseHandshakeType(buffer, offset + ProtocolFormatConst.HandshakeTypeOffset);
+            HandshakeType handshakeType = GetHandshakeType(buffer, offset + ProtocolFormatConst.HandshakeTypeOffset);
 
             int handshakeContentLength = (int)NumberConverter.ToUInt24(buffer, offset + ProtocolFormatConst.HandshakeLengthOffset);
 
@@ -129,11 +129,11 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder
 
         private void ThrowUnrecognizedHandshakeTypeException(byte value)
         {
-            string msg = "Unrecognized 'Handshake Type'. {0} is not associate with any 'HandshakeType' enum.";
+            string msg = "ERROR::HandshakeBuilder:: Unrecognized 'Handshake Type'. {0} is not associated with any 'HandshakeType' enum value.";
             throw new MessageFromatException(msg);
         }
 
-        private HandshakeType ParseHandshakeType(byte[] buffer, int offset)
+        private HandshakeType GetHandshakeType(byte[] buffer, int offset)
         {
             byte type = buffer[offset];
             

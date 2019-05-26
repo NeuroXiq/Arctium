@@ -5,6 +5,6 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
     abstract class HandshakeFormatterBase
     {
         public abstract int GetLength(Handshake handshake);
-        public abstract void FormatBytes(Handshake hs, byte[] buffer, int offset);
+        public abstract int GetBytes(byte[] buffer, int offset, Handshake handshakeMessage);
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
+using System.Text;
+using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters.ExtensionsFormatters
 {
@@ -11,67 +13,96 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
     // [extension] == [extension type (2 bytes)][data length (2 bytes)][data bytes]
     //                               
     //
-    // Im not sure how to format extensions when: 
-    //  1. value is null (HandshakeExtension[] extensions == null)
-    //  2. list is empty (extensions.Length == 0)
-    //
-    // Decided to treat this 2 cases in following manned:
-    // 1. When value is null then do nothing (0 bytes writed)
-    // 2. When extensions list length == 0 then add first 2 length bytes of value 0
-    // 
-    //  First case indicates that there is 'nothing', 
-    //  second that there IS extensions list but is empty. 
-    //
-    // Considerations above can change in future updates.
-    //
+    
 
     public class ExtensionsFormatter
     {
-        public ExtensionsFormatter() { }
+        static readonly Dictionary<HandshakeExtensionType, ExtensionFormatterBase> typeToFormatterMap;
+
+        static ExtensionsFormatter()
+        {
+            typeToFormatterMap = new Dictionary<HandshakeExtensionType, ExtensionFormatterBase>();
+        }
+        
 
 
         public int GetLength(HandshakeExtension[] extensions)
         {
             if (extensions == null) return 0;
-            if (extensions.Length == 0) return 2;
+            if (extensions.Length == 0) return 0;
 
+            //4 == extension_type (2 bytes) + ext_data_length (2 bytes) 
+            //4 * extensions.Length == 4 * for each extension
             int totalLength = 2 + (4 * extensions.Length);
 
             foreach (HandshakeExtension ext in extensions)
             {
-                switch (ext.Type)
-                {
-                    case HandshakeExtensionType.ServerName: totalLength += GetServerNameDataLength((ServerNameExtension)ext); break;
-                    case HandshakeExtensionType.ApplicationLayerProtocolNegotiation: totalLength +=  GetALPNDataLength((ALPNExtension)ext); break;
-                    default: continue;
-                }
+               
             }
+
+            //now add ext_data_length + ext_type (4 byte)
 
             return totalLength;
         }
 
         private int GetALPNDataLength(ALPNExtension ext)
         {
+            //format:
+            //
+            // 
+            //
+
             int totalStringsLength = 0;
             foreach (string protName in ext.ProtocolNameList) totalStringsLength += protName.Length;
 
             totalStringsLength += ext.ProtocolNameList.Length; // (1 bytes indicates each name length )
 
-            return totalStringsLength;
-
+            //2 byte of list length
+            return totalStringsLength + 2;
         }
 
         private int GetServerNameDataLength(ServerNameExtension ext)
         {
-            // 1 + 1 == hostName bytes + name length byte
-            return 1 + 1 + ext.Name.Length;
+            
+
+            if (ext.Name == null) return 0;
+            else
+            {
+                //2 == length of server_name_list
+                //2 == length of host_name vector
+                //1 == name_type
+
+
+                return 2 + 1 + 2 + (ext.Name.Length);
+            }
+
         }
 
-        public int FormatExtensions(byte[] buffer, int offset, HandshakeExtension[] extensions)
+        public int GetBytes(byte[] buffer, int offset, HandshakeExtension[] extensions)
         {
             if (extensions == null) return 0;
-            if (extensions.Length == 0) return 2;
+            if (extensions.Length == 0) return 0;
 
+            // 2 + 2 == first extension type (2 bytes) + first extensions length ( 2 bytes )
+            int extDataOffset = offset + 2 + 2;
+            int totalLength = 0;
+
+            foreach (HandshakeExtension ext in extensions)
+            {
+                
+
+                //format ext_type (4 byte before ext_data)
+                NumberConverter.FormatUInt16((ushort)ext.Type, buffer, extDataOffset - 4);
+
+                //format ext_data_length (2 bytes before ext_data)
+                NumberConverter.FormatUInt16((ushort)ext.Type, buffer, extDataOffset - 2);
+
+                //move to next format offset
+                totalLength += currentExtDataLength + 4;
+                extDataOffset += currentExtDataLength + 4;
+            }
+
+            return totalLength;
         }
     }
 }

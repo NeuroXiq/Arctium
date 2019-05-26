@@ -1,6 +1,7 @@
 ﻿
 using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters.ExtensionsFormatters;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters
 {
@@ -16,12 +17,17 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             public int CipherSuitesOffset;
             public int CompressionMethodsLengthOffset;
             public int CompressionMethodsOffset;
+            public int ExtensionsOffset;
         }
 
-        public ClientHelloFormatter()
-        { }
+        ExtensionsFormatter extensionsFormatter;
 
-        public override void FormatBytes(Handshake handshake, byte[] buffer, int offset)
+        public ClientHelloFormatter()
+        {
+            extensionsFormatter = new ExtensionsFormatter();
+        }
+
+        public override int GetBytes(byte[] buffer, int offset, Handshake handshake)
         {
             ClientHello hello = (ClientHello)handshake;
 
@@ -53,7 +59,11 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             for (int i = 0; i < hello.CompressionMethods.Length; i++)
             {
                 buffer[offsets.CompressionMethodsOffset + i] = (byte)hello.CompressionMethods[i];
-            } 
+            }
+
+            int formattedExtenionsLength = extensionsFormatter.GetBytes(buffer, offsets.ExtensionsOffset, hello.Extensions);
+
+            return offsets.CompressionMethodsOffset - offset + 1 + formattedExtenionsLength;
         }
 
         private Offsets ComputeOffsets(ClientHello hello, int shiftOffset)
@@ -68,6 +78,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             offsets.CipherSuitesOffset = offsets.CipherSuitesLengthOffset + 2;
             offsets.CompressionMethodsLengthOffset = offsets.CipherSuitesOffset + (2 * hello.CipherSuites.Length);
             offsets.CompressionMethodsOffset = offsets.CompressionMethodsLengthOffset + 1;
+            offsets.ExtensionsOffset = offsets.CompressionMethodsOffset + 1;
 
 
             offsets.VersionOffset += shiftOffset;
@@ -78,7 +89,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             offsets.CipherSuitesOffset += shiftOffset;
             offsets.CompressionMethodsLengthOffset += shiftOffset;
             offsets.CompressionMethodsOffset += shiftOffset;
-
+            offsets.CompressionMethodsOffset += shiftOffset ;
 
 
             return offsets;

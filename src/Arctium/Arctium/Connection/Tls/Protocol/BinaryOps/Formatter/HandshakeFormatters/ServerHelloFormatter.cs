@@ -4,7 +4,7 @@ using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters.Ex
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters
 {
-    class ServerHelloFormater
+    class ServerHelloFormatter : HandshakeFormatterBase
     {
         struct SHOffsets
         {
@@ -20,36 +20,33 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
 
         ExtensionsFormatter extensionsFormatter;
 
-        public ServerHelloFormater()
+        public ServerHelloFormatter()
         {
             extensionsFormatter = new ExtensionsFormatter();
         }
 
-        public byte[] GetBytes(ServerHello serverHello)
+        public override int GetBytes(byte[] buffer, int offset, Handshake handshakeMessage)
         {
-            byte[] fBuffer = new byte[GetLength(serverHello)];
+            ServerHello serverHello = (ServerHello)handshakeMessage;
 
             SHOffsets offsets = CalculateOffsets(serverHello);
 
-            fBuffer[offsets.MajorVersion] = serverHello.ProtocolVersion.Major;
-            fBuffer[offsets.MinorVersion] = serverHello.ProtocolVersion.Minor;
+            buffer[offsets.MajorVersion + offset] = serverHello.ProtocolVersion.Major;
+            buffer[offsets.MinorVersion + offset] = serverHello.ProtocolVersion.Minor;
 
             checked
             {
-                Buffer.BlockCopy(serverHello.Random, 0, fBuffer, offsets.Random, serverHello.Random.Length);
-                fBuffer[offsets.SessionIdLength] = (byte)serverHello.SessionID.Length;
-                Buffer.BlockCopy(serverHello.SessionID, 0, fBuffer, offsets.SessionId, serverHello.SessionID.Length);
-                NumberConverter.FormatUInt16((ushort)serverHello.CipherSuite, fBuffer, offsets.CipherSuite);
-                fBuffer[offsets.CompressionMethod] = (byte)serverHello.CompressionMethod;
+                Buffer.BlockCopy(serverHello.Random, 0, buffer, offsets.Random + offset, serverHello.Random.Length);
+                buffer[offsets.SessionIdLength + offset] = (byte)serverHello.SessionID.Length;
+                Buffer.BlockCopy(serverHello.SessionID, 0, buffer, offsets.SessionId + offset, serverHello.SessionID.Length);
+                NumberConverter.FormatUInt16((ushort)serverHello.CipherSuite, buffer, offsets.CipherSuite + offset);
+                buffer[offsets.CompressionMethod + offset] = (byte)serverHello.CompressionMethod;
             }
 
-            extensionsFormatter.FormatExtensions(fBuffer, offsets.ExtensionsOffset, serverHello.Extensions);
+            int formattedExtensionsLength = extensionsFormatter.GetBytes(buffer, offsets.ExtensionsOffset + offset, serverHello.Extensions);
 
-
-            return fBuffer;
+            return offsets.CompressionMethod + 1 + formattedExtensionsLength;
         }
-
-        
 
         private SHOffsets CalculateOffsets(ServerHello serverHello)
         {
@@ -62,13 +59,15 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             offsets.SessionId = 35;
             offsets.CipherSuite = offsets.SessionId + serverHello.SessionID.Length;
             offsets.CompressionMethod = offsets.CipherSuite + 2;
-
+            offsets.ExtensionsOffset = offsets.CompressionMethod + 1;
 
             return offsets;
         }
 
-        public int GetLength(ServerHello serverHello)
+        public override int GetLength(Handshake handshakeMsg)
         {
+            ServerHello serverHello = (ServerHello)handshakeMsg;
+
             int fullLength = 0;
 
             int versionLength = 2;
@@ -89,6 +88,8 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
 
             return fullLength;
         }
+
+        
     }
 }
 

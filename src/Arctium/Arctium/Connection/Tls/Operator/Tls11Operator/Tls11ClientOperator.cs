@@ -75,7 +75,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             SendCertifiateVerify();
             SendChangeCipherSpec();
 
-            
+
             // change cipher spec in own record layer
             recordLayer.ChangeWriteCipherSpec(secParams);
             SendFinished();
@@ -94,7 +94,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             protocol.HandshakeHandler -= FatalHandshake;
             protocol.HandshakeHandler += ReadHandshakeAndCache;
-            
+
             // start reading process
             protocol.Read();
             GetFinished();
@@ -188,7 +188,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         private void SendFinished()
         {
             PRF prf = new PRF();
-            
+
 
             MD5 md5 = MD5.Create();
             SHA1 sha1 = SHA1.Create();
@@ -304,10 +304,10 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             if (currentHandshakeMessage.MsgType == HandshakeType.ClientKeyExchange)
             {
                 //do something with this message.
-                
+
                 throw new NotImplementedException("Server key exchange not implemented");
                 // always expect server hello done OR next conditional message
-                protocol.Read();   
+                protocol.Read();
             }
         }
 
@@ -334,7 +334,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         private void SendClientHello()
         {
             ClientHello hello = new ClientHello();
-            hello.CipherSuites = new CipherSuite[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA};
+            hello.CipherSuites = new CipherSuite[] { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA };
             hello.ClientVersion = new Protocol.ProtocolVersion(3, 2);
             hello.CompressionMethods = new CompressionMethod[] { CompressionMethod.NULL };
             hello.MsgType = HandshakeType.ClientHello;

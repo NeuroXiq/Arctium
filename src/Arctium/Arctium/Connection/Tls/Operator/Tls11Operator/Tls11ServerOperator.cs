@@ -52,7 +52,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             return tlsOperator;
         }
 
-        
+
 
         private void HandshakeAsServer()
         {
@@ -141,7 +141,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         private void ServerHandshakeProcessor(Handshake message, byte[] rawBytes)
         {
-            if(handshakeState.NextExpectedRead != message.MsgType)
+            if (handshakeState.NextExpectedRead != message.MsgType)
             {
                 throw new Exception("Unexpected message type");
             }
@@ -214,7 +214,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
             handshakeState.NextExpectedRead = HandshakeType.Finished;
 
-            
+
         }
 
         private void DoClientHello(ClientHello clientHello)
@@ -318,7 +318,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         public override int ReadApplicationData(byte[] buffer, int offset, int length)
         {
-            if(applicationDataLength < 1)
+            if (applicationDataLength < 1)
                 highLevelProtocolStream.Read();
 
             int toRead = applicationDataLength > length ? length : applicationDataLength;

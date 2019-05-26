@@ -92,7 +92,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
             string name = Encoding.ASCII.GetString(buffer, extData.DataOffset + 2 + 2 + 1, extData.Length - 5);
 
 
-            ServerNameExtension sName = new ServerNameExtension(name);
+            ServerNameExtension sName = new ServerNameExtension(name, NameType.HostName);
 
             return sName;
         }

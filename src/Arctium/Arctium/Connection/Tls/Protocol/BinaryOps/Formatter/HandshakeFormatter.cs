@@ -2,105 +2,86 @@
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.FormatConsts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters;
+using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
 {
-    ///<summary>Handshake formatter changes object representation of handshake message to bytes of the handshake structure</summary>
+    ///<summary>Handshake formatter changes object representation of the handshake message to Handshake struct bytes ready to send in record layer fragment</summary>
     class HandshakeFormatter
     {
-        ServerHelloFormater serverHelloFormatter;
-        CertificateFormatter certificateFormatter;
-        ServerHelloDoneFormatter serverHelloDoneFormatter;
-        ClientHelloFormatter clientHelloFormatter;
-        ClientKeyExchangeFormatter clientKeyExchangeFormatter = new ClientKeyExchangeFormatter();
+        static Dictionary<HandshakeType, HandshakeFormatterBase> allFormatters;
+
+        static HandshakeFormatter()
+        {
+            allFormatters = new Dictionary<HandshakeType, HandshakeFormatterBase>();
+
+            allFormatters[HandshakeType.ClientHello] = new ClientHelloFormatter();
+
+            allFormatters[HandshakeType.ServerHello] = new ServerHelloFormatter();
+            allFormatters[HandshakeType.Certificate] = new CertificateFormatter();
+            allFormatters[HandshakeType.ServerKeyExchange] = new ServerKeyExchangeFormatter();
+            allFormatters[HandshakeType.CertificateRequest] = new CertificateRequestFormatter();
+            allFormatters[HandshakeType.ServerHelloDone] = new ServerHelloDoneFormatter();
+
+            allFormatters[HandshakeType.ClientKeyExchange] = new ClientKeyExchangeFormatter();
+            allFormatters[HandshakeType.CertificateVerify] = new CertificateVerifyFormatter();
+            allFormatters[HandshakeType.Finished] = new FinishedFormatter();
+        }
+
+        static HandshakeFormatterBase GetFormatter(HandshakeType type)
+        {
+            return allFormatters[type];
+        }
+
 
         public HandshakeFormatter()
         {
-            serverHelloFormatter = new ServerHelloFormater();
-            certificateFormatter = new CertificateFormatter();
-            serverHelloDoneFormatter = new ServerHelloDoneFormatter();
-            clientHelloFormatter = new ClientHelloFormatter();
         }
 
-        private byte[] FormatHandshake(HandshakeType type, byte[] innerMsgBytes)
+
+        ///<summary>
+        ///Creates byte representation of <see cref="Handshake"/> object.
+        ///This method creates ready to send  Handshake structure including msg_type and length fields
+        ///</summary>
+        public int GetBytes(byte[] buffer, int offset, Handshake handshakeMessage)
         {
-            byte[] handshakeBytes = new byte[innerMsgBytes.Length + HandshakeConst.HeaderLength];
+            HandshakeFormatterBase formatter = GetFormatter(handshakeMessage.MsgType);
 
-            handshakeBytes[0] = (byte)type;
-            NumberConverter.FormatUInt24(innerMsgBytes.Length, handshakeBytes, 1);
+            int innerBytesLength = formatter.GetBytes(buffer, offset + 4, handshakeMessage);
 
-            int innerMsgOffset = HandshakeConst.HeaderLength;
-            Array.Copy(innerMsgBytes, 0, handshakeBytes, innerMsgOffset, innerMsgBytes.Length);
+            buffer[offset] = (byte)handshakeMessage.MsgType;
+            NumberConverter.FormatUInt24(innerBytesLength, buffer, offset + 1);
 
-            return handshakeBytes;
+            return 4 + innerBytesLength;
         }
 
-        public byte[] GetBytes(Handshake handshake)
+        public byte[] GetBytes(Handshake handshakeMessage)
         {
-            byte[] innerBytes;
+            HandshakeFormatterBase formatter = GetFormatter(handshakeMessage.MsgType);
+            byte[] buffer = new byte[formatter.GetLength(handshakeMessage) + 4];
 
-            switch (handshake.MsgType)
-            {
-                case HandshakeType.ServerHello:
-                    innerBytes = serverHelloFormatter.GetBytes(handshake as ServerHello);
-                    break;
-                case HandshakeType.Certificate:
-                    innerBytes = certificateFormatter.GetBytes(handshake as Certificate);
-                    break;
-                case HandshakeType.ServerHelloDone:
-                    innerBytes = serverHelloDoneFormatter.GetBytes(handshake as ServerHelloDone);
-                    break;
-                case HandshakeType.Finished:
-                    return FormatHandshake(HandshakeType.Finished, (handshake as Finished).VerifyData);
-                case HandshakeType.ServerKeyExchange:
-                case HandshakeType.CertificateRequest:
-                case HandshakeType.HelloRequest:
-                case HandshakeType.ClientHello:
-                    innerBytes = new byte[clientHelloFormatter.GetLength(handshake)];
-                    clientHelloFormatter.FormatBytes(handshake, innerBytes, 0);
-                    break;
-                case HandshakeType.CertificateVerify:
-                case HandshakeType.ClientKeyExchange:
-                    innerBytes = new byte[clientKeyExchangeFormatter.GetLength(handshake)];
-                    clientKeyExchangeFormatter.FormatBytes(handshake, innerBytes, 0);
-                    break; 
-                default:
-                    throw new NotImplementedException();
-            }
+            GetBytes(buffer, 0, handshakeMessage);
 
-            return FormatHandshake(handshake.MsgType, innerBytes);
+            return buffer;
         }
 
-        public byte[] GetBytes(Finished finished)
+        public int GetLength(Handshake handshakeMessage)
         {
-            byte[] innerMsgBytes = finished.VerifyData;
-            return FormatHandshake(HandshakeType.Finished, innerMsgBytes);
+            // 1 byte    |3 bytes    | 'handshakeMessage' depend length
+            // [msg_type][msg_length][handshake message bytes of msg_type type]
+            //                       |
+            // this fields           | formatter compute this length
+            // formatted do not      |
+            // include, they are     |
+            // const   of 4 bytes len|
 
+            var formatter = GetFormatter(handshakeMessage.MsgType);
+
+            int msgTypeLength = 1;
+            int lengthLength = 3;
+            int formattedLength = formatter.GetLength(handshakeMessage);
+
+            return msgTypeLength + lengthLength + formattedLength;
         }
-
-        public byte[] GetBytes(ServerHello serverHello)
-        {
-            byte[] innerMsgBytes =  serverHelloFormatter.GetBytes(serverHello);
-            byte[] handshakeBytes = FormatHandshake(HandshakeType.ServerHello, innerMsgBytes);
-
-            return handshakeBytes;
-        }
-
-        public byte[] GetBytes(Certificate certificate)
-        {
-            byte[] innerMsgBytes = certificateFormatter.GetBytes(certificate);
-            byte[] handshakeBytes = FormatHandshake(HandshakeType.Certificate, innerMsgBytes);
-
-            return handshakeBytes;
-        }
-
-        public byte[] GetBytes(ServerHelloDone serverHelloDone)
-        {
-            byte[] innerMsgBytes = serverHelloDoneFormatter.GetBytes(serverHelloDone);
-            byte[] handshakeBytes = FormatHandshake(HandshakeType.ServerHelloDone, innerMsgBytes);
-
-            return handshakeBytes;
-        }
-        
     }
 }

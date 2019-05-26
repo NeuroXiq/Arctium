@@ -74,7 +74,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                     string serverName = ((SniExtension)ext).ServerName;
 
                     //create internal extension
-                    internalExt = new ServerNameExtension(serverName);
+                    internalExt = new ServerNameExtension(serverName, NameType.HostName);
 
                 }
                 else throw new Exception("INTERNAL_ERROR_NOT_IMPLEMENTED::ExtensionsHandler, Unrecognized public api extension to format");
