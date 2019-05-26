@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
 using Arctium.Connection.Tls.Exceptions;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {

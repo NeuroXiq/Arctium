@@ -5,11 +5,12 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {
-    class CertificateBuilder
+    class CertificateBuilder : HandshakeBuilderBase
     {
         public CertificateBuilder() { }
 
-        public Certificate BuildFromBytes(byte[] buffer, int offset, int length)
+       
+        public override Handshake BuildFromBytes(byte[] buffer, int offset, int length)
         {
             List<X509Certificate2> certs = new List<X509Certificate2>();
 

@@ -7,7 +7,7 @@ using System;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {
-    class ClientHelloBuilder
+    class ClientHelloBuilder : HandshakeBuilderBase
     {
         struct Format
         {
@@ -27,42 +27,9 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 
         }
 
-        public ClientHello BuildClientHello(byte[] buffer, int clientHelloOffset, int bytesInMessage)
+        public override Handshake BuildFromBytes(byte[] buffer, int clientHelloOffset, int bytesInMessage)
         {
             Format format = GetFormat(buffer, clientHelloOffset, bytesInMessage);
-
-            //int sessionIdLength = -1;
-            //int cipherSuiteLength = -1;
-            //int compressionMethodsLength = -1;
-
-            //int sessionIdLengthOffset = 34 + clientHelloOffset;
-            //if (sessionIdLengthOffset >= bytesInMessage) throw new Exception("invalid length of client hello");
-            //sessionIdLength = buffer[sessionIdLengthOffset];
-
-            //int cipherSuiteLengthOffset = sessionIdLengthOffset + 1 + sessionIdLength;
-            //if (cipherSuiteLengthOffset >= bytesInMessage) throw new Exception("invalid length of client hello");
-            //cipherSuiteLength = NumberConverter.ToUInt16(buffer, cipherSuiteLengthOffset);
-
-            //int compressionMethodLengthOffset = cipherSuiteLengthOffset + 2 + cipherSuiteLength;
-            //if (compressionMethodLengthOffset >= bytesInMessage) throw new Exception("invalid length of client hello");
-            //compressionMethodsLength = buffer[compressionMethodLengthOffset];
-
-            //if (cipherSuiteLength % 2 == 1) throw new Exception("invalid length of cipher suites");
-
-            //byte majorVersion = buffer[clientHelloOffset + 0];
-            //byte minorVersion = buffer[clientHelloOffset + 1];
-
-            //byte[] sessionIdBytes = new byte[sessionIdLength];
-            //Array.Copy(buffer, sessionIdLengthOffset + 1, sessionIdBytes, 0, sessionIdLength);
-
-            //ClientHello clientHello = new ClientHello();
-            //clientHello.ClientVersion = new ProtocolVersion(majorVersion, minorVersion);
-            //clientHello.Random = GetHelloRandom(buffer, clientHelloOffset + 2);
-            //clientHello.SessionID = sessionIdBytes ;//new SessionID(sessionIdBytes);
-            //clientHello.CipherSuites = GetCipherSuite(buffer, cipherSuiteLength, cipherSuiteLengthOffset + 2);
-            //clientHello.CompressionMethods = BuildCompressionMethods(buffer, compressionMethodLengthOffset + 1, compressionMethodsLength);
-
-
 
             ClientHello clientHello = new ClientHello();
             clientHello.ClientVersion = new ProtocolVersion(buffer[format.majVer], buffer[format.minVer]);
@@ -191,5 +158,93 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 
             //return new HelloRandom(gmtUnixTime, randomBytes);
         }
+
+
     }
 }
+
+
+
+
+
+
+
+// 
+// IGNORE COPY
+//
+
+
+
+/*
+  public ClientHello BuildClientHello(byte[] buffer, int clientHelloOffset, int bytesInMessage)
+        {
+            Format format = GetFormat(buffer, clientHelloOffset, bytesInMessage);
+
+            //int sessionIdLength = -1;
+            //int cipherSuiteLength = -1;
+            //int compressionMethodsLength = -1;
+
+            //int sessionIdLengthOffset = 34 + clientHelloOffset;
+            //if (sessionIdLengthOffset >= bytesInMessage) throw new Exception("invalid length of client hello");
+            //sessionIdLength = buffer[sessionIdLengthOffset];
+
+            //int cipherSuiteLengthOffset = sessionIdLengthOffset + 1 + sessionIdLength;
+            //if (cipherSuiteLengthOffset >= bytesInMessage) throw new Exception("invalid length of client hello");
+            //cipherSuiteLength = NumberConverter.ToUInt16(buffer, cipherSuiteLengthOffset);
+
+            //int compressionMethodLengthOffset = cipherSuiteLengthOffset + 2 + cipherSuiteLength;
+            //if (compressionMethodLengthOffset >= bytesInMessage) throw new Exception("invalid length of client hello");
+            //compressionMethodsLength = buffer[compressionMethodLengthOffset];
+
+            //if (cipherSuiteLength % 2 == 1) throw new Exception("invalid length of cipher suites");
+
+            //byte majorVersion = buffer[clientHelloOffset + 0];
+            //byte minorVersion = buffer[clientHelloOffset + 1];
+
+            //byte[] sessionIdBytes = new byte[sessionIdLength];
+            //Array.Copy(buffer, sessionIdLengthOffset + 1, sessionIdBytes, 0, sessionIdLength);
+
+            //ClientHello clientHello = new ClientHello();
+            //clientHello.ClientVersion = new ProtocolVersion(majorVersion, minorVersion);
+            //clientHello.Random = GetHelloRandom(buffer, clientHelloOffset + 2);
+            //clientHello.SessionID = sessionIdBytes ;//new SessionID(sessionIdBytes);
+            //clientHello.CipherSuites = GetCipherSuite(buffer, cipherSuiteLength, cipherSuiteLengthOffset + 2);
+            //clientHello.CompressionMethods = BuildCompressionMethods(buffer, compressionMethodLengthOffset + 1, compressionMethodsLength);
+
+
+
+            ClientHello clientHello = new ClientHello();
+            clientHello.ClientVersion = new ProtocolVersion(buffer[format.majVer], buffer[format.minVer]);
+
+            clientHello.Random = new byte[32];
+            Buffer.BlockCopy(buffer, format.Rand, clientHello.Random, 0, 32);
+
+            clientHello.SessionID = new byte[format.SesIdLen];
+            Buffer.BlockCopy(buffer, format.SesId, clientHello.SessionID, 0, format.SesIdLen);
+
+            if (format.CipSuiteLen % 2 != 0) throw new Exception("invalid length of the cipher suites");
+
+            clientHello.CipherSuites = new CipherSuite[format.CipSuiteLen / 2];
+            for (int i = 0; i < format.CipSuiteLen / 2; i++)
+                clientHello.CipherSuites[i] = (CipherSuite)NumberConverter.ToUInt16(buffer, (i*2) + format.CipSuite);
+
+            clientHello.CompressionMethods = new CompressionMethod[format.ComprMethLen];
+            for (int i = 0; i < format.ComprMethLen; i++)
+                clientHello.CompressionMethods[i] = (CompressionMethod)buffer[format.ComprMeth];
+
+            HandshakeExtension[] extensions = new HandshakeExtension[0];
+
+            //compression method is the last filed in client hello before extensions (if present)
+            //compute length of expected extensions block (extensions length field included in computed length)
+            int extensionsBlockLength = bytesInMessage - (format.ComprMeth - clientHelloOffset + 1);
+            if (extensionsBlockLength > 0)
+            {
+                extensions = BuildExtensions(buffer, format.ComprMeth + format.ComprMethLen, extensionsBlockLength);
+            }
+
+            clientHello.Extensions = extensions;
+
+            return clientHello;
+        }
+     
+     */

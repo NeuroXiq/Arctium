@@ -40,6 +40,7 @@ namespace Arctium.Connection.Tls
             tls12Serverconfig = new Tls12ServerConfig();
             tls12Serverconfig.Certificates = new X509Certificate2[] { cert };
             tls12Serverconfig.EnableCipherSuites = DefaultConfigurations.CreateDefaultTls12CipherSuites();
+            tls12Serverconfig.HandshakeExtensions = extensionsList;
         }
 
         ///<summary>Accept new connection from specified stream</summary>

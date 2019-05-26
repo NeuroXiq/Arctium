@@ -3,7 +3,7 @@ using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {
-    class ServerHelloBuilder
+    class ServerHelloBuilder : HandshakeBuilderBase
     {
         struct Offsets
         {
@@ -19,7 +19,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
         public ServerHelloBuilder() { }
 
 
-        public ServerHello BuildFromBytes(byte[] buffer, int offset, int length)
+        public override Handshake BuildFromBytes(byte[] buffer, int offset, int length)
         {
             ServerHello hello = new ServerHello();
             Offsets offsets = GetOffsets(buffer, offset);

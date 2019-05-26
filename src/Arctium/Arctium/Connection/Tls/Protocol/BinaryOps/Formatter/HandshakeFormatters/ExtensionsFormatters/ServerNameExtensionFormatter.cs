@@ -10,7 +10,11 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
         {
             ServerNameExtension ext = (ServerNameExtension)extension;
 
-            if (ext.Name == null) return 0;
+            if (ext.Name == null)
+            {
+                //NumberConverter.FormatUInt16(0, buffer, offset);
+                return 0;
+            }
 
             //Assumes that there is only 1 entry in list
 
@@ -33,7 +37,19 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
 
         public override int GetLength(HandshakeExtension extension)
         {
-            throw new NotImplementedException();
+            ServerNameExtension ext = (ServerNameExtension)extension;
+
+            if (ext.Name == null) return 0;
+            else
+            {
+                //2 == length of server_name_list
+                //2 == length of host_name vector
+                //1 == name_type
+
+
+                return 2 + 1 + 2 + (ext.Name.Length);
+            }
+
         }
     }
 }

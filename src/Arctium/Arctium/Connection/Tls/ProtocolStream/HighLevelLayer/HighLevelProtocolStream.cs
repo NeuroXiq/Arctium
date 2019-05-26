@@ -11,6 +11,7 @@ using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
 using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders;
 
 namespace Arctium.Connection.Tls.ProtocolStream.HighLevelLayer
 {

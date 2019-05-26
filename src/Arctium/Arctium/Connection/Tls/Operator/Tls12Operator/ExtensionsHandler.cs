@@ -17,20 +17,39 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         public ExtensionsHandler() { }
 
 
-        public HandshakeExtension[] BuildAllHandshakeExtensionsOnServer(HandshakeExtension[] clientHelloExtensions, TlsHandshakeExtension[] tlsHandshakeExtensions)
+        public HandshakeExtension[] BuildAllHandshakeExtensionsOnServer(HandshakeExtension[] clientHelloExtensions, TlsHandshakeExtension[] toResponseExtensions)
         {
             List<HandshakeExtension> allExtensions = new List<HandshakeExtension>();
             
-            HandshakeExtension[] tlsHandshakeExtension = BuildTlsHandshakeExtensionsOnServer(clientHelloExtensions, tlsHandshakeExtensions);
+            HandshakeExtension[] tlsHandshakeExtension = BuildResponseToExtensions(clientHelloExtensions, toResponseExtensions);
             HandshakeExtension[] internalExtensions = GetInternalServerExtensions(clientHelloExtensions);
+
+            allExtensions.AddRange(tlsHandshakeExtension);
+            allExtensions.AddRange(internalExtensions);
 
             return allExtensions.ToArray();
         }
 
         ///<summary>Build result for ClientHello extensions based on provided TlsHandshakeExtension's</summary>
-        private HandshakeExtension[] BuildTlsHandshakeExtensionsOnServer(HandshakeExtension[] clientHelloExtensions, TlsHandshakeExtension[] tlsHandshakeExtensions)
+        private HandshakeExtension[] BuildResponseToExtensions(HandshakeExtension[] clientHelloExtensions, TlsHandshakeExtension[] tlsHandshakeExtensions)
         {
-            return null;
+            
+
+            List<HandshakeExtension> responseExtensions = new List<HandshakeExtension>();
+
+            foreach (var responseExt in tlsHandshakeExtensions)
+            {
+                foreach (var clientExt in clientHelloExtensions)
+                {
+                    if (clientExt.Type == responseExt.internalExtensionType)
+                    {
+                        HandshakeExtension responseResult = responseExt.GetResponse(clientExt);
+                        responseExtensions.Add(responseResult);
+                    }
+                }
+            }
+
+            return responseExtensions.ToArray();
         }
 
         ///<summary>Build server internal extensions to internal usage (should not be exposed as public, e.g. record max length)</summary>

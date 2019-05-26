@@ -24,6 +24,8 @@
         ProtocolVersion = 70,
         InternalError = 80,
         UserCanceled = 90,
-        NoRenegotiation = 100
+        NoRenegotiation = 100,
+        UnrecognizedName = 112,
+        NoApplicationProtocol = 120
     }
 }

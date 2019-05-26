@@ -9,28 +9,28 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter
     ///<summary>Handshake formatter changes object representation of the handshake message to Handshake struct bytes ready to send in record layer fragment</summary>
     class HandshakeFormatter
     {
-        static Dictionary<HandshakeType, HandshakeFormatterBase> allFormatters;
+        static Dictionary<HandshakeType, HandshakeFormatterBase> handshakeTypeToFormatter;
 
         static HandshakeFormatter()
         {
-            allFormatters = new Dictionary<HandshakeType, HandshakeFormatterBase>();
+            handshakeTypeToFormatter = new Dictionary<HandshakeType, HandshakeFormatterBase>();
 
-            allFormatters[HandshakeType.ClientHello] = new ClientHelloFormatter();
+            handshakeTypeToFormatter[HandshakeType.ClientHello] = new ClientHelloFormatter();
 
-            allFormatters[HandshakeType.ServerHello] = new ServerHelloFormatter();
-            allFormatters[HandshakeType.Certificate] = new CertificateFormatter();
-            allFormatters[HandshakeType.ServerKeyExchange] = new ServerKeyExchangeFormatter();
-            allFormatters[HandshakeType.CertificateRequest] = new CertificateRequestFormatter();
-            allFormatters[HandshakeType.ServerHelloDone] = new ServerHelloDoneFormatter();
+            handshakeTypeToFormatter[HandshakeType.ServerHello] = new ServerHelloFormatter();
+            handshakeTypeToFormatter[HandshakeType.Certificate] = new CertificateFormatter();
+            handshakeTypeToFormatter[HandshakeType.ServerKeyExchange] = new ServerKeyExchangeFormatter();
+            handshakeTypeToFormatter[HandshakeType.CertificateRequest] = new CertificateRequestFormatter();
+            handshakeTypeToFormatter[HandshakeType.ServerHelloDone] = new ServerHelloDoneFormatter();
 
-            allFormatters[HandshakeType.ClientKeyExchange] = new ClientKeyExchangeFormatter();
-            allFormatters[HandshakeType.CertificateVerify] = new CertificateVerifyFormatter();
-            allFormatters[HandshakeType.Finished] = new FinishedFormatter();
+            handshakeTypeToFormatter[HandshakeType.ClientKeyExchange] = new ClientKeyExchangeFormatter();
+            handshakeTypeToFormatter[HandshakeType.CertificateVerify] = new CertificateVerifyFormatter();
+            handshakeTypeToFormatter[HandshakeType.Finished] = new FinishedFormatter();
         }
 
         static HandshakeFormatterBase GetFormatter(HandshakeType type)
         {
-            return allFormatters[type];
+            return handshakeTypeToFormatter[type];
         }
 
 

@@ -24,13 +24,21 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
                 insertNameOffset += writedCount + 1;
                 insertNameLengthOffset += writedCount + 1;
             }
-
-            return listLength;
+            NumberConverter.FormatUInt16((ushort)listLength, buffer, offset);
+            return listLength + 2;
         }
 
         public override int GetLength(HandshakeExtension extension)
         {
-            throw new NotImplementedException();
+            ALPNExtension ext = (ALPNExtension)extension;
+
+            int totalStringsLength = 0;
+            foreach (string protName in ext.ProtocolNameList) totalStringsLength += protName.Length;
+
+            totalStringsLength += ext.ProtocolNameList.Length; // (1 bytes indicates each name length )
+
+            //2 byte of list length
+            return totalStringsLength + 2;
         }
     }
 }

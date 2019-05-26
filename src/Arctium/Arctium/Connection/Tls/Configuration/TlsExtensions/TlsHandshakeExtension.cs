@@ -9,7 +9,7 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
     // and thats why only several can be configurable by the user
     //
 
-    public class TlsHandshakeExtension
+    public abstract class TlsHandshakeExtension
     {
         internal HandshakeExtensionType internalExtensionType;
 
@@ -17,5 +17,8 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
         {
             internalExtensionType = msgType;
         }
+
+
+        internal abstract HandshakeExtension GetResponse(HandshakeExtension extensionFromClient);
     }
 }
