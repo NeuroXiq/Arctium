@@ -8,8 +8,9 @@ Available features:
 | TLS 1.1       |     X        |[RFC 4346]  |
 | TLS 1.2       | Partial      |[RFC 5246]  |
 | TLS 1.3       |     X        |[RFC 8446]  |
+| ECC Crypto    |     X        |[RFC 4492]  |
 | TLS Extensions| Partial      |[RFC 6066]  |
-| ALPN          | X            |[RFC 7301]  |
+| ALPN          |     X        |[RFC 7301]  |
 
 #### Public Extensions
  * SNI (Server name)
@@ -43,4 +44,5 @@ TLS_RSA_WITH_AES_256_CBC_SHA256
 [RFC 6066]:<https://tools.ietf.org/html/rfc6066>
 [RFC 8446]:<https://tools.ietf.org/html/rfc8446>
 [RFC 7301]:<https://tools.ietf.org/html/rfc7301>
+[RFC 4492]:<https://tools.ietf.org/html/rfc4492>
 [Tls docs]:<docs/Connection/Tls/>
