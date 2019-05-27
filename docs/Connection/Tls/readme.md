@@ -10,9 +10,9 @@ Available features:
 | TLS 1.3       |     X        |[RFC 8446]  |
 | ECC Crypto    |     X        |[RFC 4492]  |
 | TLS Extensions| Partial      |[RFC 6066]  |
-| ALPN          |     X        |[RFC 7301]  |
+| ALPN          |    Yes       |[RFC 7301]  |
 
-#### Public Extensions
+#### Configurable Extensions
  * SNI (Server name)
  * ALPN (Application layer protocol negotiation)
 

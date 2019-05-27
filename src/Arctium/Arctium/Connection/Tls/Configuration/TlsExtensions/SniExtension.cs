@@ -41,7 +41,7 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
             foreach (CertNamePair cnPair in certNamePairs)
             {
                 if (cnPair.ServerName == clientSni.Name)
-                    return new ServerNameExtension(clientSni.Name, NameType.HostName);
+                    return new ServerNameExtension(null, NameType.HostName);
             }
 
             //not sure to throw this here

@@ -94,26 +94,26 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             currentContext = new Context(recordLayer);
 
-            //try
+            try
             {
                 GetClientHello();
                 ProcessSessionOpenAfterClientHello();
 
                 isSessionOpened = true;
             }
-            //catch (FatalAlertException e)
-            //{
-            //    ActionOnFatalException();
-            //    SendFatalAlert((AlertDescription)e.AlertDescriptionNumber);
-            //    throw e;
-            //}
-            //catch (Exception e)
-            //{
-            //    //unrecognized exception, internal error
-            //    SendFatalAlert(AlertDescription.InternalError);
-            //    ActionOnFatalException();
-            //    throw e;
-            //}
+            catch (FatalAlertException e)
+            {
+                ActionOnFatalException();
+                SendFatalAlert((AlertDescription)e.AlertDescriptionNumber);
+                throw e;
+            }
+            catch (Exception e)
+            {
+                //unrecognized exception, internal error
+                SendFatalAlert(AlertDescription.InternalError);
+                ActionOnFatalException();
+                throw e;
+            }
 
             return currentContext.allHandshakeMessages;
         }
