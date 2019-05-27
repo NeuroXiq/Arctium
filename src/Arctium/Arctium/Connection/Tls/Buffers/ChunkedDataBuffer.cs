@@ -28,7 +28,8 @@ namespace Arctium.Connection.Tls.Buffers
         {
             if (totalFreeSpace < appendLength)
             {
-                ExtendBuffer(appendLength - totalFreeSpace + DataLength);
+                int extendLength = (appendLength + DataLength) - totalFreeSpace;
+                ExtendBuffer(extendLength + DataBuffer.Length);
             }
 
             int appendFreeSpace = DataBuffer.Length - DataOffset - DataLength;

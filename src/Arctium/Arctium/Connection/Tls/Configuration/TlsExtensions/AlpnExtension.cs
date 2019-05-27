@@ -49,5 +49,15 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
                 (int)AlertDescription.NoApplicationProtocol,
                 "not found protocol name which support both parties of the connection. All client protocll names do not match supported server protocol names");
         }
+
+        internal override HandshakeExtension ConvertToClientRequest()
+        {
+            //converts from public usage extensions to internal format which will be send in client hello.
+            //internal class is 'HandshakeExtension' and is not marked as public.
+
+            HandshakeExtension converted = new ALPNExtension(SupportedProtocolNames);
+
+            return converted;
+        }
     }
 }

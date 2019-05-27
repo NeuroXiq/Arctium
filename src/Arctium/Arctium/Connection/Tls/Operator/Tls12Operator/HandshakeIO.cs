@@ -38,7 +38,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         List<HandshakeMessageData> messagesTransmissionCache;
 
-        byte[] readBuffer = new byte[0x48 + 2048];
+        byte[] readBuffer = new byte[0x4800 + 2048];
 
         public HandshakeIO(RecordLayer12 recordLayer)
         {

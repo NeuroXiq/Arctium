@@ -53,5 +53,13 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
                 "client gives server name that do not match any server name on server side. This means that cannot select appriopriate certificate in response");
 
         }
+
+        internal override HandshakeExtension ConvertToClientRequest()
+        {
+            HandshakeExtension converted = new ServerNameExtension(ServerName, NameType.HostName);
+
+            return converted;
+                
+        }
     }
 }

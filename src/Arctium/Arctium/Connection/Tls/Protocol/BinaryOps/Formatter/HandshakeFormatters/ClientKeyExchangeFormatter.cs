@@ -18,7 +18,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
 
         public override int GetLength(Handshake handshake)
         {
-            return ((ClientKeyExchange)handshake).ExchangeKeys.Length;
+            return ((ClientKeyExchange)handshake).ExchangeKeys.Length + 2;
         }
     }
 }

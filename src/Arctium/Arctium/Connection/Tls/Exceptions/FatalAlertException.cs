@@ -14,7 +14,7 @@ namespace Arctium.Connection.Tls.Exceptions
         ///<summary>More informations about exception</summary>
         public string Description { get; private set; }
 
-        ///<summary>Exception is thrown when fatal alert error occur during processing TLS</summary>
+        ///<summary>Exception is thrown when fatal alert error occur during TLS transmission</summary>
         public FatalAlertException(
             string where, string when, int alertNumber, string description) : base(description)
         {

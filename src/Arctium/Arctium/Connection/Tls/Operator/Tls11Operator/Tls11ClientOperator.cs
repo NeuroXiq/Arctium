@@ -225,10 +225,10 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
 
         private void SendClientKeyExchange()
         {
-            ClientKeyExchange kkx = new ClientKeyExchange();
+            
             byte[] premaster = GeneratePremasterSecret();
             byte[] encrypted = EncryptPremasterSecret(premaster);
-
+            ClientKeyExchange kkx = new ClientKeyExchange(encrypted);
             kkx.ExchangeKeys = encrypted;
 
             WriteAndCacheMessage(kkx);

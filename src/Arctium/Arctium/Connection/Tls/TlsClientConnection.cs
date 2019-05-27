@@ -1,21 +1,32 @@
-﻿using Arctium.Connection.Tls.Operator.Tls11Operator;
-using Arctium.Connection.Tls.ProtocolStream.RecordsLayer;
+﻿using Arctium.Connection.Tls.Configuration;
+using Arctium.Connection.Tls.Operator;
+using Arctium.Connection.Tls.Operator.Tls12Operator;
 using System.IO;
 
 namespace Arctium.Connection.Tls
 {
     public class TlsClientConnection
     {
+        Tls12ClientConfig config;
+
         public TlsClientConnection() { }
 
-
-        public TlsStream Connect(Stream innerStream)
+        public TlsConnectionResult Connect(Stream innerStream)
         {
-            RecordIO recordIO = new RecordIO(innerStream);
-            Tls11ClientOperator o = Tls11ClientOperator.Initialize(recordIO);
-            o.OpenNewSession();
+            config = new Tls12ClientConfig();
+            config.EnableCipherSuites = DefaultConfigurations.CreateDefaultTls12CipherSuites();
+            config.Extensions = null;
 
-            return new TlsStream(o);
+            Tls12ClientOperator clientOperator = new Tls12ClientOperator(config, innerStream);
+            clientOperator.OpenSession();
+
+
+            TlsConnectionResult result = new TlsConnectionResult();
+            result.ExtensionsResult = null;
+            result.Session = null;
+            result.TlsStream = new TlsStream(clientOperator);
+
+            return result;
         }
 
         public int Read(byte[] buffer, int offset, int length)

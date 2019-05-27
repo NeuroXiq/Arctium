@@ -7,8 +7,6 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
     {
         public override Handshake BuildFromBytes(byte[] buffer, int offset, int length)
         {
-            ClientKeyExchange keyExchange = new ClientKeyExchange();
-            keyExchange.MsgType = HandshakeType.ClientKeyExchange;
             int encryptedBytesVectorLength = NumberConverter.ToUInt16(buffer, offset);
 
             int delta = encryptedBytesVectorLength - length + 2;
@@ -20,7 +18,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 
             int encryptedBytesOffset = offset + 2;
 
-            keyExchange.ExchangeKeys = new byte[encryptedBytesVectorLength];
+            ClientKeyExchange keyExchange = new ClientKeyExchange(new byte[encryptedBytesVectorLength]);
             Array.Copy(buffer, encryptedBytesOffset, keyExchange.ExchangeKeys, 0, encryptedBytesVectorLength);
 
             return keyExchange;

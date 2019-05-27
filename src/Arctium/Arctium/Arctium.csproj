@@ -44,6 +44,7 @@
     <Compile Include="Connection\Tls\Buffers\BufferTools.cs" />
     <Compile Include="Connection\Tls\Buffers\ChunkedDataBuffer.cs" />
     <Compile Include="Connection\Tls\Configuration\Tls12ClientConfig.cs" />
+    <Compile Include="Connection\Tls\Configuration\Tls12Session.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\AlpnExtension.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\SniExtension.cs" />
     <Compile Include="Connection\Tls\Configuration\TlsExtensions\TlsHandshakeExtension.cs" />
@@ -56,6 +57,7 @@
     <Compile Include="Connection\Tls\Operator\Tls12Operator\ExtensionsHandler.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeMessages.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\ClientKeyExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ClientOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IRecordCryptoFilter.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />

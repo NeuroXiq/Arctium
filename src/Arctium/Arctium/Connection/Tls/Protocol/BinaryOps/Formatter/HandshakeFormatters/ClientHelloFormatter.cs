@@ -89,7 +89,6 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             offsets.CipherSuitesOffset += shiftOffset;
             offsets.CompressionMethodsLengthOffset += shiftOffset;
             offsets.CompressionMethodsOffset += shiftOffset;
-            offsets.CompressionMethodsOffset += shiftOffset ;
 
 
             return offsets;

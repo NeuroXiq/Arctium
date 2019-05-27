@@ -53,7 +53,7 @@ namespace Arctium.Connection.Tls
 
             TlsConnectionResult result = new TlsConnectionResult();
             result.TlsStream = new TlsStream(tls12Operator);
-            result.Extensions = null;
+            result.ExtensionsResult = null;
 
             return result;
         }

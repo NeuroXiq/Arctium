@@ -4,8 +4,9 @@
     {
         public byte[] ExchangeKeys;
 
-        public ClientKeyExchange()
+        public ClientKeyExchange(byte[] exchangeKeyBytes)
         {
+            ExchangeKeys = exchangeKeyBytes;
             base.MsgType = HandshakeType.ClientKeyExchange;
         }
     }

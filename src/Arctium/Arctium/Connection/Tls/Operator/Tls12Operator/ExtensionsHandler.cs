@@ -64,49 +64,26 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             return new HandshakeExtension[0];
         }
 
-        ///<summary>Convert TlsHandshakeExtension's on client side to <see cref="HandshakeExtension"/> object which can be injected to ClientHello message</summary>
-        public HandshakeExtension[] BuildTlsHandshakeExtensionsOnClient(TlsHandshakeExtension[] tlsHandshakeExtensions)
+        public HandshakeExtension[] BuildClientHelloExtensions(TlsHandshakeExtension[] additionalExtensions)
         {
+            HandshakeExtension[] extensions = BuildAdditionalClientExtensions(additionalExtensions);
+
+            return extensions;
+        }
+
+        private HandshakeExtension[] BuildAdditionalClientExtensions(TlsHandshakeExtension[] additionalExtensions)
+        {
+            if (additionalExtensions == null) return new HandshakeExtension[0];
             List<HandshakeExtension> convertedToInternal = new List<HandshakeExtension>();
 
-            // Conversion from public TlsHandshakeExtension object in client state to 
-            // internal state-less HandshakeExtension. 'HandshakeExtension' objects can be directly formatter to bytes and 
-            // sended to recipient.
-            //
-            // Current conversion is very simple and short. 
-
-            foreach (TlsHandshakeExtension ext in tlsHandshakeExtensions)
+           
+            foreach (TlsHandshakeExtension ext in additionalExtensions)
             {
-                HandshakeExtension internalExt = null;
-
-                if (ext.internalExtensionType == HandshakeExtensionType.ApplicationLayerProtocolNegotiation)
-                {
-                    // get data from public extension
-                    string[] supportedProtocolNames = ((AlpnExtension)ext).SupportedProtocolNames;
-
-                    //convert to internal extension
-                    internalExt = new ALPNExtension(supportedProtocolNames);
-                    
-                }
-                else if (ext.internalExtensionType == HandshakeExtensionType.ServerName)
-                {
-                    string serverName = ((SniExtension)ext).ServerName;
-
-                    //create internal extension
-                    internalExt = new ServerNameExtension(serverName, NameType.HostName);
-
-                }
-                else throw new Exception("INTERNAL_ERROR_NOT_IMPLEMENTED::ExtensionsHandler, Unrecognized public api extension to format");
-
+                HandshakeExtension internalExt = ext.ConvertToClientRequest();
                 convertedToInternal.Add(internalExt);
             }
 
             return convertedToInternal.ToArray();
-        }
-
-        public HandshakeExtension[] BuildClientHelloExtensions(TlsHandshakeExtension[] clientExtensions, TlsHandshakeExtension[] additionalClientExtensions)
-        {
-            throw new NotImplementedException();
         }
     }
 }

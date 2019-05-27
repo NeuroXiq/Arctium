@@ -20,5 +20,8 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 
 
         internal abstract HandshakeExtension GetResponse(HandshakeExtension extensionFromClient);
+
+        internal abstract HandshakeExtension ConvertToClientRequest();
+
     }
 }
