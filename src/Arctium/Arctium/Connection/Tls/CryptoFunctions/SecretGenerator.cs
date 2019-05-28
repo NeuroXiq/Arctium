@@ -21,15 +21,18 @@ namespace Arctium.Connection.Tls.CryptoFunctions
             public ConnectionEnd HostType;
         }
 
+        public static byte[] GenerateTls12MasterSecret(byte[] premaster, byte[] clientRandom, byte[] serverRandom)
+        {
+            return PRF.Prf12(premaster, "master secret", BufferTools.Join(clientRandom, serverRandom), 48);
+        }
 
-        public static Tls12Secrets GenerateTls12Secrets(RecordCryptoType cryptoType, byte[] premaster, byte[] clientRandom, byte[] serverRandom)
+        public static Tls12Secrets GenerateTls12Secrets(RecordCryptoType cryptoType, byte[] masterSecret, byte[] clientRandom, byte[] serverRandom)
         {
             int macKeySize = CryptoConst.HashSize(cryptoType.MACAlgorithm) / 8;
             int keySize = cryptoType.KeySize / 8;
             //int ivSize = cryptoType.KeySize / 8;
             int keyBlockSize = 2 * (macKeySize + keySize);
 
-            byte[] masterSecret = PRF.Prf12(premaster, "master secret", BufferTools.Join(clientRandom, serverRandom), 48);
             byte[] keyBlock = PRF.Prf12(masterSecret, "key expansion", BufferTools.Join(serverRandom, clientRandom), keyBlockSize);
 
 

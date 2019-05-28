@@ -18,13 +18,14 @@ namespace Arctium.Connection.Tls
             config.Extensions = null;
 
             Tls12ClientOperator clientOperator = new Tls12ClientOperator(config, innerStream);
-            clientOperator.OpenSession();
+            return clientOperator.OpenSession();
+        }
 
+        public TlsConnectionResult Connect(Stream innerStream, Tls12Session testSessionResumption)
+        {
+            Tls12ClientOperator clientOperator = new Tls12ClientOperator(config, innerStream);
+            TlsConnectionResult result = clientOperator.OpenSession(testSessionResumption);
 
-            TlsConnectionResult result = new TlsConnectionResult();
-            result.ExtensionsResult = null;
-            result.Session = null;
-            result.TlsStream = new TlsStream(clientOperator);
 
             return result;
         }

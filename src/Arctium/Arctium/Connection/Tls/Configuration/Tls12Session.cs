@@ -1,4 +1,5 @@
-﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+﻿using Arctium.Connection.Tls.CryptoConfiguration;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 
 namespace Arctium.Connection.Tls.Configuration
@@ -8,7 +9,7 @@ namespace Arctium.Connection.Tls.Configuration
         public byte[] SessionID;
         public CipherSuite SelectedCipherSuite;
 
-        internal RecordLayer12Params readParams;
-        internal RecordLayer12Params writeParams;
+        internal Tls12Secrets secrets;
+        internal byte[] premaster;
     }
 }

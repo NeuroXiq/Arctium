@@ -15,6 +15,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             handshakeIO = new HandshakeIO(recordLayer);
             appDataIO = new AppDataIO(recordLayer);
             allHandshakeMessages = new HandshakeMessages();
+            secrets = new Tls12Secrets();
         }
     }
 }

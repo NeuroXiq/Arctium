@@ -420,7 +420,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
             byte[] serverRandom = currentContext.allHandshakeMessages.ServerHello.Random;
             RecordCryptoType recordCryptoType = CryptoSuites.Get(currentContext.allHandshakeMessages.ServerHello.CipherSuite).RecordCryptoType;
-            currentContext.secrets = SecretGenerator.GenerateTls12Secrets(recordCryptoType, premaster, clientRandom, serverRandom);
+            byte[] master = SecretGenerator.GenerateTls12MasterSecret(premaster, clientRandom, serverRandom);
+            currentContext.secrets = SecretGenerator.GenerateTls12Secrets(recordCryptoType, master, clientRandom, serverRandom);
         }
 
         private byte[] GetPremaster()

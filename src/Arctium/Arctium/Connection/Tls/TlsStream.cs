@@ -85,6 +85,7 @@ namespace Arctium.Connection.Tls
             tlsOperator.WriteApplicationData(buffer, offset, count);
         }
 
+        ///<summary>Sends close notify</summary>
         public override void Close()
         {
             tlsOperator.CloseNotify();
