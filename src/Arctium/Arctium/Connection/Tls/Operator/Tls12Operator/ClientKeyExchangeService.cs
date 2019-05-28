@@ -39,7 +39,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             RSA rsaEncryption = currentOperatorContext.allHandshakeMessages.ServerCertificate.ANS1Certificates[0].GetRSAPublicKey();
 
-            byte[] encryptedPremaster = rsaEncryption.Encrypt(premaster, RSAEncryptionPadding.Pkcs1);
+            byte[] encryptedPremaster = rsaEncryption.Encrypt(premaster,RSAEncryptionPadding.Pkcs1);
 
             ClientKeyExchange keyExchange = new ClientKeyExchange(encryptedPremaster);
 

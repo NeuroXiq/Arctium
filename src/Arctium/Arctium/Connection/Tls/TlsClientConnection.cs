@@ -28,15 +28,5 @@ namespace Arctium.Connection.Tls
 
             return result;
         }
-
-        public int Read(byte[] buffer, int offset, int length)
-        {
-            return 0;
-        }
-
-        public void Write(byte[] buffer, int offset, int length)
-        {
-
-        }
     }
 }

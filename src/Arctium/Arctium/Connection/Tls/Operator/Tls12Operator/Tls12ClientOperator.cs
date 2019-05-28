@@ -1,20 +1,26 @@
-﻿using Arctium.Connection.Tls.Configuration;
+﻿using Arctium.Connection.Tls.Buffers;
+using Arctium.Connection.Tls.Configuration;
 using Arctium.Connection.Tls.CryptoConfiguration;
 using Arctium.Connection.Tls.CryptoFunctions;
 using Arctium.Connection.Tls.Exceptions;
 using Arctium.Connection.Tls.Protocol;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Builder;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter;
 using Arctium.Connection.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.RecordProtocol;
 using Arctium.Connection.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
     class Tls12ClientOperator : TlsProtocolOperator
     {
+
         RecordLayer12 recordLayer;
         Tls12ClientConfig config;
 
@@ -27,10 +33,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         ExtensionsHandler extensionHandler;
         ClientKeyExchangeService currentKeyExchangeService;
 
+        bool canExchangeAppData;
+
         public Tls12ClientOperator(Tls12ClientConfig config, Stream innerStream)
         {
             recordLayer = RecordLayer12.Initialize(innerStream);
             this.config = config;
+            canExchangeAppData = false;
         }
 
         public override void CloseNotify()
@@ -40,12 +49,16 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         public override int ReadApplicationData(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            if (!canExchangeAppData) throw new InvalidOperationException("Cannot read application data on this state of Thls12ClientOperator");
+            currentContext.appDataIO.PrepareToRead();
+
+            return currentContext.appDataIO.Read(buffer, offset, count);
         }
 
         public override void WriteApplicationData(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            if (!canExchangeAppData) throw new InvalidOperationException("Cannot send application data on this state of Tls12ClientOperator");
+            currentContext.appDataIO.Write(buffer, offset, count);
         }
 
         public void OpenSession()
@@ -59,30 +72,90 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 SendClientHello();
                 currentMessageToProcess = currentContext.handshakeIO.Read();
                 GetServerHello();
-
                 ProcessHandshakeAfterServerHello();
+
+                OnSuccessHandshake();
             }
             catch (FatalAlertException e)
             {
-
+                ActionBeforeThrowFatalAlertException(e);
                 throw e;
             }
             catch (ReceivedWarningAlertException e)
             {
+                
+                ActionBeforeThrowReceivedWarningAlertException(e);
                 throw e;
             }
             catch (ReceivedFatalAlertException e)
             {
+                ActionBeforeThrowReceivedFatalAlertException(e);
                 throw e;
             }
+            catch (Exception e)
+            {
+                ActionBeforeThrowInternalException(e);
+                throw e;
+            }
+        }
+
+        private void ActionBeforeThrowInternalException(Exception e)
+        {
+            canExchangeAppData = false;
+            
+            //trying to send that internal error occur
+            //if cannot send because some exception during transmission just ignore this
+            try
+            {
+                byte[] internalErrorAlert = AlertFormatter.FormatAlert(AlertDescription.InternalError, AlertLevel.Fatal);
+                recordLayer.Write(internalErrorAlert, 0, internalErrorAlert.Length, ContentType.Alert);
+            }
+            catch (Exception ignoreException)
+            {
+
+            }
+        }
+
+        private void ActionBeforeThrowReceivedFatalAlertException(ReceivedFatalAlertException e)
+        {
+            canExchangeAppData = false;
+        }
+
+        private void ActionBeforeThrowReceivedWarningAlertException(ReceivedWarningAlertException e)
+        {
+            canExchangeAppData = false;
+        }
+
+        private void ActionBeforeThrowFatalAlertException(FatalAlertException e)
+        {
+            canExchangeAppData = false;
+            //
+            // send alert to server
+
+            byte[] alertBytes = AlertFormatter.FormatAlert((AlertDescription)e.AlertDescriptionNumber, AlertLevel.Fatal);
+
+            try
+            {
+                recordLayer.Write(alertBytes, 0, alertBytes.Length, ContentType.Alert);
+            }
+            catch (Exception ignoreException)
+            {
+                // ignore any errors during alert transmission,
+                // this method is last operation before throwing exception
+            }
+        }
+
+        private void OnSuccessHandshake()
+        {
+            canExchangeAppData = true;
         }
 
         //
         // All steps are conditional and base on current 'Context' instance (currentContext field) and 'currentMessageToProcess'
         // Assumption is made that message is already readed and holded by 'currentMessageToProcess'
-        // and if there is already readed message before method call, conditional server messages can be 
+        // and if when readed message before method call, conditional server messages can be 
         // processed more easily
-        //
+        // 'Conditional messages' means Handshake messages which can be sended by server but server can ignore them (like certificate request)
 
         private void ProcessHandshakeAfterServerHello()
         {
@@ -105,11 +178,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             //read after record layer changed cipher spec
             currentMessageToProcess = currentContext.handshakeIO.Read();
-            ReadFinished();
-
-            VerifyFinishedMessages();
-
-            ChangeContextToApplicationDataExchage();
+            ReadFinished();            
         }
 
         private void ChangeReadCipherSpec()
@@ -124,43 +193,72 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             recordLayer.ChangeReadCipherSpec(readParams);
         }
 
-        private void ChangeContextToApplicationDataExchage()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void VerifyFinishedMessages()
-        {
-            throw new NotImplementedException();
-        }
-
         private void ReadFinished()
         {
             ThrowIfUnexpectedHandshakeMessage(HandshakeType.Finished, currentMessageToProcess.MsgType);
             currentContext.allHandshakeMessages.ServerFinished = (Finished)currentMessageToProcess;
+
+            byte[] expectedServerVerifyData = ComputeExpectedVerifyDataFromServer();
+            byte[] receivedVerifyData = currentContext.allHandshakeMessages.ServerFinished.VerifyData;
+
+            if (expectedServerVerifyData.Length != receivedVerifyData.Length)
+                throw new FatalAlertException("Tls12ClientOperator", "On verify data from server validation", (int)AlertDescription.DecryptError, "expected verify data length is other than received from server");
+
+            for (int i = 0; i < expectedServerVerifyData.Length; i++)
+            {
+                if (expectedServerVerifyData[i] != receivedVerifyData[i])
+                {
+                    throw new FatalAlertException("Tls12ClientOperator", "On comparing expected verify data from server", (int)AlertDescription.DecryptError, "Vefiry data received from server are different than expected computer locally");
+                }
+            }
+        }
+
+        private byte[] ComputeExpectedVerifyDataFromServer()
+        {
+            HandshakeType ignore = HandshakeType.CertificateVerify;
+            HandshakeIO.HandshakeMessageData[] allMsgs = currentContext.handshakeIO.HandshakeTransmissionCache;
+
+            SHA256 sha256 = SHA256.Create();
+
+            foreach (var msg in allMsgs)
+            {
+                if (ignore == msg.Type) continue;
+                if (msg.Type == HandshakeType.Finished)
+                {
+                    sha256.TransformFinalBlock(msg.RawBytes, 0, msg.RawBytes.Length);
+                    break;
+                }
+                sha256.TransformBlock(msg.RawBytes, 0, msg.RawBytes.Length, null, 0);
+            }
+            byte[] master = currentContext.secrets.MasterSecret;
+
+            byte[] computedAsServer = PRF.Prf12(master, "server finished", sha256.Hash, 12);
+
+            return computedAsServer;
         }
 
         private void ReadChangeCipherSpec()
         {
             //reading directly from the record layer
-            byte[] ccsExptectedByte = new byte[1];
+
+            byte[] ccsExptectedByte = new byte[0x4800];
             ContentType readedContetType;
-            try
-            {
-                //buffer length must be 0x4800
-                //but expect to read exactly 1 byte of CCS
-                recordLayer.ReadFragment(ccsExptectedByte, 0, out readedContetType);
-            }
-            catch (ArgumentOutOfRangeException e)
-            {
-                throw new FatalAlertException("Tls12ClientOperator", "On reading Change cipher spec",
-                    (int)AlertDescription.UnexpectedMessage,
-                    "tried to read 1 byte of the change cipher spec protocol but readed more bytes else");
-                
-            }
-            //readed 1 byte but this is not CCS
+            int readedBytes = recordLayer.ReadFragment(ccsExptectedByte, 0, out readedContetType);
+            
             if (readedContetType != ContentType.ChangeCipherSpec)
             {
+                if (readedContetType == ContentType.Alert)
+                {
+                    Alert alert = AlertBuilder.FromBytes(ccsExptectedByte, 0, readedBytes);
+                    string where = "tls12clientoperator";
+                    string when = "on reading change cipher spec";
+                    string description = "expected to read change cipher spec byte but received alert message";
+
+                    if (alert.Level == AlertLevel.Fatal)
+                        throw new ReceivedFatalAlertException((int)alert.Description, where, when, description);
+                    else throw new ReceivedWarningAlertException((int)alert.Description, where, when, description);
+
+                }
                 throw new FatalAlertException("Tls12ClientOperator", "On reading Change cipher spec",
                 (int)AlertDescription.UnexpectedMessage,
                 "tried to read 1 byte of the change cipher spec protocol but readed something else");
@@ -179,7 +277,30 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private byte[] ComputeVerifyDataToSend()
         {
-            
+            HandshakeIO.HandshakeMessageData[] allExchangedMsgs = currentContext.handshakeIO.HandshakeTransmissionCache;
+            HandshakeType toIgnoreMsg = HandshakeType.CertificateVerify;
+
+            SHA256 sha256 = SHA256.Create();
+
+            foreach (var msgData in allExchangedMsgs)
+            {
+                if (toIgnoreMsg == msgData.Type) continue;
+                if (msgData.Type == HandshakeType.Finished) break;
+                sha256.TransformBlock(msgData.RawBytes, 0, msgData.RawBytes.Length, null, 0);
+            }
+
+            sha256.TransformFinalBlock(new byte[0], 0, 0);
+
+            byte[] master = currentContext.secrets.MasterSecret;
+            //byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
+            //byte[] serverRandom = currentContext.allHandshakeMessages.ServerHello.Random;
+            //byte[] seed = BufferTools.Join(clientRandom, serverRandom);
+
+            byte[] seed = sha256.Hash;
+
+            byte[] verifyData = PRF.Prf12(master, "client finished", seed, 12);
+
+            return verifyData;
         }
 
         private void SendChangeCipherSpes()

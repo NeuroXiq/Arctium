@@ -12,8 +12,9 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
             ClientKeyExchange kkx = (ClientKeyExchange)handshakeMessage;
             NumberConverter.FormatUInt16((ushort)kkx.ExchangeKeys.Length, buffer, offset);
             Buffer.BlockCopy(kkx.ExchangeKeys, 0, buffer, offset + 2, kkx.ExchangeKeys.Length);
+            NumberConverter.FormatUInt16((ushort)kkx.ExchangeKeys.Length, buffer, offset);
 
-            return kkx.ExchangeKeys.Length;
+            return kkx.ExchangeKeys.Length + 2;
         }
 
         public override int GetLength(Handshake handshake)
