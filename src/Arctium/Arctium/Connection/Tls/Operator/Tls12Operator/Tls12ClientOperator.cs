@@ -72,7 +72,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             ResetContextToBeforeHandshake();
             try
             {
-                SendClientHello();
+                SendClientHello(GenerateRandom(32));
                 currentMessageToProcess = currentContext.handshakeIO.Read();
                 GetServerHello();
                 ProcessHandshakeAfterServerHello();
@@ -115,58 +115,42 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             ResetContextToBeforeHandshake();
 
-            ClientHello clientHello = new ClientHello();
-            clientHello.CipherSuites = config.EnableCipherSuites;
-            clientHello.ClientVersion = new ProtocolVersion(3, 3);
-            clientHello.CompressionMethods = new CompressionMethod[] { CompressionMethod.NULL };
-            clientHello.SessionID = cachedSession.SessionID;
-            clientHello.Random = GenerateRandom(32);
+            SendClientHello(cachedSession.SessionID);
 
-            currentContext.handshakeIO.Write(clientHello);
+            //read server hello and do nothing to check what happend with SessionID
             currentMessageToProcess = currentContext.handshakeIO.Read();
+            ThrowIfUnexpectedHandshakeMessage(HandshakeType.ServerHello, currentMessageToProcess.MsgType);
             currentContext.allHandshakeMessages.ServerHello = (ServerHello)currentMessageToProcess;
-
+            
             byte[] cachedSesId = cachedSession.SessionID;
             byte[] serverResponseId = currentContext.allHandshakeMessages.ServerHello.SessionID;
-            //currentContext.secrets = cachedSession.secrets;
-            //UpdatSecrets();
 
-            RecordCryptoType cryptoType = CryptoSuites.Get(currentContext.allHandshakeMessages.ServerHello.CipherSuite).RecordCryptoType;
+            //on session resume ? 
 
-            byte[] clientRandom = clientHello.Random;
-            byte[] serverRandom = (currentMessageToProcess as ServerHello).Random;
-            //byte[] master = SecretGenerator.GenerateTls12MasterSecret(cachedSession.premaster, clientRandom, serverRandom);
-            Tls12Secrets newCurrentSecrets = SecretGenerator.GenerateTls12Secrets(cryptoType, cachedSession.secrets.MasterSecret, clientRandom, serverRandom);
-
-            currentContext.secrets = newCurrentSecrets;
-
-
-            bool resumptionSuccess = false;
-
-            if (serverResponseId.Length == cachedSesId.Length)
+            if (BufferTools.IsContentEqual(cachedSesId, serverResponseId))
             {
-                if (BufferTools.IsContentEqual(cachedSesId, serverResponseId))
-                {
-                    ReadChangeCipherSpec();
-                    ChangeReadCipherSpec();
+                //resuming session
+                UpdateSecretsFromMaster(cachedSession.MasterSecret);
 
-                    currentMessageToProcess = currentContext.handshakeIO.Read();
-                    ReadFinished();
+                ReadChangeCipherSpec();
+                ChangeReadCipherSpec();
 
-                    SendChangeCipherSpes();
-                    ChangeWriteCipherSpec();
+                currentMessageToProcess = currentContext.handshakeIO.Read();
+                ReadFinished();
 
-                    
-                    
+                SendChangeCipherSpes();
+                ChangeWriteCipherSpec();
 
-                    SendFinished();
+                SendFinished();
 
-                    ThrowIfInvalidServerVerifyData();
-                }
-                else resumptionSuccess = false;
+                ThrowIfInvalidServerVerifyData();
             }
-            if(!resumptionSuccess)
+            else
+            {
+                //no, go to full handshake
+                GetServerHello();
                 ProcessHandshakeAfterServerHello();
+            }
 
             OnSuccessHandshake();
 
@@ -191,8 +175,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             Tls12Session cachedSession = new Tls12Session();
             cachedSession.SelectedCipherSuite = currentContext.allHandshakeMessages.ServerHello.CipherSuite;
             cachedSession.SessionID = currentContext.allHandshakeMessages.ServerHello.SessionID;
-            cachedSession.secrets = currentContext.secrets;
-            cachedSession.premaster = currentKeyExchangeService.Premaster;
+            cachedSession.MasterSecret = currentContext.secrets.MasterSecret;
 
             return cachedSession;
         }
@@ -291,7 +274,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             SendClientKeyExchange();
             SendCertificateVerify();
 
-            UpdatSecrets();
+            UpdateSecretsAfterKeyExchange();
             SendChangeCipherSpes();
             ChangeWriteCipherSpec();
             SendFinished();
@@ -336,7 +319,10 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             {
                 if (expectedServerVerifyData[i] != receivedVerifyData[i])
                 {
-                    throw new FatalAlertException("Tls12ClientOperator", "On comparing expected verify data from server", (int)AlertDescription.DecryptError, "Vefiry data received from server are different than expected computer locally");
+                    throw new FatalAlertException("Tls12ClientOperator", 
+                        "On comparing expected verify data from server",
+                        (int)AlertDescription.DecryptError, 
+                        "Vefiry data received from server are different from computed locally");
                 }
             }
         }
@@ -347,17 +333,28 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             HandshakeIO.HandshakeMessageData[] allMsgs = currentContext.handshakeIO.HandshakeTransmissionCache;
 
             SHA256 sha256 = SHA256.Create();
+            bool isOnResumption = allMsgs[2].Type == HandshakeType.Finished;
 
-            foreach (var msg in allMsgs)
+
+            if (isOnResumption)
             {
-                if (ignore == msg.Type) continue;
-                if (msg.Type == HandshakeType.Finished)
-                {
-                    sha256.TransformFinalBlock(msg.RawBytes, 0, msg.RawBytes.Length);
-                    break;
-                }
-                sha256.TransformBlock(msg.RawBytes, 0, msg.RawBytes.Length, null, 0);
+                sha256.TransformBlock(allMsgs[0].RawBytes, 0, allMsgs[0].RawBytes.Length, null, 0);
+                sha256.TransformFinalBlock(allMsgs[1].RawBytes, 0, allMsgs[1].RawBytes.Length);
             }
+            else
+            {
+                foreach (var msg in allMsgs)
+                {
+                    if (ignore == msg.Type) continue;
+                    if (msg.Type == HandshakeType.Finished)
+                    {
+                        sha256.TransformFinalBlock(msg.RawBytes, 0, msg.RawBytes.Length);
+                        break;
+                    }
+                    sha256.TransformBlock(msg.RawBytes, 0, msg.RawBytes.Length, null, 0);
+                }
+            }
+
             byte[] master = currentContext.secrets.MasterSecret;
 
             byte[] computedAsServer = PRF.Prf12(master, "server finished", sha256.Hash, 12);
@@ -409,15 +406,25 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             HandshakeType toIgnoreMsg = HandshakeType.CertificateVerify;
 
             SHA256 sha256 = SHA256.Create();
+            bool isOnResumption = allExchangedMsgs[2].Type == HandshakeType.Finished;
 
-            foreach (var msgData in allExchangedMsgs)
+            if (isOnResumption)
             {
-                if (toIgnoreMsg == msgData.Type) continue;
-                if (msgData.Type == HandshakeType.Finished) break;
-                sha256.TransformBlock(msgData.RawBytes, 0, msgData.RawBytes.Length, null, 0);
+                sha256.TransformBlock(allExchangedMsgs[0].RawBytes, 0, allExchangedMsgs[0].RawBytes.Length, null, 0);
+                sha256.TransformBlock(allExchangedMsgs[1].RawBytes, 0, allExchangedMsgs[1].RawBytes.Length, null, 0);
+                sha256.TransformFinalBlock(allExchangedMsgs[2].RawBytes, 0, allExchangedMsgs[2].RawBytes.Length);
+            }
+            else
+            {
+                foreach (var msgData in allExchangedMsgs)
+                {
+                    if (toIgnoreMsg == msgData.Type) continue;
+                    if (msgData.Type == HandshakeType.Finished) break;
+                    sha256.TransformBlock(msgData.RawBytes, 0, msgData.RawBytes.Length, null, 0);
+                }
+                sha256.TransformFinalBlock(new byte[0], 0, 0);
             }
 
-            sha256.TransformFinalBlock(new byte[0], 0, 0);
 
             byte[] master = currentContext.secrets.MasterSecret;
             //byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
@@ -472,16 +479,34 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             recordLayer.ChangeWriteCipherSpec(writeParams);
         }
 
-        private void UpdatSecrets()
+
+        //
+        // If full handshake is processing, then this method is called but when 
+        // session resumption is going on only UpdatesecretsFromMaster is called.
+        // Different is that the premaster is holded in 'KeyExchangeService (current instance)'
+        // and must be converted to master but in resumption master already exist from last session.
+        // 
+        private void UpdateSecretsAfterKeyExchange()
         {
-            RecordCryptoType cryptoType = CryptoSuites.Get(currentContext.allHandshakeMessages.ServerHello.CipherSuite).RecordCryptoType;
             byte[] currentPremaster = currentKeyExchangeService.Premaster;
             byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
             byte[] serverRandom = currentContext.allHandshakeMessages.ServerHello.Random;
-
             byte[] master = SecretGenerator.GenerateTls12MasterSecret(currentPremaster, clientRandom, serverRandom);
-            Tls12Secrets newCurrentSecrets = SecretGenerator.GenerateTls12Secrets(cryptoType, master, clientRandom, serverRandom);
 
+            // after compute master do same thing like in session resumption, update secrets from master,
+            UpdateSecretsFromMaster(master);
+        }
+
+        //
+        // insert into 'currentContext.secret' symmetric keys to HMAC and cipher
+        // which will be used by record layer
+        private void UpdateSecretsFromMaster(byte[] master)
+        {
+            RecordCryptoType cryptoType = CryptoSuites.Get(currentContext.allHandshakeMessages.ServerHello.CipherSuite).RecordCryptoType;
+            byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
+            byte[] serverRandom = currentContext.allHandshakeMessages.ServerHello.Random;
+
+            Tls12Secrets newCurrentSecrets = SecretGenerator.GenerateTls12Secrets(cryptoType, master, clientRandom, serverRandom);
             currentContext.secrets = newCurrentSecrets;
         }
 
@@ -568,7 +593,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             currentMessageToProcess = currentContext.handshakeIO.Read();
         }
 
-        private void SendClientHello()
+        private void SendClientHello(byte[] sessionID)
         {
             ClientHello clientHello = new ClientHello();
 
@@ -577,7 +602,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             clientHello.CompressionMethods = new CompressionMethod[] { CompressionMethod.NULL };
             clientHello.Extensions = extensionHandler.BuildClientHelloExtensions(config.Extensions);
             clientHello.Random = GenerateRandom(32);
-            clientHello.SessionID = GenerateRandom(32);
+            clientHello.SessionID = sessionID;
 
             currentContext.handshakeIO.Write(clientHello);
             currentContext.allHandshakeMessages.ClientHello = clientHello;

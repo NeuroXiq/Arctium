@@ -9,7 +9,6 @@ namespace Arctium.Connection.Tls.Configuration
         public byte[] SessionID;
         public CipherSuite SelectedCipherSuite;
 
-        internal Tls12Secrets secrets;
-        internal byte[] premaster;
+        internal byte[] MasterSecret;
     }
 }

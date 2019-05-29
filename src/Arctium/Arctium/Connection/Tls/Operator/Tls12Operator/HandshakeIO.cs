@@ -20,6 +20,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             public byte[] RawBytes;
             public HandshakeType Type;
+            
 
             public HandshakeMessageData(byte[] rawBytes, HandshakeType type)
             {
