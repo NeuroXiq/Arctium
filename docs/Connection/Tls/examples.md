@@ -1,17 +1,16 @@
 1. [ Overview ](#overview)
-2. [ Client code examples ](#clientcodeexamples)
-  2.1 [ HTTPS/1.1 to www.google.com ](#https11togoogle)
 
-<a name="overview"/>
+2. [ Examples ](#examples)
+
 
 ## Overview
 
 **Namespaces:**
 * Arctium.Connection.Tls:
-  * TlsClientConnection - Contains basic configuration used to connect to the server by TLS client
-  * TlsServerConnection - Contains basic configuration to accept TLS clients connections 
-  * TlsConnectionResult - Returns connection data
-  * TlsStream - Read/Write over TLS tunnel
+  - TlsClientConnection - Contains basic configuration used to connect to the server by TLS client
+  - TlsServerConnection - Contains basic configuration to accept TLS clients connections 
+  - TlsConnectionResult - Returns connection data
+  - TlsStream - Read/Write over TLS tunnel
 
 * Arctium.Connection.Tls.Exceptions:
   * FatalAlertException - Exception is thrown when during processing TLS operations occur some error.
@@ -29,11 +28,11 @@
 
 ## Client code examples
 
-<a name="https11togoogle"/>
 
 ### HTTPS/1.1 to www.google.com
 
-``cs
+```cs
+
 using Arctium.Connection.Tls;
 using System;
 using System.IO;
@@ -104,7 +103,7 @@ namespace TlsExamples
             Console.WriteLine(responseString);
 
             //send close notify
-            //now TLS(!) connection is closed
+            //now TLS connection is closed
             stream.Close();
 
             //close connection on socket
@@ -132,4 +131,4 @@ namespace TlsExamples
          */
     }
 }
-``cs
+```
