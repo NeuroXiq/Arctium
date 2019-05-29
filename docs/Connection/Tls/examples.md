@@ -16,7 +16,7 @@
   * FatalAlertException - Exception is thrown when during processing TLS operations occur some error.
   * ReceivedFatalAlertException - Exception is thrown when received Alert message of fatal level
   * ReceiveWarningAlertException - Exception is thrown when received Aler message of warning level
-  * note: server and client connection do not handle warning alerts, any level of alert always gives exception and terminate connection processing. Maybe in future there will be some warning alerts mechanism*
+  * *note: server and client connection do not handle warning alerts, any level of alert always gives exception and terminate connection processing. Maybe in future there will be some warning alerts mechanism*
 
 * Arctium.Connection.Tls.Configuration:
   *Contains definition to explicit TLS client/server configuration. Currently this do not work well and can be ignored*
