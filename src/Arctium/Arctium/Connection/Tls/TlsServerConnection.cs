@@ -49,13 +49,8 @@ namespace Arctium.Connection.Tls
             Tls12ServerOperator tls12Operator = new Tls12ServerOperator(tls12Serverconfig, innerStream);
 
             //handshake
-            HandshakeMessages allMsgs = tls12Operator.OpenSession();
+            return tls12Operator.OpenSession();
 
-            TlsConnectionResult result = new TlsConnectionResult();
-            result.TlsStream = new TlsStream(tls12Operator);
-            result.ExtensionsResult = null;
-
-            return result;
         }
 
       

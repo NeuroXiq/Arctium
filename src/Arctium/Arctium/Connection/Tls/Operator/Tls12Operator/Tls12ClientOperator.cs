@@ -70,13 +70,48 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         public TlsConnectionResult OpenSession()
         {
             ResetContextToBeforeHandshake();
+            //try
+            //{
+                  SendClientHello(GenerateRandom(32));
+                  currentMessageToProcess = currentContext.handshakeIO.Read();
+                  GetServerHello();
+                  ProcessHandshakeAfterServerHello();
+
+                  OnSuccessHandshake();
+            //}
+            //catch (FatalAlertException e)
+            //{
+            //    ActionBeforeThrowFatalAlertException(e);
+            //    throw e;
+            //}
+            //catch (ReceivedWarningAlertException e)
+            //{
+                
+            //    ActionBeforeThrowReceivedWarningAlertException(e);
+            //    throw e;
+            //}
+            //catch (ReceivedFatalAlertException e)
+            //{
+            //    ActionBeforeThrowReceivedFatalAlertException(e);
+            //    throw e;
+            //}
+            //catch (Exception e)
+            //{
+            //    ActionBeforeThrowInternalException(e);
+            //    throw e;
+            //}
+
+            TlsConnectionResult result = GetCurrentConnectionResult();
+
+            return result;
+        }
+
+        ///<summary>Test session resumption code, in future should be debbugged, now its just for test. (should work)</summary>
+        public TlsConnectionResult OpenSession(Tls12Session cachedSession)
+        {
             try
             {
-                SendClientHello(GenerateRandom(32));
-                currentMessageToProcess = currentContext.handshakeIO.Read();
-                GetServerHello();
-                ProcessHandshakeAfterServerHello();
-
+                OpenSessionTryingToResumeIt(cachedSession);
                 OnSuccessHandshake();
             }
             catch (FatalAlertException e)
@@ -86,7 +121,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             }
             catch (ReceivedWarningAlertException e)
             {
-                
+
                 ActionBeforeThrowReceivedWarningAlertException(e);
                 throw e;
             }
@@ -101,17 +136,12 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 throw e;
             }
 
-            TlsConnectionResult result = new TlsConnectionResult();
-
-            result.ExtensionsResult = GetExtensionsResult();
-            result.Session = CacheCurrentSession();
-            result.TlsStream = new TlsStream(this);
+            TlsConnectionResult result = GetCurrentConnectionResult();
 
             return result;
         }
 
-        ///<summary>Test session resumption code, in future should be debbugged, now its just for test. (should work)</summary>
-        public TlsConnectionResult OpenSession(Tls12Session cachedSession)
+        private void OpenSessionTryingToResumeIt(Tls12Session cachedSession)
         {
             ResetContextToBeforeHandshake();
 
@@ -121,7 +151,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             currentMessageToProcess = currentContext.handshakeIO.Read();
             ThrowIfUnexpectedHandshakeMessage(HandshakeType.ServerHello, currentMessageToProcess.MsgType);
             currentContext.allHandshakeMessages.ServerHello = (ServerHello)currentMessageToProcess;
-            
+
             byte[] cachedSesId = cachedSession.SessionID;
             byte[] serverResponseId = currentContext.allHandshakeMessages.ServerHello.SessionID;
 
@@ -129,7 +159,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             if (BufferTools.IsContentEqual(cachedSesId, serverResponseId))
             {
-                //resuming session
+                //resuming session is simple
                 UpdateSecretsFromMaster(cachedSession.MasterSecret);
 
                 ReadChangeCipherSpec();
@@ -152,11 +182,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 ProcessHandshakeAfterServerHello();
             }
 
-            OnSuccessHandshake();
+        }
 
+        private TlsConnectionResult GetCurrentConnectionResult()
+        {
             TlsConnectionResult result = new TlsConnectionResult();
-            result.ExtensionsResult = null;
-            result.Session = CacheCurrentSession();
+            result.ExtensionsResult = extensionHandler.GetExtensionsResultFromServerHello(currentContext.allHandshakeMessages.ServerHello.Extensions);
+            result.Session = CatchCurrentSession();
             result.TlsStream = new TlsStream(this);
 
             return result;
@@ -170,7 +202,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             canExchangeAppData = false;
         }
 
-        private Tls12Session CacheCurrentSession()
+        private Tls12Session CatchCurrentSession()
         {
             Tls12Session cachedSession = new Tls12Session();
             cachedSession.SelectedCipherSuite = currentContext.allHandshakeMessages.ServerHello.CipherSuite;
@@ -600,7 +632,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             clientHello.CipherSuites = config.EnableCipherSuites; ;
             clientHello.ClientVersion = new Protocol.ProtocolVersion(3, 3);
             clientHello.CompressionMethods = new CompressionMethod[] { CompressionMethod.NULL };
-            clientHello.Extensions = extensionHandler.BuildClientHelloExtensions(config.Extensions);
+            clientHello.Extensions = extensionHandler.ConvertPublicExtensionsToClientHelloRequest(config.Extensions);
             clientHello.Random = GenerateRandom(32);
             clientHello.SessionID = sessionID;
 

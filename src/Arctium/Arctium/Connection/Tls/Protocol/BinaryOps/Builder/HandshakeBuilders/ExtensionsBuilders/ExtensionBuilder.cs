@@ -12,7 +12,8 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
         // Extensions specific constant values
         //
          
-        
+        ///TODO Extensions builder: partition methods to classes and map this classes to dictionary,
+        /// same as in Handshke formatter (not sure to do this ?)
 
         
 

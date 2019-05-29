@@ -1,5 +1,6 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
+using Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.ExtensionsBuilders;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {
@@ -14,9 +15,15 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             public int SesID;
             public int CipSuite;
             public int ComprMeth;
+            public int Extensions;
         }
 
-        public ServerHelloBuilder() { }
+        ExtensionBuilder extensionsBuilder;
+
+        public ServerHelloBuilder()
+        {
+            extensionsBuilder = new ExtensionBuilder();
+        }
 
 
         public override Handshake BuildFromBytes(byte[] buffer, int offset, int length)
@@ -37,6 +44,13 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             hello.CipherSuite = (CipherSuite)(NumberConverter.ToUInt16(buffer, offsets.CipSuite));
             hello.CompressionMethod = (CompressionMethod)(buffer[offsets.ComprMeth]);
 
+
+            int lengthBeforeExtensions = offsets.Extensions - offset;
+            int extensionsBlockLength = length - lengthBeforeExtensions;
+
+            hello.Extensions = extensionsBuilder.GetExtensions(buffer, offsets.Extensions, extensionsBlockLength);
+
+
             return hello;
         }
 
@@ -51,6 +65,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
             o.SesID = 35 + baseOffset;
             o.CipSuite = (int)buffer[o.SesIDLen] + o.SesID;
             o.ComprMeth = o.CipSuite + 2;
+            o.Extensions = o.ComprMeth + 1;
 
             return o;
         }

@@ -1,4 +1,5 @@
 ﻿using Arctium.Connection.Tls.Configuration;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
 using Arctium.Connection.Tls.Operator;
 using Arctium.Connection.Tls.Operator.Tls12Operator;
 using System.IO;
@@ -9,14 +10,17 @@ namespace Arctium.Connection.Tls
     {
         Tls12ClientConfig config;
 
-        public TlsClientConnection() { }
+        public TlsClientConnection() : this(null) { }
 
-        public TlsConnectionResult Connect(Stream innerStream)
+        public TlsClientConnection(TlsHandshakeExtension[] publicExtensions)
         {
             config = new Tls12ClientConfig();
             config.EnableCipherSuites = DefaultConfigurations.CreateDefaultTls12CipherSuites();
-            config.Extensions = null;
+            config.Extensions = publicExtensions;
+        }
 
+        public TlsConnectionResult Connect(Stream innerStream)
+        {
             Tls12ClientOperator clientOperator = new Tls12ClientOperator(config, innerStream);
             return clientOperator.OpenSession();
         }

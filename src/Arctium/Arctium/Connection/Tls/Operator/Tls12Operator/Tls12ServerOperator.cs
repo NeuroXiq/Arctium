@@ -87,7 +87,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             closeNotifySended = true;
         }
 
-        public HandshakeMessages OpenSession()
+        public TlsConnectionResult OpenSession()
         {
             if (isSessionOpened) throw new InvalidOperationException("Cannot open session because is already opened");
             if (closeNotifySended) throw new InvalidOperationException("Cannot open session because close notify was sended.");
@@ -115,7 +115,16 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
                 throw e;
             }
 
-            return currentContext.allHandshakeMessages;
+            return GetCurrentConnectionResult();
+        }
+
+        private TlsConnectionResult GetCurrentConnectionResult()
+        {
+            TlsConnectionResult result = new TlsConnectionResult();
+            result.Session = null;
+            result.TlsStream = new TlsStream(this);
+            result.ExtensionsResult = extensionsHandler.GetExtensionsResultFromServerHello(currentContext.allHandshakeMessages.ServerHello.Extensions);
+            return result;
         }
 
         //
@@ -348,7 +357,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             TlsHandshakeExtension[] configExtensions  = config.HandshakeExtensions;
             HandshakeExtension[] extensionsFromClient = currentContext.allHandshakeMessages.ClientHello.Extensions;
 
-            HandshakeExtension[] serverExtensions = extensionsHandler.BuildAllHandshakeExtensionsOnServer(extensionsFromClient, configExtensions);
+            HandshakeExtension[] serverExtensions = extensionsHandler.GetResponseToPublicExtensions(configExtensions, extensionsFromClient);
 
             return serverExtensions;
         }

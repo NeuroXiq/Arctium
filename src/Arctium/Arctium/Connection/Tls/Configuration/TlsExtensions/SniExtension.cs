@@ -34,32 +34,6 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
             this.certNamePairs = certNamePairs; 
         }
 
-        internal override HandshakeExtension GetResponse(HandshakeExtension extensionFromClient)
-        {
-            ServerNameExtension clientSni = (ServerNameExtension)extensionFromClient;
-
-            foreach (CertNamePair cnPair in certNamePairs)
-            {
-                if (cnPair.ServerName == clientSni.Name)
-                    return new ServerNameExtension(null, NameType.HostName);
-            }
-
-            //not sure to throw this here
-
-            throw new FatalAlertException(
-                "SniExtension",
-                "On building response for client server name request extension",
-                (int)AlertDescription.UnrecognizedName,
-                "client gives server name that do not match any server name on server side. This means that cannot select appriopriate certificate in response");
-
-        }
-
-        internal override HandshakeExtension ConvertToClientRequest()
-        {
-            HandshakeExtension converted = new ServerNameExtension(ServerName, NameType.HostName);
-
-            return converted;
-                
-        }
+        
     }
 }
