@@ -33,8 +33,7 @@
 
 ### HTTPS/1.1 to www.google.com
 
-``
-
+``cs
 using Arctium.Connection.Tls;
 using System;
 using System.IO;
@@ -133,5 +132,4 @@ namespace TlsExamples
          */
     }
 }
-
-``
+``cs
