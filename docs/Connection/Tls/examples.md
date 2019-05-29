@@ -1,5 +1,5 @@
 1. [ Overview ](#overview)
-2. [ Code examples ](#codeexamples)
+2. [ Client code examples ](#clientcodeexamples)
 <a name="overview"/>
 ## Overview
 **Namespaces:**
@@ -21,8 +21,8 @@
   * AlpnExtension - ALPN extension support for client/server
   * SniExtension - Server name extension support (currently only for client)
 
-<a name="codeexamples"/>
+<a name="clientcodeexamples"/>
 
-## Code examples
+## Client code examples
 
 
