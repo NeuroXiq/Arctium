@@ -1,8 +1,7 @@
 1. [ Overview ](#overview)
-
 2. [ Examples ](#examples)
-
-
+   2.1 [HTTPS to google](#https-to-google)
+   2.2 [Session resumption](#session-resumption)
 ## Overview
 
 **Namespaces:**
@@ -16,7 +15,7 @@
   * FatalAlertException - Exception is thrown when during processing TLS operations occur some error.
   * ReceivedFatalAlertException - Exception is thrown when received Alert message of fatal level
   * ReceiveWarningAlertException - Exception is thrown when received Aler message of warning level
-  * *note: server and client connection do not handle warning alerts, any level of alert always gives exception and terminate connection processing. Maybe in future there will be some warning alerts mechanism*
+  >*note: server and client connection do not handle warning alerts, any level of alert always gives exception and terminate connection processing. Maybe in future there will be some warning alerts mechanism*
 
 * Arctium.Connection.Tls.Configuration:
   *Contains definition to explicit TLS client/server configuration. Currently this do not work well and can be ignored*
@@ -29,7 +28,7 @@
 ## Client code examples
 
 
-### HTTPS/1.1 to www.google.com
+## HTTPS to google
 
 ```cs
 
@@ -132,3 +131,122 @@ namespace TlsExamples
     }
 }
 ```
+
+## Session resumption
+
+```cs
+using Arctium.Connection.Tls;
+using Arctium.Connection.Tls.Configuration;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace TlsExamples
+{
+    //see using statement
+
+    class TlsExampleClientConnection
+    {
+        //create connected socket to any server supporting TLS 1.2
+        static Socket ConnectToGoogleCom()
+        {
+            IPAddress ip = Dns.GetHostEntry("www.google.com").AddressList[0];
+            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(ip, 443);
+
+            return socket;
+        }
+
+        //get any request to show how application data exchange works (read and write)
+        static byte[] GetExampleHttpRequest()
+        {
+            string request =  "GET / HTTP/1.1\r\n" +
+                "Host: www.google.com\r\n\r\n";
+
+            return Encoding.ASCII.GetBytes(request);
+        }
+
+        //compare 2 bytes arrays contains session id and write if they are same or not
+        static void SessionIsResumed(byte[] sesId1, byte[] sesId2)
+        {
+            bool isResumed = true;
+            if (sesId1.Length == sesId2.Length)
+            {
+                for (int i = 0; i < sesId1.Length; i++)
+                {
+                    if (sesId1[i] != sesId2[i])
+                    {
+                        isResumed = false;
+                    }
+                }
+            }
+            else isResumed = false;
+
+
+            if (isResumed)
+            {
+                Console.WriteLine("Session is resumed success. SessionsID are same");
+            }
+            else
+            {
+                Console.WriteLine("Session is not resumed. SessionID are different");
+            }
+
+        }
+
+        public static void Main(string[] args)
+        {
+            //create several connection to one server
+            Socket connectedSocket1 = ConnectToGoogleCom();
+            Socket connectedSocket2 = ConnectToGoogleCom();
+            Socket connectedSocket3 = ConnectToGoogleCom();
+
+            Stream innerStream1 = new NetworkStream(connectedSocket1);
+            Stream innerStream2 = new NetworkStream(connectedSocket2);
+            Stream innerStream3 = new NetworkStream(connectedSocket3);
+            
+
+            TlsClientConnection clientConnections = new TlsClientConnection();
+
+            //full-handshake connection
+
+            TlsConnectionResult result1 = clientConnections.Connect(innerStream1);
+            Tls12Session cachedSession = result1.Session;
+
+            //trying to resume session connected on innerStream1 over connectedSocket1 socket
+
+            //this step can be repeated more times as needed to more that 2 connections
+            // there can be innerStream4,5 ... to every new connected socket
+            TlsConnectionResult result2 = clientConnections.Connect(innerStream2, cachedSession);
+            TlsConnectionResult result3 = clientConnections.Connect(innerStream3, cachedSession);
+
+            //note: if session is not resumed, TLS connection is going to full-handshake
+            //and will be establshed without resumption 
+
+            Console.WriteLine("Session resumption example result: ");
+            SessionIsResumed(result1.Session.SessionID, result2.Session.SessionID);
+            SessionIsResumed(result1.Session.SessionID, result3.Session.SessionID);
+
+            //stream to write app data e.g. http/1.1 requests:
+            TlsStream stream1 = result1.TlsStream;
+            TlsStream stream2 = result2.TlsStream;
+            TlsStream stream3 = result3.TlsStream;
+
+            //Out:
+            /*
+             Session resumption example result:
+             Session is resumed success. SessionsID are same
+             Session is resumed success. SessionsID are same
+             */
+
+
+        }
+
+
+    }
+}
+
+```
+

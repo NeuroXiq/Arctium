@@ -27,6 +27,8 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
 
         public HandshakeExtension[] GetExtensions(byte[] buffer, int extensionsBlockOffset, int extensionsBlockLength)
         {
+            if (extensionsBlockLength == 0) return null;
+
             if (extensionsBlockLength < 2)
                 throw new Exception("extensions block length must be at least 2 bytes (length bytes)");
 

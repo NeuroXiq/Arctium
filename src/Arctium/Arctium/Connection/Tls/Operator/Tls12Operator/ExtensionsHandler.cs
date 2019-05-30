@@ -81,6 +81,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         public HandshakeExtension[] ConvertPublicExtensionsToClientHelloRequest(TlsHandshakeExtension[] publicExtensions)
         {
+            if (publicExtensions == null) return null;
             List<HandshakeExtension> converted = new List<HandshakeExtension>();
             foreach (var ext in publicExtensions)
             {
