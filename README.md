@@ -21,6 +21,7 @@ Implemented standards (or not implemented yet):
 
 
 For more informations about TLS connection see: [Tls docs]
+
 For more informations about connection see: [Tls examples]
 
 [RFC 4346]:<https://www.ietf.org/rfc/rfc4346.txt>
@@ -29,4 +30,4 @@ For more informations about connection see: [Tls examples]
 [RFC 8446]:<https://tools.ietf.org/html/rfc8446>
 [RFC 7301]:<https://tools.ietf.org/html/rfc7301>
 [Tls docs]:<docs/Connection/Tls/>
-[Tls examples]:<docs/Connection/tls/examples.md>
+[Tls examples]:<docs/Connection/Tls/examples.md>
