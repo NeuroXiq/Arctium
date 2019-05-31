@@ -16,7 +16,7 @@
         ClientAuthz = 7,
         ServerAuthz = 8,
         CertType = 9,
-        SupportedGroups = 10,
+        EllipticCurves = 10,
         EcPointFormats = 11,
         Srp = 12,
         SignatureAlgorithms = 13,

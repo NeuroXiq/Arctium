@@ -101,7 +101,12 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\CertificateRequestBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\CertificateVerifyBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ClientKeyExchangeBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ALPNExtensionBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\IExtensionBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionFormatData.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ServerNameExtensionBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\SignatureAlgorithmsExtensionBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\FinishedBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\HandshakeBuilderBase.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ServerHelloBuilder.cs" />
