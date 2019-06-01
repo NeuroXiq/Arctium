@@ -45,13 +45,43 @@ namespace Arctium.Connection.Tls.Protocol
 
             Add_TLS_RSA_WITH_AES_128_CBC_SHA256();
 
-
-
             Add_TLS_DHE_RSA_WITH_AES_128_CBC_SHA();
 
             Add_TLS_DHE_RSA_WITH_AES_256_CBC_SHA();
 
+            /* ECC */
+
+            Add_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA();
+
         }
+
+
+
+        #region ECC methods
+
+        private static void Add_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA()
+        {
+            CipherSuite baseSuite = CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA;
+
+            RecordCryptoType recordCryptoType = new RecordCryptoType
+                (CipherType.Block,
+                BlockCipherMode.CBC,
+                BulkCipherAlgorithm.AES,
+                128,
+                HashAlgorithmType.SHA1);
+
+            CryptoSuite cryptoSuite = new CryptoSuite(
+                baseSuite,
+                KeyExchangeAlgorithm.ECDHE,
+                SignatureAlgorithm.RSA,
+                recordCryptoType);
+
+            cryptoSuitesDefinitions[baseSuite] = cryptoSuite;
+        }
+
+
+        #endregion
+
 
         private static void Add_TLS_RSA_WITH_AES_128_CBC_SHA256()
         {

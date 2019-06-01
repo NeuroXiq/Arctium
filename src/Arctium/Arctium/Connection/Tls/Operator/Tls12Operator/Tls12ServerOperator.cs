@@ -357,7 +357,14 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             TlsHandshakeExtension[] configExtensions  = config.HandshakeExtensions;
             HandshakeExtension[] extensionsFromClient = currentContext.allHandshakeMessages.ClientHello.Extensions;
 
-            HandshakeExtension[] serverExtensions = extensionsHandler.GetResponseToPublicExtensions(configExtensions, extensionsFromClient);
+            HandshakeExtension[] publicExtensionsResponse = extensionsHandler.GetResponseToPublicExtensions(configExtensions, extensionsFromClient);
+            HandshakeExtension[] internalExtensionsResponse = extensionsHandler.GetResponseToInternalExtensions(extensionsFromClient);
+
+            List<HandshakeExtension> allExtensions = new List<HandshakeExtension>();
+            allExtensions.AddRange(publicExtensionsResponse);
+            allExtensions.AddRange(internalExtensionsResponse);
+
+            HandshakeExtension[] serverExtensions = allExtensions.ToArray();
 
             return serverExtensions;
         }

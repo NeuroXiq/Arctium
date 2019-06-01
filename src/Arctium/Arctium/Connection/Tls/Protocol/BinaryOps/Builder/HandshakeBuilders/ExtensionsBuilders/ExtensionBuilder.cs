@@ -1,8 +1,6 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 using System.Collections.Generic;
-using Arctium.Connection.Tls.Protocol.BinarOps.HandshakeBuilders.ExtensionsBuilders;
-using System.Text;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.ExtensionsBuilders
 {
@@ -10,6 +8,19 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
     {
         static Dictionary<HandshakeExtensionType, IExtensionBuilder> extTypeToBuilderMap;
 
+        // for every extensions exist class which build object from raw bytes
+        // this builder can be easy find using this dictionary holding [extension type (enum)] -> [extenions builder instance] key-value pair
+        // note that all extensions inherit from IExtensionBuilder interface
+        
+        // to create new extesion builder:
+        // 1. Add extension definition into /Protocol/HandshakeProtocol/Extensions/ namespace (folder path)
+        //      note: Extension must inherit from 'HandshakeExtension' class located in folder above
+        //
+        // 2. Create builder class in Protocol/BinaryOps/Builder/HandshakeBuilder/ExtensionsBuilders (this current folder)
+        //      note: builder class must inherit from IExtensionBuilder, builder build extension from extension data
+        // 
+        // 3. Add new extension builder instance to dictionary below with associated 'HandshakeExtensionType' key as you can see
+        
         static ExtensionBuilder()
         {
             extTypeToBuilderMap = new Dictionary<HandshakeExtensionType, IExtensionBuilder>();
@@ -17,6 +28,10 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
             extTypeToBuilderMap[HandshakeExtensionType.ApplicationLayerProtocolNegotiation] = new ALPNExtensionBuilder();
             extTypeToBuilderMap[HandshakeExtensionType.ServerName] = new ServerNameExtensionBuilder();
             extTypeToBuilderMap[HandshakeExtensionType.SignatureAlgorithms] = new SignatureAlgorithmsExtensionBuilder();
+            
+            //Elliptic curve cryptography 
+            extTypeToBuilderMap[HandshakeExtensionType.EllipticCurves] = new EllipticCurvesExtensionBuilder();
+            extTypeToBuilderMap[HandshakeExtensionType.EcPointFormats] = new ECPointFormatsExtensionBuilder();
         }
 
         public ExtensionBuilder()
@@ -35,13 +50,25 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
             if (extensionDataLength != extensionsBlockLength - 2) throw new Exception("Invalid length of extensions");
 
             //get informations about extensions in raw data buffer
-            //ExtData[] lists all extensions even if they cannot be translated to object.
+            //ExtensionFormatData[] lists all extensions even if they cannot be translated to object.
+            //ExtensionFormatData hold info about:
+            // * buffer -> poiter to buffer where bytes are holded
+            // * offset -> at which index DATA of the extension appear
+            // * length -> length of the expected extension data 
+            //        note: specific extensions builder gets extension data length and if this data length do not match while building 
+            //              specific extension exception is throw
+            //
+            // * Type -> Extension type, used only to get specific extension builder from dictionary, ignored by builders.
+            //
+            // note_2: extensions builders do not get [ext_type][ext_data_length] (4 bytes) but only bytes after them (called 'extension data' in extension struct definition).
+            //        this means that 'offset' points to 'extension data' not [ext_type].
+            //        
+
             ExtensionFormatData[] extData = GetExtensionData(buffer, extensionsBlockOffset + 2, extensionDataLength);
             List<HandshakeExtension> extensionsObjects = new List<HandshakeExtension>();
 
             //build from bytes objects
             //unrecognized extensions are ignored.
-            //to parse new extension, add in switch its type and create object which inherits from HandshakeExtension
 
             for (int i = 0; i < extData.Length; i++)
             {
@@ -68,6 +95,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.Ex
             else return null;
         }
 
+        
         private ExtensionFormatData[] GetExtensionData(byte[] buffer, int firstExtensionOffset, int allExtsLength)
         {
             int maxOffset = allExtsLength + firstExtensionOffset - 1;
