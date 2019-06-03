@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using Arctium.Connection.Tls.Exceptions;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 using Arctium.Connection.Tls.Configuration.TlsExtensions;
+using Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers;
+using Arctium.Connection.Tls.Operator.Tls12Operator.KeyExchangeServices;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -23,13 +25,15 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
     class Tls12ServerOperator : TlsProtocolOperator
     {
         Tls12ServerConfig config;
-        RecordLayer12 recordLayer;
-        ExtensionsHandler extensionsHandler;
+        //RecordLayer12 recordLayer;
+        PublicExtensionsHandler publicExtensionsHandler;
         Context currentContext;
 
         bool isSessionOpened;
         bool closeNotifySended;
         AppDataIO appDataIO;
+        Stream innerStream;
+        ServerKeyExchangeService serverKeyExchangeService;
             
         //TODO end 
 
@@ -43,8 +47,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             //this initialization means that record layer algo is TLS_NULL_WITH_NULL_NULL
             //plain data exchange at this moment
 
-            this.recordLayer = RecordLayer12.Initialize(innerStream);
-            extensionsHandler = new ExtensionsHandler();
+            publicExtensionsHandler = new PublicExtensionsHandler();
+            this.innerStream = innerStream;
         }
 
         //
@@ -82,7 +86,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             if (closeNotifySended) throw new InvalidOperationException("Cannot send close notify because it was sended");
 
             byte[] closeBytes = AlertFormatter.FormatAlert(AlertDescription.CloseNotify, AlertLevel.Warning);
-            recordLayer.Write(closeBytes,0,closeBytes.Length, ContentType.Alert);
+            currentContext.recordLayer.Write(closeBytes,0,closeBytes.Length, ContentType.Alert);
 
             closeNotifySended = true;
         }
@@ -92,28 +96,29 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             if (isSessionOpened) throw new InvalidOperationException("Cannot open session because is already opened");
             if (closeNotifySended) throw new InvalidOperationException("Cannot open session because close notify was sended.");
 
-            currentContext = new Context(recordLayer);
+            currentContext = new Context(innerStream);
+            serverKeyExchangeService = new ServerKeyExchangeService(currentContext, config);
 
-            try
-            {
+            //try
+            //{
                 GetClientHello();
                 ProcessSessionOpenAfterClientHello();
 
                 isSessionOpened = true;
-            }
-            catch (FatalAlertException e)
-            {
-                ActionOnFatalException();
-                SendFatalAlert((AlertDescription)e.AlertDescriptionNumber);
-                throw e;
-            }
-            catch (Exception e)
-            {
-                //unrecognized exception, internal error
-                SendFatalAlert(AlertDescription.InternalError);
-                ActionOnFatalException();
-                throw e;
-            }
+            //}
+            //catch (FatalAlertException e)
+            //{
+            //    ActionOnFatalException();
+            //    SendFatalAlert((AlertDescription)e.AlertDescriptionNumber);
+            //    throw e;
+            //}
+            //catch (Exception e)
+            //{
+            //    //unrecognized exception, internal error
+            //    SendFatalAlert(AlertDescription.InternalError);
+            //    ActionOnFatalException();
+            //    throw e;
+            //}
 
             return GetCurrentConnectionResult();
         }
@@ -123,7 +128,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             TlsConnectionResult result = new TlsConnectionResult();
             result.Session = null;
             result.TlsStream = new TlsStream(this);
-            result.ExtensionsResult = extensionsHandler.GetExtensionsResultFromServerHello(currentContext.allHandshakeMessages.ServerHello.Extensions);
+            result.ExtensionsResult = publicExtensionsHandler.GetExtensionsResultFromServerHello(currentContext.allHandshakeMessages.ServerHello.Extensions);
             return result;
         }
 
@@ -143,7 +148,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             try
             {
                 byte[] alertBytes = AlertFormatter.FormatAlert(alertDescription, AlertLevel.Fatal);
-                recordLayer.Write(alertBytes, 0, alertBytes.Length, ContentType.Alert);
+                currentContext.recordLayer.Write(alertBytes, 0, alertBytes.Length, ContentType.Alert);
             }
             catch (Exception e)
             {
@@ -180,7 +185,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void ActionOnHandshakeEndSuccess()
         {
-            appDataIO = new AppDataIO(recordLayer);
+            appDataIO = currentContext.appDataIO;//new AppDataIO(recordLayer);
             isSessionOpened = true;
         }
 
@@ -195,14 +200,14 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         private void SendChangeCipherSpec()
         {
             byte[] changeCipherSpecBytes = new byte[] { (byte)(ChangeCipherSpecType.ChangeCipherSpec) };
-            recordLayer.Write(changeCipherSpecBytes, 0, 1, ContentType.ChangeCipherSpec);
+            currentContext.recordLayer.Write(changeCipherSpecBytes, 0, 1, ContentType.ChangeCipherSpec);
 
             RecordLayer12Params writeParams = new RecordLayer12Params();
             writeParams.BulkKey = currentContext.secrets.ServerWriteKey;
             writeParams.MacKey = currentContext.secrets.ServerWriteMacKey;
             writeParams.RecordCryptoType = CryptoSuites.Get(currentContext.allHandshakeMessages.ServerHello.CipherSuite).RecordCryptoType;
 
-            recordLayer.ChangeWriteCipherSpec(writeParams);
+            currentContext.recordLayer.ChangeWriteCipherSpec(writeParams);
         }
 
         private void GetFinished()
@@ -274,7 +279,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             {
                 byte[] ccsBytes = new byte[1];
                 ContentType contentType;
-                recordLayer.ReadFragment(ccsBytes, 0, out contentType);
+                currentContext.recordLayer.ReadFragment(ccsBytes, 0, out contentType);
 
                 if (contentType != ContentType.ChangeCipherSpec)
                     throw new FatalAlertException("","",(int)AlertDescription.UnexpectedMessage, "Expected to receive change cipher spec");
@@ -289,7 +294,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             readParams.MacKey = currentContext.secrets.ClientWriteMacKey;
             readParams.RecordCryptoType = CryptoSuites.Get(currentContext.allHandshakeMessages.ServerHello.CipherSuite).RecordCryptoType;
 
-            recordLayer.ChangeReadCipherSpec(readParams);
+            currentContext.recordLayer.ChangeReadCipherSpec(readParams);
         }
 
         private void GetCertificateVerify()
@@ -325,7 +330,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void SendServerKeyExchange()
         {
-            return;
+            if (serverKeyExchangeService.NeedToSendKeyExchange())
+            {
+                ServerKeyExchange keyExchangeMsg = serverKeyExchangeService.CreateNewKeyExchangeMessage();
+                currentContext.handshakeIO.Write(keyExchangeMsg);
+
+                currentContext.allHandshakeMessages.ServerKeyExchage = keyExchangeMsg;
+            }
         }
 
         private void SendCertificate()
@@ -345,24 +356,24 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             serverHello.CompressionMethod = CompressionMethod.NULL;
             serverHello.ProtocolVersion = new ProtocolVersion(3, 3);
             serverHello.Random = GenerateRandom();
-            serverHello.SessionID = GenerateSessionID();
-            serverHello.Extensions = BuildServerHelloExtensions();
+            serverHello.SessionID = GenerateRandomSessionID();
+            serverHello.Extensions = GetExtensionsToServerHello();
 
             currentContext.handshakeIO.Write(serverHello);
             currentContext.allHandshakeMessages.ServerHello = serverHello;
         }
 
-        private HandshakeExtension[] BuildServerHelloExtensions()
+        private HandshakeExtension[] GetExtensionsToServerHello()
         {
+            List<HandshakeExtension> allExtensions = new List<HandshakeExtension>();
             TlsHandshakeExtension[] configExtensions  = config.HandshakeExtensions;
             HandshakeExtension[] extensionsFromClient = currentContext.allHandshakeMessages.ClientHello.Extensions;
 
-            HandshakeExtension[] publicExtensionsResponse = extensionsHandler.GetResponseToPublicExtensions(configExtensions, extensionsFromClient);
-            HandshakeExtension[] internalExtensionsResponse = extensionsHandler.GetResponseToInternalExtensions(extensionsFromClient);
+            HandshakeExtension[] publicExtensionsResponse = publicExtensionsHandler.GetResponseToPublicExtensions(configExtensions, extensionsFromClient);
+            HandshakeExtension[] eccExtensions = new HandshakeExtension[] { new ECPointFormatsExtension(ECPointFormat.Uncompressed) };
 
-            List<HandshakeExtension> allExtensions = new List<HandshakeExtension>();
-            allExtensions.AddRange(publicExtensionsResponse);
-            allExtensions.AddRange(internalExtensionsResponse);
+            if (publicExtensionsResponse != null) { allExtensions.AddRange(publicExtensionsResponse); }
+            allExtensions.AddRange(eccExtensions);
 
             HandshakeExtension[] serverExtensions = allExtensions.ToArray();
 
@@ -374,7 +385,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             return;
         }
 
-        private byte[] GenerateSessionID()
+        private byte[] GenerateRandomSessionID()
         {
             Random r = new Random();
             byte[] random = new byte[32];
@@ -442,8 +453,10 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private byte[] GetPremaster()
         {
+            return serverKeyExchangeService.GetPremaster();
+
             RSA rsa = config.Certificates[0].GetRSAPrivateKey();
-            return rsa.Decrypt(currentContext.allHandshakeMessages.ClientKeyExchange.ExchangeKeys, RSAEncryptionPadding.Pkcs1);
+            return rsa.Decrypt(currentContext.allHandshakeMessages.ClientKeyExchange.KeyExchangeRawBytes, RSAEncryptionPadding.Pkcs1);
         }
 
     }

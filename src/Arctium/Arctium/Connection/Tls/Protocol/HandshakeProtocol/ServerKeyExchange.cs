@@ -2,8 +2,7 @@
 {
     class ServerKeyExchange : Handshake
     {
-        public byte[] KeyExchangeParams;
-        public byte[] ParamsSignature;
+        public byte[] KeyExchangeRawBytes;
 
         public ServerKeyExchange()
         {

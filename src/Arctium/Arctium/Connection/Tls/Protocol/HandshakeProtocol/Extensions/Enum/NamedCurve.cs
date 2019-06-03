@@ -2,6 +2,7 @@
 {
     enum NamedCurve : ushort
     {
+        //deprecated start 
         Sect163k1 =1,   
         Sect163r1= 2,
         Sect163r2= 3,
@@ -24,9 +25,17 @@
         Secp224k1= 20,
         Secp224r1= 21,
         Secp256k1=22,
+        // deprecated end
         Secp256r1= 23,
         Secp384r1= 24,
         Secp521r1=25,
+        X25519 = 29,
+        X448 = 30,
+        ffdhe2048 = 256,
+        ffdhe3072 = 257,
+        ffdhe4096 = 258,
+        ffdhe6144 = 259,
+        ffdhe8192 = 260,
         ArbitraryExplicitPrimeCurves = 0xFF01,
         ArbitraryExplicitChar2Curves = 0xFF02
     }

@@ -229,7 +229,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
             byte[] premaster = GeneratePremasterSecret();
             byte[] encrypted = EncryptPremasterSecret(premaster);
             ClientKeyExchange kkx = new ClientKeyExchange(encrypted);
-            kkx.ExchangeKeys = encrypted;
+            kkx.KeyExchangeRawBytes = encrypted;
 
             WriteAndCacheMessage(kkx);
 

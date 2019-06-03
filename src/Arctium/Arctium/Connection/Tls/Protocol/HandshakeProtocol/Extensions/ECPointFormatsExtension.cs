@@ -4,9 +4,14 @@
     {
         public ECPointFormat[] EcPointFormatList;
 
-        public ECPointFormatsExtension(HandshakeExtensionType type) : base(HandshakeExtensionType.EcPointFormats)
+        public ECPointFormatsExtension(ECPointFormat[] pointFormats) : base(HandshakeExtensionType.EcPointFormats)
         {
+            EcPointFormatList = pointFormats;
+        }
 
+        public ECPointFormatsExtension(ECPointFormat singlePointFormat) : this(new ECPointFormat[] { singlePointFormat })
+        {
+            EcPointFormatList = new ECPointFormat[] { singlePointFormat };
         }
     }
 }

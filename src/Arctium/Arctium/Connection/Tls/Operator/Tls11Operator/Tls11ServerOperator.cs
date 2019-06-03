@@ -133,7 +133,7 @@ namespace Arctium.Connection.Tls.Operator.Tls11Operator
         {
             RSA decryptor = config.Certificates[0].GetRSAPrivateKey();
 
-            byte[] enctyptedPremaster = handshakeState.ClientKeyExchange.ExchangeKeys;
+            byte[] enctyptedPremaster = handshakeState.ClientKeyExchange.KeyExchangeRawBytes;
             byte[] decryptedPremaster = decryptor.Decrypt(enctyptedPremaster, RSAEncryptionPadding.Pkcs1);
 
             return decryptedPremaster;

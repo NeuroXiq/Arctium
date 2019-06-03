@@ -32,6 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -56,10 +57,11 @@
     <Compile Include="Connection\Tls\Exceptions\ReceivedWarningAlertException.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\AppDataIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Context.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls12Operator\ExtensionsHandler.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\ExtensionsHandlers\PublicExtensionsHandler.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeMessages.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls12Operator\ClientKeyExchangeService.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\KeyExchangeServices\ClientKeyExchangeService.cs" />
+    <Compile Include="Connection\Tls\Operator\Tls12Operator\KeyExchangeServices\ServerKeyExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ClientOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IRecordCryptoFilter.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />
@@ -104,6 +106,8 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\CertificateVerifyBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ClientKeyExchangeBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ALPNExtensionBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ECPointFormatsExtensionBuilder.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\EllipticCurvesExtensionBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\IExtensionBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionFormatData.cs" />
@@ -115,6 +119,7 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ServerHelloDoneBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ServerKeyExchangeBuilder.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedHandshakeInfo.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedKeyExchangeFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\FixedOps\FixedRecordInfo.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\AlertFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\CertificateFormatter.cs" />
@@ -124,6 +129,8 @@
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientHelloFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ClientKeyExchangeFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\ALPNExtensionFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\ECPointFormatsExtensionFormatter.cs" />
+    <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\EllipticCurvesExtensionFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\ExtensionFormatterBase.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\ExtensionsFormatter.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Formatter\HandshakeFormatters\ExtensionsFormatters\ServerNameExtensionFormatter.cs" />
@@ -151,7 +158,8 @@
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Enum\ClientCertificateType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ALPNExtension.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\ECPointFormatsExtension.cs" />
-    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\EllipticCurveExtension.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\EllipticCurvesExtension.cs" />
+    <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\ECCurveType.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\ECPointFormat.cs" />
     <Compile Include="Connection\Tls\Protocol\HandshakeProtocol\Extensions\Enum\HandshakeExtensionType.cs" />
     <Compile Include="Connection\Tls\Protocol\BinaryOps\Builder\HandshakeBuilders\ExtensionsBuilders\ExtensionsBuildConsts.cs" />

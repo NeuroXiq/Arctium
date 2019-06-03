@@ -9,17 +9,16 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
         {
             ServerKeyExchange skx = (ServerKeyExchange)hs;
 
-            Buffer.BlockCopy(skx.KeyExchangeParams, 0, buffer, offset, skx.KeyExchangeParams.Length);
-            Buffer.BlockCopy(skx.ParamsSignature, 0, buffer, offset + skx.KeyExchangeParams.Length, skx.ParamsSignature.Length);
+            Buffer.BlockCopy(skx.KeyExchangeRawBytes, 0, buffer, offset, skx.KeyExchangeRawBytes.Length);
 
-            return skx.ParamsSignature.Length + skx.KeyExchangeParams.Length;
+            return skx.KeyExchangeRawBytes.Length;
         }
 
         public override int GetLength(Handshake handshake)
         {
             ServerKeyExchange skx = (ServerKeyExchange)handshake;
 
-            return skx.ParamsSignature.Length + skx.KeyExchangeParams.Length;
+            return skx.KeyExchangeRawBytes.Length;
         }
     }
 }

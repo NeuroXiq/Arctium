@@ -10,16 +10,16 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatter
         public override int GetBytes( byte[] buffer, int offset, Handshake handshakeMessage)
         {
             ClientKeyExchange kkx = (ClientKeyExchange)handshakeMessage;
-            NumberConverter.FormatUInt16((ushort)kkx.ExchangeKeys.Length, buffer, offset);
-            Buffer.BlockCopy(kkx.ExchangeKeys, 0, buffer, offset + 2, kkx.ExchangeKeys.Length);
-            NumberConverter.FormatUInt16((ushort)kkx.ExchangeKeys.Length, buffer, offset);
+            NumberConverter.FormatUInt16((ushort)kkx.KeyExchangeRawBytes.Length, buffer, offset);
+            Buffer.BlockCopy(kkx.KeyExchangeRawBytes, 0, buffer, offset + 2, kkx.KeyExchangeRawBytes.Length);
+            NumberConverter.FormatUInt16((ushort)kkx.KeyExchangeRawBytes.Length, buffer, offset);
 
-            return kkx.ExchangeKeys.Length + 2;
+            return kkx.KeyExchangeRawBytes.Length + 2;
         }
 
         public override int GetLength(Handshake handshake)
         {
-            return ((ClientKeyExchange)handshake).ExchangeKeys.Length + 2;
+            return ((ClientKeyExchange)handshake).KeyExchangeRawBytes.Length + 2;
         }
     }
 }

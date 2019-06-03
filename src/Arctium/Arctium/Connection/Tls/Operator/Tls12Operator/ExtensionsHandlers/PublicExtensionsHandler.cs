@@ -6,9 +6,9 @@ using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 using System;
 using System.Collections.Generic;
 
-namespace Arctium.Connection.Tls.Operator.Tls12Operator
+namespace Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers
 {
-    class ExtensionsHandler
+    class PublicExtensionsHandler
     {
         //
         // TlsHandshakeExtension class is a public defined extensions for public API usage (e.g. in configuration objects). 
@@ -17,9 +17,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         //
         // HandshakeExtension contains only fields necessary to format to bytes and transfer.
 
-        public ExtensionsHandler() { }
-
-
+        public PublicExtensionsHandler() { }
 
 
 
@@ -45,6 +43,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         public HandshakeExtension[] GetResponseToPublicExtensions(TlsHandshakeExtension[] publicExtensions, HandshakeExtension[] clientHelloExtensions)
         {
+            if (publicExtensions == null) return null;
             List<HandshakeExtension> responses = new List<HandshakeExtension>();
             foreach (var publicExt in publicExtensions)
             {
@@ -100,7 +99,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             return converted.ToArray();
         }
-        
+
         //public HandshakeExtension[] BuildAllHandshakeExtensionsOnServer(HandshakeExtension[] clientHelloExtensions, TlsHandshakeExtension[] toResponseExtensions)
         //{
         //    List<HandshakeExtension> allExtensions = new List<HandshakeExtension>();
@@ -141,13 +140,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         //private HandshakeExtension ConvertToPublicExtensionResult(TlsHandshakeExtension responseDataExt, HandshakeExtension clientRequestExtData)
         //{
-            
+
         //}
         /////<summary>Tricky extensiosn not sure how should it works </summary>
         //public TlsHandshakeExtension[] GetExtensionsResultFromServerHello(ServerHello serverHello)
         //{
         //    HandshakeExtension[] extensions = serverHello.Extensions;
-            
+
         //    foreach (var ext in extensions)
         //    {
 
@@ -180,7 +179,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         //{
         //    switch (ext.internalExtensionType)
         //    {
-                
+
         //    }
         //}
     }

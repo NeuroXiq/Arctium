@@ -4,7 +4,7 @@
     {
         public NamedCurve[] EllipticCurveList;
 
-        public EllipticCurvesExtension(HandshakeExtensionType type) : base(HandshakeExtensionType.EllipticCurves)
+        public EllipticCurvesExtension() : base(HandshakeExtensionType.EllipticCurves)
         {
         }
     }

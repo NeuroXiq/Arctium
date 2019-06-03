@@ -15,14 +15,17 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
+using Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers;
+using Arctium.Connection.Tls.Operator.Tls12Operator.KeyExchangeServices;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
     class Tls12ClientOperator : TlsProtocolOperator
     {
 
-        RecordLayer12 recordLayer;
+        //RecordLayer12 recordLayer;
         Tls12ClientConfig config;
+        Stream innerStream;
 
         // this field is very important. Is updated by all Get..() and Send...() methods
         // and holds all sended and received messages. Is also contains readers and writers of the
@@ -30,14 +33,16 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         // 
         Context currentContext;
         Handshake currentMessageToProcess;
-        ExtensionsHandler extensionHandler;
-        ClientKeyExchangeService currentKeyExchangeService;
+        PublicExtensionsHandler extensionHandler;
+        ClientKeyExchangeService clientKeyExchangeService;
+        
 
         bool canExchangeAppData;
 
         public Tls12ClientOperator(Tls12ClientConfig config, Stream innerStream)
         {
-            recordLayer = RecordLayer12.Initialize(innerStream);
+            //recordLayer = RecordLayer12.Initialize(innerStream);
+            this.innerStream = innerStream;
             this.config = config;
             canExchangeAppData = false;
         }
@@ -48,7 +53,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             byte[] closeNotifyBytes = AlertFormatter.FormatAlert(AlertDescription.CloseNotify, AlertLevel.Warning);
 
-            recordLayer.Write(closeNotifyBytes, 0, closeNotifyBytes.Length, ContentType.Alert);
+            currentContext.recordLayer.Write(closeNotifyBytes, 0, closeNotifyBytes.Length, ContentType.Alert);
 
             canExchangeAppData = false;
         }
@@ -196,9 +201,9 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void ResetContextToBeforeHandshake()
         {
-            currentContext = new Context(recordLayer);
-            extensionHandler = new ExtensionsHandler();
-            currentKeyExchangeService = new ClientKeyExchangeService(currentContext);
+            currentContext = new Context(innerStream);
+            extensionHandler = new PublicExtensionsHandler();
+            clientKeyExchangeService = new ClientKeyExchangeService(currentContext);
             canExchangeAppData = false;
         }
 
@@ -246,7 +251,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             try
             {
                 byte[] internalErrorAlert = AlertFormatter.FormatAlert(AlertDescription.InternalError, AlertLevel.Fatal);
-                recordLayer.Write(internalErrorAlert, 0, internalErrorAlert.Length, ContentType.Alert);
+                currentContext.recordLayer.Write(internalErrorAlert, 0, internalErrorAlert.Length, ContentType.Alert);
             }
             catch (Exception ignoreException)
             {
@@ -274,7 +279,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             try
             {
-                recordLayer.Write(alertBytes, 0, alertBytes.Length, ContentType.Alert);
+                currentContext.recordLayer.Write(alertBytes, 0, alertBytes.Length, ContentType.Alert);
             }
             catch (Exception ignoreException)
             {
@@ -330,7 +335,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             readParams.MacKey = currentContext.secrets.ServerWriteMacKey;
             readParams.RecordCryptoType = recordCrypto;
 
-            recordLayer.ChangeReadCipherSpec(readParams);
+            currentContext.recordLayer.ChangeReadCipherSpec(readParams);
         }
 
         private void ReadFinished()
@@ -400,7 +405,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             byte[] ccsExptectedByte = new byte[0x4800];
             ContentType readedContetType;
-            int readedBytes = recordLayer.ReadFragment(ccsExptectedByte, 0, out readedContetType);
+            int readedBytes = currentContext.recordLayer.ReadFragment(ccsExptectedByte, 0, out readedContetType);
             
             if (readedContetType != ContentType.ChangeCipherSpec)
             {
@@ -480,7 +485,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             // note: other messages are writed by some 'writers' like 'HandshakeIO'
 
             //and how writing directly to the record layer looks like:
-            recordLayer.Write(ccsBytes, 0, ccsBytes.Length, ContentType.ChangeCipherSpec);
+            currentContext.recordLayer.Write(ccsBytes, 0, ccsBytes.Length, ContentType.ChangeCipherSpec);
         }
 
         private void ChangeWriteCipherSpec()
@@ -507,8 +512,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             // after this step, all (only) write operations are encrypted and HMAC'ed
             // note that recordLayer in injected into 'Context.HandshakeIO' and 'Context.AppDataIO'
             // and changing recordLayer state have infulence in this instances
-            
-            recordLayer.ChangeWriteCipherSpec(writeParams);
+
+            currentContext.recordLayer.ChangeWriteCipherSpec(writeParams);
         }
 
 
@@ -520,7 +525,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         // 
         private void UpdateSecretsAfterKeyExchange()
         {
-            byte[] currentPremaster = currentKeyExchangeService.Premaster;
+            byte[] currentPremaster = clientKeyExchangeService.GetPremaster();
             byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
             byte[] serverRandom = currentContext.allHandshakeMessages.ServerHello.Random;
             byte[] master = SecretGenerator.GenerateTls12MasterSecret(currentPremaster, clientRandom, serverRandom);
@@ -557,7 +562,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void SendClientKeyExchange()
         {
-            ClientKeyExchange clientKeyExchange = currentKeyExchangeService.CreateNewClientKeyExchangeMessage();
+            ClientKeyExchange clientKeyExchange = clientKeyExchangeService.CreateNewClientKeyExchangeMessage();
             currentContext.handshakeIO.Write(clientKeyExchange);
         }
 
@@ -597,7 +602,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void GetServerKeyExchange()
         {
-            if (currentKeyExchangeService.ExpectToReadServerKeyExchange())
+            if (clientKeyExchangeService.ServerMustSendServerKeyExchange())
             {
                 ThrowIfUnexpectedHandshakeMessage(HandshakeType.ServerKeyExchange, currentMessageToProcess.MsgType);
                 currentContext.allHandshakeMessages.ServerKeyExchage = (ServerKeyExchange)currentMessageToProcess;
