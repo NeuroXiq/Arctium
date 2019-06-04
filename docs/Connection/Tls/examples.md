@@ -1,7 +1,8 @@
 1. [ Overview ](#overview)
 2. [ Examples ](#examples)
-2.1 [HTTPS to google](#https-to-google)
-2.2 [Session resumption](#session-resumption)
+  - 2.1 [HTTPS to google](#https-to-google)
+  - 2.2 [Session resumption](#session-resumption)
+
 ## Overview
 
 **Namespaces:**
