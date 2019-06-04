@@ -3,6 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using System;
 using Arctium.Connection.Tls.Exceptions;
 using Arctium.Connection.Tls.Protocol.AlertProtocol;
+using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 {
@@ -20,10 +21,10 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
             }
         }
 
-        CertNamePair[] certNamePairs;
+        public CertNamePair[] CertNamePairs;
 
         public string ServerName;
-        
+
         public SniExtension(string serverName) : base(HandshakeExtensionType.ServerName)
         {
             ServerName = serverName;
@@ -31,7 +32,7 @@ namespace Arctium.Connection.Tls.Configuration.TlsExtensions
 
         public SniExtension(CertNamePair[] certNamePairs) : base(HandshakeExtensionType.ServerName)
         {
-            this.certNamePairs = certNamePairs; 
+            this.CertNamePairs = certNamePairs; 
         }
 
         

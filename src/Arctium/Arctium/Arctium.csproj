@@ -60,8 +60,6 @@
     <Compile Include="Connection\Tls\Operator\Tls12Operator\ExtensionsHandlers\PublicExtensionsHandler.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeIO.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\HandshakeMessages.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls12Operator\KeyExchangeServices\ClientKeyExchangeService.cs" />
-    <Compile Include="Connection\Tls\Operator\Tls12Operator\KeyExchangeServices\ServerKeyExchangeService.cs" />
     <Compile Include="Connection\Tls\Operator\Tls12Operator\Tls12ClientOperator.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\IRecordCryptoFilter.cs" />
     <Compile Include="Connection\Tls\ProtocolStream\RecordsLayer\RecordsLayer12\RecordLayer12Params.cs" />

@@ -15,10 +15,12 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers
         // This extensions are located in Connection/Tls/Configuration/TlsExtensions and must be translated to appriopriate 
         // HandshakeExtension (internal usage). This extensions include ALPN and SNI 
         //
-        // HandshakeExtension contains only fields necessary to format to bytes and transfer.
+        // 'HandshakeExtension' contains only fields necessary to format to bytes and transfer over record layer.
 
         public PublicExtensionsHandler() { }
 
+
+        
 
 
         public TlsHandshakeExtension[] GetExtensionsResultFromServerHello(HandshakeExtension[] serverHelloExtension)
@@ -41,43 +43,6 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers
             return results.ToArray();
         }
 
-        public HandshakeExtension[] GetResponseToPublicExtensions(TlsHandshakeExtension[] publicExtensions, HandshakeExtension[] clientHelloExtensions)
-        {
-            if (publicExtensions == null) return null;
-            List<HandshakeExtension> responses = new List<HandshakeExtension>();
-            foreach (var publicExt in publicExtensions)
-            {
-                foreach (var chExt in clientHelloExtensions)
-                {
-                    if (chExt.Type == publicExt.internalExtensionType)
-                    {
-                        switch (chExt.Type)
-                        {
-                            case HandshakeExtensionType.ApplicationLayerProtocolNegotiation:
-                                GetResponseForALPN(publicExt, chExt);
-                                break;
-                            default: break;
-                        }
-                    }
-                }
-            }
-
-            return responses.ToArray();
-        }
-
-        private HandshakeExtension GetResponseForALPN(TlsHandshakeExtension publicExt, HandshakeExtension chExt)
-        {
-            foreach (var supportedByServer in ((AlpnExtension)publicExt).SupportedProtocolNames)
-            {
-                foreach (var supportedByClient in ((ALPNExtension)chExt).ProtocolNameList)
-                {
-                    if (supportedByClient == supportedByServer) return new ALPNExtension(new string[] { supportedByServer });
-                }
-            }
-
-            throw new FatalAlertException("Extensions Handler", "On trying to negotiate ALPN protocol", (int)AlertDescription.NoApplicationProtocol, "");
-        }
-
         public HandshakeExtension[] ConvertPublicExtensionsToClientHelloRequest(TlsHandshakeExtension[] publicExtensions)
         {
             if (publicExtensions == null) return null;
@@ -98,6 +63,43 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers
             }
 
             return converted.ToArray();
+        }
+
+        internal HandshakeExtension TryBuildAlpnResponse(TlsHandshakeExtension[] configExtensions, HandshakeExtension[] extensionsFromClient)
+        {
+            AlpnExtension publicExt = null;
+            ALPNExtension chExt = null;
+
+            foreach (var ext in configExtensions)
+            {
+                if (ext.internalExtensionType == HandshakeExtensionType.ApplicationLayerProtocolNegotiation)
+                {
+                    publicExt = (AlpnExtension)ext;
+                    break;
+                }
+            }
+            foreach (var clientExt in extensionsFromClient)
+            {
+                if (clientExt.Type == HandshakeExtensionType.ApplicationLayerProtocolNegotiation)
+                {
+                    chExt = (ALPNExtension)clientExt;
+                    break;
+                }
+            }
+
+
+            if (publicExt == null || chExt == null) return null;
+
+            foreach (var supportedByServer in ((AlpnExtension)publicExt).SupportedProtocolNames)
+            {
+                foreach (var supportedByClient in ((ALPNExtension)chExt).ProtocolNameList)
+                {
+                    if (supportedByClient == supportedByServer) return new ALPNExtension(new string[] { supportedByServer });
+                }
+            }
+
+            throw new FatalAlertException("Extensions Handler", "On trying to negotiate ALPN protocol", 
+                (int)AlertDescription.NoApplicationProtocol, "Client and server do not share common application layer protocol name");
         }
 
         //public HandshakeExtension[] BuildAllHandshakeExtensionsOnServer(HandshakeExtension[] clientHelloExtensions, TlsHandshakeExtension[] toResponseExtensions)

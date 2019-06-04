@@ -17,7 +17,6 @@ using Arctium.Connection.Tls.Exceptions;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 using Arctium.Connection.Tls.Configuration.TlsExtensions;
 using Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers;
-using Arctium.Connection.Tls.Operator.Tls12Operator.KeyExchangeServices;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -25,7 +24,6 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
     class Tls12ServerOperator : TlsProtocolOperator
     {
         Tls12ServerConfig config;
-        //RecordLayer12 recordLayer;
         PublicExtensionsHandler publicExtensionsHandler;
         Context currentContext;
 
@@ -33,9 +31,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         bool closeNotifySended;
         AppDataIO appDataIO;
         Stream innerStream;
-        ServerKeyExchangeService serverKeyExchangeService;
             
-        //TODO end 
+        
 
         public Tls12ServerOperator(Tls12ServerConfig config, Stream innerStream)
         {
@@ -97,7 +94,6 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             if (closeNotifySended) throw new InvalidOperationException("Cannot open session because close notify was sended.");
 
             currentContext = new Context(innerStream);
-            serverKeyExchangeService = new ServerKeyExchangeService(currentContext, config);
 
             //try
             //{
@@ -179,7 +175,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
             SendFinished();
 
-            //after all steps, prepare internal environment to exchange app data
+            //after all steps, prepare internal environment to app data exchange
             ActionOnHandshakeEndSuccess();
         }
 
@@ -238,7 +234,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             string when = "On processing finished message";
             string where = "Tls12ServerOperator";
-            string description = "Finished message contains invalid data";
+            string description = "Finished message received from client contains invalid data";
 
             throw new FatalAlertException(where,when,(int)AlertDescription.DecryptError, description);
         }
@@ -330,21 +326,67 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void SendServerKeyExchange()
         {
-            if (serverKeyExchangeService.NeedToSendKeyExchange())
-            {
-                ServerKeyExchange keyExchangeMsg = serverKeyExchangeService.CreateNewKeyExchangeMessage();
-                currentContext.handshakeIO.Write(keyExchangeMsg);
-
-                currentContext.allHandshakeMessages.ServerKeyExchage = keyExchangeMsg;
-            }
+            return;
         }
 
         private void SendCertificate()
         {
-            Certificate certificate = new Certificate(config.Certificates);
+            X509Certificate2 certificateToSend = SelectCertificateToSend();
+
+            Certificate certificate = new Certificate(new X509Certificate2[] { certificateToSend });
 
             currentContext.handshakeIO.Write(certificate);
             currentContext.allHandshakeMessages.ServerCertificate = certificate;
+            currentContext.Certificate = certificateToSend;
+        }
+
+        
+        private X509Certificate2 SelectCertificateToSend()
+        {
+            // If Server and client contains Sni extension, try to select 
+            // certificate from this extension, otherwise send default certifiate from 'config' object
+
+            SniExtension serverSni = null;
+            ServerNameExtension clientSni = null;
+
+
+            foreach (var ext in config.HandshakeExtensions)
+            {
+                if (ext.internalExtensionType == HandshakeExtensionType.ServerName)
+                {
+                    serverSni = (SniExtension)ext;
+                    break;
+                }
+            }
+
+            foreach (var chExt in currentContext.allHandshakeMessages.ClientHello.Extensions)
+            {
+                if (chExt.Type == HandshakeExtensionType.ServerName)
+                {
+                    clientSni = (ServerNameExtension)chExt; 
+                }
+            }
+
+            // try to process SNI, if still not presend send default certificate from config object
+            X509Certificate2 selectedCert = null;
+
+            if (clientSni != null && serverSni != null)
+            {
+                foreach (var nameCertPair in serverSni.CertNamePairs)
+                {
+                    if (nameCertPair.ServerName == clientSni.Name)
+                    {
+                        selectedCert = nameCertPair.Certificate;
+                        break;
+                    }
+                }
+            }
+
+            //not Sni, send default cert from config
+            if(selectedCert == null) return config.Certificates[0];
+
+            //sni founded, send cert from sni
+            return selectedCert;
         }
 
         private void SendServerHello()
@@ -357,27 +399,27 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             serverHello.ProtocolVersion = new ProtocolVersion(3, 3);
             serverHello.Random = GenerateRandom();
             serverHello.SessionID = GenerateRandomSessionID();
-            serverHello.Extensions = GetExtensionsToServerHello();
+            serverHello.Extensions = BuildServerHelloExtensions();
 
             currentContext.handshakeIO.Write(serverHello);
             currentContext.allHandshakeMessages.ServerHello = serverHello;
         }
 
-        private HandshakeExtension[] GetExtensionsToServerHello()
+        private HandshakeExtension[] BuildServerHelloExtensions()
         {
             List<HandshakeExtension> allExtensions = new List<HandshakeExtension>();
             TlsHandshakeExtension[] configExtensions  = config.HandshakeExtensions;
             HandshakeExtension[] extensionsFromClient = currentContext.allHandshakeMessages.ClientHello.Extensions;
 
-            HandshakeExtension[] publicExtensionsResponse = publicExtensionsHandler.GetResponseToPublicExtensions(configExtensions, extensionsFromClient);
-            HandshakeExtension[] eccExtensions = new HandshakeExtension[] { new ECPointFormatsExtension(ECPointFormat.Uncompressed) };
-
-            if (publicExtensionsResponse != null) { allExtensions.AddRange(publicExtensionsResponse); }
-            allExtensions.AddRange(eccExtensions);
-
             HandshakeExtension[] serverExtensions = allExtensions.ToArray();
 
-            return serverExtensions;
+            //if extenion is present in config extensions and in client hello extenions
+            //then try build response
+            HandshakeExtension alpnResponse = publicExtensionsHandler.TryBuildAlpnResponse(configExtensions, extensionsFromClient);
+
+            if (alpnResponse != null) allExtensions.Add(alpnResponse);
+
+            return allExtensions.ToArray();
         }
 
         private void ThrowIfInvalidClientExtensions()
@@ -453,11 +495,14 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private byte[] GetPremaster()
         {
-            return serverKeyExchangeService.GetPremaster();
+            RSA rsa = currentContext.Certificate.GetRSAPrivateKey();
+            int length = currentContext.allHandshakeMessages.ClientKeyExchange.KeyExchangeRawBytes.Length - 2;
+            byte[] encryptedPremaster = new byte[length];
 
-            RSA rsa = config.Certificates[0].GetRSAPrivateKey();
-            return rsa.Decrypt(currentContext.allHandshakeMessages.ClientKeyExchange.KeyExchangeRawBytes, RSAEncryptionPadding.Pkcs1);
+            Buffer.BlockCopy(currentContext.allHandshakeMessages.ClientKeyExchange.KeyExchangeRawBytes, 2, encryptedPremaster, 0, length);
+
+
+            return rsa.Decrypt(encryptedPremaster,RSAEncryptionPadding.Pkcs1);
         }
-
     }
 }

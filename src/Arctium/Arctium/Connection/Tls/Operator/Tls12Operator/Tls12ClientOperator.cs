@@ -16,7 +16,7 @@ using System.IO;
 using System.Security.Cryptography;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 using Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers;
-using Arctium.Connection.Tls.Operator.Tls12Operator.KeyExchangeServices;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Connection.Tls.Operator.Tls12Operator
 {
@@ -34,8 +34,6 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         Context currentContext;
         Handshake currentMessageToProcess;
         PublicExtensionsHandler extensionHandler;
-        ClientKeyExchangeService clientKeyExchangeService;
-        
 
         bool canExchangeAppData;
 
@@ -203,7 +201,6 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             currentContext = new Context(innerStream);
             extensionHandler = new PublicExtensionsHandler();
-            clientKeyExchangeService = new ClientKeyExchangeService(currentContext);
             canExchangeAppData = false;
         }
 
@@ -525,12 +522,11 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         // 
         private void UpdateSecretsAfterKeyExchange()
         {
-            byte[] currentPremaster = clientKeyExchangeService.GetPremaster();
             byte[] clientRandom = currentContext.allHandshakeMessages.ClientHello.Random;
             byte[] serverRandom = currentContext.allHandshakeMessages.ServerHello.Random;
-            byte[] master = SecretGenerator.GenerateTls12MasterSecret(currentPremaster, clientRandom, serverRandom);
+            byte[] master = SecretGenerator.GenerateTls12MasterSecret(currentContext.Premaster, clientRandom, serverRandom);
 
-            // after compute master do same thing like in session resumption, update secrets from master,
+            // after compute master do same action like in session resumption, update secrets from master,
             UpdateSecretsFromMaster(master);
         }
 
@@ -549,34 +545,26 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void SendCertificateVerify()
         {
-            if (NeedToSendCertificateVerify())
-            {
-                //send certificate verify
-            }
-        }
-
-        private bool NeedToSendCertificateVerify()
-        {
-            return false;
+            return;
         }
 
         private void SendClientKeyExchange()
         {
-            ClientKeyExchange clientKeyExchange = clientKeyExchangeService.CreateNewClientKeyExchangeMessage();
-            currentContext.handshakeIO.Write(clientKeyExchange);
+            currentContext.Premaster = GenerateRandom(48);
+
+            currentContext.Premaster[0] = 3;
+            currentContext.Premaster[1] = 3;
+
+            byte[] encryptedPremaster = currentContext.allHandshakeMessages.ServerCertificate.ANS1Certificates[0].GetRSAPublicKey().Encrypt(currentContext.Premaster, RSAEncryptionPadding.Pkcs1);
+
+            ClientKeyExchange ckx = new ClientKeyExchange(encryptedPremaster);
+            currentContext.handshakeIO.Write(ckx);
+            currentContext.allHandshakeMessages.ClientKeyExchange = ckx;
         }
 
         private void SendCertificate()
         {
-            if (NeedToSendCertificate())
-            {
-                // send certificate
-            }
-        }
-
-        private bool NeedToSendCertificate()
-        {
-            return false;
+            return;
         }
 
         private void GetServerHelloDone()
@@ -602,16 +590,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
 
         private void GetServerKeyExchange()
         {
-            if (clientKeyExchangeService.ServerMustSendServerKeyExchange())
-            {
-                ThrowIfUnexpectedHandshakeMessage(HandshakeType.ServerKeyExchange, currentMessageToProcess.MsgType);
-                currentContext.allHandshakeMessages.ServerKeyExchage = (ServerKeyExchange)currentMessageToProcess;
-
-                currentMessageToProcess = currentContext.handshakeIO.Read();
-            }
-
-            // not expected to read ServerKeyExchange,
-            // leave currentMessageToProcess to another processing method
+            return;
         }
 
         private void GetCertificate()
