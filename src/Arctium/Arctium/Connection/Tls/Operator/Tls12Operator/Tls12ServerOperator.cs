@@ -349,7 +349,7 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
             SniExtension serverSni = null;
             ServerNameExtension clientSni = null;
 
-
+            if (config.HandshakeExtensions != null)
             foreach (var ext in config.HandshakeExtensions)
             {
                 if (ext.internalExtensionType == HandshakeExtensionType.ServerName)

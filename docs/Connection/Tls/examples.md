@@ -2,6 +2,11 @@
 2. [ Examples ](#examples)
   - 2.1 [HTTPS to google](#https-to-google)
   - 2.2 [Session resumption](#session-resumption)
+  - 2.3 [Client Sni Extension](#client-sni-extension)
+  - 2.4 [Client ALPN Extension](#client-alpn-extension)
+  - 2.5 [TLS server](#tls-server)
+  - 2.6 [Server ALPN Extension](#server-alpn-extension)
+  - 2.7 [Server Sni Extension](#server-sni-extension)
 
 ## Overview
 
@@ -250,4 +255,429 @@ namespace TlsExamples
 }
 
 ```
+## Client Sni Extension
+
+
+
+## Client ALPN Extension
+
+```cs
+using Arctium.Connection.Tls;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace TlsExamples
+{
+    //see using statement
+
+    class TlsExampleClientConnection
+    {
+        //create connected socket to any server supporting TLS 1.2
+        static Socket ConnectToGoogleCom()
+        {
+            IPAddress ip = Dns.GetHostEntry("www.google.com").AddressList[0];
+            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(ip, 443);
+
+            return socket;
+        }
+
+        //get any request to show how application data exchange works (read and write)
+        static byte[] GetExampleHttpRequest()
+        {
+            string request = "GET / HTTP/1.1\r\n" +
+                "Host: www.google.com\r\n\r\n";
+
+            return Encoding.ASCII.GetBytes(request);
+        }
+
+        public static void Main(string[] args)
+        {
+            Socket connectedSocket = ConnectToGoogleCom();
+            //create inner stream
+            Stream networkStream = new NetworkStream(connectedSocket);
+
+            string[] protocols = new string[] { "http/1.1", "http/1.0" };
+
+            //prtocol names to send in client hello extension
+            AlpnExtension alpnExtension = new AlpnExtension(protocols);
+            TlsHandshakeExtension[] extensionsToSend = new TlsHandshakeExtension[] { alpnExtension };
+
+            TlsClientConnection tlsClientConnection = new TlsClientConnection(extensionsToSend);
+
+            TlsConnectionResult tlsConnectionResult = tlsClientConnection.Connect(networkStream);
+
+            //* reponse can be null - server do not accept alpn extesnion
+            //* response can have other extensions than sended, server do not accept extension
+            //  which was sended but provided others supported by them
+            //
+            TlsHandshakeExtension[] extensionsResponse = tlsConnectionResult.ExtensionsResult;
+
+            if (extensionsResponse != null)
+            {
+                //sended only 1 extensions, expected result that first element containt response
+
+                TlsHandshakeExtension extension = extensionsResponse[0];
+                if (extension.Type == TlsHandshakeExtension.ExtensionType.ALPN)
+                {
+                    AlpnExtension response = (AlpnExtension)extension;
+                    Console.WriteLine("response to ALPN: ");
+                    Console.WriteLine(response.SelectedProtocolName);
+                }
+            }
+
+            Stream tlsStream = tlsConnectionResult.TlsStream;
+
+            //read/write over tls stream
+            // ... 
+            // ...
+
+            //close notify
+            tlsStream.Close();
+
+            //close socket
+            connectedSocket.Close();
+        }
+    }
+}
+
+```cs
+using Arctium.Connection.Tls;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace TlsExamples
+{
+    //see using statement
+
+    class TlsExampleClientConnection
+    {
+        //create connected socket to any server supporting TLS 1.2
+        static Socket ConnectToGoogleCom()
+        {
+            IPAddress ip = Dns.GetHostEntry("www.google.com").AddressList[0];
+            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(ip, 443);
+
+            return socket;
+        }
+
+        //get any request to show how application data exchange works (read and write)
+        static byte[] GetExampleHttpRequest()
+        {
+            string request = "GET / HTTP/1.1\r\n" +
+                "Host: www.google.com\r\n\r\n";
+
+            return Encoding.ASCII.GetBytes(request);
+        }
+
+        public static void Main(string[] args)
+        {
+            Socket connectedSocket = ConnectToGoogleCom();
+            //create inner stream
+            Stream networkStream = new NetworkStream(connectedSocket);
+
+            string[] protocols = new string[] { "http/1.1", "http/1.0" };
+
+            SniExtension sniExtension = new SniExtension("www.google.com");
+            TlsHandshakeExtension[] extensionsToSend = new TlsHandshakeExtension[] { sniExtension };
+
+            TlsClientConnection tlsClientConnection = new TlsClientConnection(extensionsToSend);
+
+            TlsConnectionResult tlsConnectionResult = tlsClientConnection.Connect(networkStream);
+
+            Stream tlsStream = tlsConnectionResult.TlsStream;
+
+            //read/write over tls stream
+            // ... 
+            // ...
+
+            //close notify
+            tlsStream.Close();
+
+            //close socket
+            connectedSocket.Close();
+        }
+    }
+}
+```
+
+## TLS server
+
+```cs
+using Arctium.Connection.Tls;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+
+namespace TlsExamples
+{
+    //see using statement
+
+    class TlsServer
+    {
+        static Socket CreateServerSocket()
+        {
+            Socket server = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            server.Bind(new IPEndPoint(IPAddress.Any, 443));
+            server.Listen(1234);
+
+            return server;
+        }
+
+        static Socket AcceptClientFromsServerSocket(Socket serverSock)
+        {
+            return serverSock.Accept();
+        }
+
+        public static void Main(string[] args)
+        {
+            Socket serverSocket = CreateServerSocket();
+            Socket clientSocket = AcceptClientFromsServerSocket(serverSocket);
+
+            NetworkStream clientInnerStream = new NetworkStream(clientSocket);
+
+            X509Certificate2 serverCertificate = new X509Certificate2("D:\\test.pfx", "test");
+
+            TlsServerConnection serverConnection = new TlsServerConnection(serverCertificate);
+            TlsConnectionResult result = serverConnection.Accept(clientInnerStream);
+
+            //ready stream in result
+
+            TlsStream stream = result.TlsStream;
+
+            //connected on web browser, url: https://localhost
+
+            byte[] request = new byte[0x400];
+
+            int readedBytes = stream.Read(request, 0, 0x400);
+
+            string requestString = Encoding.ASCII.GetString(request, 0, readedBytes);
+
+            Console.WriteLine("Request from browser: ");
+            Console.WriteLine(requestString);
+
+            //send close notify
+            stream.Close();
+
+            //close networkstream and socket
+            clientInnerStream.Close();
+
+            //end
+
+            // [Console out] 
+            //
+            //Request from browser:
+            //GET / HTTP / 1.1
+            //Host: localhost
+            //User - Agent: Mozilla / 5.0(Windows NT 6.3; Win64; x64; rv: 67.0) Gecko / 20100101 Firefox / 67.0
+            //Accept: text / html,application / xhtml + xml,application / xml; q = 0.9,*/*;q=0.8
+            //Accept-Language: en-US,en;q=0.5
+            //Accept-Encoding: gzip, deflate, br
+            //Connection: keep-alive
+            //Upgrade-Insecure-Requests: 1
+        }
+    }
+}
+```
+
+## Server ALPN Extension
+
+```cs
+using Arctium.Connection.Tls;
+using Arctium.Connection.Tls.Configuration;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+
+namespace TlsExamples
+{
+    //see using statement
+
+    class TlsServer
+    {
+        static Socket CreateServerSocket()
+        {
+            Socket server = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            server.Bind(new IPEndPoint(IPAddress.Any, 1234));
+            server.Listen(1234);
+
+            return server;
+        }
+
+        static Socket AcceptClientFromsServerSocket(Socket serverSock)
+        {
+            return serverSock.Accept();
+        }
+
+        public static void Main(string[] args)
+        {
+            Socket serverSocket = CreateServerSocket();
+            Socket clientSocket = AcceptClientFromsServerSocket(serverSocket);
+
+            NetworkStream clientInnerStream = new NetworkStream(clientSocket);
+
+            X509Certificate2 serverCertificate = new X509Certificate2("D:\\test.pfx", "test");
+
+            string[] supportedProtocols = new string[] { "http/1.1", "http/1.0" };
+            AlpnExtension alpnExtensions = new AlpnExtension(supportedProtocols);
+            TlsHandshakeExtension[] extensionsList = new TlsHandshakeExtension[] { alpnExtensions };
+
+            //must be tls12
+            TlsServerConnection serverConnection = new TlsServerConnection(serverCertificate, TlsProtocolVersion.Tls12, extensionsList );
+            TlsConnectionResult result = serverConnection.Accept(clientInnerStream);
+            TlsHandshakeExtension[] extensionsResult = result.ExtensionsResult;
+
+            if (extensionsResult != null)
+            {
+                if (extensionsResult[0].Type == TlsHandshakeExtension.ExtensionType.ALPN)
+                {
+                    Console.WriteLine("selected protocol: ");
+                    AlpnExtension alpnResult = (AlpnExtension)extensionsResult[0];
+                    Console.WriteLine(alpnResult.SelectedProtocolName);
+                }
+            }
+
+            //ready stream in result
+
+            TlsStream stream = result.TlsStream;
+
+            //connected on web browser, url: https://localhost
+
+            byte[] request = new byte[0x400];
+
+            int readedBytes = stream.Read(request, 0, 0x400);
+
+            string requestString = Encoding.ASCII.GetString(request, 0, readedBytes);
+
+            Console.WriteLine("Request from browser: ");
+            Console.WriteLine(requestString);
+
+            //send close notify
+            stream.Close();
+
+            //close networkstream and socket
+            clientInnerStream.Close();
+
+            //end
+
+            //[Console Out]
+            //
+            //
+            //selected protocol:
+            //http / 1.1
+            //Request from browser:
+            //GET / HTTP / 1.1
+            //Host: 78.10.151.161:1234
+            //User - Agent: Mozilla / 5.0(Windows NT 6.3; Win64; x64; rv: 67.0) Gecko / 20100101 Firefox / 67.0
+            //Accept: text / html,application / xhtml + xml,application / xml; q = 0.9,*/*;q=0.8
+            //Accept-Language: en-US,en;q=0.5
+            //Accept-Encoding: gzip, deflate, br
+            //Connection: keep-alive
+            //Cookie: rg_cookie_session_id=7A6FF4C15DB31FE7
+            //Upgrade-Insecure-Requests: 1
+        }
+
+        
+    }
+}
+```
+
+
+## Server Sni Extension
+
+```cs
+using Arctium.Connection.Tls;
+using Arctium.Connection.Tls.Configuration;
+using Arctium.Connection.Tls.Configuration.TlsExtensions;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+
+namespace TlsExamples
+{
+    //see using statement
+
+    class TlsServer
+    {
+        static Socket CreateServerSocket()
+        {
+            Socket server = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            server.Bind(new IPEndPoint(IPAddress.Any, 1234));
+            server.Listen(1234);
+
+            return server;
+        }
+
+        static Socket AcceptClientFromsServerSocket(Socket serverSock)
+        {
+            return serverSock.Accept();
+        }
+
+        public static void Main(string[] args)
+        {
+            Socket serverSocket = CreateServerSocket();
+            Socket clientSocket = AcceptClientFromsServerSocket(serverSocket);
+
+            NetworkStream clientInnerStream = new NetworkStream(clientSocket);
+
+            //certificate will be sended when client do not support SNI or 
+            //if SNI not match in client request and provided Cert-names pairs below
+            X509Certificate2 defaultCertificate = new X509Certificate2("D:\\test.pfx", "test");
+
+            SniExtension.CertNamePair[] certNamePairs = new SniExtension.CertNamePair[]
+            {
+                new SniExtension.CertNamePair(new X509Certificate2("D:\\test2.pfx","test2"), "test2host"),
+                new SniExtension.CertNamePair(new X509Certificate2("D:\\test3.pfx","test3"), "test3host"),
+            };
+
+            SniExtension serverSniExtension = new SniExtension(certNamePairs);
+
+            TlsHandshakeExtension[] extensions = new TlsHandshakeExtension[] { serverSniExtension };
+
+            TlsServerConnection serverConnection = new TlsServerConnection(defaultCertificate, TlsProtocolVersion.Tls12, extensions );
+
+            //
+            // server choose appriopriate certificate to send
+
+            TlsConnectionResult result = serverConnection.Accept(clientInnerStream);
+            TlsHandshakeExtension[] extensionsResult = result.ExtensionsResult;
+
+
+            TlsStream stream = result.TlsStream;
+
+            //send close notify
+            stream.Close();
+
+            //close networkstream and socket
+            clientInnerStream.Close();
+
+           
+        }
+
+        
+    }
+}
+```
+
+
 

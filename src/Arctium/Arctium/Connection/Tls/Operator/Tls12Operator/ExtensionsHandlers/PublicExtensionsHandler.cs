@@ -67,6 +67,8 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator.ExtensionsHandlers
 
         internal HandshakeExtension TryBuildAlpnResponse(TlsHandshakeExtension[] configExtensions, HandshakeExtension[] extensionsFromClient)
         {
+            if (configExtensions == null) return null;
+
             AlpnExtension publicExt = null;
             ALPNExtension chExt = null;
 
