@@ -38,7 +38,7 @@ namespace Arctium.Connection.Tls.CryptoFunctions
                 secretBytes[i + toProtect.Length] = (byte)paddingLength;
             }
 
-            ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
+            //ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
         }
 
         public static ProtectedStruct CreateProtector(byte[] source)
@@ -68,12 +68,12 @@ namespace Arctium.Connection.Tls.CryptoFunctions
 
             lock (lockObjectInstance)
             {
-                ProtectedMemory.Unprotect(secretBytes, MemoryProtectionScope.SameLogon);
+                //ProtectedMemory.Unprotect(secretBytes, MemoryProtectionScope.SameLogon);
 
                 for (int i = 0; i < decrypted.Length; i++)
                     decrypted[i] = secretBytes[i];
 
-                ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
+                //ProtectedMemory.Protect(secretBytes, MemoryProtectionScope.SameLogon);
             }
 
             return decrypted;

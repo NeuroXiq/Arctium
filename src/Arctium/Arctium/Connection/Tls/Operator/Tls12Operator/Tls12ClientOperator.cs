@@ -577,13 +577,13 @@ namespace Arctium.Connection.Tls.Operator.Tls12Operator
         {
             if (currentMessageToProcess.MsgType == HandshakeType.CertificateRequest)
             {
-                currentContext.allHandshakeMessages.CertificateRequset = (CertificateRequest)currentMessageToProcess;
+                currentContext.allHandshakeMessages.CertificateRequset = (Protocol.HandshakeProtocol.CertificateRequest)currentMessageToProcess;
 
                 currentMessageToProcess = currentContext.handshakeIO.Read();
             }
         }
 
-        private void ProcessCertifiateRequest(CertificateRequest msg)
+        private void ProcessCertifiateRequest(Protocol.HandshakeProtocol.CertificateRequest msg)
         {
             throw new NotImplementedException();
         }
