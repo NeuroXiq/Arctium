@@ -2,7 +2,7 @@
 
 namespace Arctium.CryptoFunctions
 {
-    public class RandomGenerator
+    class RandomGenerator
     {
         // classic, unsafe pseudo random generator
         private Random classicRandom;
