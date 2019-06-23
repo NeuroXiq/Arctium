@@ -20,9 +20,7 @@ Implemented standards (or not implemented yet):
 - **Tls v1.3:  Not implemented**
 
 For more informations about TLS connection see: [Tls docs]
-
 For more informations about connection see: [Tls examples]
-
 For more informations about Hash functions see: [Hash functions docs]
 For more informations about Ciphers see: [Ciphers docs]
 
@@ -35,7 +33,7 @@ For more informations about Ciphers see: [Ciphers docs]
 [Tls examples]:<docs/Connection/Tls/examples.md>
 
 [Ciphers docs]:<docs/Cryptography/Ciphers/>
-[Hash functions docs]:<docs/HashFunctions/>
+[Hash functions docs]:<docs/Cryptography/HashFunctions/>
 
 
 
