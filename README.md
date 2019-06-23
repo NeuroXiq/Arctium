@@ -19,10 +19,12 @@ Implemented standards (or not implemented yet):
   
 - **Tls v1.3:  Not implemented**
 
-
 For more informations about TLS connection see: [Tls docs]
 
 For more informations about connection see: [Tls examples]
+
+For more informations about Hash functions see: [Hash functions docs]
+For more informations about Ciphers see: [Ciphers docs]
 
 [RFC 4346]:<https://www.ietf.org/rfc/rfc4346.txt>
 [RFC 5246]:<https://www.ietf.org/rfc/rfc5246.txt>
@@ -31,3 +33,9 @@ For more informations about connection see: [Tls examples]
 [RFC 7301]:<https://tools.ietf.org/html/rfc7301>
 [Tls docs]:<docs/Connection/Tls/>
 [Tls examples]:<docs/Connection/Tls/examples.md>
+
+[Ciphers docs]:<docs/Cryptography/Ciphers/>
+[Hash functions docs]:<docs/HashFunctions/>
+
+
+
