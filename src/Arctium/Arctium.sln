@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium", "Arctium\Arctium.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ignoreconsoleapp", "..\..\IGNORE\ignoreconsoleapp\ignoreconsoleapp.csproj", "{33534EF3-F344-4FFF-94E3-5452E749FAFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.Connection", "Arctium.Connection\Arctium.Connection.csproj", "{18BBFE7D-6F60-4A9D-9910-54C4DD124E36}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Connection", "Arctium.Connection\Arctium.Connection.csproj", "{18BBFE7D-6F60-4A9D-9910-54C4DD124E36}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.Cryptography", "Arctium.Cryptography\Arctium.Cryptography.csproj", "{5B070346-35AE-4DA3-89C7-29226FDAF826}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Cryptography", "Arctium.Cryptography\Arctium.Cryptography.csproj", "{5B070346-35AE-4DA3-89C7-29226FDAF826}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.DllGlobalShared", "Arctium.DllGlobalShared\Arctium.DllGlobalShared.csproj", "{A893AB10-6F6F-4A29-A50C-820D359F68E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{5B070346-35AE-4DA3-89C7-29226FDAF826}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B070346-35AE-4DA3-89C7-29226FDAF826}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B070346-35AE-4DA3-89C7-29226FDAF826}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A893AB10-6F6F-4A29-A50C-820D359F68E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A893AB10-6F6F-4A29-A50C-820D359F68E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A893AB10-6F6F-4A29-A50C-820D359F68E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A893AB10-6F6F-4A29-A50C-820D359F68E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
