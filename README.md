@@ -9,9 +9,9 @@ Solution is partitioned into  a following projects, each of them is a set of rel
 |Project      |          Documentation|
 |:-----------:|:---------------------:|
 |Connection|[Connection docs]|
-|Cryptohraphy|[Cryptography docs]|
+|Cryptography|[Cryptography docs]|
 
 [docs]:<docs/>
 [Connection docs]:<docs/Connection>
-[Cryptography docs]:<docs/Cryptohraphy>
+[Cryptography docs]:<docs/Cryptography>
 
