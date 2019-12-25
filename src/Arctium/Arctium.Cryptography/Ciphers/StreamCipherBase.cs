@@ -17,10 +17,7 @@ namespace Arctium.Cryptography.Ciphers
 
         public abstract int Decrypt(byte[] inputBuffer, int inputOffset, int length, byte[] outputBuffer, int outputOffset);
 
-        public virtual int Encrypt(Stream inputStream, Stream outputStream)
-        {
-           
-        }
+        public abstract int Encrypt(Stream inputStream, Stream outputStream);
 
         public abstract int Decrypt(Stream inputStream, Stream outputStream);
 
