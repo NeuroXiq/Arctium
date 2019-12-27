@@ -20,7 +20,7 @@ namespace Arctium.Cryptography.HashFunctions
         /// </summary>
         public int HashSize { get; private set; }
 
-        private protected HashDataBuffer hashDataBuffer;
+        internal HashDataBuffer hashDataBuffer;
 
         private bool hashFinalCalled;
         protected long hashedBytesCount;
