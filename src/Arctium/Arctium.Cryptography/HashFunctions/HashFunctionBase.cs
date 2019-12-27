@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using Arctium.Cryptography.HashFunctions.Configuration;
+using Arctium.DllGlobalShared.Optimalization;
+using System;
+using System.IO;
 
 namespace Arctium.Cryptography.HashFunctions
 {
@@ -7,58 +10,50 @@ namespace Arctium.Cryptography.HashFunctions
     /// </summary>
     public abstract class HashFunctionBase
     {
-        const int KBit = 1024;
-
         /// <summary>
         /// Input block size in bits
         /// </summary>
-        public int InputBlockLength { get; private set; }
+        public int InputBlockSize { get; private set; }
 
         /// <summary>
         /// Output hash size in bits.
         /// </summary>
         public int HashSize { get; private set; }
 
-        /// <summary>
-        /// Contains current hash value 
-        /// </summary>
-        public byte[] Hash { get; protected set; }
+        private protected HashDataBuffer hashDataBuffer;
+
+        private bool hashFinalCalled;
+        protected long hashedBytesCount;
+
+        protected HashFunctionBase(int inputBlockSize, int hashSize)
+        {
+            InputBlockSize = inputBlockSize;
+            HashSize = hashSize;
+
+            int bufferSize = HashFunctionsConfig.Common_HashDataBuffer_BufferSize * (inputBlockSize / 8);
+
+            hashDataBuffer = new HashDataBuffer(bufferSize, (buffer, offset, length) => HashDataBufferCallback(buffer, offset, length));
+            hashFinalCalled = false;
+        }
 
         /// <summary>
         /// Apply hash transform
         /// </summary>
         /// <param name="buffer">Bytes to hash</param>
         /// <returns>Hash value of the bytes from buffer</returns>
-        public abstract void HashBytes(byte[] buffer);
+        public virtual int HashBytes(byte[] buffer)
+        {
+            return hashDataBuffer.Load(buffer, 0, buffer.Length);
+        }
 
         /// <summary>
         /// Apply hash transform
         /// </summary>
         /// <param name="stream">Input stream </param>
         /// <returns>Hash value of all bytes readed from the stream</returns>
-        public virtual void HashBytes(Stream stream)
+        public virtual int HashBytes(Stream stream)
         {
-            int bufSize = 4 * KBit;
-            byte[] tempBuffer = new byte[bufSize];
-            int readedBytes = 0;
-            int appendIndex = 0;
-            do
-            {
-                readedBytes = stream.Read(tempBuffer, readedBytes, bufSize - appendIndex);
-                appendIndex += readedBytes;
-
-                if (appendIndex == bufSize)
-                {
-                    HashBytes(tempBuffer, 0, bufSize);
-                    appendIndex = 0;
-                    readedBytes = 0;
-                }
-                else if (readedBytes == 0)
-                {
-                    HashFinal(tempBuffer, 0, appendIndex);
-                }
-
-            } while (readedBytes > 0);
+            return hashDataBuffer.Load(stream);
         }
 
         /// <summary>
@@ -67,15 +62,52 @@ namespace Arctium.Cryptography.HashFunctions
         /// <param name="buffer">Bytes to hash</param>
         /// <param name="offset">Start position</param>
         /// <param name="length">Length of bytes to transform</param>
-        public abstract void HashBytes(byte[] buffer, int offset, int length);
+        public virtual int HashBytes(byte[] buffer, int offset, int length)
+        {
+            return hashDataBuffer.Load(buffer, offset, length);
+        }
 
-        public abstract void HashFinal();
+        public virtual byte[] HashFinal()
+        {
+            if (hashFinalCalled) throw new InvalidOperationException("HashFinal can be called only once after ResetState or instance creation.");
+            hashFinalCalled = true;
 
-        public abstract void HashFinal(byte[] buffer, int offset, int lenght);
+            byte[] padding = GetPadding();
+            hashDataBuffer.Load(padding,0,padding.Length);
+            
+            //hashDataBuffer may call hashing method because after padding append, buffer is filled and callback was invoked.
+            if(hashDataBuffer.DataLength > 0)
+                ExecuteHashing(hashDataBuffer.Buffer, 0, hashDataBuffer.DataLength);
+
+            return GetCurrentHash();
+        }
+
+        private void HashDataBufferCallback(byte[] buffer, int offset, int length)
+        {
+            ExecuteHashing(buffer, offset, length);
+            hashedBytesCount += length;
+        }
+
+        protected abstract byte[] GetPadding();
+
+        //this function is a main function implemented by all hash functions. This is where specific hashing for specific hash function shall be executed.
+        //'length' must be multiply of the input block size.
+        protected abstract void ExecuteHashing(byte[] buffer, int offset, int length);
+
+        /// <summary>
+        /// Returns current hash state.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract byte[] GetCurrentHash();
 
         /// <summary>
         /// Reset state of the hash function to the initial value. 
         /// </summary>
-        public abstract void ResetState();
+        public virtual void ResetState()
+        {
+            hashFinalCalled = false;
+            hashedBytesCount = 0;
+            hashDataBuffer.Clear();
+        }
     }
 }

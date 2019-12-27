@@ -21,7 +21,7 @@ namespace Arctium.Cryptography.HashFunctions
             set
             {
                 if (value.Length == 16) r = value;
-                else throw new InvalidOperationException("Invalid length of the R param. Param length must be 16 bytes");
+                else throw new InvalidOperationException("Invalid length of the R param. Param length must have 16 bytes");
             }
         }
 
@@ -36,7 +36,7 @@ namespace Arctium.Cryptography.HashFunctions
             set
             {
                 if (value.Length == 16) s = value;
-                else throw new InvalidOperationException("Invalid length of the S param. Param length must be 16 bytes");
+                else throw new InvalidOperationException("Invalid length of the S param. Param length must have 16 bytes");
             }
         }
 
@@ -51,7 +51,7 @@ namespace Arctium.Cryptography.HashFunctions
             set
             {
                 if (value.Length == 17) p = value;
-                else throw new ArgumentException("Invalid length of P param. P length must be 17 bytes");
+                else throw new ArgumentException("Invalid length of P param. P length must have 17 bytes");
             }
         }
 
@@ -66,7 +66,7 @@ namespace Arctium.Cryptography.HashFunctions
             set
             {
                 if (value.Length == 32) oneTimeKey = value;
-                else throw new ArgumentException("Invalid length of one time key. One time key length must be 256 bits (32 bytes).");
+                else throw new ArgumentException("Invalid length of one time key. One time key length must have 256 bits (32 bytes).");
             }
         }
 
@@ -306,7 +306,6 @@ namespace Arctium.Cryptography.HashFunctions
         // with no future need to reallocate new buffer to process new chunk. (see Transform16BytesChunks()) 
         private void TransformBlock(byte[] blockToTransform, int dataLength)
         {
-            //debug-only reason, indicate that input must have 18 bytes 
             if (blockToTransform.Length != 18) throw new Exception("INTERNAL :: Block length must have 18 bytes length (fixed size), wher first 0-17 byte are data bytes");
 
             //clear upper bytes 
