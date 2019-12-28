@@ -3,7 +3,7 @@ using System;
 
 namespace Arctium.Cryptography.HashFunctions
 {
-    public class SHA256 : HashFunctionBase
+    public class SHA2_256 : HashFunctionBase
     {
         readonly uint[] InitialHashValue = new uint[]
         {
@@ -20,7 +20,7 @@ namespace Arctium.Cryptography.HashFunctions
         uint[] currentHashValue;
         uint[] messageScheduleBuffer;
 
-        public SHA256() : base(512, 256)
+        public SHA2_256() : base(512, 256)
         {
             currentHashValue = GetInitialHashValue();
             messageScheduleBuffer = new uint[64];
@@ -40,7 +40,7 @@ namespace Arctium.Cryptography.HashFunctions
 
         protected override void ExecuteHashing(byte[] buffer, int offset, int length)
         {
-            SHA224_256_Shared.PerformHashComputation(buffer, offset, length, currentHashValue, messageScheduleBuffer);
+            SHA2_224_256_Shared.PerformHashComputation(buffer, offset, length, currentHashValue, messageScheduleBuffer);
         }
 
         protected override byte[] GetCurrentHash()
@@ -57,7 +57,7 @@ namespace Arctium.Cryptography.HashFunctions
         protected override byte[] GetPadding()
         {
             long totalMessageLength = base.CurrentMessageLength;
-            return SHA224_256_Shared.GetPadding(totalMessageLength);
+            return SHA2_224_256_Shared.GetPadding(totalMessageLength);
         }
 
         protected override void ResetCurrentState()

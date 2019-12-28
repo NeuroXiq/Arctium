@@ -4,7 +4,7 @@ using Arctium.Cryptography.HashFunctions.Exceptions;
 
 namespace Arctium.Cryptography.HashFunctions
 {
-    static class SHA384_512_Shared
+    static class SHA2_384_512_Shared
     {
         static ulong[] ConstantWords = new ulong[]
         {

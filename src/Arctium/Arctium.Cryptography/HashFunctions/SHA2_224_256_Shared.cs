@@ -4,7 +4,7 @@ using System;
 
 namespace Arctium.Cryptography.HashFunctions
 {
-    static class SHA224_256_Shared
+    static class SHA2_224_256_Shared
     {
         static uint[] ConstantWords = new uint[]
         {

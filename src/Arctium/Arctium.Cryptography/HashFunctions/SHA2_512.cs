@@ -2,7 +2,7 @@
 
 namespace Arctium.Cryptography.HashFunctions
 {
-    public class SHA512 : HashFunctionBase
+    public class SHA2_512 : HashFunctionBase
     {
         static readonly ulong[] InitialHashValue = new ulong[]
         {
@@ -19,7 +19,7 @@ namespace Arctium.Cryptography.HashFunctions
         ulong[] messageScheduleBuffer;
         ulong[] hashValue;
 
-        public SHA512() : base(1024, 512)
+        public SHA2_512() : base(1024, 512)
         {
             messageScheduleBuffer = new ulong[80];
             hashValue = GetInitialHashValue();
@@ -35,7 +35,7 @@ namespace Arctium.Cryptography.HashFunctions
 
         protected override void ExecuteHashing(byte[] buffer, int offset, int length)
         {
-            SHA384_512_Shared.PerformHashComputation(hashValue, buffer, offset, length, messageScheduleBuffer);
+            SHA2_384_512_Shared.PerformHashComputation(hashValue, buffer, offset, length, messageScheduleBuffer);
         }
 
         protected override byte[] GetCurrentHash()
@@ -51,7 +51,7 @@ namespace Arctium.Cryptography.HashFunctions
 
         protected override byte[] GetPadding()
         {
-            return SHA384_512_Shared.GetPadding(CurrentMessageLength);
+            return SHA2_384_512_Shared.GetPadding(CurrentMessageLength);
         }
 
         protected override void ResetCurrentState()
