@@ -46,14 +46,8 @@ namespace Arctium.Cryptography.HashFunctions
 
         protected override byte[] GetPadding()
         {
-            long totalMessageLength = hashedBytesCount + hashDataBuffer.DataLength;
+            long totalMessageLength = base.CurrentMessageLength;
             return SHA224_256_Shared.GetPadding(totalMessageLength);
-        }
-
-        public override void ResetState()
-        {
-            base.ResetState();
-            hashValue = GetInitialHashValue();
         }
 
         protected override byte[] GetCurrentHash()
@@ -62,10 +56,15 @@ namespace Arctium.Cryptography.HashFunctions
 
             for (int i = 0; i < 7; i++)
             {
-                BitOps.IntToBigEndianBytes(result, i * 4, hashValue[i]);
+                BinOps.IntToBigEndianBytes(result, i * 4, hashValue[i]);
             }
 
             return result;
+        }
+
+        protected override void ResetCurrentState()
+        {
+            hashValue = GetInitialHashValue();
         }
     }
 }

@@ -86,7 +86,7 @@ namespace Arctium.Cryptography.HashFunctions
             uint[] w = outputBuffet;
             for (int i = 0; i < 16; i++)
             {
-                w[i] = BitOps.ToUIntBigEndian(inputBuffer, currentOffset + (i * 4));
+                w[i] = BinOps.ToUIntBigEndian(inputBuffer, currentOffset + (i * 4));
             }
 
             for (int i = 16; i < 64; i++)
@@ -105,7 +105,7 @@ namespace Arctium.Cryptography.HashFunctions
 
             padding[0] = 0x80;
             long totalBitLength = 8 * messageLengthInBytes;
-            BitOps.LongToBigEndianBytes(padding, paddingLenght - 8, totalBitLength);
+            BinOps.LongToBigEndianBytes(padding, paddingLenght - 8, totalBitLength);
 
             return padding;
         }
