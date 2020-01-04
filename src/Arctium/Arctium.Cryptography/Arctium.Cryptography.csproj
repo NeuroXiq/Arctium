@@ -8,6 +8,10 @@
     <Folder Include="Ciphers\BlockCiphers\Aes\" />
     <Folder Include="Ciphers\BlockCiphers\Rijndael\" />
     <Folder Include="Ciphers\Asymmetric\" />
+    <Folder Include="Ciphers\Aead\" />
+    <Folder Include="HashFunctions\CRC\" />
+    <Folder Include="HashFunctions\Checksums\" />
+    <Folder Include="HashFunctions\KDF\" />
   </ItemGroup>
 
   <ItemGroup>

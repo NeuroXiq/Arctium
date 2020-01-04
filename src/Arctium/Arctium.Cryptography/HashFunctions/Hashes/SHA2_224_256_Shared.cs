@@ -2,7 +2,7 @@
 using Arctium.Cryptography.Exceptions;
 using System;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     static class SHA2_224_256_Shared
     {

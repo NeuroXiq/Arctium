@@ -1,7 +1,7 @@
 ﻿using Arctium.Cryptography.CryptoHelpers;
 using System;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     public class SHA2_224 : HashFunctionBase
     {

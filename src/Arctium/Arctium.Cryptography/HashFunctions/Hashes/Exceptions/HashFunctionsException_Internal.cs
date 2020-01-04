@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Cryptography.HashFunctions.Exceptions
+namespace Arctium.Cryptography.HashFunctions.Hashes.Exceptions
 {
     class HashFunctionsException_Internal : Exception
     {

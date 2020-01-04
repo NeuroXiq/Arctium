@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     /// <summary>
     /// Facilitates working with chunked data. Invokes callback (to hash already loaded input) when some limit is reached 

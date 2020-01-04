@@ -1,8 +1,8 @@
 ﻿using System;
 using Arctium.Cryptography.CryptoHelpers;
-using Arctium.Cryptography.HashFunctions.Exceptions;
+using  Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     static class SHA2_384_512_Shared
     {

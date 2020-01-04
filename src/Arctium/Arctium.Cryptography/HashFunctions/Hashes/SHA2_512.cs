@@ -1,6 +1,6 @@
 ﻿using Arctium.Cryptography.CryptoHelpers;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     public class SHA2_512 : HashFunctionBase
     {

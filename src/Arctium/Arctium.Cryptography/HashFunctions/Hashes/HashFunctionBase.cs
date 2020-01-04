@@ -1,8 +1,8 @@
-﻿using Arctium.Cryptography.HashFunctions.Configuration;
+﻿using  Arctium.Cryptography.HashFunctions.Hashes.Configuration;
 using System;
 using System.IO;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     /// <summary>
     /// Base class for all hash function.

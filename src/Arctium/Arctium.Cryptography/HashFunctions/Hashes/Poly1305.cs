@@ -2,7 +2,7 @@
 using System.IO;
 using System.Numerics;
 
-namespace Arctium.Cryptography.HashFunctions
+namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
     /// <summary>
     /// Poly1305 Hash function created by D. J. Bernstein. ([RFC 8439])

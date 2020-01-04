@@ -1,23 +1,32 @@
-## Hash functions
+# Hash functions
+
+
+## Hashes
 
 Summary of the implemented hash functions :
 
 |Name         |Standard          |Documentation        |Status       |
 |:-----------:|:----------------:|:-------------------:|:-----------:|
 |  Poly1305   |[RFC 8439]        |  [Poly1305]         | OK          |
-| SHA-224     |[RFC 4634]        |  [SHA-224]          | OK          |
-| SHA-256     |[RFC 4634]        |  [SHA-256]          | OK          |
-| SHA-384     |[RFC 4634]        |  [SHA-384]          | OK          |
-| SHA-512     |[RFC 4634]        |  [SHA-512]          | OK          |
+| SHA2-224    |[RFC 6234]        |  [SHA2]             | OK          |
+| SHA2-256    |[RFC 6234]        |  [SHA2]             | OK          |
+| SHA2-384    |[RFC 6234]        |  [SHA2]             | OK          |
+| SHA2-512    |[RFC 6234]        |  [SHA2]             | OK          |
+| SHA3-224    |[FIPS 202]        |  [SHA3]             | TODO        |
+| SHA3-256    |[FIPS 202]        |  [SHA3]             | TODO        |  
+| SHA3-384    |[FIPS 202]        |  [SHA3]             | TODO        |  
+| SHA3-512    |[FIPS 202]        |  [SHA3]             | TODO        |
+
+
+          
 
 [Poly1305]:<./poly1305.md>
-[SHA-224]:<./sha224.md>
-[SHA-256]:<./sha256.md>
-[SHA-384]:<./sha384.md>
-[SHA-512]:<./sha512.md>
+[SHA2]:<./sha2.md>
+[SHA3]:<./sha3.md>
 
 [RFC 8439]:<https://tools.ietf.org/html/rfc8439>
-[RFC 4634]:<https://tools.ietf.org/html/rfc4634#section-4.1>
+[RFC 6234]:<https://tools.ietf.org/html/rfc6234>
+[FIPS 202]:<https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf>
 
 
 ### Hashing example
@@ -60,5 +69,38 @@ namespace DEBUG_ConsoleApplicationForTests
 }
 
 ```
+
+## Checksums
+
+|Name         |Standard          |Documentation        |Status       |
+|:-----------:|:----------------:|:-------------------:|:-----------:|
+| empty       |   empty          |  empty              | EMPTY       |
+
+## CRC
+
+|Name         |Standard          |Documentation        |Status       |
+|:-----------:|:----------------:|:-------------------:|:-----------:|
+| empty       |   empty          |  empty              | EMPTY       |
+
+## Function Algorithms
+
+
+|Name         |Standard          |Documentation        |Status       |
+|:-----------:|:----------------:|:-------------------:|:-----------:|
+| Keccak      |[FIPS 202]        |  [Keccak]           | TODO        |
+
+[Keccak]:<./keccak.md>
+
+## KDF
+
+|Name         |Standard          |Documentation        |Status       |
+|:-----------:|:----------------:|:-------------------:|:-----------:|
+| Keccak      |[FIPS 202]        |  [Keccak]           | TODO        |
+
+## XOF (Extendable output functions)
+
+|Name         |Standard          |Documentation        |Status       |
+|:-----------:|:----------------:|:-------------------:|:-----------:|
+| empty       |   empty          |  empty              | EMPTY       |
 
 

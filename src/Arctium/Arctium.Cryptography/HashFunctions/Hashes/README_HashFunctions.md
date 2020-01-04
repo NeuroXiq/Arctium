@@ -1,0 +1,1 @@
+﻿This namespace should contain standarized hash functions with constant output size.
