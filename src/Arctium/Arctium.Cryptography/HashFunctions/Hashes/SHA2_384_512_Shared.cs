@@ -1,6 +1,6 @@
 ﻿using System;
-using Arctium.Cryptography.CryptoHelpers;
 using  Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
+using Arctium.DllGlobalShared.Helpers.Binary;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
@@ -45,6 +45,10 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             ulong[] k = ConstantWords;
             ulong[] vars = new ulong[8];
 
+
+            //ulong* T1_helperResultPtr = stackalloc ulong[2];
+            //ulong* T2_helperResultPtr = T1_helperResultPtr + 1;
+
             for (long i = 0, dataOffset = offset; i < blocksCount; i++, dataOffset += 128)
             {
                 hashValue.CopyTo(vars, 0);
@@ -53,6 +57,10 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
                 //for every scheduled block
                 for (int j = 0; j < 80; j++)
                 {
+                    //*T1_helperResultPtr = *T2_helperResultPtr = 0;
+
+                    //T1_helperResultPtr += vars[7];
+
                     ulong t1 = vars[7] + BitLogic.BSIG1(vars[4]) + BitLogic.CH(vars[4], vars[5], vars[6]) + k[j] + w[j];
                     ulong t2 = BitLogic.BSIG0(vars[0]) + BitLogic.MAJ(vars[0], vars[1], vars[2]);
 
@@ -81,7 +89,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             for (long i = 0, j = dataOffset; i < 16; i++, j += 8)
             {
-                w[i] = BinOps.ToULongBigEndian(buffer, j);
+                w[i] = BinOps.ToULongLittleEndian(buffer, j);
             }
 
             for (int i = 16; i < 80; i++)

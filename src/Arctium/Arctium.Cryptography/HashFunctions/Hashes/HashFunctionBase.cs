@@ -51,9 +51,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// </summary>
         /// <param name="buffer">Bytes to hash</param>
         /// <returns>Hash value of the bytes from buffer</returns>
-        public virtual int HashBytes(byte[] buffer)
+        public virtual long HashBytes(byte[] buffer)
         {
-            int loaded = hashDataBuffer.Load(buffer, 0, buffer.Length);
+            long loaded = hashDataBuffer.Load(buffer, 0, buffer.Length);
             CurrentMessageLength += loaded;
 
             return loaded;
@@ -64,9 +64,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// </summary>
         /// <param name="stream">Input stream </param>
         /// <returns>Hash value of all bytes readed from the stream</returns>
-        public virtual int HashBytes(Stream stream)
+        public virtual long HashBytes(Stream stream)
         {
-            int loaded = hashDataBuffer.Load(stream);
+            long loaded = hashDataBuffer.Load(stream);
             CurrentMessageLength += loaded;
             return loaded;
         }
@@ -77,9 +77,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// <param name="buffer">Bytes to hash</param>
         /// <param name="offset">Start position</param>
         /// <param name="length">Length of bytes to transform</param>
-        public virtual int HashBytes(byte[] buffer, int offset, int length)
+        public virtual long HashBytes(byte[] buffer, long offset, long length)
         {
-            int loaded = hashDataBuffer.Load(buffer, offset, length);
+            long loaded = hashDataBuffer.Load(buffer, offset, length);
             CurrentMessageLength += loaded;
 
             return loaded;
@@ -100,7 +100,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             return GetCurrentHash();
         }
 
-        private void HashDataBufferCallback(byte[] buffer, int offset, int length)
+        private void HashDataBufferCallback(byte[] buffer, long offset, long length)
         {
             ExecuteHashing(buffer, offset, length);
             HashedBlocksCount++;
@@ -110,7 +110,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         //this function is a main function implemented by all hash functions. This is where specific hashing for specific hash function shall be executed.
         //'length' must be multiply of the input block size.
-        protected abstract void ExecuteHashing(byte[] buffer, int offset, int length);
+        protected abstract void ExecuteHashing(byte[] buffer, long offset, long length);
 
         /// <summary>
         /// Returns current hash state.

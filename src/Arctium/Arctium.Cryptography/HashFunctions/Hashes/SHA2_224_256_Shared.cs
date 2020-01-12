@@ -1,5 +1,5 @@
-﻿using Arctium.Cryptography.CryptoHelpers;
-using Arctium.Cryptography.Exceptions;
+﻿using Arctium.Cryptography.Exceptions;
+using Arctium.DllGlobalShared.Helpers.Binary;
 using System;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
@@ -39,12 +39,12 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// </param>
         internal static void PerformHashComputation(
             byte[] inputBuffer,
-            int inputOffset,
-            int inputLength,
+            long inputOffset,
+            long inputLength,
             uint[] workingVariables,
             uint[] messageScheduleBuffer)
         {
-            int blocksCount = inputLength / 64;
+            long blocksCount = inputLength / 64;
             uint[] w = messageScheduleBuffer;
             uint[] k = ConstantWords;
 
@@ -54,7 +54,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             for (int i = 0; i < blocksCount; i++)
             {
                 workingVariables.CopyTo(vars, 0);
-                int currentOffset = (i * (64)) + inputOffset;
+                long currentOffset = (i * (64)) + inputOffset;
 
                 PrepareMessageScheduleBuffer(inputBuffer, currentOffset, w);
 
@@ -81,7 +81,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             }
         }
 
-        static void PrepareMessageScheduleBuffer(byte[] inputBuffer, int currentOffset, uint[] outputBuffet)
+        static void PrepareMessageScheduleBuffer(byte[] inputBuffer, long currentOffset, uint[] outputBuffet)
         {
             uint[] w = outputBuffet;
             for (int i = 0; i < 16; i++)

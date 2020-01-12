@@ -12,10 +12,10 @@ Summary of the implemented hash functions :
 | SHA2-256    |[RFC 6234]        |  [SHA2]             | OK          |
 | SHA2-384    |[RFC 6234]        |  [SHA2]             | OK          |
 | SHA2-512    |[RFC 6234]        |  [SHA2]             | OK          |
-| SHA3-224    |[FIPS 202]        |  [SHA3]             | TODO        |
-| SHA3-256    |[FIPS 202]        |  [SHA3]             | TODO        |  
-| SHA3-384    |[FIPS 202]        |  [SHA3]             | TODO        |  
-| SHA3-512    |[FIPS 202]        |  [SHA3]             | TODO        |
+| SHA3-224    |[FIPS 202]        |  [SHA3]             | OK          |
+| SHA3-256    |[FIPS 202]        |  [SHA3]             | OK          |  
+| SHA3-384    |[FIPS 202]        |  [SHA3]             | OK          |  
+| SHA3-512    |[FIPS 202]        |  [SHA3]             | OK          |
 
 
           

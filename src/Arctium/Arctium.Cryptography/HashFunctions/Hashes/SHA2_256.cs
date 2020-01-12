@@ -1,4 +1,4 @@
-﻿using Arctium.Cryptography.CryptoHelpers;
+﻿using Arctium.DllGlobalShared.Helpers.Binary;
 using System;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
@@ -38,7 +38,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             return initalValue;
         }
 
-        protected override void ExecuteHashing(byte[] buffer, int offset, int length)
+        protected override void ExecuteHashing(byte[] buffer, long offset, long length)
         {
             SHA2_224_256_Shared.PerformHashComputation(buffer, offset, length, currentHashValue, messageScheduleBuffer);
         }

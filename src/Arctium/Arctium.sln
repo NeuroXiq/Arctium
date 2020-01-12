@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Cryptography", "Arc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.DllGlobalShared", "Arctium.DllGlobalShared\Arctium.DllGlobalShared.csproj", "{A893AB10-6F6F-4A29-A50C-820D359F68E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DEBUG_ConsoleApplicationForTests", "DEBUG_ConsoleApplicationForTests\DEBUG_ConsoleApplicationForTests.csproj", "{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DEBUG_ConsoleApplicationForTests", "DEBUG_ConsoleApplicationForTests\DEBUG_ConsoleApplicationForTests.csproj", "{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.Unmanaged.Cryptography", "Arctium.Unmanaged.Cryptography\Arctium.Unmanaged.Cryptography.csproj", "{27538370-5701-468B-8F07-C6893965CE1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +40,10 @@ Global
 		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27538370-5701-468B-8F07-C6893965CE1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27538370-5701-468B-8F07-C6893965CE1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27538370-5701-468B-8F07-C6893965CE1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27538370-5701-468B-8F07-C6893965CE1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

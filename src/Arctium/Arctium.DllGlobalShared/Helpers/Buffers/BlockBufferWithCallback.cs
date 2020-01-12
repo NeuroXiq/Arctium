@@ -1,24 +1,21 @@
 ﻿using System;
 using System.IO;
 
-namespace  Arctium.Cryptography.HashFunctions.Hashes
+namespace Arctium.Cryptography.HashFunctions.Hashes
 {
-    /// <summary>
-    /// Facilitates working with chunked data. Invokes callback (to hash already loaded input) when some limit is reached 
-    /// and then removes this data, moving rest bytes to the begining of the buffer. This is a repetitive process, probably shared by all 
-    /// hashing function and can be moved to some reusable place. 
-    /// </summary>
-    class HashDataBuffer
+    //COPY PASTE FROM hashes/hashhelpers
+    // not sure to move
+    public class BlockBufferWithCallback
     {
         public byte[] Buffer { get; private set; }
-        
+
         public long DataLength { get; private set; }
 
         //invoked when Buffer is full.
-        Action<byte[],long,long> limitReachedCallback;
+        Action<byte[], long, long> limitReachedCallback;
         int bufferSize;
 
-        public HashDataBuffer(int bufferSize, Action<byte[],long,long> limitReachedCallback)
+        public BlockBufferWithCallback(int bufferSize, Action<byte[], long, long> limitReachedCallback)
         {
             Buffer = new byte[bufferSize];
             this.bufferSize = bufferSize;
@@ -58,7 +55,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             if (DataLength > 0)
             {
                 //TODO repair length to valid long
-                System.Buffer.BlockCopy(buffer, (int)offset,Buffer,(int)DataLength, (int)(bufferSize - DataLength));
+                System.Buffer.BlockCopy(buffer, (int)offset, Buffer, (int)DataLength, (int)(bufferSize - DataLength));
                 totalCopied += bufferSize - DataLength;
                 limitReachedCallback(Buffer, 0, DataLength);
             }
