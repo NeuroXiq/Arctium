@@ -9,8 +9,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
     {
 
         //
-        // This fields represents precomputed results of Iota RC LFSR function for specific round 
-        // means that RC result for round index 0 = array[0] ] round index 1 =  array[1] 
+        // This fields represents precomputed results of a Iota RC LFSR function for specific round 
+        // means that RC result for round index 0 = array[0] round index 1 =  array[1] 
         // values to xor with line(1) 
         private static readonly ulong[] RCIotaResults = new ulong[]
             {
@@ -46,21 +46,22 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         ulong[] xoredColumns = new ulong[5];
 
-        //ulong[] S;
-        //ulong[] keccakpInputBuffer;
-        //ulong[] keccakTempOutputBuffer;
         private int r;
         public SHA3_Shared(int r)
         {
             this.r = r;
-            //S = new ulong[25];
-            //keccakpInputBuffer = new ulong[25];
-            //keccakTempOutputBuffer = new ulong[25];
-
             keccakBuffer0 = new ulong[25];
             keccakBuffer1 = new ulong[25];
         }
 
+        /// <summary>
+        /// Processe main hash computation based on keccak-p function.
+        /// Stores result in internal state (keccakBuffer0). Length must match input block length based on 'r'.
+        /// Can be called multiple times, used by SHA3 Hash function and SHAKE XOF functions.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
         public void MainHashComputation(byte[] input, long offset, long length)
         {
             if (length % (r / 8) != 0 || length <= 0 || length % (r/8) != 0) throw new HashFunctionsException_Internal("SHA3 invalid r/length");
@@ -74,6 +75,14 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }
         }
 
+        /// <summary>
+        /// after 'MainHashComputation' keccak-p is invoked without data, used by shake functions
+        /// </summary>
+        public void Shake_GenerateNextState()
+        {
+            Keccakp();
+        }
+
         internal void ResetState()
         {
             for (int i = 0; i < 25; i++)
@@ -83,7 +92,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }
         }
 
-        // keccakp input is fixed-length bytes from the input message width some zero padded bits based on r
+        // keccakp input is fixed-length bytes from the input message with some zero padded bits based on r
+        // called by hash functions
         void PrepareKeccakBuffer0(byte[] buffer, long offset)
         {
             int ulongToInsert = r / 64;
@@ -114,21 +124,26 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }   
         }
 
-        public byte[] GetHashFromState(int bitLength)
-        {
-            int bytesCount = bitLength / 8;
 
-            byte[] result = new byte[bytesCount];
+
+        // todo rewrite methods to inline variants
+        
+        /// <summary>
+        /// buffer = 200 bytes
+        /// </summary>
+        /// <param name="outputBuffer"></param>
+        /// <param name="offset"></param>
+        public void GetCurrentState(byte[] outputBuffer, long offset, int length)
+        {
+            int bytesCount = length;
 
             for (int i = 0; i < bytesCount; i++)
             {
                 int ulongNo = i / 8;
                 int byteNo = i % 8;
 
-                result[i] = (byte)((keccakBuffer0[ulongNo] >> (8 * byteNo)) & (ulong)0xff);
+                outputBuffer[i] = (byte)((keccakBuffer0[ulongNo] >> (8 * byteNo)) & (ulong)0xff);
             }
-
-            return result;
         }
 
         /// <summary>
@@ -137,11 +152,11 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         /// <param name="r"></param>
         /// <param name="messageLengthInBytes"></param>
         /// <returns></returns>
-        public byte[] SHA3_GetLastBlockWithPadForHashFunction(long messageLengthInBytes)
+        public byte[] SHA3_GetLastBlockWithPad_HashFunction(long messageLengthInBytes)
         {
             int bytesR = r / 8;
 
-            int padLen = (bytesR - ((int)((messageLengthInBytes) % bytesR)));
+            int padLen = bytesR - ((int)(messageLengthInBytes % bytesR));
 
             if (padLen < 1) padLen += bytesR;
 
@@ -153,12 +168,20 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             return padding;
         }
 
-        public static byte[] SHA3_GetLastBlockWidthPadForXOFShakeFunctions(int r, long messageLengthInBytes)
+        public byte[] SHA3_GetLastBlockWidthPad_ShakeFunctions(long messageLengthInBytes)
         {
-            throw new Exception();
-        }
+            int bytesR = r / 8;
 
-        
+            int padLen = (int)(bytesR - (messageLengthInBytes % bytesR));
+
+            if (padLen == 0) padLen += bytesR;
+
+            byte[] padding = new byte[padLen];
+            padding[0] = 0x1F;
+            padding[padLen - 1] = 0x80;
+
+            return padding;
+        }
 
         static void Iota(ulong[] state, ulong[] outState, int roundIndex)
         {

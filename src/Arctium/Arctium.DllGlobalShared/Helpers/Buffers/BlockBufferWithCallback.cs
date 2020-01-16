@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.DllGlobalShared.Helpers.Buffers;
+using System;
 using System.IO;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
@@ -13,9 +14,9 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         //invoked when Buffer is full.
         Action<byte[], long, long> limitReachedCallback;
-        int bufferSize;
+        long bufferSize;
 
-        public BlockBufferWithCallback(int bufferSize, Action<byte[], long, long> limitReachedCallback)
+        public BlockBufferWithCallback(long bufferSize, Action<byte[], long, long> limitReachedCallback)
         {
             Buffer = new byte[bufferSize];
             this.bufferSize = bufferSize;
@@ -35,8 +36,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             //not exceeding ? just copy
             if ((DataLength + length) <= bufferSize)
             {
-                //TODO repair int to long
-                System.Buffer.BlockCopy(buffer, (int)offset, Buffer, (int)DataLength, (int)length);
+                ByteBuffer.Copy(buffer, offset, Buffer, DataLength, length);
                 DataLength += length;
 
                 totalCopied = length;
@@ -54,8 +54,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             //first,if some data is alerdy in buffer, copy to fill them and clear buffer ( DataLength = 0 )
             if (DataLength > 0)
             {
-                //TODO repair length to valid long
-                System.Buffer.BlockCopy(buffer, (int)offset, Buffer, (int)DataLength, (int)(bufferSize - DataLength));
+                ByteBuffer.Copy(buffer, offset, Buffer, DataLength, (bufferSize - DataLength));
                 totalCopied += bufferSize - DataLength;
                 limitReachedCallback(Buffer, 0, DataLength);
             }
@@ -71,9 +70,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }
 
             //if some bytes left, append them to the buffer
-            //TODO long repair
             long remaining = length - totalCopied;
-            System.Buffer.BlockCopy(buffer, (int)(offset + totalCopied), Buffer, 0, (int)remaining);
+            ByteBuffer.Copy(buffer, (offset + totalCopied), Buffer, 0, (int)remaining);
             DataLength = remaining;
 
             return totalCopied;

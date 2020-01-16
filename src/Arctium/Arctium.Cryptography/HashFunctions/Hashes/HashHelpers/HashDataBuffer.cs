@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.DllGlobalShared.Helpers.Buffers;
+using System;
 using System.IO;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
@@ -38,8 +39,8 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             //not exceeding ? just copy
             if ((DataLength + length) <= bufferSize)
             {
-                //TODO repair int to long
-                System.Buffer.BlockCopy(buffer, (int)offset, Buffer, (int)DataLength, (int)length);
+                
+                ByteBuffer.Copy(buffer, offset, Buffer, DataLength, length);
                 DataLength += length;
 
                 totalCopied = length;
@@ -74,9 +75,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             }
 
             //if some bytes left, append them to the buffer
-            //TODO long repair
+            
             long remaining = length - totalCopied;
-            System.Buffer.BlockCopy(buffer, (int)(offset + totalCopied), Buffer, 0, (int)remaining);
+            ByteBuffer.Copy(buffer, (int)(offset + totalCopied), Buffer, 0, (int)remaining);
             DataLength = remaining;
 
             return totalCopied;

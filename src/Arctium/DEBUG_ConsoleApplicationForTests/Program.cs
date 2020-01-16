@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Cryptography.HashFunctions.XOF;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -12,20 +13,28 @@ namespace DEBUG_ConsoleApplicationForTests
     {
         static void Main(string[] args)
         {
-            var sha3 = new SHA3_512();
+            //var sha3 = new SHA3_384();
 
+            var shake = new SHAKE256();
 
-            byte[] input = Encoding.ASCII.GetBytes("abcd");
+            //byte[] input = Encoding.ASCII.GetBytes("abcd");
+            string feed = "";
 
-            //Stream input = new FileStream(@"C:\Users\Marek\Desktop\feedbooks_book_15.pdf",FileMode.Open);
+            byte[] result = new byte[(1600-512)/8];
+            Console.WriteLine(feed);
+            Console.WriteLine();
+            shake.Feed(Encoding.ASCII.GetBytes(feed));
+            shake.FeedEnd();
 
-            sha3.HashBytes(input);
-            byte[] result = sha3.HashFinal();
-
-            foreach (byte b in result)
+            for (int i = 0; i < 10; i++)
             {
-                Console.Write("{0:X2}", b);
+                shake.GenerateNextOutput(result, 0, 1);
+                foreach (byte b in result)
+                {
+                    Console.Write("{0:X2}", b);
+                }
             }
+            
 
         }
     }

@@ -1,4 +1,6 @@
-﻿namespace Arctium.Cryptography.HashFunctions.Hashes
+﻿using System;
+
+namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public class SHA3_224 : HashFunctionBase
     {
@@ -18,12 +20,16 @@
 
         protected override byte[] GetCurrentHash()
         {
-            return sha3Shared.GetHashFromState(224);
+            byte[] hash = new byte[28];
+
+            sha3Shared.GetCurrentState(hash, 0, 28);
+
+            return hash;
         }
 
         protected override byte[] GetPadding()
         {
-            return sha3Shared.SHA3_GetLastBlockWithPadForHashFunction(CurrentMessageLength);
+            return sha3Shared.SHA3_GetLastBlockWithPad_HashFunction(CurrentMessageLength);
         }
 
         protected override void ResetCurrentState()
