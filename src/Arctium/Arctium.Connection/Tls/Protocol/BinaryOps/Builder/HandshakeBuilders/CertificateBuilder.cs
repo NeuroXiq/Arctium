@@ -21,8 +21,7 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
                 byte[] curCertBytes = new byte[certBytesLen];
                 Buffer.BlockCopy(buffer, offset + total + 3, curCertBytes, 0, certBytesLen);
 
-                var ctt = new X509Certificate2();
-                ctt.Import(curCertBytes);
+                var ctt = new X509Certificate2(curCertBytes);
 
                 certs.Add(ctt);
 

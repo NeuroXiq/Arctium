@@ -1,6 +1,5 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
-using Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders;
 using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders

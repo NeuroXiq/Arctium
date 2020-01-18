@@ -1,8 +1,9 @@
-﻿using Arctium.Connection.Tls.CryptoConfiguration;
-using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
+﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
+using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 
 namespace Arctium.Connection.Tls.Protocol.BinarOps.HandshakeBuilders.ExtensionsBuilders
 {
+    //TODO TLS12 Simplify this by assignment of this const value to the enum values
     static class ExtensionsBuildConsts
     {
         public static SignatureAlgorithmsExtension.SignatureAndHashAlgorithm GetSignatureHashAlgoPair(byte hashAlgoByte, byte signAlgoByte)

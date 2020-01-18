@@ -1,4 +1,4 @@
-﻿using Arctium.Connection.Tls.CryptoConfiguration;
+﻿using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 
 namespace Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions
 {

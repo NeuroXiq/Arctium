@@ -1,6 +1,6 @@
 ﻿using System;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
-using Arctium.Connection.Tls.Protocol.FormatConsts;
+using Arctium.Connection.Tls.Protocol.Consts;
 using Arctium.Connection.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters;
 using System.Collections.Generic;
 

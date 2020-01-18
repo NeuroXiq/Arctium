@@ -1,4 +1,4 @@
-﻿using Arctium.Connection.Tls.Protocol.FormatConsts;
+﻿using Arctium.Connection.Tls.Protocol.Consts;
 
 namespace Arctium.Connection.Tls.Protocol.BinaryOps.FixedOps
 {

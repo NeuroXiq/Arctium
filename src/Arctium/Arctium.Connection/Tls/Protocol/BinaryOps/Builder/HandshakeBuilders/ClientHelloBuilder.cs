@@ -1,6 +1,4 @@
-﻿using Arctium.Connection.Tls.CryptoConfiguration;
-using Arctium.Connection.Tls.Protocol.BinaryOps.Builder;
-using Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.ExtensionsBuilders;
+﻿using Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.ExtensionsBuilders;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol;
 using Arctium.Connection.Tls.Protocol.HandshakeProtocol.Extensions;
 using System;
@@ -136,30 +134,6 @@ namespace Arctium.Connection.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 
             return ciphersSuite;
         }
-
-        private byte[] GetHelloRandom(byte[] buffer, int offset)
-        {
-            byte[] random = new byte[32];
-            Buffer.BlockCopy(buffer, offset, random, 0, 32);
-            return random;
-            
-            //byte[] randomBytes = new byte[28];
-            
-            //uint gmtUnixTime = (uint)(buffer[offset + 0] << 24 |
-            //                buffer[offset + 1] << 16 |
-            //                buffer[offset + 2] << 8 |
-            //                buffer[offset + 3] << 0);
-            //for (int i = 0; i < 28; i++)
-            //{
-            //    randomBytes[i] = buffer[4 + offset + i];
-            //}
-
-
-
-            //return new HelloRandom(gmtUnixTime, randomBytes);
-        }
-
-
     }
 }
 
