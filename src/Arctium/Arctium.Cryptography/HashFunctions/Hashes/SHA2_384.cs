@@ -45,7 +45,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             for (int i = 0; i < 6; i++)
             {
-                BinOps.ULongToBigEndianBytes(result, i * 8, hashValue[i]);
+                BinConverter.ULongToBE(result, i * 8, hashValue[i]);
             }
 
             return result;

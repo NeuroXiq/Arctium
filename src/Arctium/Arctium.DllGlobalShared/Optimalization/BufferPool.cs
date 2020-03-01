@@ -4,7 +4,7 @@
     {
         
         private static readonly object _lock = new object();
-
+        //TODO
         static BufferPool() { }
 
         public static byte[] Alloc(int minSize) { lock (_lock) { } return new byte[minSize];  }

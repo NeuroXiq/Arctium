@@ -38,7 +38,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             long length, 
             ulong[] messageScheduleBuffer)
         {
-            if ((length == 0) || (length % 128) != 0) throw new HashFunctionsException_Internal("input length != n*128");
+            if ((length == 0) || (length % 128) != 0) throw new HashFunctionsExceptionInternal("input length != n*128","","STATIC_SHA2_284_512_Shared");
 
             long blocksCount = length / 128;
             ulong[] w = messageScheduleBuffer;
@@ -89,7 +89,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             for (long i = 0, j = dataOffset; i < 16; i++, j += 8)
             {
-                w[i] = BinOps.ToULongLittleEndian(buffer, j);
+                w[i] = BinConverter.ToULongLE(buffer, j);
             }
 
             for (int i = 16; i < 80; i++)
@@ -121,8 +121,8 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             byte[] padding = new byte[paddingLengthInBytes];
 
             padding[0] = 0x80;
-            BinOps.ULongToBigEndianBytes(padding, padding.Length - 16, messageLengthInBits[0]);
-            BinOps.ULongToBigEndianBytes(padding, padding.Length - 8, messageLengthInBits[1]);
+            BinConverter.ULongToBE(padding, padding.Length - 16, messageLengthInBits[0]);
+            BinConverter.ULongToBE(padding, padding.Length - 8, messageLengthInBits[1]);
 
             return padding;
         }

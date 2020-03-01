@@ -2,10 +2,10 @@
 
 namespace Arctium.DllGlobalShared.Helpers.Binary
 {
-    public static class BinOps
+    public static class BinConverter
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ToULongLittleEndian(byte[] buffer, long offset)
+        public static ulong ToULongLE(byte[] buffer, long offset)
         {
             return (ulong)
                 (
@@ -22,7 +22,7 @@ namespace Arctium.DllGlobalShared.Helpers.Binary
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ToULongBigEndian(byte[] buffer, long offset)
+        public static ulong ToULongBE(byte[] buffer, long offset)
         {
             return (ulong)
                 (
@@ -37,14 +37,17 @@ namespace Arctium.DllGlobalShared.Helpers.Binary
                 );
         }
 
-        public static void IntToBigEndianBytes(byte[] buffer, long offset, uint value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void IntToBE(byte[] buffer, long offset, uint value)
         {
             buffer[offset + 0] = (byte)((value >> 24) & 0xff);
             buffer[offset + 1] = (byte)((value >> 16) & 0xff);
             buffer[offset + 2] = (byte)((value >>  8) & 0xff);
             buffer[offset + 3] = (byte)((value >>  0) & 0xff);
         }
-        public static void LongToBigEndianBytes(byte[] buffer, long offset, long value)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void LongToBE(byte[] buffer, long offset, long value)
         {
             buffer[offset + 0] = (byte)((value >> 56) & (0xFF));
             buffer[offset + 1] = (byte)((value >> 48) & (0xFF));
@@ -56,7 +59,8 @@ namespace Arctium.DllGlobalShared.Helpers.Binary
             buffer[offset + 7] = (byte)((value >>  0) & (0xFF));
         }
 
-        public static void ULongToBigEndianBytes(byte[] buffer, long offset, ulong value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ULongToBE(byte[] buffer, long offset, ulong value)
         {
             buffer[offset + 0] = (byte)((value >> 56) & (0xFF));
             buffer[offset + 1] = (byte)((value >> 48) & (0xFF));
@@ -68,7 +72,8 @@ namespace Arctium.DllGlobalShared.Helpers.Binary
             buffer[offset + 7] = (byte)((value >> 0) & (0xFF));
         }
 
-        public static uint ToUIntBigEndian(byte[] buffer, long offset)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUIntBE(byte[] buffer, long offset)
         {
             uint result = (uint)
                (((uint)buffer[offset + 0] << 24) |
@@ -79,15 +84,53 @@ namespace Arctium.DllGlobalShared.Helpers.Binary
             return result;
         }
 
-        public static byte[] ToByteArrayBigEndian(ulong[] input, long bitOffset, long bitLength)
+        /// <summary>
+        /// Converts byte array to the unsigned integer where array is represented as big-endian integer<br/>
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="length">Length of the bytes of the big-endiang integer</param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULongBE(byte[] buffer, long offset, int length)
         {
-            throw new System.Exception();
+            ulong value = 0;
+            for (int i = 0; i < length; i++)
+            {
+                value |= (ulong)(buffer[offset + i]) << ((length - 1 - i) * 8);
+            }
+
+            return value;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ROTR(ulong value, int n)
+        /// <summary>
+        /// Converts ulong value to the big-endian byte array where the most significant bytes with value 0 are removed
+        /// </summary>
+        /// <returns></returns>
+        public static byte[] GetULtoBEMSTrim(ulong value)
         {
-            return ((value >> n) | (value << 64 - n));
+            int trimLen = 0;
+
+            for (int i = 0; i < 8; i++)
+            {
+                if ((value >> (i * 8)) > 0) trimLen++;
+                else break;
+            }
+
+            byte[] result = new byte[8 - trimLen];
+
+            for (int i = trimLen; i < 8; i++)
+            {
+                result[i - trimLen] = (byte)(value >> (trimLen - i - 1));
+            }
+
+            return result;
         }
+
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public static ulong ROTR(ulong value, int n)
+        //{
+        //    return ((value >> n) | (value << 64 - n));
+        //}
     }
 }

@@ -64,7 +64,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         /// <param name="length"></param>
         public void MainHashComputation(byte[] input, long offset, long length)
         {
-            if (length % (r / 8) != 0 || length <= 0 || length % (r/8) != 0) throw new HashFunctionsException_Internal("SHA3 invalid r/length");
+            if (length % (r / 8) != 0 || length <= 0 || length % (r/8) != 0) throw new HashFunctionsExceptionInternal("SHA3 invalid r/length","","STATIC_SHA3_Shared");
             int inputBytesCount = r / 8;
             for (long i = offset; i < length + offset;)
             {
@@ -101,7 +101,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
             for (int i = 0; i < ulongToInsert; i++)
             {
-                keccakBuffer0[i] ^= BinOps.ToULongBigEndian(buffer, currentBlockOffset);
+                keccakBuffer0[i] ^= BinConverter.ToULongBE(buffer, currentBlockOffset);
 
                 currentBlockOffset += 8;
             }

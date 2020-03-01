@@ -48,7 +48,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             byte[] hash = new byte[32];
             for (int i = 0; i < 8; i++)
             {
-                BinOps.IntToBigEndianBytes(hash, i * 4, currentHashValue[i]);
+                BinConverter.IntToBE(hash, i * 4, currentHashValue[i]);
             }
 
             return hash;

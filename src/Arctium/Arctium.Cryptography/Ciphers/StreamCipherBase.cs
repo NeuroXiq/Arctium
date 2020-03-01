@@ -1,4 +1,5 @@
 ﻿
+using Arctium.DllGlobalShared.Security.SecureStorage;
 using System.IO;
 
 namespace Arctium.Cryptography.Ciphers
@@ -6,11 +7,11 @@ namespace Arctium.Cryptography.Ciphers
     public abstract class StreamCipherBase
     {
         const int KBit = 1024;
-        public byte[] Key { get; private set; }
+        public SecretBytes Key { get; private set; }
 
         public StreamCipherBase(byte[] key)
         {
-            Key = key;
+            Key = SecretBytes.CreateSafeStorage(key);
         }
 
         public abstract int Encrypt(byte[] inputBuffer, int inputOffset, int length, byte[] outputBuffer, int outputOffset);

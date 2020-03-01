@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arctium.DllGlobalShared\Arctium.DllGlobalShared.csproj" />
+    <ProjectReference Include="..\Arctium.Encoding\Arctium.Encoding.csproj" />
   </ItemGroup>
 
 </Project>

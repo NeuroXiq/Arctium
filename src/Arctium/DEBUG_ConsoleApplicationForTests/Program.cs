@@ -1,22 +1,15 @@
-﻿using Arctium.Connection.Tls;
-using Arctium.Cryptography.HashFunctions.Hashes;
-using Arctium.Cryptography.HashFunctions.XOF;
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
-
-
-//
-// [Console program]
+﻿//
+// [Testing console program]
 // Testing console program exclude from solution.
 // Imports all Arctium dll, easy to check how something works
 //
 
-
+using Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Certificate;
+using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types;
+using Arctium.Encoding.IDL.ASN1.Serialization.X690.BER;
+using Arctium.Encoding.IDL.ASN1.Serialization.X690.DER;
+using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
+using System.IO;
 
 namespace DEBUG_ConsoleApplicationForTests
 {
@@ -24,7 +17,7 @@ namespace DEBUG_ConsoleApplicationForTests
     {
         static void Main(string[] args)
         {
-            
+            X509v3CertificateEncoding.FromPem("D:\\GTSRootR1.crt");
         }
     }
 }

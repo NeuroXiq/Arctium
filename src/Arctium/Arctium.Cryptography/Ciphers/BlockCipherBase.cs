@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers.Shared;
+using Arctium.DllGlobalShared.Security.SecureStorage;
 using System.IO;
 
 namespace Arctium.Cryptography.Ciphers
@@ -12,14 +13,14 @@ namespace Arctium.Cryptography.Ciphers
         /// Length of the input block in bits
         /// </summary>
         public int InputBlockSize { get; protected set; }
-        public byte[] Key { get; private set; }
+        public SecretBytes Key { get; private set; }
         public BlockCipherMode CipherMode { get; protected set; }
 
         public BlockCipherBase(byte[] key, int inputBlockSize, BlockCipherMode blockCipherMode)
         {
             InputBlockSize = inputBlockSize;
             CipherMode = blockCipherMode;
-            Key = key;
+            Key =  SecretBytes.CreateSafeStorage(key);
         }
 
         public abstract int Encrypt(byte[] inputBuffer, int inputOffset, int inputLength, byte[] outputBuffer, int outputOffset);
