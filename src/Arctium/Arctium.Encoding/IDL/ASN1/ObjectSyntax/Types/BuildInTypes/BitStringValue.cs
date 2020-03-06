@@ -9,7 +9,7 @@ namespace Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes
     {
         /// <summary>
         /// Contains bit string data where the most significant bit of the <br/>
-        /// first byte is first bit in bit string
+        /// first byte is first bit in the bit string
         /// </summary>
         public byte[] Value;
         

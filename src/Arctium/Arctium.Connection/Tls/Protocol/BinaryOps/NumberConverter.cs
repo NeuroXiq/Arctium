@@ -3,6 +3,8 @@
     ///<summary>TLS number converter, all operation are processed in big-endian manner.</summary>
     static class NumberConverter
     {
+        // TODO remove this and user funcions from GlobalShared.dll
+
 
         public static ushort ToUInt16(byte[] buffer, int offset)
         {

@@ -27,7 +27,7 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
 
         public Tag DecodesTag { get { return tag; } }
 
-        public CodingFrame Frame { get { return this.cachedFrame; } }
+        public CodingFrame InitializationFrame { get { return this.cachedFrame; } }
 
         public void Add(CodingFrame frame, Asn1TaggedType decodedType)
         {

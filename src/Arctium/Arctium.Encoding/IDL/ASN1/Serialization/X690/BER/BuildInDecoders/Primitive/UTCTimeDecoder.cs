@@ -11,8 +11,8 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
     {
         const int LengthWithoutOffset = 13;
         const int LengthWithOffset = 18;
-        const string PatterLocalOffsetNotPresent = "yyMMddhhmmssZ";
-        const string PatternLocalOffsetPresent = "yyMMddhhmmssK";
+        const string PatterLocalOffsetNotPresent = "yyMMddHHmmssZ";
+        const string PatternLocalOffsetPresent = "yyMMddHHmmssK";
 
         public Tag DecodesTag { get { return BuildInTag.UTCTime; } }
 

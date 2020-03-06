@@ -113,7 +113,7 @@ namespace Arctium.DllGlobalShared.Helpers.Binary
 
             for (int i = 0; i < 8; i++)
             {
-                if ((value >> (i * 8)) > 0) trimLen++;
+                if (((value << (i * 8)) & 0xFF00000000000000) > 0) trimLen++;
                 else break;
             }
 

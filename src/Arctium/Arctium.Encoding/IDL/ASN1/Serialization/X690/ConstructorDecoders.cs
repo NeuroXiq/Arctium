@@ -36,8 +36,8 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690
         public IConstructorDecoder Create(Tag tag, CodingFrame frame)
         {
             if (!decodersMap.ContainsKey(TagHash(tag)))
-                throw new X690DeserializerException(null, $"Cannot find ContructorDecoder for {tag.ToString()}." +
-                    "If this is not a build in type, this onstructor decodem should be added as external decoder");
+                throw new X690DeserializerException(null, $"Cannot find ContructorDecoder for {tag.ToString()}.\n" +
+                    "If this is not a build in type, this constructor decoder should be added as an external decoder");
             return decodersMap[TagHash(tag)].Create(frame);
         }
 

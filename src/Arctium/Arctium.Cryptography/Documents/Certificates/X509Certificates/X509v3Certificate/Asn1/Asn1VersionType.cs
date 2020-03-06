@@ -6,10 +6,7 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
 {
     public class Asn1VersionType : Asn1TaggedType, IAsn1StrictType<Integer>
     {
-        public Asn1VersionType(object value) : base(new Tag(TagClass.Private, 0), value)
-        {
-
-        }
+        public Asn1VersionType(object value) : base(new Tag(TagClass.Private, 0), value) { }
 
         public override object Value { get { return TypedValue; } set { SetAsStrict(value); } }
 

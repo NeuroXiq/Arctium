@@ -17,7 +17,7 @@ namespace DEBUG_ConsoleApplicationForTests
     {
         static void Main(string[] args)
         {
-            X509v3CertificateEncoding.FromPem("D:\\GTSRootR1.crt");
+            X509v3CertificateEncoding.FromPem("D:\\www_google_com.crt");
         }
     }
 }

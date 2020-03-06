@@ -37,8 +37,8 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690
             if (!decodersMap.ContainsKey(key))
             {
                 throw new X690DeserializerException(null,
-                    $"Primitive decoder for tag: {tag.ToString()} was not found." + 
-                    "If this is not a build-in type, need to provide external primitive decoder to this Tag");
+                    $"Primitive decoder for tag: {tag.ToString()} was not found. " + 
+                    "If this is not a build-in type, is needed to provide external primitive decoder to this Tag");
             }
 
             return decodersMap[TagHash(tag)];

@@ -9,7 +9,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Const
     {
         public Tag DecodesTag { get { return BuildInTag.Set; } }
 
-        public CodingFrame Frame { get; set; }
+        public CodingFrame InitializationFrame { get; set; }
 
         List<Asn1TaggedType> setContainer = new List<Asn1TaggedType>();
 
@@ -17,7 +17,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Const
         public BerSetDecoder() { }
         public BerSetDecoder(CodingFrame frame)
         {
-            Frame = frame;
+            InitializationFrame = frame;
         }
 
         public void Add(CodingFrame frame, Asn1TaggedType decodedType)

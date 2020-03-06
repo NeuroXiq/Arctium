@@ -50,18 +50,7 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
 
         private static X509v3Certificate DecodeBer(byte[] rawBytes)
         {
-            //BerDeserializer deserializer = new BerDeserializer();
-            //deserializer.AddExternalDecoder(new Asn1VersionDecoder());
-            //deserializer.Decode(rawBytes);
-
-            List<IConstructorDecoder> certDecoders = new List<IConstructorDecoder>();
-            certDecoders.Add(new Asn1VersionDecoder());
-
-            DerDeserializer deserializer = new DerDeserializer(certDecoders.ToArray());
-
-            var result = deserializer.Deserialize(rawBytes);
-
-            return null;
+            return Asn1x509v3CertDerDecoder.Decode(rawBytes);
         }
     }
 }
