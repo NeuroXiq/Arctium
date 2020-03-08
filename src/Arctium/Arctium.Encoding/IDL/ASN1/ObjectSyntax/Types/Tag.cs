@@ -44,5 +44,19 @@ namespace Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types
 
             return $"{className}:{numName} ({classNo}, {numNo})";
         }
+
+
+        public override bool Equals(object obj)
+        {
+            bool result = false;
+            if (obj is Tag)
+            {
+                Tag tag = (Tag)obj;
+                result = tag.Class == this.Class &&
+                    tag.Number == this.Number;
+            }
+
+            return result;
+        }
     }
 }

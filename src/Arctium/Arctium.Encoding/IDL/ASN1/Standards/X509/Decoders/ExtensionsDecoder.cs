@@ -3,20 +3,19 @@ using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690.DER;
+using Arctium.Encoding.IDL.ASN1.Standards.X509.Types;
 
-namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Certificate.Asn1
+namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Decoders
 {
-    class Asn1UniqueIdentifierDecoder : IConstructorDecoder
+    class ExtensionsDecoder : IConstructorDecoder
     {
-        const long UniqueIdentifierTypeTagNumber = 3;
-        private readonly Tag decodesTag = new Tag(TagClass.Private, UniqueIdentifierTypeTagNumber);
-        public Tag DecodesTag => decodesTag;
+        public Tag DecodesTag => X509Type.ExtensionsTag;
         public CodingFrame InitializationFrame { get; private set; }
 
-        Asn1TaggedType currentDecodedType;
+        Extensions currentDecodedType;
 
-        public Asn1UniqueIdentifierDecoder() { }
-        public Asn1UniqueIdentifierDecoder(CodingFrame initializationFrame)
+        public ExtensionsDecoder() { }
+        public ExtensionsDecoder(CodingFrame initializationFrame)
         {
             InitializationFrame = initializationFrame;
         }
@@ -26,12 +25,12 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
             if (currentDecodedType != null)
             {
                 throw new X690DecoderException(
-                    "Cannot assign second item to a UniqueIdentifierConstructor.\n" +
-                    "Value of the unique identifier must consist of single UniqueIdentifierType with Sequence as an internal value but trying\n" +
+                    "Cannot assign second item to a ExtensionsDecoder.\n" +
+                    "Value of the unique identifier must consist of single with Sequence object as an internal value but trying\n" +
                     "to assign next value when value is already assigned.", frame, this);
             }
 
-            this.currentDecodedType = (Sequence)decodedType;
+            this.currentDecodedType = new Extensions((Sequence)decodedType);
         }
 
         public bool CanPush(CodingFrame frame)
@@ -41,7 +40,7 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
 
         public IConstructorDecoder Create(CodingFrame frame)
         {
-            return new Asn1UniqueIdentifierDecoder(frame);
+            return new ExtensionsDecoder(frame);
         }
 
         public Asn1TaggedType GetPopValue()

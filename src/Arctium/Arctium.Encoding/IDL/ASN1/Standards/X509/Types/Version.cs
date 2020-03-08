@@ -2,11 +2,11 @@
 using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types;
 using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes;
 
-namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Certificate.Asn1
+namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Types
 {
-    public class Asn1VersionType : Asn1TaggedType, IAsn1StrictType<Integer>
+    public class Version : Asn1TaggedType, IAsn1StrictType<Integer>
     {
-        public Asn1VersionType(object value) : base(new Tag(TagClass.Private, 0), value) { }
+        public Version(object value) : base(new Tag(TagClass.Private, 0), value) { }
 
         public override object Value { get { return TypedValue; } set { SetAsStrict(value); } }
 
@@ -16,7 +16,7 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
         {
             if (!(value is Integer))
             {
-                throw InvalidStrictTypeException.Create<Asn1VersionType, IAsn1StrictType<Integer>>(value);
+                throw InvalidStrictTypeException.Create<Version, IAsn1StrictType<Integer>>(value);
             }
 
             TypedValue = (Integer)value;

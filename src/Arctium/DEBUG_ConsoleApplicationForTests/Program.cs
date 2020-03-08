@@ -4,12 +4,12 @@
 // Imports all Arctium dll, easy to check how something works
 //
 
-using Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Certificate;
 using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690.BER;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690.DER;
 using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
 using System.IO;
+using Arctium.Cryptography.Documents.Certificates.X509Certificates;
 
 namespace DEBUG_ConsoleApplicationForTests
 {
@@ -17,7 +17,7 @@ namespace DEBUG_ConsoleApplicationForTests
     {
         static void Main(string[] args)
         {
-            X509v3CertificateEncoding.FromPem("D:\\www_google_com.crt");
+            new X509CertDecoder().FromPem("D:\\wikipedia_cert.cer");
         }
     }
 }

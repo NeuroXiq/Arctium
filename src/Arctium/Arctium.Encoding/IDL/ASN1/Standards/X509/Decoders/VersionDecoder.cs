@@ -3,29 +3,30 @@ using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690.DER;
+using Arctium.Encoding.IDL.ASN1.Standards.X509.Types;
 
-namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Certificate.Asn1
+namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Decoders
 {
-    class Asn1VersionDecoder : IConstructorDecoder
+    class VersionDecoder : IConstructorDecoder
     {
         // x509 cert private tag, ' [0] => Version '
-        private readonly Tag tag = new Tag(TagClass.Private, 0);
+        //private readonly Tag tag = new Tag(TagClass.Private, 0);
         private CodingFrame cachedFrame;
         private readonly Tag expectedAddValue = BuildInTag.Integer;
 
-        Asn1VersionType decodedVersion;
+        Version decodedVersion;
 
-        public Asn1VersionDecoder()
+        public VersionDecoder()
         {
 
         }
 
-        public Asn1VersionDecoder(CodingFrame frame)
+        public VersionDecoder(CodingFrame frame)
         {
             this.cachedFrame = frame;
         }
 
-        public Tag DecodesTag { get { return tag; } }
+        public Tag DecodesTag { get { return X509Type.VersionTag; } }
 
         public CodingFrame InitializationFrame { get { return this.cachedFrame; } }
 
@@ -40,19 +41,17 @@ namespace Arctium.Cryptography.Documents.Certificates.X509Certificates.X509v3Cer
             if(decodedVersion != null)
                 throw new X690DecoderException("Cannot assign vesion second type. Expected only one version in data.", this);
 
-            decodedVersion = new Asn1VersionType(decodedType);
+            decodedVersion = new Version(decodedType);
         }
 
         public bool CanPush(CodingFrame frame)
         {
-            // integer / universal
-            return frame.TagNumber == 2 &&
-                   frame.ClassNumber == 0;
+            return decodedVersion == null;
         }
 
         public IConstructorDecoder Create(CodingFrame frame)
         {
-            return new Asn1VersionDecoder(frame);
+            return new VersionDecoder(frame);
         }
 
         public Asn1TaggedType GetPopValue()

@@ -7,7 +7,7 @@ namespace Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes
     {
         public Set(List<Asn1TaggedType> value) : base(BuildInTag.Set)
         {
-
+            TypedValue = value;
         }
 
         public List<Asn1TaggedType> TypedValue { get; set; }

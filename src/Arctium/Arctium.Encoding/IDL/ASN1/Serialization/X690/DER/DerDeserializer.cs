@@ -1,14 +1,11 @@
-﻿using Arctium.Encoding.IDL.ASN1.Exceptions;
-using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types;
-using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes;
+﻿using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types;
 using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
 using System;
 using System.Collections.Generic;
 
 namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 {
-    // constructors stack is a recursion but accomplished by the stack
-    // 
+    // constructors stack is a recursion but is accomplished by this stack
 
     public class DerDeserializer
     {
@@ -43,30 +40,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
         }
 
-        class SpecialRootConstructor : IConstructorDecoder
-        {
-            public Tag DecodesTag => throw new NotImplementedException();
-
-            public CodingFrame InitializationFrame { get; set; }
-
-            public List<Asn1TaggedType> container = new List<Asn1TaggedType>();
-
-            public SpecialRootConstructor(long length)
-            {
-                InitializationFrame = new CodingFrame() { ContentLength = new ContentLength(length) };
-            }
-
-            public void Add(CodingFrame frame, Asn1TaggedType decodedType)
-            {
-                container.Add(decodedType);
-            }
-
-            public bool CanPush(CodingFrame frame) => true;
-            public IConstructorDecoder Create(CodingFrame frame) => null;
-            public Asn1TaggedType GetPopValue() => throw new Asn1InternalException("Cannot pop value from the special-root contructor decoder","",this);
-        }
-
-        public DerDecodingResult Deserialize(byte[] buffer)
+        public DerDeserializationResult Deserialize(byte[] buffer)
         {
             bufferFrame = new BufferFrame(buffer);
             bufferFrame.SeekFromStart(0);
@@ -85,15 +59,13 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
             while (continueDecoding)
             {
-                
                 long frameShift = 0;
-                if (bufferFrame.Offset == 855)
-                {
-                    Console.WriteLine();
-                }
+
                 if (ConstructorEndOfData())
                 {
-                   
+                    //check end of data
+                    
+
                     if (constructorsStack.Count == 1) break;
 
                     int shiftLength = PopCurrentConstructor();
@@ -129,14 +101,15 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
                     frameShift = contentLength + codingFrame.FrameLength;
                     
-                    // in shift include 2 null bytes of the content
+                    // in shift include 2 null bytes of the content (if present)
                     if (!codingFrame.ContentLength.IsDefinite) frameShift += 2;
                 }
                 else
                 {
-                    // create constructed type
+                    // create new constructed type
                     // add this type to constructots stack
                     // move frame right
+                    // this constructor is from now 'current' constructor until 'pop'
 
                     PushNewConstructor();
 
@@ -145,11 +118,12 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
                 bufferFrame.SeekFromCurrentPosition(frameShift);
             }
-            decoding_loop_end:
 
-            DerDecodingResult result = new DerDecodingResult();
+            // TODO ASN1/DER/Deserializer Implement metadata (what was parsed etc.)
+
+            DerDeserializationResult result = new DerDeserializationResult();
             result.Metadata = metadata;
-            result.DecodedValue = ((SpecialRootConstructor)constructorsStack.Pop().Constructor).container;
+            result.RootDecodedValue = ((SpecialRootConstructor)constructorsStack.Pop().Constructor).container;
 
             return result;
         }
@@ -184,6 +158,10 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
         private bool ConstructorEndOfData()
         {
+            // for the end of data the are 2 possible cases:
+            // * value is definite, just compute length by addition
+            // * for indefinite: check if current offset points to a 'special' frame
+
             ConstructorDecoderContext constructorContext = constructorsStack.Peek();
             IConstructorDecoder currentConstructor = constructorContext.Constructor;
 
