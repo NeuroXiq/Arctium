@@ -9,11 +9,13 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Model
     {
         public Version Version;
         public Integer SerialNumber;
-        public AlgorithmIdentifier Signature;
+        public AlgorithmIdentifierModel Signature;
         public AttributeTypeAndValue[] Issuer;
         public Validity Validity;
         public AttributeTypeAndValue[] Subject;
-        public SubjectPublicKeyInfo SubjectPublicKeyInfo;
-        public Extension[] Extensions;
+        public SubjectPublicKeyInfoModel SubjectPublicKeyInfo;
+        public byte[] IssuerUniqueId;
+        public byte[] SubjectUniqueId;
+        public ExtensionModel[] Extensions;
     }
 }

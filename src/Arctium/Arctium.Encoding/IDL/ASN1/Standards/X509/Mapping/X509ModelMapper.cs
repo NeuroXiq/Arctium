@@ -11,7 +11,22 @@ using X509Types = Arctium.Encoding.IDL.ASN1.Standards.X509.Types;
 using ASN1Type = Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Encoding.IDL.ASN1.Standards.X509.Types;
 
-namespace Arctium.Encoding.IDL.ASN1.Standards.X509
+
+/* - Class info -
+ * 
+ * Mapping from a decoded, raw asn.1 objects (sequence, integer, bistring etc.) 
+ * to 'X509CertifiacateModel' object.
+ * 
+ * It gets asn1. objects and reassign them to concrete 
+ * fileds in x509certificate object eg:
+ * from some 'sequence', values are extracted and assigned to a 'tbsCertificate' property
+ * 
+ * helper methods like 'Is', 'AsSpecific' are importet as static in using statement
+ * 
+ */
+
+
+namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Mapping
 {
     public class X509ModelMapper
     {
@@ -39,7 +54,7 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             var signatureValue = rootList[2];
 
             TBSCertificate tbsCert = MapTbsCertificate(AsSpecific<Sequence>(tbsCertSeq));
-            AlgorithmIdentifier algoIdentifier = MapAlgorithmIdentifier(signatureAlgoSeq);
+            AlgorithmIdentifierModel algoIdentifier = MapAlgorithmIdentifier(signatureAlgoSeq);
             BitString sigValue = AsSpecific<BitString>(signatureValue);
 
             X509CertificateModel certModel = new X509CertificateModel(tbsCert, algoIdentifier, sigValue);
@@ -60,7 +75,7 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             var subjectPubKeyInfo = MapSubjectPublicKeyInfo(tbsList[6]);
 
             // TODO ASN1/X509 this values must be a new Tagged types with implemented decoders.
-            // Now working now
+            // Not working now
             //BitString issuerUniqueId, subjectUniqueId;
 
             // optional fields
@@ -82,7 +97,7 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             //
             //}
 
-            Extension[] extensions = null;
+            ExtensionModel[] extensions = null;
 
             int last = tbsList.Count - 1;
             if (last > 6)
@@ -104,11 +119,11 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             return mappedTbsCert;
         }
 
-        private Extension[] GetExtensions(Asn1TaggedType asn1TaggedType)
+        private ExtensionModel[] GetExtensions(Asn1TaggedType asn1TaggedType)
         {
             var extensionsType = AsSpecific<X509Types.Extensions>(asn1TaggedType);
             var extensionsList = extensionsType.TypedValue.TypedValue;
-            var mappedExtensions = new List<Extension>();
+            var mappedExtensions = new List<ExtensionModel>();
 
             foreach (var ext in extensionsList)
             {
@@ -118,11 +133,11 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             return mappedExtensions.ToArray();
         }
 
-        private Extension MapExtension(Asn1TaggedType ext)
+        private ExtensionModel MapExtension(Asn1TaggedType ext)
         {
             var extFields = AsSpecific<Sequence>(ext).TypedValue;
 
-            var extId = AsSpecific<ObjectIdentifier>(extFields[0]);
+            var extId = AsSpecific<ObjectId>(extFields[0]);
             ASN1Type.Boolean critical = null;
             ASN1Type.OctetString extnValue = null;
 
@@ -136,19 +151,19 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             else critical = new ASN1Type.Boolean(false); // default value if not present
 
             extnValue = AsSpecific<OctetString>(extFields[nextIndex]);
-            Extension mappedExtention = new Extension(extId, critical, extnValue);
+            ExtensionModel mappedExtention = new ExtensionModel(extId, critical, extnValue);
 
             return mappedExtention;
         }
 
-        private SubjectPublicKeyInfo MapSubjectPublicKeyInfo(Asn1TaggedType value)
+        private SubjectPublicKeyInfoModel MapSubjectPublicKeyInfo(Asn1TaggedType value)
         {
             List<Asn1TaggedType> values = AsSpecific<Sequence>(value).TypedValue;
 
             var algorithm = MapAlgorithmIdentifier(values[0]);
             var subjectPubKey = AsSpecific<BitString>(values[1]);
 
-            return new SubjectPublicKeyInfo(algorithm, subjectPubKey);
+            return new SubjectPublicKeyInfoModel(algorithm, subjectPubKey);
         }
 
         private Validity MapValidity(Asn1TaggedType asn1TaggedType)
@@ -188,20 +203,20 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X509
             // sequence [ set [ sequence { type,value }], set [ sequence {type, value}], set [ sequence {type,value}]  .... ]
             var pairAsList = AsSpecific<Sequence>(tvSet.TypedValue[0]).TypedValue;
             
-            var type = AsSpecific<ObjectIdentifier>(pairAsList[0]);
+            var type = AsSpecific<ObjectId>(pairAsList[0]);
             var value = pairAsList[1];
 
             return new AttributeTypeAndValue(type, value);
         }
 
-        private AlgorithmIdentifier MapAlgorithmIdentifier(Asn1TaggedType signatureAlgoSeq)
+        private AlgorithmIdentifierModel MapAlgorithmIdentifier(Asn1TaggedType signatureAlgoSeq)
         {
             List<Asn1TaggedType> values = (signatureAlgoSeq as Sequence).TypedValue;
 
-            var oid = AsSpecific<ObjectIdentifier>(values[0]);
+            var oid = AsSpecific<ObjectId>(values[0]);
             Asn1TaggedType parameters = values[1];
 
-            AlgorithmIdentifier identifier = new AlgorithmIdentifier(oid, parameters);
+            AlgorithmIdentifierModel identifier = new AlgorithmIdentifierModel(oid, parameters);
 
             return identifier;
         }

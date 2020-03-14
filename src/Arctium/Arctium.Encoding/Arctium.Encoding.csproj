@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="IDL\ASN1\Mapper\" />
     <Folder Include="IDL\ASN1\Serialization\X690\DER\BuildInDecoders\Constructed\" />
     <Folder Include="IDL\ASN1\Serialization\X690\DER\BuildInDecoders\Primitive\" />
     <Folder Include="IDL\ASN1\Serialization\PER\" />
     <Folder Include="IDL\ASN1\Shared\" />
+    <Folder Include="IDL\ASN1\Standards\X509\X509Certificate\Extensions\" />
   </ItemGroup>
 
   <ItemGroup>

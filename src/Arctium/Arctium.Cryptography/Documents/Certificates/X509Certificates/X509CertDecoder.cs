@@ -1,30 +1,32 @@
-﻿using System;
-using Arctium.Encoding.FileFormat.PEM;
-using Arctium.Encoding.IDL.ASN1.Standards.X509;
-using Arctium.Encoding.IDL.ASN1.Standards.X509.Model;
-using Arctium.Encoding.IDL.ASN1.Standards.X509.Types;
+﻿//using System;
+//using Arctium.Encoding.FileFormat.PEM;
+//using Arctium.Encoding.IDL.ASN1.Standards.X509;
+//using Arctium.Encoding.IDL.ASN1.Standards.X509.Model;
+//using Arctium.Encoding.IDL.ASN1.Standards.X509.Types;
 
-namespace Arctium.Cryptography.Documents.Certificates.X509Certificates
-{
-    public class X509CertDecoder
-    {
-        public X509Certificate FromPem(string fileName)
-        {
-            PemFile pemFile = PemFile.FromFile(fileName);
+//TODO crypto/documents/x509cert remove class
 
-            byte[] derRawData = pemFile.DecodedData;
+//namespace Arctium.Cryptography.Documents.Certificates.X509Certificates
+//{
+//    public class X509CertDecoder
+//    {
+//        public X509Certificate FromPem(string fileName)
+//        {
+//            PemFile pemFile = PemFile.FromFile(fileName);
 
-            X509Deserializer deserializer = new X509Deserializer();
-            X509CertificateModel model = deserializer.FromDer(derRawData);
+//            byte[] derRawData = pemFile.DecodedData;
 
-            X509Certificate certificate = MapFromModel(model);
+//            X509Deserializer deserializer = new X509Deserializer();
+//            X509CertificateModel model = deserializer.FromDer(derRawData);
 
-            return certificate;
-        }
+//            X509Certificate certificate = MapFromModel(model);
 
-        private X509Certificate MapFromModel(X509CertificateModel model)
-        {
-            throw new NotImplementedException();
-        }
-    }
-}
+//            return certificate;
+//        }
+
+//        private X509Certificate MapFromModel(X509CertificateModel model)
+//        {
+//            throw new NotImplementedException();
+//        }
+//    }
+//}

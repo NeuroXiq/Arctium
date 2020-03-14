@@ -40,7 +40,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690
 
             fitInLong = true;
             longValue = value;
-            FullValue = BinConverter.GetULtoBEMSTrim((ulong)value);
+            FullValue = BinConverter.GetBytesTrimToEmptyLE((ulong)value);
         }
 
         public static ContentLength Indefinite

@@ -3,16 +3,16 @@ using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes;
 
 namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Model
 {
-    public class AlgorithmIdentifier
+    public class AlgorithmIdentifierModel
     {
-        public ObjectIdentifier Algorithm;
+        public ObjectId Algorithm;
         /// <summary>
         /// Optional, defined by <see cref="Algorithm"/>
         /// </summary>
         public Asn1TaggedType Parameters;
 
 
-        public AlgorithmIdentifier(ObjectIdentifier algorithm, Asn1TaggedType parameters)
+        public AlgorithmIdentifierModel(ObjectId algorithm, Asn1TaggedType parameters)
         {
             Algorithm = algorithm;
             Parameters = parameters;

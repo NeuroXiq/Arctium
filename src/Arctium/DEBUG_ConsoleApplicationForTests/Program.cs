@@ -9,7 +9,7 @@ using Arctium.Encoding.IDL.ASN1.Serialization.X690.BER;
 using Arctium.Encoding.IDL.ASN1.Serialization.X690.DER;
 using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
 using System.IO;
-using Arctium.Cryptography.Documents.Certificates.X509Certificates;
+using Arctium.Encoding.IDL.ASN1.Standards.X509.X509Certificate;
 
 namespace DEBUG_ConsoleApplicationForTests
 {
@@ -17,7 +17,7 @@ namespace DEBUG_ConsoleApplicationForTests
     {
         static void Main(string[] args)
         {
-            new X509CertDecoder().FromPem("D:\\wikipedia_cert.cer");
+            new X509CertificateDeserializer().FromPem("D:\\wikipedia_cert.cer");
         }
     }
 }

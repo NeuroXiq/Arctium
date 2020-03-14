@@ -20,8 +20,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
         {
             long length = frame.ContentLength.Length;
             long i = offset;
-            List<OidSubidentifier> subi = new List<OidSubidentifier>();
-            List<byte> curData = new List<byte>();
+            List<byte[]> subi = new List<byte[]>();
 
             int subLength = 1;
 
@@ -34,7 +33,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
                     subLength++;
                 }
 
-                OidSubidentifier subidentifier = ConvertToOidSubidentifier(buffer, i, subLength);
+                byte[] subidentifier = ConvertToOidSubidentifier(buffer, i, subLength);
                 subi.Add(subidentifier);
 
                 i += subLength;
@@ -42,10 +41,11 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
             }
 
             contentLength = i - offset;
-            return new ObjectIdentifier(subi.ToArray());
+            ObjectIdentifier objectIdentifier = new ObjectIdentifier(subi.ToArray());
+            return new ObjectId(objectIdentifier);
         }
 
-        private OidSubidentifier ConvertToOidSubidentifier(byte[] buffer, long offset, int subLength)
+        private byte[] ConvertToOidSubidentifier(byte[] buffer, long offset, int subLength)
         {
             // every first bit is removed from bit string
             // round to bytes
@@ -72,7 +72,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
 
             int bitLength = (8 * subLength) - subLength;
 
-            return new OidSubidentifier(converted);
+            return converted;
 
         }
     }

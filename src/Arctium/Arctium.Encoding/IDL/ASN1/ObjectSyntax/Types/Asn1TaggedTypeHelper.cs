@@ -19,8 +19,7 @@ namespace Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types
         /// <exception cref=""></exception>
         public static T AsSpecific<T>(Asn1TaggedType type) where T : class
         {
-            var result = type as T;
-            if (result == null) throw new Asn1InternalException("Invalid cast:"+(typeof(T).Name),"",typeof(Asn1TaggedTypeHelper));
+            if (!(type is T result)) throw new Asn1InternalException("Invalid cast:" + (typeof(T).Name), "", typeof(Asn1TaggedTypeHelper));
 
             return result;
         }

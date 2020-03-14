@@ -3,16 +3,16 @@
 namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Model
 {
     /// <summary>
-    /// Model gives conventient way to :manipulate certificate, creation it and serializate it.
-    /// For typical, high level usage, X509Certifiate should be used but this type is fine too.
+    /// Model gives conventient way to: create, manipulate and serializate certificate.
+    /// For typical, high level usage, X509Certifiate should be used.
     /// </summary>
     public class X509CertificateModel
     {
         public TBSCertificate TBSCertificate;
-        public AlgorithmIdentifier SignatureAlgorithm;
+        public AlgorithmIdentifierModel SignatureAlgorithm;
         public BitString SignatureValue;
 
-        public X509CertificateModel(TBSCertificate tbsCertificate, AlgorithmIdentifier algorithmIdentifier, BitString signatureValue)
+        public X509CertificateModel(TBSCertificate tbsCertificate, AlgorithmIdentifierModel algorithmIdentifier, BitString signatureValue)
         {
             TBSCertificate = tbsCertificate;
             SignatureAlgorithm = algorithmIdentifier;

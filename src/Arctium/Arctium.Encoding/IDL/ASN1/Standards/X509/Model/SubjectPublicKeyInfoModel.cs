@@ -2,12 +2,12 @@
 
 namespace Arctium.Encoding.IDL.ASN1.Standards.X509.Model
 {
-    public class SubjectPublicKeyInfo
+    public class SubjectPublicKeyInfoModel
     {
-        public AlgorithmIdentifier Algorithm;
+        public AlgorithmIdentifierModel Algorithm;
         public BitString SubjectPublicKey;
 
-        public SubjectPublicKeyInfo(AlgorithmIdentifier algorithmIdentifier, BitString subjectPublicKey)
+        public SubjectPublicKeyInfoModel(AlgorithmIdentifierModel algorithmIdentifier, BitString subjectPublicKey)
         {
             Algorithm = algorithmIdentifier;
             SubjectPublicKey = subjectPublicKey;

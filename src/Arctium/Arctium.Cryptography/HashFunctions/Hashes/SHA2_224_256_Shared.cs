@@ -105,7 +105,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             padding[0] = 0x80;
             long totalBitLength = 8 * messageLengthInBytes;
-            BinConverter.LongToBE(padding, paddingLenght - 8, totalBitLength);
+            BinConverter.GetBytesBE(padding, paddingLenght - 8, totalBitLength);
 
             return padding;
         }

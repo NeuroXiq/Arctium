@@ -40,7 +40,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
         }
 
-        public DerDeserializationResult Deserialize(byte[] buffer)
+        public X690DeserializationResult Deserialize(byte[] buffer)
         {
             bufferFrame = new BufferFrame(buffer);
             bufferFrame.SeekFromStart(0);
@@ -121,7 +121,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
 
             // TODO ASN1/DER/Deserializer Implement metadata (what was parsed etc.)
 
-            DerDeserializationResult result = new DerDeserializationResult();
+            X690DeserializationResult result = new X690DeserializationResult();
             result.Metadata = metadata;
             result.RootDecodedValue = ((SpecialRootConstructor)constructorsStack.Pop().Constructor).container;
 
@@ -181,7 +181,7 @@ namespace Arctium.Encoding.IDL.ASN1.Serialization.X690.DER
                 CodingFrame frame = bufferFrame.CodingFrame;
                 if (frame.ContentLength.IsDefinite)
                 {
-                    // special frame where frame is decoded from 2 zero bytes
+                    // special frame where frame is encoded as 2 zero bytes
                     // means that frame decoded from 2 zero bytes (end-of-content) have following values 
                     // also means that *current* frame points to this null-bytes  == end of data for constructor
                     return frame.Tag.Class == TagClass.Universal &&

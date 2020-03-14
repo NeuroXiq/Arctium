@@ -5,48 +5,49 @@ namespace Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types.BuildInTypes
 {
     public class IntegerValue
     {
-        public byte[] BinaryValue {
-            get { return binaryValue; }
-            set
-            {
-                binaryValue = value ?? throw new ArgumentException("binaryValue cannot be null");
+        public byte[] BinaryValue { get; private set; }
 
-                if (binaryValue.Length < 9)
-                {
-                    fitInLong = true;
-                    longValue = (long)BinConverter.ToULongBE(value, 0, binaryValue.Length);
-                }
-                else
-                {
-                    fitInLong = false;
-                }
-            }
-        }
-
-        public long LongValue
+        public ulong ToULong()
         {
-            get
             {
                 if (!fitInLong) throw new InvalidOperationException(
-                    "Cannot convert current integer value to ulong type " + 
-                    "becaues its do not fit in 8-byte structure");
+                    "Cannot convert current integer value to ulong type " +
+                    "because it do not fit in 8-byte structure");
                 return longValue;
-            }
-            set
-            {
-                binaryValue = BinConverter.GetULtoBEMSTrim((ulong)value);
-                fitInLong = true;
-                longValue = value;
             }
         }
 
         bool fitInLong;
         byte[] binaryValue;
-        long longValue;
+        ulong longValue;
 
         public IntegerValue(byte[] binaryValue)
         {
             BinaryValue = binaryValue;
+            if (binaryValue.Length < 9)
+            {
+                fitInLong = true;
+                longValue = BinConverter.ToULongBE(binaryValue, 0, binaryValue.Length);
+            }
+            else
+            {
+                fitInLong = false;
+            }
         }
+
+        public IntegerValue(ulong value) : this(BinConverter.GetBytesBE(value)) { }
+
+        public static implicit operator ulong(IntegerValue value) => value.ToULong();
+        public static explicit operator IntegerValue(ulong value) => new IntegerValue(value);
+
+        public static implicit operator uint(IntegerValue value) { checked { return (uint)value.ToULong(); } }
+        public static explicit operator IntegerValue(uint value) => new IntegerValue((ulong)value);
+
+        public static implicit operator ushort(IntegerValue value) { checked { return (ushort)value.ToULong(); } }
+        public static explicit operator IntegerValue(ushort value) => new IntegerValue((ulong)value);
+
+        public static implicit operator byte(IntegerValue value) { checked { return (byte)value.ToULong(); } }
+        public static explicit operator IntegerValue(byte value) => new IntegerValue((ulong)value);
+
     }
 }

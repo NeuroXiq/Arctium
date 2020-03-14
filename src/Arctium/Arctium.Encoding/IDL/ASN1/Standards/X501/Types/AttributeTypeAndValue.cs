@@ -5,10 +5,10 @@ namespace Arctium.Encoding.IDL.ASN1.Standards.X501.Types
 {
     public class AttributeTypeAndValue
     {
-        public ObjectIdentifier Type;
-        Asn1TaggedType Value;
+        public ObjectId Type;
+        public Asn1TaggedType Value;
 
-        public AttributeTypeAndValue(ObjectIdentifier type, Asn1TaggedType value)
+        public AttributeTypeAndValue(ObjectId type, Asn1TaggedType value)
         {
             Type = type;
             Value = value;
