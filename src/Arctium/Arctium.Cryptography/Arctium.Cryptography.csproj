@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="ASN1\Serialization\PER\" />
+    <Folder Include="ASN1\Serialization\X690\BER\BuildInDecoders\Constructed\" />
+    <Folder Include="ASN1\Serialization\X690\DER\BuildInDecoders\Primitive\" />
+    <Folder Include="ASN1\Standards\X400\Decoders\" />
     <Folder Include="Ciphers\BlockCiphers\Aes\" />
     <Folder Include="Ciphers\BlockCiphers\Rijndael\" />
     <Folder Include="Ciphers\Asymmetric\" />
@@ -15,8 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arctium.DllGlobalShared\Arctium.DllGlobalShared.csproj" />
-    <ProjectReference Include="..\Arctium.Encoding\Arctium.Encoding.csproj" />
+    <ProjectReference Include="..\Arctium.Shared\Arctium.Shared.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿using Arctium.DllGlobalShared.Exceptions;
+﻿using Arctium.Shared.Exceptions;
 using System;
 
 namespace Arctium.Cryptography.Exceptions

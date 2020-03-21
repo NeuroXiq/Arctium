@@ -4,12 +4,8 @@
 // Imports all Arctium dll, easy to check how something works
 //
 
-using Arctium.Encoding.IDL.ASN1.ObjectSyntax.Types;
-using Arctium.Encoding.IDL.ASN1.Serialization.X690.BER;
-using Arctium.Encoding.IDL.ASN1.Serialization.X690.DER;
-using Arctium.Encoding.IDL.ASN1.Serialization.Exceptions;
-using System.IO;
-using Arctium.Encoding.IDL.ASN1.Standards.X509.X509Certificate;
+
+using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 
 namespace DEBUG_ConsoleApplicationForTests
 {

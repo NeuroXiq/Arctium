@@ -1,0 +1,15 @@
+public int Version { get; internal set; }
+        public byte[] SerialNumber { get; internal set; }
+        public SignatureAlgorithm SignatureAlgorithm { get; internal set; }
+        public byte[] RawSignatureValue { get; internal set; }
+        public TypeNameAttribute[] Issuer { get; internal set; }
+        public DateTime ValidNotBefore { get; internal set; }
+        public DateTime ValidNotAfter { get; internal set; }
+        public TypeNameAttribute[] Subject { get; internal set; }
+        public PublicKeyAlgorithm PublicKeyAlgorithm { get; internal set; }
+        public byte[] RawPublicKey { get; internal set; }
+        public byte[] IssuerUniqueId { get; internal set; }
+        public byte[] SubjectUniqueId { get; internal set; }
+        public X509CertificateExtension[] Extensions { get; internal set; }
+        public object SignatureAlgorithmParams { get; internal set; }
+        public object PublicKeyAlgorithmParams { get; internal set; }

@@ -1,5 +1,5 @@
 ﻿
-using Arctium.DllGlobalShared.Helpers.Binary;
+using Arctium.Shared.Helpers.Binary;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 using  Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
-using Arctium.DllGlobalShared.Helpers.Binary;
+using Arctium.Shared.Helpers.Binary;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {

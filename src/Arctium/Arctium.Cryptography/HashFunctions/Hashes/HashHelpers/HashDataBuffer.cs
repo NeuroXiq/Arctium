@@ -1,4 +1,4 @@
-﻿using Arctium.DllGlobalShared.Helpers.Buffers;
+﻿using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.IO;
 

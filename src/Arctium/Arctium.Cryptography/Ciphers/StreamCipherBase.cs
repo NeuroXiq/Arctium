@@ -1,5 +1,5 @@
 ﻿
-using Arctium.DllGlobalShared.Security.SecureStorage;
+using Arctium.Shared.Security.SecureStorage;
 using System.IO;
 
 namespace Arctium.Cryptography.Ciphers
