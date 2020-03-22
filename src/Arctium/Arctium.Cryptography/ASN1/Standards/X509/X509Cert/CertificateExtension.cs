@@ -4,7 +4,13 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     public abstract class CertificateExtension
     {
-        public ExtensionType ExtensionType { get; protected set; }
-        public bool IsCritical { get; protected set; }
+        public readonly ExtensionType ExtensionType;
+        public readonly bool IsCritical;
+
+        protected CertificateExtension(ExtensionType type, bool isCritical)
+        {
+            ExtensionType = type;
+            IsCritical = isCritical;
+        }
     }
 }

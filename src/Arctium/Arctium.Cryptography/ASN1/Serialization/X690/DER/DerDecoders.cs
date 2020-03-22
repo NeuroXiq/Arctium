@@ -5,8 +5,20 @@ using System;
 using System.Collections.Generic;
 using ASN = Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 
+/*
+ * - Class info - 
+ *  Contains implemented Der decoders in one place
+ *  
+ *  Have a Dictionary from typeof(SOME_ASN1_TYPE) => DER_DECODER
+ * 
+ */
+
+
 namespace Arctium.Cryptography.ASN1.Serialization.X690.DER
 {
+    /// <summary>
+    /// Contains DER decoders for build-in types. Gives possibility to decode DER data as ASN1 type with - or - without tags.
+    /// </summary>
     public class DerDecoders
     {
         static Dictionary<Type, object> decoders = new Dictionary<Type, object>();
@@ -69,7 +81,20 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690.DER
             return new TaggedType<T>(decoded, tags);
         }
 
+        /// <summary>
+        /// Decodes content value of the EXPLICIT context-specific tagged type.
+        /// </summary>
+        /// <typeparam name="T">Content value type</typeparam>
+        /// <param name="node">Coding node</param>
+        /// <returns>Decoded content value</returns>
+        public static T DecodeWithoutECS<T>(X690DecodedNode node)
+        {
+            var inner = node[0];
+            IX690Decoder<T> decoder = (IX690Decoder<T>)decoders[typeof(T)];
+            T decoded = decoder.Decode(node.DataBuffer, node.ContentOffset, node.ContentLength);
 
+            return decoded;
+        }
 
 
         private static void Initialize()
@@ -83,6 +108,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690.DER
             decoders[typeof(UTF8String)] = new UTF8StringDecoder();
             decoders[typeof(ASN.Boolean)] = new BooleanDecoder();
             decoders[typeof(OctetString)] = new OctetStringDecoder();
+            decoders[typeof(IA5String)] = new IA5StringDecoder();
         }
     }
 }

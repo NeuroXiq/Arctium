@@ -27,8 +27,8 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 
         public object FromBytes(byte[] data)
         {
-            DerDeserializer decoder = new DerDeserializer(data);
-            var decoded = decoder.Deserialize();
+            DerDeserializer decoder = new DerDeserializer();
+            var decoded = decoder.Deserialize(data);
 
             var certificateModel = (new X509CertificateModelNodeDecoder()).Decode(decoded[0]);
             

@@ -10,6 +10,8 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
 {
     public class BitstringDecoder : IX690Decoder<BitString>
     {
+        // ommiting first bytes, first byte = num of unused bits
+        const int BinaryStringInnerOffset = 1;
 
         public BitString Decode(byte[] buffer, long offset, long length)
         {
@@ -32,7 +34,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
 
             long lengthInBytes = length - 1;
             byte[] bitString = new byte[lengthInBytes];
-            ByteBuffer.Copy(buffer, offset, bitString, 0, lengthInBytes);
+            ByteBuffer.Copy(buffer, offset + BinaryStringInnerOffset, bitString, 0, lengthInBytes);
 
             BitString bsValue = new BitString(bitString, (lengthInBytes * 8) - unusedBits);
 

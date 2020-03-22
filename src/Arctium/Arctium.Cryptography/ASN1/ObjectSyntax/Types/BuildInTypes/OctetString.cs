@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes
+﻿namespace Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes
 {
     public struct OctetString
     {
-        byte[] value;
+        public byte[] Value;
         public OctetString(byte[] binaryValue)
         {
-            value = binaryValue;
+            Value = binaryValue;
         }
 
-        public byte this[long index] { get { return value[index]; } set { this.value[index] = value; } }
+        public static implicit operator byte[](OctetString octetString) => octetString.Value;
+        public static implicit operator OctetString(byte[] array) => new OctetString(array);
     }
 }

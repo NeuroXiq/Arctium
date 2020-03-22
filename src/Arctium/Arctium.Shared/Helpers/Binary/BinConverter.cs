@@ -93,6 +93,18 @@ namespace Arctium.Shared.Helpers.Binary
             return value;
         }
 
+        public static bool[] ToBooleanArray(byte flagsArray)
+        {
+            bool[] flags = new bool[8];
+
+            for (int j = 0; j < 8; j++)
+            {
+                flags[j] = (flagsArray & (1 << j)) > 0;
+            }
+
+            return flags;
+        }
+
         /*
          * From number to byte array
          *  

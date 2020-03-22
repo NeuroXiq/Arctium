@@ -1,20 +1,39 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Cryptography.Shared.Algorithms;
 using Arctium.Shared.Helpers.DataStructures;
+using System.Collections.Generic;
 using static Arctium.Cryptography.Shared.Algorithms.Algorithm;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
 {
     public static class SignatureAlgorithmPairOidMap
     {
-        static DoubleDictionary<ObjectIdentifier, SignatureAlgorithmPair> signatureMap;
+        static DoubleDictionary<ObjectIdentifier, SignatureAlgorithmPair> map;
 
-        public static ObjectIdentifier GetOid(SignatureAlgorithmPair signatureAlgorithm) => signatureMap[signatureAlgorithm];
-        public static SignatureAlgorithmPair GetSignatureAlgorithm(ObjectIdentifier oid) => signatureMap[oid];
+        public static ObjectIdentifier GetOid(SignatureAlgorithmPair signatureAlgorithm)
+        {
+            if (!map.ContainsKey(signatureAlgorithm))
+            {
+                throw new KeyNotFoundException($"{nameof(SignatureAlgorithmPairOidMap)}: " +
+                    $"Provided key {signatureAlgorithm.ToString()} was not found in current mapping");
+            }
+
+            return map[signatureAlgorithm];
+        }
+        public static SignatureAlgorithmPair GetSignatureAlgorithm(ObjectIdentifier oid)
+        {
+            if (!map.ContainsKey(oid))
+            {
+                throw new KeyNotFoundException($"{nameof(SignatureAlgorithmPairOidMap)}: " +
+                    $"Provided key {oid.ToString()} was not found in current mapping");
+            }
+
+            return map[oid];
+        }
 
         static SignatureAlgorithmPairOidMap()
         {
-            signatureMap = new DoubleDictionary<ObjectIdentifier, SignatureAlgorithmPair>();
+            map = new DoubleDictionary<ObjectIdentifier, SignatureAlgorithmPair>();
 
             Initialize();
         }
@@ -23,16 +42,16 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
         {
             // RSA 
 
-            signatureMap[Md2Rsa] = new SignatureAlgorithmPair(MD2, RSA);
-            signatureMap[Md5Rsa] = new SignatureAlgorithmPair(MD5, RSA);
-            signatureMap[Sha1hRsa] = new SignatureAlgorithmPair(SHA1, RSA);
-            signatureMap[sha256Rsa] = new SignatureAlgorithmPair(SHA2_256, RSA);
+            map[Md2Rsa] = new SignatureAlgorithmPair(MD2, RSA);
+            map[Md5Rsa] = new SignatureAlgorithmPair(MD5, RSA);
+            map[Sha1hRsa] = new SignatureAlgorithmPair(SHA1, RSA);
+            map[sha256Rsa] = new SignatureAlgorithmPair(SHA2_256, RSA);
 
             //DSA
-            signatureMap[DsaSha1] = new SignatureAlgorithmPair(SHA1, DSA);
+            map[DsaSha1] = new SignatureAlgorithmPair(SHA1, DSA);
 
             //ECDSA
-            signatureMap[EcdsaSha1] = new SignatureAlgorithmPair(SHA1, RSA);
+            map[EcdsaSha1] = new SignatureAlgorithmPair(SHA1, RSA);
         }
 
         // RSA

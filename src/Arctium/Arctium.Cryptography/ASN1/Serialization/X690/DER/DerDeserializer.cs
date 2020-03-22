@@ -14,14 +14,14 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690.DER
 
         Stack<X690DecodedNode> constructorsStack;
 
-        public DerDeserializer(byte[] buffer)
+        public DerDeserializer()
         {
             constructorsStack = new Stack<X690DecodedNode>();
-            this.buffer = buffer;
         }
 
-        public X690DecodedNode Deserialize()
+        public X690DecodedNode Deserialize(byte[] data)
         {
+            this.buffer = data;
             bufferFrame = new BufferFrame(buffer);
             bufferFrame.SeekFromStart(0);
             X690DecodedNode rootDecodedNode = new X690DecodedNode();

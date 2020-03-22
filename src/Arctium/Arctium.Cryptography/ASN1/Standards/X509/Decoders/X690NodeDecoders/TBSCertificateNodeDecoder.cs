@@ -2,7 +2,7 @@
 using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
-using X500D = Arctium.Cryptography.ASN1.Standards.X500.Decoders.X690NodeDecoders;
+using X500D = Arctium.Cryptography.ASN1.Standards.X501.Decoders.X690NodeDecoders;
 using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders;
 using Arctium.Cryptography.ASN1.ObjectSyntax.Types;
 using System;
@@ -15,7 +15,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.NodeDecoders.X690NodeDecoders
     {
         ValidityNodeDecoder validityDecoder = new ValidityNodeDecoder();
         AlgorithmIdentifierModelNodeDecoder algoIdDecoder = new AlgorithmIdentifierModelNodeDecoder();
-        X500D.NameDecoder nameDecoder = new X500D.NameDecoder();
+        X500D.NameNodeDecoder nameDecoder = new X500D.NameNodeDecoder();
 
 
 
