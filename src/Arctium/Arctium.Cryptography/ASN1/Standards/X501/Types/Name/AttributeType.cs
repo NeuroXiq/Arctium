@@ -2,7 +2,7 @@
 {
     public enum AttributeType
     {
-        // type that receiver MUST process
+        // type that receiver MUST process ()x509
         Country,
         Organization,
         OrganizationalUnit,
@@ -13,7 +13,7 @@
 
         DomainComponent,
 
-        // additional types that receiver SHOULD process
+        // additional types that receiver SHOULD process ()x509
         Locality,
         Title,
         Surname,

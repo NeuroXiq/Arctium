@@ -16,10 +16,17 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690
         public long FrameOffset;
         public long ContentOffset { get { return FrameOffset + Frame.FrameLength; } }
         public long ContentLength;
+        public int ConstructedCount { get { return ConstructedContent.Count; } }
 
         public List<X690DecodedNode> ConstructedContent;
 
-        public X690DecodedNode this[int i] { get { return ConstructedContent[i]; } }
+        public X690DecodedNode this[int i]
+        {
+            get
+            {
+                return ConstructedContent[i];
+            }
+        }
 
         public X690DecodedNode()
         {
@@ -96,6 +103,10 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690
 #if DEBUG
         public override string ToString()
         {
+            // for debug purposes (when cursor hover this class) 
+            // values (if type is constructed) are shown and are easy to see 
+            // instead of searching what is in constructed list (and unwinding object tree)
+
             string constructedContent = "";
             int i = 0;
             if (Frame.PC == PCType.Constructed)

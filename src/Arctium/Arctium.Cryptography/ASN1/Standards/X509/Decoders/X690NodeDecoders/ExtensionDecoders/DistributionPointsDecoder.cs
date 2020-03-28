@@ -100,7 +100,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
             else
             {
                 // ?? 
-                throw new X590DecodingException(
+                throw new X509DecodingException(
                     "Cannot find valid Context-Specific tag for " +
                     "DistributionPoint object in CRLDistributionPoint Extension");
             }

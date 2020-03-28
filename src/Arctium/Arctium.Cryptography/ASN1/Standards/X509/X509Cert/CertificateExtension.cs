@@ -12,5 +12,12 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
             ExtensionType = type;
             IsCritical = isCritical;
         }
+
+#if DEBUG
+        public override string ToString()
+        {
+            return this.GetType().Name;
+        }
+#endif
     }
 }

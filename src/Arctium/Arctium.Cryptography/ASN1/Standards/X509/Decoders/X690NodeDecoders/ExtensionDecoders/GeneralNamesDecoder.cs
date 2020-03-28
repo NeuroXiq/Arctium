@@ -2,41 +2,32 @@
 using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Standards.X509.Types;
-using Arctium.Shared.Helpers.Buffers;
 using System;
-using System.Collections.Generic;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
     public class GeneralNamesDecoder
     {
-        public GeneralName[] DecodeGeneralNames(X690DecodedNode gnameNodes)
+        public GeneralName DecodeGeneralName(X690DecodedNode node)
         {
-            var sequence = gnameNodes;
-            List<GeneralName> decoded = new List<GeneralName>();
-
-            foreach (var node in sequence)
+            long number = node.Frame.TagNumber;
+            GeneralName decodedGeneralName;
+            // choice  [0 - 8], EXPLICIT tags
+            switch (number)
             {
-                long number = node.Frame.TagNumber;
-                GeneralName decodedGeneralName;
-                // choice  [0 - 8], EXPLICIT tags
-                switch (number)
-                {
-                    case 6:
-                        decodedGeneralName = DecodeURI(node);
-                        break;
-                    case 2:
-                        decodedGeneralName = DecodeDnsName(node);
-                        break;
-                    default:
-                        throw new NotSupportedException("Not supported decoding for GeneralName (X590) for number " + number);
-                }
-
-                decoded.Add(decodedGeneralName);
+                case 6:
+                    decodedGeneralName = DecodeURI(node);
+                    break;
+                case 2:
+                    decodedGeneralName = DecodeDnsName(node);
+                    break;
+                default:
+                    throw new NotSupportedException("Not supported decoding for GeneralName (X590) for number " + number);
             }
 
-            return decoded.ToArray();
+            return decodedGeneralName;
         }
+
 
         private GeneralName DecodeURI(X690DecodedNode node)
         {

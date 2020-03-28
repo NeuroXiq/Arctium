@@ -32,7 +32,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
                 throw new KeyNotFoundException($"{nameof(ExtensionsDecoder)}: " + 
                     $"ExtensionType of {nameof(model)} parameter not found in decoding functions dictionary. " +
                     $"Enumerated ExtensionType (not found): {type.ToString()}. " +
-                    $"model OID: {model.ExtId.ToString()} ");
+                    $"CertificateModel OID: {model.ExtId.ToString()} ");
             }
 
             var extensionDecoder = map[type];
@@ -49,12 +49,26 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
 
         private void InitializeDictionaryMap()
         {
-           map[ExtensionType.AuthorityKeyIdentifier] = new AuthorityKeyIdentifierDecoder();
-           map[ExtensionType.SubjectKeyIdentifier] = new SubjectKeyIdentifierDecoder();
-           map[ExtensionType.SubjectAltName] = new SubjectAltNameDecoder();
-           map[ExtensionType.KeyUsage] = new KeyUsageDecoder();
-           map[ExtensionType.ExtendedKeyUsage] = new ExtendedKeyUsageDecoder();
-           map[ExtensionType.CRLDistributionPoints] = new CRLDistributionPointsDecoder();
+            map[ExtensionType.AuthorityKeyIdentifier] = new AuthorityKeyIdentifierDecoder();
+            map[ExtensionType.SubjectKeyIdentifier] = new SubjectKeyIdentifierDecoder();
+            map[ExtensionType.SubjectAltName] = new SubjectAltNameDecoder();
+            map[ExtensionType.KeyUsage] = new KeyUsageDecoder();
+            map[ExtensionType.ExtendedKeyUsage] = new ExtendedKeyUsageDecoder();
+            map[ExtensionType.CRLDistributionPoints] = new CRLDistributionPointsDecoder();
+            map[ExtensionType.CertificatePolicy] = new CertificatePolicyDecoder();
+            map[ExtensionType.AuthorityInfoAccess] = new AuthorityInfoAccessDecoder();
+            map[ExtensionType.BasicConstraints] = new BasicConstraintsDecoder();
+            map[ExtensionType.SCTL] = new SCTLDecoder();
+
+            //[ExtensionType.KeyIdentifier] = null;
+            //[ExtensionType.BasicConstraint
+            //[ExtensionType.NameConstraint
+            //[ExtensionType.InhibitAntipolicy
+            
+            //[ExtensionType.KeyUsage,
+            //[ExtensionType.Authority,
+            //[ExtensionType.Policy,
+
         }
 
         /// <summary>
@@ -64,9 +78,21 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
         /// encoded general name values as a implicitly tagged CHOICE [0-8 tag number]
         /// </param>
         /// <returns>Decoded general name list</returns>
-        public static GeneralName[] DecodeGeneralNames(X690DecodedNode x690DecodedNode)
+        public static GeneralName[] DecodeGeneralNames(X690DecodedNode sequenceOfGeneralNames)
         {
-            return generalNamesDecoder.DecodeGeneralNames(x690DecodedNode);
+            List<GeneralName> decodedNames = new List<GeneralName>();
+            foreach (var node in sequenceOfGeneralNames)
+            {
+                var decoded = generalNamesDecoder.DecodeGeneralName(node);
+                decodedNames.Add(decoded);
+            }
+
+            return decodedNames.ToArray();
         }
+        public static GeneralName DecodeGeneralName(X690DecodedNode generalNameNode)
+        {
+            return generalNamesDecoder.DecodeGeneralName(generalNameNode);
+        }
+
     }
 }

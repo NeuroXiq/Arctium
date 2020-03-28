@@ -6,6 +6,10 @@
         Rfc822Name,
         DNSName,
         X400Address,
+
+        /// <summary>
+        /// X501 Name
+        /// </summary>
         DirectoryName,
         EdiPartyName,
         UniformResourceIdentifier,

@@ -29,7 +29,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
         public static KeyUsageExtension.KeyUsageFlags DecodeKeyUsageFlags(BitString bitstring)
         {
             if (bitstring.Length > 9)
-                throw new X590DecodingException("Invalid coding of the KeyUsageExtension.KeyUsageFlags BitString value. LEngth must be in range 0-9");
+                throw new X509DecodingException("Invalid coding of the KeyUsageExtension.KeyUsageFlags BitString value. LEngth must be in range 0-9");
 
             byte flags0 = bitstring.Value[0];
 

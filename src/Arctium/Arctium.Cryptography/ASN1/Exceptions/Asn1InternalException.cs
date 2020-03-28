@@ -2,6 +2,7 @@
 
 namespace Arctium.Cryptography.ASN1.Exceptions
 {
+    // ASN1/ Investigate and remove this class (?)
     class Asn1InternalException : Exception
     {
         

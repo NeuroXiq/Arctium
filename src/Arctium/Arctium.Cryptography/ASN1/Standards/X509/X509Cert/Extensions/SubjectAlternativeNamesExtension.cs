@@ -6,7 +6,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions
     {
         public GeneralName[] GeneralNames { get; private set; }
 
-        public SubjectAlternativeNamesExtension(bool isCritical, GeneralName[] generalNames) : base(ExtensionType.SubjectAlternativeName, isCritical)
+        public SubjectAlternativeNamesExtension(bool isCritical, GeneralName[] generalNames) : base(ExtensionType.SubjectAltName, isCritical)
         {
             GeneralNames = generalNames;
         }

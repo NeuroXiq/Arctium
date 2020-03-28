@@ -31,7 +31,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.NodeDecoders.X690NodeDecoders
             }
             else
             {
-                throw new X590DecodingException("Invalid Tag value of the time in validity sequence");
+                throw new X509DecodingException("Invalid Tag value of the time in validity sequence");
             }
         }
     }

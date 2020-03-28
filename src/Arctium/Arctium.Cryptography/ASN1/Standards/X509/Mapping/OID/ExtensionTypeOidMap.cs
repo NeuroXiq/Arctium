@@ -2,6 +2,7 @@
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 using Arctium.Shared.Helpers.DataStructures;
 using System.Collections.Generic;
+using static Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID.X509CommonOidsBuilder;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
 {
@@ -29,11 +30,6 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
             return map[oid];
         }
 
-        static ObjectIdentifier idce(ulong last)
-        {
-            return new ObjectIdentifier(2, 5, 29, last);
-        }
-
         static DoubleDictionary<ObjectIdentifier, ExtensionType> map = new DoubleDictionary<ObjectIdentifier, ExtensionType>()
         {
             [ExtensionType.AuthorityKeyIdentifier] = idce(35),
@@ -41,7 +37,23 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
             [ExtensionType.SubjectAltName] = idce(17),
             [ExtensionType.KeyUsage] = idce(15),
             [ExtensionType.ExtendedKeyUsage] = idce(37),
-            [ExtensionType.CRLDistributionPoints] = idce(31)
+            [ExtensionType.CRLDistributionPoints] = idce(31),
+            [ExtensionType.CertificatePolicy] = idce(32),
+            [ExtensionType.AuthorityInfoAccess] = idpe(1),
+            [ExtensionType.BasicConstraints] = idce(19),
+            [ExtensionType.SCTL] = new ObjectIdentifier(1, 3, 6, 1, 4, 1, 11129, 2, 4, 2),
+
+
+
+            //[ExtensionType.KeyIdentifier] = null;
+            //[ExtensionType.BasicConstraint
+            //[ExtensionType.NameConstraint
+            //[ExtensionType.InhibitAntipolicy
+            //[ExtensionType.SubjectAlternativeName
+            //[ExtensionType.Authority,
+            //[ExtensionType.Policy,
+
+
         };
     }
 }
