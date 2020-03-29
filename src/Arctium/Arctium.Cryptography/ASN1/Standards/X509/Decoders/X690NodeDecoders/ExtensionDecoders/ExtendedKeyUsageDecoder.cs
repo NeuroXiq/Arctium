@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
-    public class ExtendedKeyUsageDecoder : IExtensionDecoder
+    class ExtendedKeyUsageDecoder : IExtensionDecoder
     {
         DerDeserializer derDeserializer = new DerDeserializer();
 

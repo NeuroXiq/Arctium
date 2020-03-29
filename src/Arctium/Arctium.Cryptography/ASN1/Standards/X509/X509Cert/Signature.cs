@@ -1,0 +1,46 @@
+﻿using Arctium.Cryptography.ASN1.Shared.Exceptions;
+using System;
+
+namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
+{
+    public class Signature
+    {
+        public SignatureAlgorithm AlgorithmType { get; private set; }
+
+        object genericParmsValue;
+
+        /// <summary>
+        /// Returns typed representation of the parameters for specific 
+        /// signature algorithm. Type of the returned value depends 
+        /// on <see cref="AlgorithmType"/>
+        /// </summary>
+        /// <typeparam name="T">Parameters to convert</typeparam>
+        /// <returns></returns>
+        /// <exception cref="ASN1InvalidCastException">
+        /// Throws when cast is invalid or parameters 
+        /// for specific algorithm do not extists (null)
+        /// </exception>
+        public T GetParms<T>()
+        {
+            if (genericParmsValue == null)
+            {
+                throw new ASN1CastException(null, typeof(T),
+                    "Current value of the parameters are null and cannot be casted to typed object. " +
+                    "AlgorithmType indicates, that parameters do not exists for this type of signing");
+            }
+
+            return (T)genericParmsValue;
+        }
+
+        public T GetSignatureValue<T>()
+        {
+            throw new NotSupportedException();
+        }
+
+        internal Signature(SignatureAlgorithm algorithm, object signatureValue)
+        {
+            AlgorithmType = algorithm;
+            genericParmsValue = signatureValue;
+        }
+    }
+}

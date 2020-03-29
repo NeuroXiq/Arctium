@@ -2,10 +2,16 @@
 {
     public enum SignatureAlgorithm
     {
-        md2WithRSAEncryption,
-        md5WithRSAEncryption,
-        sha_1WithRSAEncryption,
-        dsaWithSha1,
-        ecdsaWithSHA1,
+        SHA1WithRSAEncryption,
+        DSAWithSha1,
+        ECDSAWithSHA1,
+
+        // RSA
+        SHA224WithRSAEncryption,
+        SHA384WithRSAEncryption,
+        SHA512WithRSAEncryption,
+        SHA256WithRSAEncryption,
+        MD2WithRSAEncryption,
+        MD5WithRSAEncryption,
     }
 }

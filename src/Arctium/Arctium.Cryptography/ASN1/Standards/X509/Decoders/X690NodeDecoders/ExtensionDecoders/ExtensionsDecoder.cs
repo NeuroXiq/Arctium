@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
-    public class ExtensionsDecoder
+    class ExtensionsDecoder
     {
         // extension value to function
         Dictionary<ExtensionType, IExtensionDecoder> map;

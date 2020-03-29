@@ -4,7 +4,7 @@ using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
-    public interface IExtensionDecoder
+    interface IExtensionDecoder
     {
         CertificateExtension DecodeExtension(ExtensionModel model);
     }

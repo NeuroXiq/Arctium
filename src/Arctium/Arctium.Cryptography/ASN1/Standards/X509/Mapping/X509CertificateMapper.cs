@@ -16,11 +16,13 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
 {
     public class X509CertificateMapper
     {
-        PublicKeyMapper publicKeyMap;
+        SubjectPublicKeyInfoMapper subjectPublicKeyInfoMapper;
+        SignatureMapper signatureAlgoIdentifierMapper;
 
         public X509CertificateMapper()
         {
-            publicKeyMap = new PublicKeyMapper();
+            subjectPublicKeyInfoMapper = new SubjectPublicKeyInfoMapper();
+            signatureAlgoIdentifierMapper = new SignatureMapper();
         }
 
         public X509Certificate MapFromModel(X509CertificateModel modelObject)
@@ -41,14 +43,11 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
             cert.SubjectUniqueId = tbs.SubjectUniqueId.Value;
 
             cert.Extensions = MapExtensions(modelObject.TBSCertificate.Extensions);
-            //cert.PublicKeyAlgorithmParams = MapAlgorithmIdParams(modelObject.TBSCertificate.SubjectPublicKeyInfo.Algorithm);
-            //cert.SignatureAlgorithmParams = MapAlgorithmIdParams(modelObject.SignatureAlgorithm);
-            //cert.PublicKey = publicKeyMap.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm.TypedValue,
-            //    modelObject.TBSCertificate.SubjectPublicKeyInfo.SubjectPublicKey.TypedValue);
 
-            //return cert;
+            cert.Signature = signatureAlgoIdentifierMapper.Map(modelObject.TBSCertificate.Signature);
+            cert.SubjectPublicKey = subjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
 
-            return null;
+            return cert;
         }
 
         private CertificateExtension[] MapExtensions(ExtensionModel[] extensions)

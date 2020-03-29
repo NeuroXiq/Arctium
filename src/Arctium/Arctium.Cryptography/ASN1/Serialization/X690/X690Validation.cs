@@ -44,7 +44,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690
         }
 
         /// <summary>
-        /// If tags of the <paramref name="node"/> do not match any <paramref name="expectedTags"/>
+        /// If tag of the <paramref name="node"/> do not match any <paramref name="expectedTags"/>
         /// throws exception
         /// </summary>
         /// <param name="node"></param>

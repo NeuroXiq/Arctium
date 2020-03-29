@@ -34,7 +34,6 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
     {
         public int Version { get; internal set; }
         public byte[] SerialNumber { get; internal set; }
-        public X509Algorithm<SignatureAlgorithm> SignatureAlgorithm { get; internal set; }
         public byte[] RawSignatureValue { get; internal set; }
         public X500T.Name Issuer { get; internal set; }
         public DateTime ValidNotBefore { get; internal set; }
@@ -43,6 +42,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
         public byte[] IssuerUniqueId { get; internal set; }
         public byte[] SubjectUniqueId { get; internal set; }
         public CertificateExtension[] Extensions { get; internal set; }
-        public X509Algorithm<PublicKeyAlgorithm> PublicKey { get; internal set; }
+        public Signature Signature { get; internal set; }
+        public SubjectPublicKeyInfo SubjectPublicKey { get; internal set; }
     }
 }

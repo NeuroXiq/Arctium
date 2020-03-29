@@ -2,12 +2,14 @@
 {
     public enum PublicKeyAlgorithm
     {
+        RSAEncryption,
         ECPublicKey,
-        rsaEncryption,
-        dhpublicnumber,
+
+        // ECPublicKey,
+        // dhpublicnumber,
         /// <summary>
         /// ECDSA and ECDH public keys
         /// </summary>
-        ecPublicKey
+        //ecPublicKey
     }
 }

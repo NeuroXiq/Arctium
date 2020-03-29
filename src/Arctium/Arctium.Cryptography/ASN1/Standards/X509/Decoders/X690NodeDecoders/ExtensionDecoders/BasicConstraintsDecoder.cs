@@ -10,7 +10,7 @@ using ASN = Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
-    public class BasicConstraintsDecoder : IExtensionDecoder
+    class BasicConstraintsDecoder : IExtensionDecoder
     {
         DerDeserializer derDeserializer = new DerDeserializer();
         X690Validation valid = new X690Validation(nameof(BasicConstraintsDecoder));

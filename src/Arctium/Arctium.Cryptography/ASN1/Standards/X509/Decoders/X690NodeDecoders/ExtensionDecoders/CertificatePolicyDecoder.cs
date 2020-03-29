@@ -11,7 +11,7 @@ using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
-    public class CertificatePolicyDecoder : IExtensionDecoder
+    class CertificatePolicyDecoder : IExtensionDecoder
     {
         DerDeserializer derDecoder = new DerDeserializer();
         X690Validation validation = new X690Validation(nameof(CertificatePolicyDecoder));

@@ -8,7 +8,7 @@ using System;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
 {
-    public class KeyUsageDecoder : IExtensionDecoder
+    class KeyUsageDecoder : IExtensionDecoder
     {
         DerDeserializer derDeserializer = new DerDeserializer();
         public CertificateExtension DecodeExtension(ExtensionModel arg)

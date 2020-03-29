@@ -88,7 +88,9 @@ namespace Arctium.Cryptography.ASN1.Shared.Mappings.OID
             {
                 string message =
                    $"{MappingName}: " +
-                   $"Not found mapping from OID to {typeof(T).Name} Type";
+                   $"Not found mapping from OID to {typeof(T).Name} Type" +
+                   $"OID: {key.ToString()}";
+
                    throw new KeyNotFoundException(message);
             }
         }
@@ -99,7 +101,8 @@ namespace Arctium.Cryptography.ASN1.Shared.Mappings.OID
             {
                 string message =
                    $"{MappingName}: " +
-                   $"Not found mapping {typeof(T).Name} to OID";
+                   $"Not found mapping {typeof(T).Name} to OID" +
+                   $"Enum: {key.ToString()}";
 
                 throw new KeyNotFoundException(message);
             }

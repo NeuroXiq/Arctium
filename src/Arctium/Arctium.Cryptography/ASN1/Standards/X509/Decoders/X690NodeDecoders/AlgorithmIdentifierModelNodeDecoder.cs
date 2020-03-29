@@ -3,13 +3,10 @@ using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
 using Arctium.Shared.Helpers.Buffers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders
 {
-    public class AlgorithmIdentifierModelNodeDecoder : IX690NodeDecoder<AlgorithmIdentifierModel>
+    class AlgorithmIdentifierModelNodeDecoder : IX690NodeDecoder<AlgorithmIdentifierModel>
     {
         public AlgorithmIdentifierModel Decode(X690DecodedNode node)
         {
@@ -18,11 +15,14 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders
 
             if (node.ConstructedContent.Count == 2)
             {
-                if (node[1].Frame.Tag != BuildInTag.Null)
+                var parmsNode = node[1];
+                if (parmsNode.Frame.Tag != BuildInTag.Null)
                 {
-                    long len = node[1].ContentLength;
-                    parameters = new byte[len];
-                    ByteBuffer.Copy(node.DataBuffer, node[1].FrameOffset, parameters, 0, len);
+                    // copy ALL der-encoded parameters bytes
+
+                    long encodedParmsLength = parmsNode.ContentLength + parmsNode.Frame.FrameLength;
+                    parameters = new byte[encodedParmsLength];
+                    ByteBuffer.Copy(node.DataBuffer, node[1].FrameOffset, parameters, 0, encodedParmsLength);
                 }
             }
 

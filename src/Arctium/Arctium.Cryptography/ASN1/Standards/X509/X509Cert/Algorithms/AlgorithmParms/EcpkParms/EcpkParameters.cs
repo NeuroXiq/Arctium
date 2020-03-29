@@ -2,7 +2,7 @@
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
-    public struct EcpkParameters
+    public class EcpkParameters
     {
         public enum EcpkParmsType
         {
@@ -11,19 +11,40 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
             ImplicitlyCA
         };
 
-        public EcpkParmsType ChoiceType { get; private set; }
+        public EcpkParmsType ParmsType { get; private set; }
 
         private object value;
 
+        /// <summary>
+        /// Creates instance of <see cref="EcpkParameters"/> with a type
+        /// <see cref="EcpkParmsType.ImplicitlyCA"/> 
+        /// </summary>
+        public EcpkParameters()
+        {
+            ParmsType = EcpkParmsType.ImplicitlyCA;
+        }
+
+
+        public EcpkParameters(ObjectIdentifier nameCurveOid)
+        {
+            ParmsType = EcpkParmsType.NamedCurve;
+            value = nameCurveOid;
+        }
+
+        public EcpkParameters(ECParameters ecParameters)
+        {
+            ParmsType = EcpkParmsType.ECParameters;
+            value = ecParameters;
+        }
+
         public T GetParams<T>()
         {
-            switch (ChoiceType)
+            switch (ParmsType)
             {
                 case EcpkParmsType.ECParameters:
                     if (typeof(ECParameters) == typeof(T))
                         return (T)value;
                     else throw new System.Exception("Expected ECParameters type as generic <T>");
-                    break;
                 case EcpkParmsType.NamedCurve:
                     if (typeof(T) != typeof(ObjectIdentifier)) throw new System.Exception("expeceted OID");
                     return (T)value;

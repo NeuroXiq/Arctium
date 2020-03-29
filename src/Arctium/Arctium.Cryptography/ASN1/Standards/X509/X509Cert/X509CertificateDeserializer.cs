@@ -34,7 +34,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
             
             X509Certificate certificate = new X509CertificateMapper().MapFromModel(certificateModel);
 
-            return null;
+            return certificate;
         }
     }
 }

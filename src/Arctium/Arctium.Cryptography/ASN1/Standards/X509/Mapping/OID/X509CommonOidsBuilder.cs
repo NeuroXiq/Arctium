@@ -29,5 +29,10 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
         {
             return new ObjectIdentifier(2, 5, 29, last);
         }
+
+        public static ObjectIdentifier pkcs1(ulong last)
+        {
+            return new ObjectIdentifier(1, 2, 840, 113549, 1, 1, last);
+        }
     }
 }

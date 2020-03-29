@@ -15,7 +15,7 @@ namespace DEBUG_ConsoleApplicationForTests
     {
         static void Main(string[] args)
         {
-            new X509CertificateDeserializer().FromPem("d:\\GTSRootR1.crt");
+            
         }
     }
 }

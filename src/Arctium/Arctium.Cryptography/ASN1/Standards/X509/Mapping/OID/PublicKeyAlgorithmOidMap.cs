@@ -1,39 +1,27 @@
-﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
+﻿using Arctium.Cryptography.ASN1.Shared.Mappings.OID;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
-using Arctium.Shared.Helpers.DataStructures;
-using System.Collections.Generic;
+using static Arctium.Cryptography.ASN1.Standards.X509.X509Cert.PublicKeyAlgorithm;
+using static Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID.X509CommonOidsBuilder;
+using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
 {
     public static class PublicKeyAlgorithmOidMap
     {
-        public static ObjectIdentifier Get(PublicKeyAlgorithm publicKeyAlgorithm)
-        {
-            if (!map.ContainsKey(publicKeyAlgorithm))
-            {
-                throw new KeyNotFoundException($"{nameof(PublicKeyAlgorithmOidMap)}: " +
-                    $"Provided key {publicKeyAlgorithm.ToString()} was not found in current mapping");
-            }
+        static EnumToOidMap<PublicKeyAlgorithm> map = new EnumToOidMap<PublicKeyAlgorithm>(nameof(PublicKeyAlgorithm));
 
-            return map[publicKeyAlgorithm];
-        }
-        public static PublicKeyAlgorithm Get(ObjectIdentifier oid)
-        {
-            if (!map.ContainsKey(oid))
-            {
-                throw new KeyNotFoundException($"{nameof(PublicKeyAlgorithmOidMap)}: " +
-                    $"Provided key OID: {oid.ToString()} was not found in current mapping");
-            }
+        public static PublicKeyAlgorithm Get(ObjectIdentifier oid) => map[oid];
+        public static ObjectIdentifier Get(PublicKeyAlgorithm algorithm) => map[algorithm];
 
-            return map[oid];
+        static PublicKeyAlgorithmOidMap()
+        {
+            Initialize();
         }
 
-        static DoubleDictionary<ObjectIdentifier, PublicKeyAlgorithm> map = new DoubleDictionary<ObjectIdentifier, PublicKeyAlgorithm>()
+        private static void Initialize()
         {
-            [PublicKeyAlgorithm.rsaEncryption] = new ObjectIdentifier(1, 2, 840, 113549, 1, 1),
-            [PublicKeyAlgorithm.dhpublicnumber] = new ObjectIdentifier(1, 2, 840, 10046, 2, 1),
-            [PublicKeyAlgorithm.ecPublicKey] = new ObjectIdentifier(1, 2, 840, 10045, 2, 1),
-
-        };
+            map[RSAEncryption] = pkcs1(1);
+            map[ECPublicKey] = new ObjectIdentifier(1, 2, 840, 10045, 2, 1);
+        }
     }
 }

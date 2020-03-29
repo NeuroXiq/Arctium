@@ -1,44 +1,36 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
+using Arctium.Cryptography.ASN1.Shared.Mappings.OID;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
-using Arctium.Shared.Helpers.DataStructures;
-using System.Collections.Generic;
+using static Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID.X509CommonOidsBuilder;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
 {
     public static class SignatureAlgorithmOidMap
     {
-        public static ObjectIdentifier Get(SignatureAlgorithm signatureAlgorithm)
-        {
-            if (!map.ContainsKey(signatureAlgorithm))
-            {
-                throw new KeyNotFoundException($"{nameof(SignatureAlgorithmOidMap)}: " +
-                    $"Provided key {signatureAlgorithm.ToString()} was not found in current mapping");
-            }
+        static EnumToOidMap<SignatureAlgorithm> map = new EnumToOidMap<SignatureAlgorithm>(nameof(SignatureAlgorithmOidMap));
 
-            return map[signatureAlgorithm];
-        }
-        public static SignatureAlgorithm Get(ObjectIdentifier oid)
-        {
-            if (!map.ContainsKey(oid))
-            {
-                throw new KeyNotFoundException($"{nameof(SignatureAlgorithmOidMap)}: " +
-                    $"Provided key OID: {oid.ToString()} was not found in current mapping");
-            }
+        public static SignatureAlgorithm Get(ObjectIdentifier oid) => map[oid];
+        public static ObjectIdentifier Get(SignatureAlgorithm algorithm) => map[algorithm];
 
-            return map[oid];
+
+        static SignatureAlgorithmOidMap()
+        {
+            Initialize();
         }
 
-
-        public static DoubleDictionary<ObjectIdentifier, SignatureAlgorithm> map = new DoubleDictionary<ObjectIdentifier, SignatureAlgorithm>()
+        private static void Initialize()
         {
-            [SignatureAlgorithm.md2WithRSAEncryption] = new ObjectIdentifier(1, 2, 840, 113549, 1, 1, 2),
-            [SignatureAlgorithm.md5WithRSAEncryption] = new ObjectIdentifier(1,2,840,113549,1,1,4),
-            [SignatureAlgorithm.sha_1WithRSAEncryption] = new ObjectIdentifier(1,2,840,113549,1,1,5),
-            [SignatureAlgorithm.dsaWithSha1] = new ObjectIdentifier(1,2,840,10040,4,3),
-            [SignatureAlgorithm.ecdsaWithSHA1] = new ObjectIdentifier(1,2,840,10045,4,1),
 
+            //map[SignatureAlgorithm.MD5WithRSAEncryption]  = 1,4),
+            //map[SignatureAlgorithm.SHA1WithRSAEncryption] = 1,5),
+            map[SignatureAlgorithm.MD2WithRSAEncryption] = pkcs1(2);
+            map[SignatureAlgorithm.DSAWithSha1] = pkcs1(3);
+            map[SignatureAlgorithm.ECDSAWithSHA1] = pkcs1(1);
 
-
-        };
+            map[SignatureAlgorithm.SHA224WithRSAEncryption] = pkcs1(14);
+            map[SignatureAlgorithm.SHA256WithRSAEncryption] = pkcs1(11);
+            map[SignatureAlgorithm.SHA384WithRSAEncryption] = pkcs1(12);
+            map[SignatureAlgorithm.SHA512WithRSAEncryption] = pkcs1(13);
+        }
     }
 }
