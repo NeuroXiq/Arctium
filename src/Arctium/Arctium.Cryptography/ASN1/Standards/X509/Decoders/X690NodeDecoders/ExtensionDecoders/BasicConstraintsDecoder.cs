@@ -17,38 +17,43 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
         public CertificateExtension DecodeExtension(ExtensionModel model)
         {
             X690DecodedNode bcSequence = derDeserializer.Deserialize(model.ExtnValue.Value)[0];
+            int count = bcSequence.ConstructedCount;
 
-            if (bcSequence.ConstructedCount == 0)
+            if (count == 0)
                 return new BasicConstraintsExtension(false, model.Critical);
 
             valid.MinMax(bcSequence, 1, 2);
 
-            int next = 0;
             bool ca = false;
-            int pathLen = -1;
             bool pathLenPresent = false;
+            int pathLen = -1;
 
-            if (bcSequence[0].TagEqual(BuildInTag.Boolean))
+            if (count == 1)
             {
-                ca = DerDecoders.DecodeWithoutTag<ASN.Boolean>(bcSequence[0]);
-                next++;
+                if (bcSequence[0].TagEqual(BuildInTag.Boolean))
+                {
+                    ca = DerDecoders.DecodeWithoutTag<ASN.Boolean>(bcSequence[0]);
+                }
+                else
+                {
+                    pathLenPresent = true;
+                    checked
+                    {
+                        pathLen = (int)DerDecoders.DecodeWithoutTag<Integer>(bcSequence[0]);
+                    }
+                }
+
             }
-            if (bcSequence[next].TagEqual(BuildInTag.Integer))
+            else
             {
-                uint integer = DerDecoders.DecodeWithoutTag<Integer>(bcSequence[1]);
+                pathLenPresent = true;
+                ca = DerDecoders.DecodeWithoutTag<ASN.Boolean>(bcSequence[0]);
                 checked
                 {
-                    pathLen = (int)integer;
+                    pathLen = (int)DerDecoders.DecodeWithoutTag<Integer>(bcSequence[0]);
                 }
-                pathLenPresent = true;
-                next++;
             }
 
-            // not processed some tags, something is invalid with tags
-            if (next != bcSequence.ConstructedCount)
-                throw new X509DecodingException(
-                    "Fields in BasicConstraints extensions" + 
-                    " are invalid. Some tag(s) are unrecognized");
 
             if (pathLenPresent)
             {

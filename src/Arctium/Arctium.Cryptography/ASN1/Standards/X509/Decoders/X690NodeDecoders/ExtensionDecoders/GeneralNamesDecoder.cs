@@ -1,7 +1,7 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
-using Arctium.Cryptography.ASN1.Standards.X509.Types;
+using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 using System;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders

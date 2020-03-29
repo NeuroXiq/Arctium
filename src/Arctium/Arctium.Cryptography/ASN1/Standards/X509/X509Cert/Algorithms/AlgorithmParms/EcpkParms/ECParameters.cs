@@ -1,7 +1,7 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 using System;
 
-namespace Arctium.Cryptography.ASN1.Standards.X509.Types
+namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     /// <summary>
     /// Variation of the choice type <see cref="EcpkParameters"/> algorithm parameters

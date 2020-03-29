@@ -5,13 +5,15 @@ Dev overview:
 Directy info:
 **Decoders/X690Nodes../**: Cefinitions for DER  encoded structures,
 extensions decoders are located in subdir 'extensionDecoders'
+
 **Mapping**: Contains mapping from CertificateModel to X509Certificate object
+
 **Mapping/OID**: Contains static classes which maps ObjectIdentifies (1.2.3.4.5 ... etc.)
 to Enumerated types/constant values etc (mapping are bidirectional,
 from enum/const to OID and reverse).
-**Model**:  contains classes of 'models' used in this namespace,
+**Model**:  contains classes of 'models' used in this namespace
+
 **X509Cert**:  This is a final area where ready-to-work certificate entities are located. 
-**Types**: Types defined by X509 Certificate standard rewrited to classes/structures
 
 What is 'model' class :
 'Model' classes are something between final class ready-to-use and from X690 DER

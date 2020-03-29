@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Arctium.Cryptography.ASN1.Standards.X509.Types
+namespace Arctium.Cryptography.ASN1.Standards.X509.Model
 {
     public struct Validity
     {

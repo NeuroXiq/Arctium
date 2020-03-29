@@ -1,10 +1,16 @@
-﻿namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
+﻿namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions
 {
     /// <summary>
     /// Represents type of the <see cref="CertificateExtension"/> object
     /// </summary>
     public enum ExtensionType
     {
+        /// <summary>
+        /// Special purpose extensions type. Indicates undefined/unknown extenions 
+        /// in current implementation of X509 standard
+        /// </summary>
+        Unknown,
+
         AuthorityKeyIdentifier,
         KeyIdentifier,
         /// <summary>

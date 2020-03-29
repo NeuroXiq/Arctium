@@ -1,6 +1,6 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 
-namespace Arctium.Cryptography.ASN1.Standards.X509.Types
+namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     public class OtherName
     {

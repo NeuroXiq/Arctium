@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Cryptography.ASN1.Standards.X509.Types
+namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     /// <summary>
     /// Represents Characteristic two parameters for <see cref="ECParameters"/> FieldId.Parameters field.

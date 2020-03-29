@@ -3,8 +3,9 @@ using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
-using Arctium.Cryptography.ASN1.Standards.X509.Types;
+
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
+using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
 using System;
 using System.Collections.Generic;
 
@@ -25,30 +26,31 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
 
         public CertificateExtension MapModelToExtension(ExtensionModel model)
         {
-            ExtensionType type = ExtensionTypeOidMap.Get(model.ExtId);
+            IExtensionDecoder extensionDecoder;
 
-            if (!map.ContainsKey(type))
+            if (!ExtensionTypeOidMap.Contains(model.ExtId))
             {
-                throw new KeyNotFoundException($"{nameof(ExtensionsDecoder)}: " + 
-                    $"ExtensionType of {nameof(model)} parameter not found in decoding functions dictionary. " +
-                    $"Enumerated ExtensionType (not found): {type.ToString()}. " +
-                    $"CertificateModel OID: {model.ExtId.ToString()} ");
+                Console.WriteLine(model.ExtId);
+                extensionDecoder = map[ExtensionType.Unknown];
+
+            }
+            else
+            {
+                ExtensionType type = ExtensionTypeOidMap.Get(model.ExtId);
+                extensionDecoder = map[type];
             }
 
-            var extensionDecoder = map[type];
             CertificateExtension mapped = extensionDecoder.DecodeExtension(model);
 
             return mapped;
         }
 
-        static void MapCommon(ExtensionModel model, out ExtensionType type, out bool isCritical)
-        {
-            type = ExtensionTypeOidMap.Get(model.ExtId);
-            isCritical = model.Critical;
-        }
-
         private void InitializeDictionaryMap()
         {
+            map[ExtensionType.Unknown] = new UnknownExtensionDecoder();
+            
+            // X509 standard extensions
+
             map[ExtensionType.AuthorityKeyIdentifier] = new AuthorityKeyIdentifierDecoder();
             map[ExtensionType.SubjectKeyIdentifier] = new SubjectKeyIdentifierDecoder();
             map[ExtensionType.SubjectAltName] = new SubjectAltNameDecoder();
@@ -58,7 +60,10 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
             map[ExtensionType.CertificatePolicy] = new CertificatePolicyDecoder();
             map[ExtensionType.AuthorityInfoAccess] = new AuthorityInfoAccessDecoder();
             map[ExtensionType.BasicConstraints] = new BasicConstraintsDecoder();
+
+            // other ()
             map[ExtensionType.SCTL] = new SCTLDecoder();
+            
 
             //[ExtensionType.KeyIdentifier] = null;
             //[ExtensionType.BasicConstraint
@@ -96,3 +101,10 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
 
     }
 }
+
+/*
+throw new KeyNotFoundException($"{nameof(ExtensionsDecoder)}: " + 
+$"ExtensionType of {nameof(model)} parameter not found in decoding functions dictionary. " +
+$"Enumerated ExtensionType (not found): {type.ToString()}. " +
+$"CertificateModel OID: {model.ExtId.ToString()} ");
+*/

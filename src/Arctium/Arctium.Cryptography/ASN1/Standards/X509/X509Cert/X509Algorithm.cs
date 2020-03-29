@@ -2,7 +2,7 @@
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
-    public class X509Algorithm<T> where T: Enum
+    public class X509Algorithm<T>
     {
         public T AlgorithmType { get; private set; }
         public IAlgorithmParms<T> Parameters { get; private set; }

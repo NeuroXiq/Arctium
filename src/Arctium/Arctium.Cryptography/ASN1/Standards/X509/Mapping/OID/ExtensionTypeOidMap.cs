@@ -1,5 +1,6 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
+using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
 using Arctium.Shared.Helpers.DataStructures;
 using System.Collections.Generic;
 using static Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID.X509CommonOidsBuilder;
@@ -8,6 +9,9 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
 {
     public static class ExtensionTypeOidMap
     {
+        public static bool Contains(ExtensionType type) => map.ContainsKey(type);
+        public static bool Contains(ObjectIdentifier oid) => map.ContainsKey(oid);
+
         public static ObjectIdentifier Get(ExtensionType type)
         {
             if (!map.ContainsKey(type))

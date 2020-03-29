@@ -5,7 +5,7 @@ using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Standards.X501.Types;
 using Arctium.Cryptography.ASN1.Standards.X509.Exceptions;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
-using Arctium.Cryptography.ASN1.Standards.X509.Types;
+
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
 using System;

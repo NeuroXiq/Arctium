@@ -1,7 +1,8 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
-using Arctium.Cryptography.ASN1.Standards.X509.Types;
+using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 using Arctium.Shared.Helpers.DataStructures;
 using System.Collections.Generic;
+
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID
 {
