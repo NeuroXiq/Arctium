@@ -18,17 +18,14 @@ for more interesting parts of the documentation.
 |:-------------------------:|:-----------------:|
 |Hash functions             | [HashFunctions]   |
 |ASN.1 Standard             | [ASN1 Standard]   |
-|ASN1. Ber decoder          | [Ber decoder]     |
-|X509 Certificate           | [X509]            |
+|ASN1. Simple Der decoder   | [Der decoder]     |
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
 [HashFunctions]:<docs/Cryptography/HashFunctions/>
-[ASN1 Standard]:<docs/Encoding/ASN1>
-[X509]:<docs/Encoding/IDL/ASN1/x509.md>
 [TLS12 Info]:<docs/Connection/Tls/readme.md>
 [TLS12 examples]:<docs/Connection/Tls/examples.md>
-[Ber decoder]:<docs/Exncoding/IDL/ASN1/x690.md>
+[Der decoder]:<./docs/lookup/asn1-x690-decoder.md>
 
 
 ### Overview of root dirs of documentation
