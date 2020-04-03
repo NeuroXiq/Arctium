@@ -5,9 +5,10 @@
 //
 
 
-using Arctium.Cryptography.ASN1.Serialization.X690;
-using Arctium.Cryptography.ASN1.Serialization.X690.DER;
+using Arctium.Cryptography.ASN1.Standards.X501.Types;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
+using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
+using Arctium.Cryptography.FileFormat.PEM;
 using System;
 using System.IO;
 
@@ -15,21 +16,78 @@ namespace DEBUG_ConsoleApplicationForTests
 {
     class Program
     {
-        static byte[] encodedData = new byte[] {
-            0x30, 0x13, 0x02, 0x01, 0x05, 0x16, 0x0e, 0x41, 0x6e,
-            0x79, 0x62, 0x6f, 0x64, 0x79, 0x20, 0x74, 0x68, 0x65, 0x72, 0x65, 0x3f,
-        };
 
         static void Main(string[] args)
         {
-            DerDeserializer der = new DerDeserializer();
-            X690DecodedNode metadataDecodedNode =  der.Deserialize(encodedData);
+            // certificate deserializer
+            X509CertificateDeserializer deserializer = new X509CertificateDeserializer();
 
-            // always perform this step (get first inner result)
-            X690DecodedNode decodedBytesRootNode = metadataDecodedNode[0];
+            // Certificate can be decoded in following manner:
 
-            // decodedBytesRootNode contains decoded bytes
+            // From Raw Bytes
+            byte[] certificateBytes = File.ReadAllBytes("C:\\some_certificate.cer");
+            X509Certificate certificateFromRawBytes = deserializer.FromBytes(certificateBytes);
+
+            // From PEM file
+
+            X509Certificate certificateFromPem = deserializer.FromPem("C:\\some_pem.crt");
             
+            // Or first decode pem and the raw bytes
+
+            PemFile pemFile = PemFile.FromFile("D:\\some_pem.crt");
+            byte[] decodedPemBytes = pemFile.DecodedData;
+
+            //X509Certificate certificateFromPemToBytes = deserializer.FromBytes(decodedPemBytes);
+
+
+            // Now object is created, examples usage:
+            var cert = certificateFromRawBytes;
+
+            Console.WriteLine(cert.ValidNotAfter);
+            Console.WriteLine(cert.ValidNotBefore);
+            Console.WriteLine(cert.Version);
+
+            RelativeDistinguishedName[] relativeDistinguishedNames = cert.Subject.GetAsRelativeDistinguishedNames();
+            Console.WriteLine("Relative distinguished names:");
+            foreach (var rdn in relativeDistinguishedNames)
+            {
+                foreach (var atv in rdn.AttributeTypeAndValues)
+                {
+                    AttributeType attributeType = atv.Type;
+                    string attributeValue = atv.StringValue();
+                    Console.WriteLine(" " + attributeType.ToString() + "=" + attributeValue);
+                }
+            }
+
+            Console.WriteLine("======== extensions =========");
+
+            CertificateExtension[] extensions = cert.Extensions;
+            foreach (var ext in extensions)
+            {
+                Console.WriteLine("Extensions type: " + ext.ExtensionType.ToString());
+                switch (ext.ExtensionType)
+                {
+                    case ExtensionType.SubjectAltName:
+                        SubjectAlternativeNamesExtension altName = (SubjectAlternativeNamesExtension)ext;
+                        GeneralName[] generalNames = altName.GeneralNames;
+                        Console.WriteLine("General names:");
+                        foreach (var gn in generalNames)
+                        {
+                            Console.WriteLine("  " + gn.ToString());
+                        }
+                        break;
+                    case ExtensionType.Unknown:
+                        break;
+                    case ExtensionType.ExtendedKeyUsage:
+                        break;
+                    case ExtensionType.KeyUsage:
+                        break;
+                    case ExtensionType.SubjectKeyIdentifier:
+                        break;
+                    // and others ....
+                }
+            }
+
         }
     }
 }

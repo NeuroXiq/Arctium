@@ -1,12 +1,8 @@
-﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
-using Arctium.Cryptography.ASN1.Serialization.X690;
-using Arctium.Cryptography.ASN1.Serialization.X690.DER;
+﻿using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
-
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
-using System;
 using System.Collections.Generic;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders
@@ -30,9 +26,11 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.Ext
 
             if (!ExtensionTypeOidMap.Contains(model.ExtId))
             {
-                Console.WriteLine(model.ExtId);
-                extensionDecoder = map[ExtensionType.Unknown];
+                // if specific decoder not found,
+                // create 'unknown' decoder, results of decoding is 
+                // just a object which contains raw bytes of certificate 
 
+                extensionDecoder = map[ExtensionType.Unknown];
             }
             else
             {

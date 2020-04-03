@@ -2,18 +2,20 @@
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Standards.X509.Mapping;
 using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders;
+using System;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     public class X509CertificateDeserializer
     {
-
-        
+        DerDeserializer derDeserializer;
+        X509CertificateModelNodeDecoder certRootNodeDecoder;
         X509CertificateMapper certificateMapper;
 
         public X509CertificateDeserializer()
         {
-            
+            derDeserializer = new DerDeserializer();
+            certRootNodeDecoder = new X509CertificateModelNodeDecoder();
             certificateMapper = new X509CertificateMapper();
         }
 
@@ -25,16 +27,23 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
             return null;
         }
 
-        public object FromBytes(byte[] data)
+        public X509Certificate FromBytes(byte[] data)
         {
-            DerDeserializer decoder = new DerDeserializer();
-            var decoded = decoder.Deserialize(data);
+            X509Certificate result;
+            var decoded = derDeserializer.Deserialize(data)[0];
+            var certificateModel = certRootNodeDecoder.Decode(decoded);
 
-            var certificateModel = (new X509CertificateModelNodeDecoder()).Decode(decoded[0]);
-            
-            X509Certificate certificate = new X509CertificateMapper().MapFromModel(certificateModel);
+            result = certificateMapper.MapFromModel(certificateModel);
+            try
+            {
+              
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
 
-            return certificate;
+            return result;
         }
     }
 }

@@ -1,5 +1,8 @@
-﻿namespace Arctium.Shared.Optimalization
+﻿namespace Arctium.Shared.Optimalization.Global
 {
+    /// <summary>
+    /// Global buffer pool used everywhere
+    /// </summary>
     public static class BufferPool
     {
         
