@@ -23,6 +23,7 @@ for more interesting parts of the documentation.
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
+[X509Cert]:<docs/lookup/x509-cert.md>
 [HashFunctions]:<docs/Cryptography/HashFunctions/>
 [TLS12 Info]:<docs/Connection/Tls/readme.md>
 [TLS12 examples]:<docs/Connection/Tls/examples.md>
