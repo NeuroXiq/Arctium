@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Shared.Helpers.Buffers
 {
-    public static class ByteBuffer
+    public static partial class ByteBuffer
     {
         /// <summary>
         /// Copy bytes from one buffer to another.
@@ -11,7 +11,9 @@
         /// <param name="outputBuffer"></param>
         /// <param name="outputOffset"></param>
         /// <returns>Number of bytes copied to output buffer</returns>
-        public static long Copy(byte[] inputBuffer, long offset, byte[] outputBuffer, long outputOffset,  long length)
+        /// 
+        //TODO remove
+        public static long Copy(byte[] inputBuffer, long offset, byte[] outputBuffer, long outputOffset, long length)
         {
             long copyEnd = offset + length;
             for (long i = offset, j = outputOffset; i < copyEnd; i++, outputOffset++)

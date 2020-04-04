@@ -1,14 +1,12 @@
-﻿using System;
+﻿using Arctium.Cryptography.ASN1.Shared.Exceptions;
+using Arctium.Cryptography.ASN1.Standards.X509.Exceptions;
+using System;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     public class SubjectPublicKeyInfo
     {
         public PublicKeyAlgorithm AlgorithmType { get; private set; }
-
-        public T GetParms<T>() { throw new NotSupportedException(); }
-
-        public T GetPublicKey<T>() { throw new NotSupportedException(); }
 
         object genericParms;
         object genericPublicKey;
@@ -18,6 +16,33 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
             AlgorithmType = algorithm;
             genericParms = parms;
             genericPublicKey = publicKey;
+        }
+
+
+        public T GetPublicKey<T>()
+        {
+            Type expectedType = GetExpectedPublicKeyType();
+            ASN1CastException.ThrowIfInvalidCast<T, SubjectPublicKeyInfo>(expectedType);
+
+            return (T)genericPublicKey;
+        }
+
+        public T GetParms<T>()
+        {
+            Type expectedType = GetExpectedPublicKeyType();
+            ASN1CastException.ThrowIfInvalidCast<T, SubjectPublicKeyInfo>(expectedType);
+
+            return (T)genericPublicKey;
+        }
+
+        private Type GetExpectedPublicKeyType()
+        {
+            switch (AlgorithmType)
+            {
+                case PublicKeyAlgorithm.RSAEncryption: return typeof(RSAPublicKey);
+                case PublicKeyAlgorithm.ECPublicKey: return typeof(byte[]);
+                default: throw new X509InternalException("Public key algorithm not found <INTERNAL>");
+            }
         }
     }
 }

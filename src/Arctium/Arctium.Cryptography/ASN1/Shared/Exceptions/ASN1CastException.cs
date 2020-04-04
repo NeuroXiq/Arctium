@@ -39,5 +39,29 @@ namespace Arctium.Cryptography.ASN1.Shared.Exceptions
             return new ASN1CastException(expected, current,
                 message, classThrowingException, additionalMessage);
         }
+
+        public static ASN1CastException Build<C, T>(Type expectedType, string additionalMessage = "")
+        {
+            Type expected = expectedType;
+            Type current = typeof(C);
+            string classThrowingException = typeof(T).Name;
+
+            string message =
+                $"Invalid castring to X509Type in {classThrowingException}" +
+                $"Expected type: '{expected.Name}' but trying to cast to: '{current.Name}'";
+
+            if (!string.IsNullOrWhiteSpace(additionalMessage)) message += additionalMessage;
+
+            return new ASN1CastException(expected, current,
+                message, classThrowingException, additionalMessage);
+        }
+
+        public static void ThrowIfInvalidCast<C, T>(Type expected)
+        {
+            if (typeof(C) != expected)
+            {
+                throw Build<C, T>(expected);
+            }
+        }
     }
 }
