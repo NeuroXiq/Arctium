@@ -93,7 +93,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             byte[] padding = GetPadding();
             hashDataBuffer.Load(padding,0,padding.Length);
 
-            //hashDataBuffer may call hashing method because after padding append, buffer is filled and callback was invoked.
+            // hashDataBuffer may call hashing method because after padding append,
+            // buffer is filled exactly to end (exact multiply of hash input block) and callback was invoked,
+            // right after Load() call
             if (hashDataBuffer.DataLength > 0)
                 ExecuteHashing(hashDataBuffer.Buffer, 0, hashDataBuffer.DataLength);
 

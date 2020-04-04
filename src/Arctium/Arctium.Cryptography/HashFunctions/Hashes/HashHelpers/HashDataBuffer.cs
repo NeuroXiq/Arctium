@@ -47,7 +47,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
                 if (DataLength == bufferSize)
                 {
-                    limitReachedCallback(buffer, 0, DataLength);
+                    limitReachedCallback(Buffer, 0, DataLength);
                     DataLength = 0;
                 }
                 return totalCopied;
@@ -61,7 +61,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
                 //TODO repair length to valid long
                 System.Buffer.BlockCopy(buffer, (int)offset,Buffer,(int)DataLength, (int)(bufferSize - DataLength));
                 totalCopied += bufferSize - DataLength;
+                DataLength += totalCopied;
                 limitReachedCallback(Buffer, 0, DataLength);
+                DataLength = 0;
             }
 
             //maybe working with some large data,
@@ -80,7 +82,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             ByteBuffer.Copy(buffer, (int)(offset + totalCopied), Buffer, 0, (int)remaining);
             DataLength = remaining;
 
-            return totalCopied;
+            return length;
         }
 
         public int Load(Stream inputStream)
