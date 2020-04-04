@@ -7,5 +7,4 @@ IGNORE/
 *.suo
 *.userprefs
 *.sln.ide
-src/Arctium/DEBUG_ConsoleApplicationForTests/*
 src/Arctium/.vs/*
