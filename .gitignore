@@ -8,3 +8,4 @@ IGNORE/
 *.userprefs
 *.sln.ide
 src/Arctium/DEBUG_ConsoleApplicationForTests/*
+src/Arctium/.vs/Arctium/v16/*
