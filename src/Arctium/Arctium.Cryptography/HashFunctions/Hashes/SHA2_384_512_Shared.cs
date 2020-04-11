@@ -89,7 +89,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             for (long i = 0, j = dataOffset; i < 16; i++, j += 8)
             {
-                w[i] = BinConverter.ToULongLE(buffer, j);
+                w[i] = BinConverter.ToULongBE(buffer, j);
             }
 
             for (int i = 16; i < 80; i++)

@@ -101,7 +101,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
             for (int i = 0; i < ulongToInsert; i++)
             {
-                keccakBuffer0[i] ^= BinConverter.ToULongBE(buffer, currentBlockOffset);
+                keccakBuffer0[i] ^= BinConverter.ToULongLE(buffer, currentBlockOffset);
 
                 currentBlockOffset += 8;
             }

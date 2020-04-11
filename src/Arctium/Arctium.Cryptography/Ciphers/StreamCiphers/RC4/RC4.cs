@@ -9,22 +9,12 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.RC4
         {
         }
 
-        public override int Decrypt(byte[] inputBuffer, int inputOffset, int length, byte[] outputBuffer, int outputOffset)
+        public override long Decrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
         {
             throw new NotImplementedException();
         }
 
-        public override int Decrypt(Stream inputStream, Stream outputStream)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int Encrypt(byte[] inputBuffer, int inputOffset, int length, byte[] outputBuffer, int outputOffset)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int Encrypt(Stream inputStream, Stream outputStream)
+        public override long Encrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
         {
             throw new NotImplementedException();
         }

@@ -10,6 +10,13 @@ namespace Arctium.Shared.Helpers.Binary
          */
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToUShortBE(byte[] buffer, long offset)
+        {
+            return (ushort)((buffer[offset] << 8) | buffer[offset + 1]);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ToUIntBE(byte[] buffer, long offset)
         {
             uint result = (uint)
@@ -23,7 +30,7 @@ namespace Arctium.Shared.Helpers.Binary
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ToULongLE(byte[] buffer, long offset)
+        public static ulong ToULongBE(byte[] buffer, long offset)
         {
             return (ulong)
                 (
@@ -40,7 +47,7 @@ namespace Arctium.Shared.Helpers.Binary
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ToULongBE(byte[] buffer, long offset)
+        public static ulong ToULongLE(byte[] buffer, long offset)
         {
             return (ulong)
                 (
@@ -193,6 +200,19 @@ namespace Arctium.Shared.Helpers.Binary
             for (int i = 0; i < length; i++)
             {
                 result[length - i - 1] = (byte)(value >> (i * 8));
+            }
+
+            return result;
+        }
+
+        public static byte[] FromHexString(string hexString, string split)
+        {
+            string[] splitted = hexString.Split(split);
+            byte[] result = new byte[splitted.Length];
+
+            for (int i = 0; i < result.Length; i++)
+            {
+                result[i] = byte.Parse(splitted[i], System.Globalization.NumberStyles.HexNumber);
             }
 
             return result;

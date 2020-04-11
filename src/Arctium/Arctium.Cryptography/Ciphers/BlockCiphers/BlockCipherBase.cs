@@ -2,7 +2,7 @@
 using Arctium.Shared.Security.SecureStorage;
 using System.IO;
 
-namespace Arctium.Cryptography.Ciphers
+namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
     /// <summary>
     /// Base class for all block ciphers. 
