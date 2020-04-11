@@ -53,13 +53,21 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
         public Rabbit(byte[] key, byte[] iv) : base(key)
         {
+            if (key == null) throw new ArgumentNullException("key");
+            if (key.Length != 16) throw new ArgumentException("Length of the key must be 16 bytes");
+
+            if (iv != null)
+            {
+                if (iv.Length != 8) throw new ArgumentException("Length of the IV must be 8 bytes");
+            }
+
             this.xState = new uint[8];
             this.cState = new uint[8];
             this.iv = iv;
             Reset();
         }
 
-        private void Reset()
+        public void Reset()
         {
             counterCarryBit = 0;
             this.toUtilizeBytesCount = 0;
@@ -134,9 +142,20 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
             toUtilizeBytesCount = 16;
             for (int i = 0; i < 16; i++) existingKeystream[i] = s[i];
+
+            // if input length is not a multiply of 128-but block
+            // this remaining bytes must be processed on existing keystream,
+            // and this keystream is cached for future call of this method
             if (remainingBytes > 0)
             {
-                remainingBytes -= UtilizeExistingKeyStream(inputBuffer, inputOffset, length, outputBuffer, outputOffset);
+                long restBytesOffset = length - remainingBytes;
+
+                remainingBytes -= UtilizeExistingKeyStream(
+                    inputBuffer, 
+                    inputOffset + restBytesOffset, 
+                    remainingBytes, 
+                    outputBuffer, 
+                    outputOffset + restBytesOffset);
             }
 
             return length - remainingBytes;

@@ -17,12 +17,14 @@ for more interesting parts of the documentation.
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
 |X509 V3 Certificate        | [X509Cert]|
+|Rabbit - stream cipher (ESTREAM)| [Rabbit]|
 |Hash functions             | [HashFunctions]   |
 |ASN.1 Standard             | [ASN1 Standard]   |
 |ASN1. Simple Der decoder   | [Der decoder]     |
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
+[Rabbit]:<docs/lookup/rabbit.md>
 [X509Cert]:<docs/lookup/x509-cert.md>
 [HashFunctions]:<docs/Cryptography/HashFunctions/>
 [TLS12 Info]:<docs/Connection/Tls/readme.md>
