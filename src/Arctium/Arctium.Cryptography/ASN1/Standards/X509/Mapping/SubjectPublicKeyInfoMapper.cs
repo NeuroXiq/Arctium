@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
-using Arctium.Cryptography.ASN1.Serialization.X690;
 using Arctium.Cryptography.ASN1.Serialization.X690.DER;
-using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders;
 using Arctium.Cryptography.ASN1.Standards.X509.Exceptions;
 using Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
@@ -28,12 +26,12 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
         };
 
 
-        PublicKeyNodeDecoders decoders;
+        PublicKeyDecoders decoders;
         DerDeserializer der;
 
         public SubjectPublicKeyInfoMapper()
         {
-            decoders = new PublicKeyNodeDecoders();
+            decoders = new PublicKeyDecoders();
             der = new DerDeserializer();
         }
 

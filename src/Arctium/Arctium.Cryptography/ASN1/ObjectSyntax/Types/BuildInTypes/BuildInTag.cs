@@ -12,7 +12,7 @@ namespace Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes
         public static readonly Tag  Boolean = new Tag(TagClass.Universal, 1);
         public static readonly Tag  Integer = new Tag(TagClass.Universal, 2);
         public static readonly Tag  Bitstring = new Tag(TagClass.Universal, 3);
-        public static readonly Tag  Octetstring = new Tag(TagClass.Universal, 4);
+        public static readonly Tag  OctetString = new Tag(TagClass.Universal, 4);
         public static readonly Tag  Null = new Tag(TagClass.Universal, 5);
         public static readonly Tag  ObjectIdentifier = new Tag(TagClass.Universal, 6);
         public static readonly Tag  ObjectDescriptor = new Tag(TagClass.Universal, 7);

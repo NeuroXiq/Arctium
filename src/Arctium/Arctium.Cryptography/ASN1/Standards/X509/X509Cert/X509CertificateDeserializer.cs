@@ -1,21 +1,20 @@
 ﻿using Arctium.Cryptography.FileFormat.PEM;
-using Arctium.Cryptography.ASN1.Serialization.X690.DER;
+using Arctium.Cryptography.ASN1.Serialization.X690v2.DER;
 using Arctium.Cryptography.ASN1.Standards.X509.Mapping;
-using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders;
 using System;
+using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690Decoders;
+using Arctium.Cryptography.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
 
 namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 {
     public class X509CertificateDeserializer
     {
-        DerDeserializer derDeserializer;
-        X509CertificateModelNodeDecoder certRootNodeDecoder;
+        X509CertificateModelDecoder certRootNodeDecoder;
         X509CertificateMapper certificateMapper;
 
         public X509CertificateDeserializer()
         {
-            derDeserializer = new DerDeserializer();
-            certRootNodeDecoder = new X509CertificateModelNodeDecoder();
+            certRootNodeDecoder = new X509CertificateModelDecoder();
             certificateMapper = new X509CertificateMapper();
         }
 
@@ -29,9 +28,11 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
 
         public X509Certificate FromBytes(byte[] data)
         {
+            
             X509Certificate result;
-            var decoded = derDeserializer.Deserialize(data)[0];
-            var certificateModel = certRootNodeDecoder.Decode(decoded);
+            var decoded = DerDeserializer.Deserialize(data, 0);
+            DerTypeDecoder derTypesDecoder = new DerTypeDecoder(data);
+            var certificateModel = certRootNodeDecoder.Decode(derTypesDecoder, decoded);
 
             result = certificateMapper.MapFromModel(certificateModel);
             try

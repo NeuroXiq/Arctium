@@ -1,6 +1,7 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types;
 using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Cryptography.ASN1.Serialization.X690.BER.BuildInDecoders.Primitive;
+using Arctium.Cryptography.ASN1.Serialization.X690v2.DER;
 using System;
 using System.Collections.Generic;
 using ASN = Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;

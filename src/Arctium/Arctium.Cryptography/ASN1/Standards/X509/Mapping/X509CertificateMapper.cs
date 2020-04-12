@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690NodeDecoders.ExtensionDecoders;
+using Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690Decoders.Extensions;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert;
 using Arctium.Cryptography.ASN1.Standards.X509.X509Cert.Extensions;
@@ -18,6 +18,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
     {
         SubjectPublicKeyInfoMapper subjectPublicKeyInfoMapper;
         SignatureMapper signatureAlgoIdentifierMapper;
+        ExtensionsDecoder extensionDecoders = new ExtensionsDecoder();
 
         public X509CertificateMapper()
         {
@@ -55,7 +56,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
             List<CertificateExtension> mappedExtensions = new List<CertificateExtension>();
             foreach (var model in extensions)
             {
-                var mapped = (new ExtensionsDecoder()).MapModelToExtension(model);
+                var mapped = extensionDecoders.MapModelToExtension(model);
                 mappedExtensions.Add(mapped);
             }
 

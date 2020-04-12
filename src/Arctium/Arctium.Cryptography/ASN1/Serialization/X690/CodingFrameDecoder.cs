@@ -117,6 +117,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690
 
         private long DecodeHighTagNumber(byte[] buffer, long offset, out int tagNumberLength)
         {
+            // TODO ASN1/X690decodedNode Chkeck if this works (decode hoght tag number)
             // high length consist of 5 bits of the first byte of identifier octet
             int lengthInBits = 5;
             int expandSize = 1;
