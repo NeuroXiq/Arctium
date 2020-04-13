@@ -18,8 +18,12 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.Helpers
             toUtilizeCount = 0;
         }
 
-        public void InsertKey(byte* keyStream)
+        public void RefreshKey(byte[] keyStream)
         {
+            if (keyStream.Length != keyLength)
+                throw new InvalidOperationException("Cannot refresh key because length of the " +
+                    "buffer do not match length of the key");
+
             for (int i = 0; i < keyLength; i++)
             {
                 key[i] = keyStream[i];
@@ -36,8 +40,10 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.Helpers
 
             for (int i = 0; i < count; i++)
             {
-                output[i + outputOffset] = (byte)(input[inputOffset + i] ^ key[keyLength - count - i]);
+                output[i + outputOffset] = (byte)(input[inputOffset + i] ^ key[keyLength - toUtilizeCount + i]);
             }
+
+            toUtilizeCount -= count;
 
             return count;
         }

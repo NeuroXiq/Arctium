@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Arctium.Shared.Helpers.Binary
 {
-    public static class BinConverter
+    public unsafe static class BinConverter
     {
         /*
          * From byte array to number
@@ -213,17 +213,33 @@ namespace Arctium.Shared.Helpers.Binary
             return result;
         }
 
-        public static byte[] FromHexString(string hexString, string split)
-        {
-            string[] splitted = hexString.Split(split);
-            byte[] result = new byte[splitted.Length];
+        // 
+        // From pointer to byte array
+        // 
 
-            for (int i = 0; i < result.Length; i++)
+
+        /// <summary>
+        /// Converts array of the unsigned integers to byte array.
+        /// Bytes of the uint values are mapped to the result array
+        /// in a big-endian order
+        /// </summary>
+        /// <param name="uintPtr">Pointer for the uint array</param>
+        /// <param name="length">length of the uint array (length = 2 means 8 bytes of memory)</param>
+        /// <returns></returns>
+        public static byte[] ToByteArrayBE(uint* uintPtr, int length)
+        {
+            byte[] buf = new byte[length * 4];
+
+            for (int i = 0, j = 0; i < length ; i++, j += 4)
             {
-                result[i] = byte.Parse(splitted[i], System.Globalization.NumberStyles.HexNumber);
+                buf[j] = (byte)(uintPtr[i] >> 24);
+                buf[j + 1] = (byte)(uintPtr[i] >> 16);
+                buf[j + 2] = (byte)(uintPtr[i] >> 8 );
+                buf[j + 3] = (byte)(uintPtr[i] >> 0);
             }
 
-            return result;
+            return buf;
         }
+
     }
 }

@@ -21,8 +21,6 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
     {
         // 0x3ff == 1024 - 1 (binary mask)
         const uint Mod1024 = 0x3FF;
-        const uint Mod2048 = 0x7FF;
-        const int GeneratedKeystreamLength = 64;
 
         uint[] P;
         uint[] Q;
@@ -39,13 +37,17 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
         CachedKey keyCache;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="key">Key is a 8 uint values in big-endian</param>
+        /// <param name="iv">In 8 uint in big-endian</param>
         public HC_256(byte[] key, byte[] iv) : base(key)
         {
             if (iv == null) throw new ArgumentNullException("iv");
             if (key.Length != 32) throw new ArgumentException("Key must have 256-bits");
             if (iv.Length != 32) throw new ArgumentException("IV must have 256-bits");
 
-            keyCache = new CachedKey(32);
+            keyCache = new CachedKey(64);
 
             P = new uint[1024];
             Q = new uint[1024];
@@ -60,6 +62,10 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             return length;
         }
 
+        /// <summary>
+        /// Try to encryptl large chunks of data instead of calling this method sevelar times. <br/>
+        /// Expected 64 bytes input buffer (length is multiply of 64)
+        /// </summary>
         public override long Encrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
         {
             TransformInput(inputBuffer, inputOffset, length, outputBuffer, outputOffset);
@@ -119,46 +125,126 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             }
         }
 
-
         void TransformInput(byte[] input, long inputOffset, long length, byte[] output, long outputOffset)
         {
             long utilized = keyCache.UtilizeExitingKeyXor(input, inputOffset, length, output, outputOffset);
             if (utilized == length) return;
 
+            long blockSizeInBytes = 64;
             long remainingBytes = length - utilized;
-            long remainingBlocks = (remainingBytes / GeneratedKeystreamLength);
+            long remainingBlocks = (remainingBytes / blockSizeInBytes);
 
             // bytes to int count
-            uint* generatedKeystream = stackalloc uint[GeneratedKeystreamLength / 4];
+            uint* generatedKeystream = stackalloc uint[16];
 
             ulong counter = totalCounter;
 
             fixed (uint* p = &P[0], q = &Q[0])
             {
-                Generate64BytesKeystream(p, q, generatedKeystream, &counter);
-
                 if (remainingBlocks > 0)
                 {
-                    fixed (byte* inPtr = &input[0], outPtr = &output[0])
+                    fixed (byte* inputPtr = &input[0], outputPtr = &output[0])
                     {
-                        uint* ip = (uint*)inPtr;
-                        uint* op = (uint*)outPtr;
+                        byte* currentInputPtr = inputPtr;
+                        byte* currentOutputPtr = outputPtr;
 
                         for (long i = 0; i < remainingBlocks; i++)
                         {
-                            for (int j = 0; j < 16; j++)
-                            {
-                                op[j] = ip[j] ^ generatedKeystream[j];
-                            }
-
-                            op += GeneratedKeystreamLength / 16;
-                            ip += GeneratedKeystreamLength / 16;
-
                             Generate64BytesKeystream(p, q, generatedKeystream, &counter);
+                            Xor64BytesKeystream(generatedKeystream, inputPtr, outputPtr);
+
+                            currentInputPtr += 64;
+                            currentOutputPtr += 64;
                         }
                     }
                 }
+
+                remainingBytes -= (remainingBlocks * blockSizeInBytes);
+
+                if (remainingBytes > 0)
+                {
+                    long offset = length - remainingBytes;
+
+                    Generate64BytesKeystream(p, q, generatedKeystream, &counter);
+                    keyCache.RefreshKey(BinConverter.ToByteArrayBE(generatedKeystream, 16));
+                    keyCache.UtilizeExitingKeyXor(input, inputOffset + offset, remainingBytes, output, outputOffset + offset);
+                }
             }
+
+            totalCounter = counter;
+        }
+
+
+        /// <summary>
+        /// Xors 16 uint of keystream with 64 bytes of input and writes to outputs
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Xor64BytesKeystream(uint* keystream, byte* input, byte* output)
+        {
+            output[0] = (byte)(input[0] ^ (keystream[0] >> 24));
+            output[1] = (byte)(input[1] ^ (keystream[0] >> 16));
+            output[2] = (byte)(input[2] ^ (keystream[0] >> 8));
+            output[3] = (byte)(input[3] ^ (keystream[0] >> 0));
+            output[4] = (byte)(input[4] ^ (keystream[1] >> 24));
+            output[5] = (byte)(input[5] ^ (keystream[1] >> 16));
+            output[6] = (byte)(input[6] ^ (keystream[1] >> 8));
+            output[7] = (byte)(input[7] ^ (keystream[1] >> 0));
+            output[8] = (byte)(input[8] ^ (keystream[2] >> 24));
+            output[9] = (byte)(input[9] ^ (keystream[2] >> 16));
+            output[10] = (byte)(input[10] ^ (keystream[2] >> 8));
+            output[11] = (byte)(input[11] ^ (keystream[2] >> 0));
+            output[12] = (byte)(input[12] ^ (keystream[3] >> 24));
+            output[13] = (byte)(input[13] ^ (keystream[3] >> 16));
+            output[14] = (byte)(input[14] ^ (keystream[3] >> 8));
+            output[15] = (byte)(input[15] ^ (keystream[3] >> 0));
+            output[16] = (byte)(input[16] ^ (keystream[4] >> 24));
+            output[17] = (byte)(input[17] ^ (keystream[4] >> 16));
+            output[18] = (byte)(input[18] ^ (keystream[4] >> 8));
+            output[19] = (byte)(input[19] ^ (keystream[4] >> 0));
+            output[20] = (byte)(input[20] ^ (keystream[5] >> 24));
+            output[21] = (byte)(input[21] ^ (keystream[5] >> 16));
+            output[22] = (byte)(input[22] ^ (keystream[5] >> 8));
+            output[23] = (byte)(input[23] ^ (keystream[5] >> 0));
+            output[24] = (byte)(input[24] ^ (keystream[6] >> 24));
+            output[25] = (byte)(input[25] ^ (keystream[6] >> 16));
+            output[26] = (byte)(input[26] ^ (keystream[6] >> 8));
+            output[27] = (byte)(input[27] ^ (keystream[6] >> 0));
+            output[28] = (byte)(input[28] ^ (keystream[7] >> 24));
+            output[29] = (byte)(input[29] ^ (keystream[7] >> 16));
+            output[30] = (byte)(input[30] ^ (keystream[7] >> 8));
+            output[31] = (byte)(input[31] ^ (keystream[7] >> 0));
+            output[32] = (byte)(input[32] ^ (keystream[8] >> 24));
+            output[33] = (byte)(input[33] ^ (keystream[8] >> 16));
+            output[34] = (byte)(input[34] ^ (keystream[8] >> 8));
+            output[35] = (byte)(input[35] ^ (keystream[8] >> 0));
+            output[36] = (byte)(input[36] ^ (keystream[9] >> 24));
+            output[37] = (byte)(input[37] ^ (keystream[9] >> 16));
+            output[38] = (byte)(input[38] ^ (keystream[9] >> 8));
+            output[39] = (byte)(input[39] ^ (keystream[9] >> 0));
+            output[40] = (byte)(input[40] ^ (keystream[10] >> 24));
+            output[41] = (byte)(input[41] ^ (keystream[10] >> 16));
+            output[42] = (byte)(input[42] ^ (keystream[10] >> 8));
+            output[43] = (byte)(input[43] ^ (keystream[10] >> 0));
+            output[44] = (byte)(input[44] ^ (keystream[11] >> 24));
+            output[45] = (byte)(input[45] ^ (keystream[11] >> 16));
+            output[46] = (byte)(input[46] ^ (keystream[11] >> 8));
+            output[47] = (byte)(input[47] ^ (keystream[11] >> 0));
+            output[48] = (byte)(input[48] ^ (keystream[12] >> 24));
+            output[49] = (byte)(input[49] ^ (keystream[12] >> 16));
+            output[50] = (byte)(input[50] ^ (keystream[12] >> 8));
+            output[51] = (byte)(input[51] ^ (keystream[12] >> 0));
+            output[52] = (byte)(input[52] ^ (keystream[13] >> 24));
+            output[53] = (byte)(input[53] ^ (keystream[13] >> 16));
+            output[54] = (byte)(input[54] ^ (keystream[13] >> 8));
+            output[55] = (byte)(input[55] ^ (keystream[13] >> 0));
+            output[56] = (byte)(input[56] ^ (keystream[14] >> 24));
+            output[57] = (byte)(input[57] ^ (keystream[14] >> 16));
+            output[58] = (byte)(input[58] ^ (keystream[14] >> 8));
+            output[59] = (byte)(input[59] ^ (keystream[14] >> 0));
+            output[60] = (byte)(input[60] ^ (keystream[15] >> 24));
+            output[61] = (byte)(input[61] ^ (keystream[15] >> 16));
+            output[62] = (byte)(input[62] ^ (keystream[15] >> 8));
+            output[63] = (byte)(input[63] ^ (keystream[15] >> 0));
         }
 
 
