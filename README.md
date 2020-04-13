@@ -25,7 +25,7 @@ for more interesting parts of the documentation.
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
-[HC256]:<docs/lookup/hd-256.md>
+[HC256]:<docs/lookup/hc-256.md>
 [Rabbit]:<docs/lookup/rabbit.md>
 [X509Cert]:<docs/lookup/x509-cert.md>
 [HashFunctions]:<docs/Cryptography/HashFunctions/>
