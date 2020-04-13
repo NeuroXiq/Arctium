@@ -6,8 +6,10 @@ using Arctium.Cryptography.ASN1.Serialization.X690.DER;
 using Arctium.Cryptography.ASN1.Serialization.X690v2.DER;
 using Arctium.Cryptography.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
 using Arctium.Cryptography.ASN1.Standards.X501.Mapping.Oid;
-using Arctium.Cryptography.ASN1.Standards.X501.Types;
+using X501N = Arctium.Cryptography.ASN1.Standards.X501.Types.Name;
 using System.Collections.Generic;
+using Arctium.Cryptography.ASN1.Standards.X501.Types;
+using System;
 
 namespace Arctium.Cryptography.ASN1.Standards.X501.Decoders.X690Decoders
 {
@@ -45,7 +47,11 @@ namespace Arctium.Cryptography.ASN1.Standards.X501.Decoders.X690Decoders
 
             if (!AttributeTypeOidMap.Exists(typeOid))
             {
-                throw new X690DecoderException("Current OID for attribute type are unrecognized or not supported. " + typeOid.ToString());
+                type = AttributeType.Unknown;
+                byte[] rawValue = DerDecoderHelper.GetBytes(decoder.Buffer, valueNode);
+
+                value = new UnknownAttributeTypeAndValue(typeOid, rawValue);
+                return new AttributeTypeAndValue(type, value);
             }
 
             type = AttributeTypeOidMap.Get(typeOid);

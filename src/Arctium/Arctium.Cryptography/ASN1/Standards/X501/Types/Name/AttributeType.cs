@@ -2,6 +2,8 @@
 {
     public enum AttributeType
     {
+        Unknown,
+
         // type that receiver MUST process ()x509
         Country,
         Organization,

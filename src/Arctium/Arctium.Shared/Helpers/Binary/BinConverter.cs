@@ -16,6 +16,14 @@ namespace Arctium.Shared.Helpers.Binary
         }
 
 
+        /// <summary>
+        /// Converts 4 bytes to unsigned integer, 
+        /// conversion assumes that bytes are stored
+        /// in bit-endian order (BE)
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ToUIntBE(byte[] buffer, long offset)
         {

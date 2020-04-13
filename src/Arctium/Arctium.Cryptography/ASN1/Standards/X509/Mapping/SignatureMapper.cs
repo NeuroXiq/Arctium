@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Cryptography.ASN1.Standards.X509.Exceptions;
 using Arctium.Cryptography.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Cryptography.ASN1.Standards.X509.Model;
@@ -24,12 +25,12 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
         };
 
 
-        internal Signature Map(AlgorithmIdentifierModel signature)
+        internal Signature Map(AlgorithmIdentifierModel signature, BitString signatureValue)
         {
             SignatureAlgorithm algorithmType = SignatureAlgorithmOidMap.Get(signature.Algorithm);
             object parms = MapParameters(algorithmType, signature.EncodedParameters);
 
-            return new Signature(algorithmType, parms);
+            return new Signature(algorithmType, parms, signatureValue.Value);
         }
 
         private object MapParameters(SignatureAlgorithm algorithmType, byte[] encodedParameters)

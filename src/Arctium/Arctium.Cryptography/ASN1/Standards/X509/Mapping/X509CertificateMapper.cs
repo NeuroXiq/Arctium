@@ -45,9 +45,9 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Mapping
 
             cert.Extensions = MapExtensions(modelObject.TBSCertificate.Extensions);
 
-            cert.Signature = signatureAlgoIdentifierMapper.Map(modelObject.TBSCertificate.Signature);
+            cert.Signature = signatureAlgoIdentifierMapper.Map(modelObject.TBSCertificate.Signature, modelObject.SignatureValue);
             cert.SubjectPublicKey = subjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
-
+            
             return cert;
         }
 

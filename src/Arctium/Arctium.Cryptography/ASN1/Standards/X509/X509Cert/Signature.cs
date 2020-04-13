@@ -8,6 +8,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
         public SignatureAlgorithm AlgorithmType { get; private set; }
 
         object genericParmsValue;
+        object genericValue;
 
         /// <summary>
         /// Returns typed representation of the parameters for specific 
@@ -32,15 +33,18 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.X509Cert
             return (T)genericParmsValue;
         }
 
-        public T GetSignatureValue<T>()
+
+        public T GetValue<T>()
         {
-            throw new NotSupportedException();
+            return default(T);
+            //return (byte[])
         }
 
-        internal Signature(SignatureAlgorithm algorithm, object signatureValue)
+        internal Signature(SignatureAlgorithm algorithm, object parms, object signatureValue)
         {
             AlgorithmType = algorithm;
-            genericParmsValue = signatureValue;
+            genericParmsValue = parms;
+            genericValue = signatureValue;
         }
     }
 }

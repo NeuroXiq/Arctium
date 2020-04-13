@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Arctium.Cryptography.Ciphers.StreamCiphers
 {
@@ -8,6 +9,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
         public StreamCipherBase(byte[] key)
         {
+            if (key == null) throw new ArgumentNullException("key");
             this.key = key;
         }
 

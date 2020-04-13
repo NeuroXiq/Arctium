@@ -1,5 +1,6 @@
 ﻿using Arctium.Cryptography.ASN1.ObjectSyntax.Types;
 using Arctium.Cryptography.ASN1.Serialization.X690v2.Exceptions;
+using System;
 
 namespace Arctium.Cryptography.ASN1.Serialization.X690v2.DER
 {
@@ -34,6 +35,21 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690v2.DER
 
             itemsExists = exists;
             return values;
+        }
+
+        /// <summary>
+        /// Returns all bytes (including tag) representing gived decoding result
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="decoded"></param>
+        /// <returns></returns>
+        public static byte[] GetBytes(byte[] buffer, DerDecoded decoded)
+        {
+            byte[] copy = new byte[decoded.Length];
+
+            Array.Copy(buffer, decoded.Offset, copy, 0, decoded.Length);
+
+            return copy;
         }
     }
 }
