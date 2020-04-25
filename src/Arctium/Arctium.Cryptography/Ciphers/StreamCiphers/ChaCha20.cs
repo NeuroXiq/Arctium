@@ -155,16 +155,6 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             return Encrypt(buffer, offset, length, outputBuffer, outputOffset);
         }
 
-        public int Encrypt(Stream inputStream, Stream outputStream)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Decrypt(Stream inputStream, Stream outputStream)
-        {
-            throw new NotImplementedException();
-        }
-
         uint[] reusableInnerBlockBuffer = new uint[16];
         private void GenerateKeyStream(uint[] currentState, byte[] outputBuffer)
         {

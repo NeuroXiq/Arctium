@@ -8,7 +8,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders
         public Integer Decode(byte[] buffer, long offset, long length)
         {            
             byte[] value = new byte[length];
-            ByteBuffer.Copy(buffer, offset, value, 0, length);
+            MemCpy.Copy(buffer, offset, value, 0, length);
 
             return new Integer(value);
         }

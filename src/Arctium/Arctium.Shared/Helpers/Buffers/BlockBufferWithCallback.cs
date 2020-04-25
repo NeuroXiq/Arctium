@@ -36,7 +36,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             //not exceeding ? just copy
             if ((DataLength + length) <= bufferSize)
             {
-                ByteBuffer.Copy(buffer, offset, Buffer, DataLength, length);
+                MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
                 DataLength += length;
 
                 totalCopied = length;
@@ -54,7 +54,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             //first,if some data is alerdy in buffer, copy to fill them and clear buffer ( DataLength = 0 )
             if (DataLength > 0)
             {
-                ByteBuffer.Copy(buffer, offset, Buffer, DataLength, (bufferSize - DataLength));
+                MemCpy.Copy(buffer, offset, Buffer, DataLength, (bufferSize - DataLength));
                 totalCopied += bufferSize - DataLength;
                 limitReachedCallback(Buffer, 0, DataLength);
             }
@@ -71,7 +71,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
             //if some bytes left, append them to the buffer
             long remaining = length - totalCopied;
-            ByteBuffer.Copy(buffer, (offset + totalCopied), Buffer, 0, (int)remaining);
+            MemCpy.Copy(buffer, (offset + totalCopied), Buffer, 0, (int)remaining);
             DataLength = remaining;
 
             return totalCopied;

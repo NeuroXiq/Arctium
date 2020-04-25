@@ -35,7 +35,7 @@ namespace Arctium.Cryptography.ASN1.ObjectSyntax.Types.BuildInTypes
             }
         }
 
-        public Integer(ulong value) : this(BinConverter.GetBytesBE(value)) { }
+        public Integer(ulong value) : this(BinConverter.ToBytesBE(value)) { }
 
         public static implicit operator ulong(Integer value) => value.ToULong();
         public static explicit operator Integer(ulong value) => new Integer(value);

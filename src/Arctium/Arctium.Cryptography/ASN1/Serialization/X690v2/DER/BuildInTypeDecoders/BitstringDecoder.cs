@@ -30,7 +30,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders
 
             long lengthInBytes = length - 1;
             byte[] bitString = new byte[lengthInBytes];
-            ByteBuffer.Copy(buffer, offset + BinaryStringInnerOffset, bitString, 0, lengthInBytes);
+            MemCpy.Copy(buffer, offset + BinaryStringInnerOffset, bitString, 0, lengthInBytes);
 
             BitString bsValue = new BitString(bitString, (lengthInBytes * 8) - unusedBits);
 

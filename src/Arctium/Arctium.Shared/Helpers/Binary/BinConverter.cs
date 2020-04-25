@@ -3,11 +3,57 @@ using System.Runtime.CompilerServices;
 
 namespace Arctium.Shared.Helpers.Binary
 {
+
+
+
+    /// <summary>
+    /// All methods contains attribute to be forced inline.
+    /// LE,BE suffixed means little-endian,big-endian byte ordering. <br/>
+    /// Conversions to byte array starts with ToBytesXX where xx is byte ordering (LE/BE) <br/>
+    /// Conversion to type from byte array starts with ToYYYYYXX where Y is a type name
+    /// and XX is a byte ordering (LE/BE)
+    /// </summary>
     public unsafe static class BinConverter
     {
         /*
          * From byte array to number
          */
+
+        // 
+        // MANAGED CODE START
+        //
+
+        #region Managed 
+
+
+        /// <summary>
+        /// Converts bytes to uint in little-endian order
+        /// </summary>
+        /// <param name="buffer">Pointer to the buffer</param>
+        /// <returns>bytes converted to uint</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUIntLE(byte* buffer)
+        {
+            return (uint)(
+                (buffer[0] <<  0) |
+                (buffer[1] <<  8) |
+                (buffer[2] << 16) |
+                (buffer[3] << 24));
+        }
+
+
+        // managed
+        //
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUIntLE(byte[] buffer, long offset)
+        {
+            return (uint)(
+                (buffer[offset + 0] << 0) |
+                (buffer[offset + 1] << 8) |
+                (buffer[offset + 2] << 16) |
+                (buffer[offset + 3] << 24));
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ToUShortBE(byte[] buffer, long offset)
@@ -121,12 +167,12 @@ namespace Arctium.Shared.Helpers.Binary
         }
 
         /*
-         * From number to byte array
+         * From value to byte array
          *  
          */
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void GetBytesBE(byte[] buffer, long offset, ulong value)
+        public static void ToBytesBE(byte[] buffer, long offset, ulong value)
         {
             buffer[offset + 0] = (byte)((value >> 56) & (0xFF));
             buffer[offset + 1] = (byte)((value >> 48) & (0xFF));
@@ -139,7 +185,7 @@ namespace Arctium.Shared.Helpers.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void GetBytesBE(byte[] buffer, long offset, uint value)
+        public static void ToBytesBE(byte[] buffer, long offset, uint value)
         {
             buffer[offset + 0] = (byte)((value >> 24) & 0xff);
             buffer[offset + 1] = (byte)((value >> 16) & 0xff);
@@ -148,7 +194,7 @@ namespace Arctium.Shared.Helpers.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void GetBytesBE(byte[] buffer, long offset, long value)
+        public static void ToBytesBE(byte[] buffer, long offset, long value)
         {
             buffer[offset + 0] = (byte)((value >> 56) & (0xFF));
             buffer[offset + 1] = (byte)((value >> 48) & (0xFF));
@@ -161,10 +207,10 @@ namespace Arctium.Shared.Helpers.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] GetBytesBE(ulong value)
+        public static byte[] ToBytesBE(ulong value)
         {
             byte[] result = new byte[8];
-            GetBytesBE(result, 0, value);
+            ToBytesBE(result, 0, value);
 
             return result;
         }
@@ -213,32 +259,87 @@ namespace Arctium.Shared.Helpers.Binary
             return result;
         }
 
-        // 
-        // From pointer to byte array
-        // 
+
+        #endregion
+
+        //
+        // MANAGED CODE END
+        //
+
+
+
+        //
+        // UNMANAGED CODE START
+        //
+
+        #region Unmanaged
+
+        //
+        // From byte array to value -START-
+        //
+
+        //
+        // From byte array to value -END-
+        //
+
+        //
+        // From value to Byte Array - START -
+        //
+
+        /// <summary>
+        /// Converts unsigned integer input to byte array in Little-endian format.
+        /// Most significant byte is writed to output[3]
+        /// </summary>
+        /// <param name="value">Value to convert to by array</param>
+        /// <param name="output">Output buffer where bytes will be writed. Length must be at least 4 bytes</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytesLE(uint value, byte* outputArray)
+        {
+            outputArray[0] = (byte)(value >> 0);
+            outputArray[1] = (byte)(value >> 8);
+            outputArray[2] = (byte)(value >> 16);
+            outputArray[3] = (byte)(value >> 24);
+        }
+
+
+        #endregion
+
+        //
+        // From value to byte array - END -
+        //
+
+        //
+        // UNMANAGED CODE END
+        //
+
+
+        //
+        // Other uncommon
+        //
+
 
 
         /// <summary>
-        /// Converts array of the unsigned integers to byte array.
-        /// Bytes of the uint values are mapped to the result array
-        /// in a big-endian order
+        /// Converts string to byte array. Stream must contain valid 
+        /// hexadecimal values, must be multiply of 2 and must not contain any delimiters (space etc.).
+        /// Only 0-9A-Z allowed
         /// </summary>
-        /// <param name="uintPtr">Pointer for the uint array</param>
-        /// <param name="length">length of the uint array (length = 2 means 8 bytes of memory)</param>
+        /// <param name="hexString"></param>
         /// <returns></returns>
-        public static byte[] ToByteArrayBE(uint* uintPtr, int length)
+        public static byte[] FromString(string hexString)
         {
-            byte[] buf = new byte[length * 4];
+            if (hexString.Length % 2 != 0)
+                throw new ArgumentException("String value must be valid hex string (mutiplication of 2)");
 
-            for (int i = 0, j = 0; i < length ; i++, j += 4)
+            int length = hexString.Length / 2;
+
+            byte[] parsed = new byte[length];
+            for (int i = 0; i < hexString.Length; i += 2)
             {
-                buf[j] = (byte)(uintPtr[i] >> 24);
-                buf[j + 1] = (byte)(uintPtr[i] >> 16);
-                buf[j + 2] = (byte)(uintPtr[i] >> 8 );
-                buf[j + 3] = (byte)(uintPtr[i] >> 0);
+                parsed[i / 2] = byte.Parse(hexString.Substring(i,2), System.Globalization.NumberStyles.HexNumber);
             }
 
-            return buf;
+            return parsed;
         }
 
     }

@@ -44,7 +44,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             byte[] hash = new byte[64];
             for (int i = 0; i < 8; i++)
             {
-                BinConverter.GetBytesBE(hash, i * 8, hashValue[i]);
+                BinConverter.ToBytesBE(hash, i * 8, hashValue[i]);
             }
 
             return hash;

@@ -1,5 +1,6 @@
 ﻿using Arctium.Cryptography.Ciphers.StreamCiphers.Helpers;
 using Arctium.Shared.Helpers.Binary;
+using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -166,7 +167,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
                     long offset = length - remainingBytes;
 
                     Generate64BytesKeystream(p, q, generatedKeystream, &counter);
-                    keyCache.RefreshKey(BinConverter.ToByteArrayBE(generatedKeystream, 16));
+                    keyCache.RefreshKey(MemCpy.ToBytesBE(generatedKeystream, 16));
                     keyCache.UtilizeExitingKeyXor(input, inputOffset + offset, remainingBytes, output, outputOffset + offset);
                 }
             }

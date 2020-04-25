@@ -40,7 +40,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             if ((DataLength + length) <= bufferSize)
             {
                 
-                ByteBuffer.Copy(buffer, offset, Buffer, DataLength, length);
+                MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
                 DataLength += length;
 
                 totalCopied = length;
@@ -79,7 +79,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             //if some bytes left, append them to the buffer
             
             long remaining = length - totalCopied;
-            ByteBuffer.Copy(buffer, (int)(offset + totalCopied), Buffer, 0, (int)remaining);
+            MemCpy.Copy(buffer, (int)(offset + totalCopied), Buffer, 0, (int)remaining);
             DataLength = remaining;
 
             return length;

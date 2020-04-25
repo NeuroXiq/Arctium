@@ -56,7 +56,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             for (int i = 0; i < 7; i++)
             {
-                BinConverter.GetBytesBE(result, i * 4, hashValue[i]);
+                BinConverter.ToBytesBE(result, i * 4, hashValue[i]);
             }
 
             return result;

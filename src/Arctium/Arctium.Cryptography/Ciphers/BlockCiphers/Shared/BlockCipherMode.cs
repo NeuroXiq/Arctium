@@ -1,7 +1,7 @@
 ﻿namespace Arctium.Cryptography.Ciphers.BlockCiphers.Shared
 {
     /// <summary>
-    /// Block cipher modes of operations.
+    /// Block cipher mode of operations
     /// </summary>
     public enum BlockCipherMode
     {
@@ -21,6 +21,10 @@
         /// Output feedback
         /// </summary>
         OFB,
+        /// <summary>
+        /// Propagating cipher block chaining
+        /// </summary>
+        PCBC,
         /// <summary>
         /// Counter
         /// </summary>

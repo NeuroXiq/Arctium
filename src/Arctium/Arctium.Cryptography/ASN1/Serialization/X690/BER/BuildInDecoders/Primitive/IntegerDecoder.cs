@@ -9,7 +9,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690.BER.BuildInDecoders.Primi
         public Integer Decode(byte[] buffer, long offset, long length)
         {            
             byte[] value = new byte[length];
-            ByteBuffer.Copy(buffer, offset, value, 0, length);
+            MemCpy.Copy(buffer, offset, value, 0, length);
 
             return new Integer(value);
         }

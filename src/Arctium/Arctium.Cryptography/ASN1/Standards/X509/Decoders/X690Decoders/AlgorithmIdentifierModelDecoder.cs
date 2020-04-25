@@ -20,7 +20,7 @@ namespace Arctium.Cryptography.ASN1.Standards.X509.Decoders.X690Decoders
                 {
                     // copy ALL der-encoded parameters bytes
                     parameters = new byte[decoded[1].Length];
-                    ByteBuffer.Copy(decoder.Buffer, decoded[1].Offset, parameters, 0, decoded[1].Length);
+                    MemCpy.Copy(decoder.Buffer, decoded[1].Offset, parameters, 0, decoded[1].Length);
                 }
             }
 

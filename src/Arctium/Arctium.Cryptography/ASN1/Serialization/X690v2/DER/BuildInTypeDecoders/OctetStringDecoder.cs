@@ -9,7 +9,7 @@ namespace Arctium.Cryptography.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders
         {
             byte[] stringValue = new byte[length];
 
-            ByteBuffer.Copy(buffer, offset, stringValue, 0, length);
+            MemCpy.Copy(buffer, offset, stringValue, 0, length);
 
             
             return new OctetString(stringValue);
