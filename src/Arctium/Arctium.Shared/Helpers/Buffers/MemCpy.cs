@@ -74,11 +74,21 @@ namespace Arctium.Shared.Helpers.Buffers
         //
         // End fixed length copy
         //
+        public static void Copy(byte* src, long srcOffset, byte* output, long outOffset, long length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                output[i + outOffset] = src[srcOffset + i];
+            }
+        }
+
+
+        //
+        // basic copy method (roots)
 
 
 
-
-
+        // basic copy method end
         public static void Copy(byte[] input, long inputOffset, byte* output, int outputOffset, long length)
         {
             for (long i = 0; i < length; i++)
@@ -94,27 +104,11 @@ namespace Arctium.Shared.Helpers.Buffers
 
 
 
-        /// <summary>
-        /// Converts array of the unsigned integers to byte array.
-        /// Bytes of the uint values are mapped to the result array
-        /// in a big-endian order
-        /// </summary>
-        /// <param name="uintPtr">Pointer for the uint array</param>
-        /// <param name="length">length of the uint array (length = 2 means 8 bytes of memory)</param>
-        /// <returns></returns>
-        public static byte[] ToBytesBE(uint* uintPtr, int length)
+        
+
+        public static void Copy(byte* src, byte* dst, long length)
         {
-            byte[] buf = new byte[length * 4];
-
-            for (int i = 0, j = 0; i < length; i++, j += 4)
-            {
-                buf[j] = (byte)(uintPtr[i] >> 24);
-                buf[j + 1] = (byte)(uintPtr[i] >> 16);
-                buf[j + 2] = (byte)(uintPtr[i] >> 8);
-                buf[j + 3] = (byte)(uintPtr[i] >> 0);
-            }
-
-            return buf;
+            Copy(src, 0, dst, 0, length);
         }
     }
 }

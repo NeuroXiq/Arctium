@@ -1,6 +1,5 @@
 ﻿using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Helpers.Debug;
 using System.Runtime.CompilerServices;
 using static Arctium.Shared.Helpers.Binary.BinOps;
 
@@ -90,11 +89,12 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
 
                 uint next0 = ROR(p[2] ^ f0, 1);
                 uint next1 = ROL(p[3], 1) ^ f1;
-
+                
                 p[2] = p[0];
                 p[3] = p[1];
                 p[0] = next0;
                 p[1] = next1;
+                
             }
 
 
@@ -153,7 +153,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
             // 3 key vectors generated
 
             ComputeExpandedKey(me, mo, outExpandedKey, keyQwordCount);
-
+            //Dbg.HexDump(outExpandedKey, 40);
             for (int i = 0; i < keyQwordCount; i++)
             {
                 outKeyVector[i] = thirdKeyVector[i];
@@ -183,11 +183,13 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
                     byte result = 0;
                     for (int j = 0; j < 8; j++)
                     {
-                        result ^= GF2Mul(RC[(y * 8) + j], key[j + (i * 16)], irreducible); // 8 vs 16 ????
+                        result ^= GF2Mul(RC[(y * 8) + j], key[j + (i * 8)], irreducible); // 8 vs 16 ????
                     }
 
-                    multiplied |= ((uint)result << (24 - (y * 8)));
+                    // multiplied |= ((uint)result << (24 - (y * 8)));
+                    multiplied |= (uint)(result << (y * 8));
                 }
+
                 outs[keyQwordCount - 1 - i] = multiplied;
             }
 
@@ -240,23 +242,23 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
 
             if (lArrayLength == 4)
             {
-                y0 = (byte)(q1(y0) ^ l[(3 * 4) + 3]);
-                y1 = (byte)(q0(y1) ^ l[(3 * 4) + 2]);
-                y2 = (byte)(q0(y2) ^ l[(3 * 4) + 1]);
-                y3 = (byte)(q1(y3) ^ l[(3 * 4) + 0]);
+                y0 = (byte)(q1(y0) ^ l[(3 * 4) + 0]);
+                y1 = (byte)(q0(y1) ^ l[(3 * 4) + 1]);
+                y2 = (byte)(q0(y2) ^ l[(3 * 4) + 2]);
+                y3 = (byte)(q1(y3) ^ l[(3 * 4) + 3]);
             }
             if (lArrayLength >= 3)
             {
-                y0 = (byte)(q1(y0) ^ l[(2 * 4) + 3]);
-                y1 = (byte)(q1(y1) ^ l[(2 * 4) + 2]);
-                y2 = (byte)(q0(y2) ^ l[(2 * 4) + 1]);
-                y3 = (byte)(q0(y3) ^ l[(2 * 4) + 0]);
+                y0 = (byte)(q1(y0) ^ l[(2 * 4) + 0]);
+                y1 = (byte)(q1(y1) ^ l[(2 * 4) + 1]);
+                y2 = (byte)(q0(y2) ^ l[(2 * 4) + 2]);
+                y3 = (byte)(q0(y3) ^ l[(2 * 4) + 3]);
             }
 
-            y0 = (byte)q1(q0(q0(y0) ^ l[(1 * 4) + 3]) ^ l[(1 * 0) + 3]);
-            y1 = (byte)q0(q0(q1(y1) ^ l[(1 * 4) + 2]) ^ l[(1 * 0) + 2]);
-            y2 = (byte)q1(q1(q0(y2) ^ l[(1 * 4) + 1]) ^ l[(1 * 0) + 1]);
-            y3 = (byte)q0(q1(q1(y3) ^ l[(1 * 4) + 0]) ^ l[(1 * 0) + 0]);
+            y0 = (byte)q1(q0(q0(y0) ^ l[(1 * 4) + 0]) ^ l[(1 * 0) + 0]);
+            y1 = (byte)q0(q0(q1(y1) ^ l[(1 * 4) + 1]) ^ l[(1 * 0) + 1]);
+            y2 = (byte)q1(q1(q0(y2) ^ l[(1 * 4) + 2]) ^ l[(1 * 0) + 2]);
+            y3 = (byte)q0(q1(q1(y3) ^ l[(1 * 4) + 3]) ^ l[(1 * 0) + 3]);
 
             uint result = MultiplyByMDS(y0, y1, y2, y3);
 

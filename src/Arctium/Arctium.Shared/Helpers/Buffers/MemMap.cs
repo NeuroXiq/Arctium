@@ -40,7 +40,28 @@ namespace Arctium.Shared.Helpers.Buffers
             output[15] = (byte)(array[3] >> 24);
         }
 
+        /// <summary>
+        /// Converts array of the unsigned integers to byte array.
+        /// Bytes of the uint values are mapped to the result array
+        /// in a big-endian order
+        /// </summary>
+        /// <param name="uintPtr">Pointer for the uint array</param>
+        /// <param name="length">length of the uint array (length = 2 means 8 bytes of memory)</param>
+        /// <returns></returns>
+        public static byte[] ToBytesBE(uint* uintPtr, int length)
+        {
+            byte[] buf = new byte[length * 4];
 
+            for (int i = 0, j = 0; i < length; i++, j += 4)
+            {
+                buf[j] = (byte)(uintPtr[i] >> 24);
+                buf[j + 1] = (byte)(uintPtr[i] >> 16);
+                buf[j + 2] = (byte)(uintPtr[i] >> 8);
+                buf[j + 3] = (byte)(uintPtr[i] >> 0);
+            }
+
+            return buf;
+        }
         //
         // Unsafe end
         //
