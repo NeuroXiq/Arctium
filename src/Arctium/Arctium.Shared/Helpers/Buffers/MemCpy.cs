@@ -34,7 +34,14 @@ namespace Arctium.Shared.Helpers.Buffers
             return length;
         }
 
-        public static byte[] Range(byte[] buffer, long offset, long length)
+        public static long Copy(byte[] source, byte[] destination)
+        {
+            if (source.Length != destination.Length)
+                throw new ArgumentException("Length of the source array do not match length of the destination");
+            return Copy(source, 0, destination, 0, destination.Length);
+        }
+
+        public static byte[] CutRange(byte[] buffer, long offset, long length)
         {
             byte[] range = new byte[length];
 
@@ -43,13 +50,7 @@ namespace Arctium.Shared.Helpers.Buffers
             return range;
         }
 
-        public static void Copy(byte[] key2, uint* input, uint[] output, long outputOffset, long length)
-        {
-            for (int i = 0; i < length; i++)
-            {
-                output[i + outputOffset] = input[i];
-            }
-        }
+       
 
         //
         // Unmanaged copy version
@@ -103,8 +104,14 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
 
+        public static void Copy(byte[] key2, uint* input, uint[] output, long outputOffset, long length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                output[i + outputOffset] = input[i];
+            }
+        }
 
-        
 
         public static void Copy(byte* src, byte* dst, long length)
         {

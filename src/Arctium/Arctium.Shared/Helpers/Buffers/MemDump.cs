@@ -15,44 +15,97 @@ namespace Arctium.Shared.Helpers.Buffers
         /// <param name="delimiterAfterNthByte"></param>
         /// <param name="delimiter"></param>
         /// <param name="format"></param>
-        public static void HexDump(byte[] buffer, int lineLength = 16, int delimiterAfterNthByte = 4, string delimiter = " ", string format = "{0:X2}")
+        public static void HexDump(byte[] buffer, 
+            int chunksCountInLine = 4,
+            int chunkLength = 4,
+            string delimiter = " ")
         {
-            int linesCount = (buffer.Length / lineLength);
-            int lastCount = buffer.Length % lineLength;
+            int linesCount = (buffer.Length / (chunkLength * chunksCountInLine));
+            int lastCount = buffer.Length % (chunkLength * chunksCountInLine);
 
-            string line = "";
-            string allLines = "";
-            int appendedBytes = 0;
+            int currentIndex = 0;
 
             for (int i = 0; i < linesCount; i++)
             {
-                for (int j = 0; j < lineLength; j++)
+                string currentLine = "";
+                for (int j = 0; j < chunksCountInLine - 1; j++)
                 {
-                    line += string.Format(format, buffer[j + (i * lineLength)]);
 
-                    appendedBytes++;
-                    if (appendedBytes % delimiterAfterNthByte == 0)
-                        line += delimiter;
+                    // format one chunk (eg. 4 byte )
+                    for (int k = 0; k < chunkLength; k++)
+                    {
+                        currentLine += string.Format("{0:X2}", buffer[currentIndex]);
+                        currentIndex++;
+                    }
+
+                    // add delimiter after chunk, but only if this is not the last chunk
+                    currentLine += delimiter;
                 }
 
-                allLines += line + "\r\n";
-                line = "";
+                // format last chunk (eg. 4 byte )
+                for (int k = 0; k < chunkLength; k++)
+                {
+                    currentLine += string.Format("{0:X2}", buffer[currentIndex]);
+                    currentIndex++;
+                }
+
+                // and do not add delimiter
+
+                Console.WriteLine(currentLine);
             }
 
             string lastLine = "";
 
             for (int i = 0; i < lastCount; i++)
             {
-                lastLine += string.Format(format, buffer[i + (linesCount * lineLength)]);
+                for (int j = 0; j < chunkLength && i < lastCount; j++)
+                {
+                    lastLine += string.Format("{0:X2}", buffer[currentIndex]);
+                    currentIndex++;
+                    i++;
 
-                appendedBytes++;
-                if (appendedBytes % delimiterAfterNthByte == 0)
-                    line += delimiter;
+                    if (j == chunkLength - 1) lastLine += delimiter;
+
+                }
             }
 
-            allLines += lastLine;
+            Console.WriteLine(lastLine);
 
-            Console.WriteLine(allLines);
+
+
+            //string line = "";
+            //string allLines = "";
+            //int appendedBytes = 0;
+
+            //for (int i = 0; i < linesCount; i++)
+            //{
+            //    for (int j = 0; j < lineLength; j++)
+            //    {
+            //        line += string.Format(format, buffer[j + (i * lineLength)]);
+
+            //        appendedBytes++;
+            //        if (appendedBytes % delimiterAfterNthByte == 0)
+            //            line += delimiter;
+            //    }
+
+            //    allLines += line + "\r\n";
+            //    line = "";
+            //}
+
+            //string lastLine = "";
+
+            //for (int i = 0; i < lastCount; i++)
+            //{
+            //    lastLine += string.Format(format, buffer[i + (linesCount * lineLength)]);
+
+            //    appendedBytes++;
+            //    if (appendedBytes % delimiterAfterNthByte == 0)
+            //        line += delimiter;
+            //}
+
+            //allLines += lastLine;
+
+            //Console.WriteLine(allLines);
 
         }
 

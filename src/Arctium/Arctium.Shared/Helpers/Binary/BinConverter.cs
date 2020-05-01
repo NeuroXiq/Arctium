@@ -329,7 +329,7 @@ namespace Arctium.Shared.Helpers.Binary
         public static byte[] FromString(string hexString)
         {
             if (hexString.Length % 2 != 0)
-                throw new ArgumentException("String value must be valid hex string (mutiplication of 2)");
+                throw new ArgumentException("String value must be valid hex string (multiply of 2)");
 
             int length = hexString.Length / 2;
 

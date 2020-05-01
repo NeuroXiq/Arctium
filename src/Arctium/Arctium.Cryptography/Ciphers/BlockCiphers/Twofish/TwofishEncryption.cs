@@ -3,8 +3,19 @@ using Arctium.Shared.Helpers.Buffers;
 using System.Runtime.CompilerServices;
 using static Arctium.Shared.Helpers.Binary.BinOps;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
+namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
 {
+    // TODO BlockCiphers/Twofish 
+    // * Create look-up tabled for RS, Q0/Q1 and MDS multiplication 
+    // instead of computing this values again every time on cipher setup.
+    // Means that there should be array length: 
+    // (256 * 4) bytes for length RC matrix look-up
+    // (256 * 4) bytes length array for MDS martix
+    // (1 * 256) for q0 values
+    // (1 * 256) for q1 values
+
+
+
     /// <summary>
     /// Represents enctyption algorithms for the Twofish cipher.
     /// This is unsafe class, never throws managed exceptions, input data MUST be valid
@@ -42,27 +53,36 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
 
         const byte Mod16 = 0x0F;
 
-        public struct EncryptParms
+        public struct TwofishParms
         {
             public byte* Input;
             public byte* Output;
+
+            /// <summary>
+            /// Contains expanded key - 40 uint values (40 * 4 bytes)
+            /// </summary>
             public uint* ExpandedKey;
 
             /// <summary>
-            /// Third key vector
+            /// Third key vector, for key length 128 vector length is equal to
+            /// 64 bits, for key:192 vector:96 for key:256 vector: 128
+            /// 
             /// </summary>
             public uint* SKeyVector;
+
+            /// <summary>
+            /// Key length in bits
+            /// </summary>
             public int KeyLength;
         }
 
-        public static void EncryptBlock(EncryptParms parms)
+        public static void EncryptBlock(TwofishParms parms)
         {
             byte* input = (parms).Input;
             byte* output = (parms).Output;
             uint* expandedKey = (parms).ExpandedKey;
             uint* skeyvector = (parms).SKeyVector;
             int keyQwordsCount = parms.KeyLength / 64;
-
 
             uint* p = stackalloc uint[4];
 
@@ -117,12 +137,66 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
             MemMap.ToBytes4UIntLE(p, output);
         }
 
+        public static void DecryptBlock(TwofishParms parms)
+        {
+            byte* input = parms.Input;
+            byte* output = parms.Output;
+            uint* expandedKey = parms.ExpandedKey;
+            uint* svector = parms.SKeyVector;
+            int keyLengthInQword = parms.KeyLength / 64;
 
+            uint* p = stackalloc uint[4];
 
-        //
-        // Strict
-        //
+            MemMap.ToUInt16BytesLE(input, p);
 
+            /* reverse output whitening */
+
+            p[0] ^= expandedKey[4];
+            p[1] ^= expandedKey[5];
+            p[2] ^= expandedKey[6];
+            p[3] ^= expandedKey[7];
+
+            for (int i = 7; i >= 0; i--)
+            {
+                uint t0 = h(p[0], svector, keyLengthInQword);
+                uint t1 = h(ROL(p[1], 8), svector, keyLengthInQword);
+
+                uint f0 = t0 + t1 + expandedKey[(4 * i) + 10];
+                uint f1 = t0 + (2 * t1) + expandedKey[(4 * i) + 11];
+
+                p[2] = ROL(p[2], 1) ^ f0;
+                p[3] = ROR(p[3] ^ f1, 1);
+
+                t0 = h(p[2], svector, keyLengthInQword);
+                t1 = h(ROL(p[3], 8), svector, keyLengthInQword);
+
+                f0 = t0 + t1 + expandedKey[(4 * i) + 8];
+                f1 = t0 + (2 * t1) + expandedKey[(4 * i) + 9];
+
+                p[0] = ROL(p[0], 1) ^ f0;
+                p[1] = ROR(p[1] ^ f1, 1);
+            }
+
+            p[0] ^= expandedKey[2];
+            p[1] ^= expandedKey[3];
+            p[2] ^= expandedKey[0];
+            p[3] ^= expandedKey[1];
+
+            BinConverter.ToBytesLE(p[2], output + 0);
+            BinConverter.ToBytesLE(p[3], output + 4);
+            BinConverter.ToBytesLE(p[0], output + 8);
+            BinConverter.ToBytesLE(p[1], output + 12);
+        }
+
+        /// <summary>
+        /// Initialize value used by twofish cipher. Input key must have 128,192,256 bits length.
+        /// outExpandedKey must be allocated array of 40 uint values, outKeyVector must be allocated
+        /// array of 64,96,128 bits according to key length (128,192,256).
+        /// </summary>
+        /// <param name="inputKey"></param>
+        /// <param name="outExpandedKey"></param>
+        /// <param name="outKeyVector"></param>
+        /// <param name="keyLength"></param>
         public static void KeySchedule(byte* inputKey, uint* outExpandedKey, uint* outKeyVector, int keyLength)
         {
             int keyQwordCount = keyLength / 64;
@@ -153,13 +227,12 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
             // 3 key vectors generated
 
             ComputeExpandedKey(me, mo, outExpandedKey, keyQwordCount);
-            //Dbg.HexDump(outExpandedKey, 40);
+            
             for (int i = 0; i < keyQwordCount; i++)
             {
                 outKeyVector[i] = thirdKeyVector[i];
             }
         }
-
 
         public static void ComputeThirdKeyVector(byte* key, uint* outs, int keyQwordCount)
         {
@@ -172,8 +245,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
              * A4   55   87   5A   58   DB   9E   03
              */
 
-            byte irreducible = (1 << 6) + (1 << 3) + (1 << 2) + 1; /* + (1 << 8) */
-
+            byte irreducible = (1 << 6) + (1 << 3) + (1 << 2) + 1; /* + (1 << 8) but ignore because GF2Mul input is a byte*/
 
             for (int i = 0; i < keyQwordCount; i++)
             {
@@ -183,31 +255,14 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
                     byte result = 0;
                     for (int j = 0; j < 8; j++)
                     {
-                        result ^= GF2Mul(RC[(y * 8) + j], key[j + (i * 8)], irreducible); // 8 vs 16 ????
+                        result ^= GF2Mul(RC[(y * 8) + j], key[j + (i * 8)], irreducible);
                     }
 
-                    // multiplied |= ((uint)result << (24 - (y * 8)));
                     multiplied |= (uint)(result << (y * 8));
                 }
 
                 outs[keyQwordCount - 1 - i] = multiplied;
             }
-
-            //multiplied = 0;
-            //for (int y = 0; y < 4; y++)
-            //{
-            //    byte result = 0;
-            //    for (int j = 0; j < 8; j++)
-            //    {
-            //        byte a = RC[(y * 8) + j];
-            //        byte b = key[j + 16];
-            //        result ^= GF2Mul(a, b, irreducible);
-            //    }
-
-            //    multiplied |= ((uint)result << (24 - (y * 8)));
-            //}
-
-            //outs[0] = multiplied;
         }
 
         static void ComputeExpandedKey(uint* me, uint* mo, uint* outk, int keyDwordCount)
@@ -368,134 +423,5 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.EncryptionAlgorithms
             return ((v >> r) | (v << (4 - r))) & 0x0F;
         }
 
-
-        //
-        // Generic DEPRECATED
-        //
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="inputKey"></param>
-        /// <param name="keyLength">Length of the key in bits</param>
-        /// <param name="outExpandedKey"></param>
-        /// <param name="outSBoxes"></param>
-        //public static void KeySchedule(byte[] inputKey, int keyLength, uint[] outExpandedKey, uint[] sKeyVector)
-        //{
-        //    int k = keyLength / 64;
-        //    uint wordsCount = (uint)keyLength / 32;
-
-        //    // key vectors
-
-        //    uint* me = stackalloc uint[k];
-        //    uint* mo = stackalloc uint[k];
-        //    uint* thirdKeyVector = stackalloc uint[k];
-
-        //    for (int i = 0; i < k; i++)
-        //    {
-        //        me[i] = BinConverter.ToUIntLE(inputKey, i * 8);
-        //        mo[i] = BinConverter.ToUIntLE(inputKey, (i * 8) + 4);
-        //    }
-
-        //    ComputeThirdKeyVector(inputKey, k * 2, thirdKeyVector);
-
-        //    // 3 key vectors generated
-
-        //    ComputeExpandedKey(me, mo, wordsCount, outExpandedKey);
-
-        //    MemCpy.Copy(thirdKeyVector, sKeyVector, 0, k);
-        //}
-
-
-
-        //public static void ComputeThirdKeyVector(byte[] key, int keyLengthInWords, uint* outs)
-        //{
-        //    // key is interpreted as 8 byte vector
-        //    /* [RS matrix]
-        //     * 
-        //     * 01   A4   55   87   5A   58   DB   9E 
-        //     * A4   56   82   F3   1E   C6   68   E5
-        //     * 02   A1   FC   C1   47   AE   3D   19
-        //     * A4   55   87   5A   58   DB   9E   03
-        //     */
-
-        //    int writeOut = (keyLengthInWords - 1) * 8;
-        //    byte irreducible = (1 << 6) + (1 << 3) + (1 << 2) + 1; /* + (1 << 8) */
-
-        //    for (int i = 0; i < keyLengthInWords; i++)
-        //    {
-        //        uint multiplied = 0;
-        //        for (int y = 0; y < 4; y++)
-        //        {
-        //            byte result = 0;
-        //            for (int j = 0; j < 8; j++)
-        //            {
-        //                byte a = RC[(y * 8) + j];
-        //                byte b = key[j];
-        //                result ^= GF2Mul(a, b, irreducible);
-        //            }
-
-        //            multiplied |= ((uint)result << (24 - (y * 8)));
-        //        }
-
-        //        outs[keyLengthInWords - 1 - i] = multiplied;
-        //    }
-        //}
-
-        
-
-       
     }
 }
-
-/*static void ComputeExpandedKey(uint* me, uint* mo, uint keyLengthInWords, uint[] outk)
-        {
-            uint r = (1 << 24) + (1 << 16) + (1 << 8) + (1);
-            uint a = 0;
-            uint b = 0;
-
-            for (uint i = 0; i < 20; i++)
-            {
-                a = h((2 * i) * r, me, keyLengthInWords / 2);
-                b = ROL(h(((2 * i) + 1) * r, mo, keyLengthInWords / 2), 8);
-                outk[2 * i] = (a + b);
-                outk[(2 * i) + 1] = (ROL(a + (2 * b), 9));
-            }
-        }*/
-
-/*static void KeyDependentSBox128(byte x, uint[] lArray, byte* outputValue)
-        {
-            int lArrayLength = 2;
-            byte* l = stackalloc byte[(int)lArrayLength * 4];
-
-            for (int i = 0; i < lArrayLength; i++)
-            {
-                byte* toBytesOffset = l + (4 * i);
-                BinConverter.ToBytesLE(lArray[i], toBytesOffset);
-            }
-
-            byte y0 = (byte)(x >> 0);
-            byte y1 = (byte)(x >> 8);
-            byte y2 = (byte)(x >> 16);
-            byte y3 = (byte)(x >> 24);
-
-            if (lArrayLength == 4)
-            {
-                y0 = (byte)(q1(y0) ^ l[(3 * 4) + 3]);
-                y1 = (byte)(q0(y1) ^ l[(3 * 4) + 2]);
-                y2 = (byte)(q0(y2) ^ l[(3 * 4) + 1]);
-                y3 = (byte)(q1(y3) ^ l[(3 * 4) + 0]);
-            }
-            if (lArrayLength >= 3)
-            {
-                y0 = (byte)(q1(y0) ^ l[(2 * 4) + 3]);
-                y1 = (byte)(q1(y1) ^ l[(2 * 4) + 2]);
-                y2 = (byte)(q0(y2) ^ l[(2 * 4) + 1]);
-                y3 = (byte)(q0(y3) ^ l[(2 * 4) + 0]);
-            }
-
-            outputValue[0] = (byte)q1(q0(q0(y0) ^ l[(1 * 4) + 3]) ^ l[(1 * 0) + 3]);
-            outputValue[1] = (byte)q0(q0(q1(y1) ^ l[(1 * 4) + 2]) ^ l[(1 * 0) + 2]);
-            outputValue[2] = (byte)q1(q1(q0(y2) ^ l[(1 * 4) + 1]) ^ l[(1 * 0) + 1]);
-            outputValue[3] = (byte)q0(q1(q1(y3) ^ l[(1 * 4) + 0]) ^ l[(1 * 0) + 0]);
-        }*/

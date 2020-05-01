@@ -1,9 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Arctium.Shared.Helpers.Buffers
 {
     /// <summary>
     /// Performs some common mapping from blocks of types to other types.
+    /// Optimized, expanded versions of mapping
     /// </summary>
     public static unsafe class MemMap
     {
@@ -62,6 +64,39 @@ namespace Arctium.Shared.Helpers.Buffers
 
             return buf;
         }
+
+        /// <summary>
+        /// Converts array of 16 bytes to array of 4 uint where each Uint is mapped 
+        /// to little-endian fromat. Means that input[0] is least significant byte of 
+        /// output[0] uint value
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="p"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt16BytesLE(byte* input, uint* output)
+        {
+            output[0] = (uint)input[0] << 0;
+            output[0] |= (uint)input[1] << 8;
+            output[0] |= (uint)input[2] << 16;
+            output[0] |= (uint)input[3] << 24;
+
+            output[1] = (uint)input[4] << 0;
+            output[1] |= (uint)input[5] << 8;
+            output[1] |= (uint)input[6] << 16;
+            output[1] |= (uint)input[7] << 24;
+
+            output[2] = (uint)input[8] << 0;
+            output[2] |= (uint)input[9] << 8;
+            output[2] |= (uint)input[10] << 16;
+            output[2] |= (uint)input[11] << 24;
+
+            output[3] = (uint)input[12] << 0;
+            output[3] |= (uint)input[13] << 8;
+            output[3] |= (uint)input[14] << 16;
+            output[3] |= (uint)input[15] << 24;
+        }
+
+
         //
         // Unsafe end
         //
