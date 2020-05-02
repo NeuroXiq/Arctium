@@ -10,13 +10,15 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
         public BlockCipherMode BlockCipherMode { get; private set; }
 
         protected byte[] key;
+        protected byte[] initializationVector;
 
-        protected BlockCipher(byte[] key,int inputBlockLength, BlockCipherMode mode)
+        protected BlockCipher(byte[] key,byte[] initializationVector, int inputBlockLength, BlockCipherMode mode)
         {
-
             InputBlockLength = inputBlockLength;
             BlockCipherMode = mode;
+            
             this.key = key;
+            this.initializationVector = initializationVector;
         }
 
         public abstract long Encrypt(byte[] input, long offset, byte[] output, long outputOffset, long length);
