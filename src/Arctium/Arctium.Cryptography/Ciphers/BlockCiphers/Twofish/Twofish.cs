@@ -35,7 +35,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
         /// Creates new instance of the Twofish cipher. 
         /// </summary>
         /// <param name="key">Secret bytes</param>
-        public Twofish(byte[] key, BlockCipherMode mode) : base(key, InputBlockLengthInBits, mode)
+        public Twofish(byte[] key, BlockCipherMode mode) : base(key,null, InputBlockLengthInBits, mode)
         {
             CiphersValidation.ThrowIfInvalidKeyLength(nameof(Twofish), validKeyLengths, key.Length * 8);
 

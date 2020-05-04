@@ -5,7 +5,8 @@ namespace Arctium.Shared.Helpers.Buffers
 {
     /// <summary>
     /// Performs some common mapping from blocks of types to other types.
-    /// Optimized, expanded versions of mapping
+    /// Optimized, expanded versions of mapping. This conversions operatates on 
+    /// arrays of values e.g. convert 8 byte uint array to byte array
     /// </summary>
     public static unsafe class MemMap
     {
@@ -50,6 +51,7 @@ namespace Arctium.Shared.Helpers.Buffers
         /// <param name="uintPtr">Pointer for the uint array</param>
         /// <param name="length">length of the uint array (length = 2 means 8 bytes of memory)</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToBytesBE(uint* uintPtr, int length)
         {
             byte[] buf = new byte[length * 4];
@@ -94,6 +96,56 @@ namespace Arctium.Shared.Helpers.Buffers
             output[3] |= (uint)input[13] << 8;
             output[3] |= (uint)input[14] << 16;
             output[3] |= (uint)input[15] << 24;
+        }
+
+
+        /// <summary>
+        /// Converts 32 bytes to 8 uint values where input bytes 
+        /// are intepreted as little-endia 4-bytes integers
+        /// </summary>
+        /// <param name="prekey"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt32BytesLE(byte* input, uint* output)
+        {
+            output[0] = (uint)input[0];
+            output[0] |= (uint)(input[1] << 8);
+            output[0] |= (uint)(input[2] << 16);
+            output[0] |= (uint)(input[3] << 24);
+
+            output[1] = (uint)input[4];
+            output[1] |= (uint)(input[5] << 8);
+            output[1] |= (uint)(input[6] << 16);
+            output[1] |= (uint)(input[7] << 24);
+
+            output[2] = (uint)input[8];
+            output[2] |= (uint)(input[9] << 8);
+            output[2] |= (uint)(input[10] << 16);
+            output[2] |= (uint)(input[11] << 24);
+
+            output[3] = (uint)input[12];
+            output[3] |= (uint)(input[13] << 8);
+            output[3] |= (uint)(input[14] << 16);
+            output[3] |= (uint)(input[15] << 24);
+
+            output[4] = (uint)input[16];
+            output[4] |= (uint)(input[17] << 8);
+            output[4] |= (uint)(input[18] << 16);
+            output[4] |= (uint)(input[19] << 24);
+
+            output[5] = (uint)input[20];
+            output[5] |= (uint)(input[21] << 8);
+            output[5] |= (uint)(input[22] << 16);
+            output[5] |= (uint)(input[23] << 24);
+
+            output[6] = (uint)input[24];
+            output[6] |= (uint)(input[25] << 8);
+            output[6] |= (uint)(input[26] << 16);
+            output[6] |= (uint)(input[27] << 24);
+
+            output[7] = (uint)input[28];
+            output[7] |= (uint)(input[29] << 8);
+            output[7] |= (uint)(input[30] << 16);
+            output[7] |= (uint)(input[31] << 24);
         }
 
 
