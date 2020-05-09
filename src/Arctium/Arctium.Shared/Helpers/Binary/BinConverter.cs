@@ -15,9 +15,6 @@ namespace Arctium.Shared.Helpers.Binary
     /// </summary>
     public unsafe static class BinConverter
     {
-        /*
-         * From byte array to number
-         */
 
         // 
         // MANAGED CODE START
@@ -26,20 +23,7 @@ namespace Arctium.Shared.Helpers.Binary
         #region Managed 
 
 
-        /// <summary>
-        /// Converts bytes to uint in little-endian order
-        /// </summary>
-        /// <param name="buffer">Pointer to the buffer</param>
-        /// <returns>bytes converted to uint</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint ToUIntLE(byte* buffer)
-        {
-            return (uint)(
-                (buffer[0] <<  0) |
-                (buffer[1] <<  8) |
-                (buffer[2] << 16) |
-                (buffer[3] << 24));
-        }
+        
 
 
         // managed
@@ -274,17 +258,46 @@ namespace Arctium.Shared.Helpers.Binary
 
         #region Unmanaged
 
-        //
-        // From byte array to value -START-
-        //
+        #region byte array -> value 
 
-        //
-        // From byte array to value -END-
-        //
+        /// <summary>
+        /// Converts bytes to uint in little-endian order
+        /// </summary>
+        /// <param name="buffer">Pointer to the buffer</param>
+        /// <returns>bytes converted to uint</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUIntLE(byte* buffer)
+        {
+            return (uint)(
+                (buffer[0] << 0) |
+                (buffer[1] << 8) |
+                (buffer[2] << 16) |
+                (buffer[3] << 24));
+        }
 
-        //
-        // From value to Byte Array - START -
-        //
+        /// <summary>
+        /// Converts 4 bytes to unsigned integer, 
+        /// conversion assumes that bytes are stored
+        /// in bit-endian order (BE)
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ToUIntBE(byte* buffer, long offset)
+        {
+            uint result = (uint)
+               (((uint)buffer[offset + 0] << 24) |
+                ((uint)buffer[offset + 1] << 16) |
+                ((uint)buffer[offset + 2] << 8) |
+                ((uint)buffer[offset + 3] << 0));
+
+            return result;
+        }
+
+        #endregion
+
+        #region Unsafe value -> byte array
 
         /// <summary>
         /// Converts unsigned integer input to byte array in Little-endian format.
@@ -301,12 +314,9 @@ namespace Arctium.Shared.Helpers.Binary
             outputArray[3] = (byte)(value >> 24);
         }
 
-
         #endregion
 
-        //
-        // From value to byte array - END -
-        //
+        #endregion
 
         //
         // UNMANAGED CODE END

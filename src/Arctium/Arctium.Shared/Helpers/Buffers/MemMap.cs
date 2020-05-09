@@ -6,7 +6,7 @@ namespace Arctium.Shared.Helpers.Buffers
     /// <summary>
     /// Performs some common mapping from blocks of types to other types.
     /// Optimized, expanded versions of mapping. This conversions operatates on 
-    /// arrays of values e.g. convert 8 byte uint array to byte array
+    /// arrays of values e.g. convert 8 uint array to 32 byte array
     /// </summary>
     public static unsafe class MemMap
     {

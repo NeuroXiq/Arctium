@@ -18,7 +18,7 @@ namespace Arctium.Shared.Helpers.Binary
         /// <param name="r">Rotation</param>
         /// <returns>Result of the rotation</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint ROL32(uint value, int r)
+        public static uint ROL(uint value, int r)
         {
             return (value << r) | (value >> (32 - r));
         }

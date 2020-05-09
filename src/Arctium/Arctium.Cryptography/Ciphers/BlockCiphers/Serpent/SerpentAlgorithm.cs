@@ -38,34 +38,61 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Serpent
         public static void KeySchedule(byte* input, uint* output)
         {
             uint* w = stackalloc uint[140];
+            uint* prekey = w + 8;
             MemMap.ToUInt32BytesLE(input, w);
 
-            for (uint i = 8; i < 140; i++)
+            MemDump.HexDump(w, 8);
+
+            for (uint i = 0; i < 132; i++)
             {
-                w[i] = w[i - 8] ^ w[i - 5] ^ w[i - 3] ^ w[i - 1] ^ 0x9e3779b9 ^ i;
-                w[i] = BinOps.ROL32(w[i], 11);
+                prekey[i] = prekey[i - 8] ^ prekey[i - 5] ^ prekey[i - 3] ^ prekey[i - 1] ^ 0x9e3779b9 ^ (i);
+                prekey[i] = BinOps.ROL(prekey[i], 11);
             }
 
-
-            for (int i = 8; i < 140; i++)
-            {
-
+            int mod8 = 7;
+            uint* block128Bits = prekey;
+            for (int i = 0; i < 32; i++)
+            {   
+                int sboxNo = (3 - (i - 8)) & mod8;
+                ApplySBox(block128Bits, block128Bits, sboxNo);
+                block128Bits += 4;
             }
+
+            MemDump.HexDump(prekey, 32);
 
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint SBoxTransform(uint value, uint sboxStartIndex)
-        {
-            uint result = 0;
+        static uint ROUNDS = 32;
+        static uint PHI = 0x9e3779b9;
 
-            for (int i = 0; i < 8; i++)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApplySBox(uint* inputBlock128Bits, uint* outputBlock128Bits, int sboxStartIndex)
+        {
+            sboxStartIndex *= 16;
+
+            uint y0=0, y1=0, y2=0, y3=0;
+
+            for (int i = 0; i < 32; i++)
             {
-                uint idx = (value >> (i * 4)) & 0xF;
-                result |= (SBox[idx + (16 * sboxStartIndex)]);
+                uint sboxKey = 0;
+
+                sboxKey =  ((inputBlock128Bits[0] >> i) & 0x01);
+                sboxKey |= ((inputBlock128Bits[1] >> i) & 0x01) << 1;
+                sboxKey |= ((inputBlock128Bits[2] >> i) & 0x01) << 2;
+                sboxKey |= ((inputBlock128Bits[3] >> i) & 0x01) << 3;
+
+                byte sboxValue = SBox[(int)sboxKey + sboxStartIndex];
+                
+                y0 |= (uint)((sboxValue >> 0) & 1) << i;
+                y1 |= (uint)((sboxValue >> 1) & 1) << i;
+                y2 |= (uint)((sboxValue >> 2) & 1) << i;
+                y3 |= (uint)((sboxValue >> 3) & 1) << i;
             }
 
-            return result;
+            outputBlock128Bits[0] = y0;
+            outputBlock128Bits[1] = y1;
+            outputBlock128Bits[2] = y2;
+            outputBlock128Bits[3] = y3;
         }
     }
 }
