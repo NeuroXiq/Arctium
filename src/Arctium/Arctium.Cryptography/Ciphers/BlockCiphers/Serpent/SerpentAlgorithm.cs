@@ -9,11 +9,15 @@
 using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers.Buffers;
 using System.Runtime.CompilerServices;
+using static Arctium.Shared.Helpers.Binary.BinOps;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Serpent
 {
     public static unsafe class SerpentAlgorithm
     {
+        // 0-15 S0
+        // 16-31 S1 etc..
+
         private static byte[] SBox = new byte[] {
             3, 8, 15, 1, 10, 6, 5, 11, 14, 13, 4, 2, 7, 0, 9, 12,
             15, 12, 2, 7, 9, 0, 5, 10, 1, 11, 14, 8, 6, 13, 3, 4,
@@ -35,13 +39,22 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Serpent
              3, 0, 6, 13, 9, 14, 15, 8, 5, 12, 11, 7, 10, 1, 4, 2,
         };
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="output">output array of 33 uint (schedule key)</param>
         public static void KeySchedule(byte* input, uint* output)
         {
             uint* w = stackalloc uint[140];
             uint* prekey = w + 8;
-            MemMap.ToUInt32BytesLE(input, w);
 
-            MemDump.HexDump(w, 8);
+            //MemMap.ToUInt32BytesLE(input, w);
+            
+            for (int i = 0; i < 8; i++)
+            {
+                w[i] = BinConverter.ToUIntBE(input, i * 4);
+            }
 
             for (uint i = 0; i < 132; i++)
             {
@@ -51,19 +64,55 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Serpent
 
             int mod8 = 7;
             uint* block128Bits = prekey;
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 33; i++)
             {   
                 int sboxNo = (3 - (i - 8)) & mod8;
                 ApplySBox(block128Bits, block128Bits, sboxNo);
                 block128Bits += 4;
             }
 
-            MemDump.HexDump(prekey, 32);
-
+            MemCpy.Copy(prekey, output, 33);
         }
 
-        static uint ROUNDS = 32;
-        static uint PHI = 0x9e3779b9;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="skey">33 uint array of encryption key (after keySchedule)</param>
+        /// <param name="output"></param>
+        public static void EncryptBlock(byte* input,uint* skey, byte* output)
+        {
+            uint* x = stackalloc uint[4];
+            x[0] = BinConverter.ToUIntLE(input + 0);
+            x[1] = BinConverter.ToUIntLE(input + 4);
+            x[2] = BinConverter.ToUIntLE(input + 8);
+            x[3] = BinConverter.ToUIntLE(input + 12);
+
+            int keyRoundIndex = 0;
+
+            for (int i = 0; i < 32; i++)
+            {
+                x[0] ^= skey[keyRoundIndex + 0];
+                x[1] ^= skey[keyRoundIndex + 1];
+                x[2] ^= skey[keyRoundIndex + 2];
+                x[3] ^= skey[keyRoundIndex + 3];
+
+                ApplySBox(x, x, i % 8);
+
+                x[0] = ROL(x[0], 13);
+                x[2] = ROL(x[2], 3);
+                x[1] = x[1] ^ x[0] ^ x[2];
+                x[3] = x[3] ^ x[2] ^ (uint)(x[0] << 3);
+                x[1] = ROL(x[1], 1);
+                x[3] = ROL(x[3], 7);
+                x[0] = x[0] ^ x[1] ^ x[3];
+                x[2] = x[2] ^ x[3] ^ (x[1] << 7);
+                x[0] = ROL(x[0], 5);
+                x[2] = ROL(x[2], 22);
+
+                MemDump.HexDump(x, 4);
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ApplySBox(uint* inputBlock128Bits, uint* outputBlock128Bits, int sboxStartIndex)

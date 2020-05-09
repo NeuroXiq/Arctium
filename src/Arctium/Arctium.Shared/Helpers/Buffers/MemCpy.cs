@@ -41,7 +41,7 @@ namespace Arctium.Shared.Helpers.Buffers
             return Copy(source, 0, destination, 0, destination.Length);
         }
 
-        public static byte[] CutRange(byte[] buffer, long offset, long length)
+        public static byte[] CopyRange(byte[] buffer, long offset, long length)
         {
             byte[] range = new byte[length];
 
@@ -50,11 +50,8 @@ namespace Arctium.Shared.Helpers.Buffers
             return range;
         }
 
-       
 
-        //
-        // Unmanaged copy version
-        //
+        #region unmanaged
 
         //
         // Fixed Length Copy
@@ -75,6 +72,7 @@ namespace Arctium.Shared.Helpers.Buffers
         //
         // End fixed length copy
         //
+
         public static void Copy(byte* src, long srcOffset, byte* output, long outOffset, long length)
         {
             for (int i = 0; i < length; i++)
@@ -83,6 +81,15 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
+        public static void Copy(uint* src, uint* dst, long length)
+        {
+            for (long i = 0; i < length; i++)
+            {
+                dst[i] = src[i];
+            }
+        }
+
+        #endregion
 
         //
         // basic copy method (roots)
