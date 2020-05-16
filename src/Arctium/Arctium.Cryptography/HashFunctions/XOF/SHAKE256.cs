@@ -2,7 +2,7 @@
 
 namespace Arctium.Cryptography.HashFunctions.XOF
 {
-    public class SHAKE256 : XOFBase
+    public unsafe class SHAKE256 : XOFBase
     {
         const int R_SpongeParam = 1600 - 512;
         const int OutputSizeInBits = R_SpongeParam;
@@ -21,9 +21,12 @@ namespace Arctium.Cryptography.HashFunctions.XOF
             sha3Shared.Shake_GenerateNextState();
         }
 
-        protected override void Feed(byte[] buffer, long offset, long length)
+        protected  override void Feed(byte[] buffer, long offset, long length)
         {
-            sha3Shared.MainHashComputation(buffer, offset, length);
+            fixed (byte* input = &buffer[offset])
+            {
+                sha3Shared.MainHashComputation(input, length);
+            }
         }
 
         protected override byte[] GetPadding()

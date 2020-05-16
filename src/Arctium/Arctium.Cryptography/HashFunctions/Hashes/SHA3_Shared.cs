@@ -5,7 +5,7 @@ using System;
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     //TODO SHA3 Force inline, maybe unwind all loops
-    class SHA3_Shared
+    unsafe class SHA3_Shared
     {
 
         //
@@ -62,14 +62,13 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         /// <param name="input"></param>
         /// <param name="offset"></param>
         /// <param name="length"></param>
-        public void MainHashComputation(byte[] input, long offset, long length)
+        public void MainHashComputation(byte* input, long length)
         {
             if (length % (r / 8) != 0 || length <= 0 || length % (r/8) != 0) throw new HashFunctionsExceptionInternal("SHA3 invalid r/length","","STATIC_SHA3_Shared");
             int inputBytesCount = r / 8;
-            for (long i = offset; i < length + offset;)
+            for (long i = 0; i < length; i += inputBytesCount)
             {
                 PrepareKeccakBuffer0(input, i);
-                i += inputBytesCount;
 
                 Keccakp();
             }
@@ -94,14 +93,14 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         // keccakp input is fixed-length bytes from the input message with some zero padded bits based on r
         // called by hash functions
-        void PrepareKeccakBuffer0(byte[] buffer, long offset)
+        void PrepareKeccakBuffer0(byte* buffer, long offset)
         {
             int ulongToInsert = r / 64;
             long currentBlockOffset = offset;
 
             for (int i = 0; i < ulongToInsert; i++)
             {
-                keccakBuffer0[i] ^= BinConverter.ToULongLE(buffer, currentBlockOffset);
+                keccakBuffer0[i] ^= BinConverter.ToULongLE(buffer + currentBlockOffset);
 
                 currentBlockOffset += 8;
             }

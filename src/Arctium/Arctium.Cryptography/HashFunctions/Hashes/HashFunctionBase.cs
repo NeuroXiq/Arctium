@@ -1,4 +1,5 @@
-﻿using  Arctium.Cryptography.HashFunctions.Hashes.Configuration;
+﻿using Arctium.Cryptography.HashFunctions.Hashes.Configuration;
+using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.IO;
 
@@ -7,7 +8,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
     /// <summary>
     /// Base class for all hash function.
     /// </summary>
-    public abstract class HashFunctionBase
+    public unsafe abstract class HashFunctionBase
     {
         /// <summary>
         /// Input block size in bits
@@ -19,7 +20,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// </summary>
         public int HashSize { get; private set; }
 
-        internal HashDataBuffer hashDataBuffer;
+        protected BlockBufferWithUnsafeCallback dataBufferWithCallback;
 
         private bool hashFinalCalled;
 
@@ -40,9 +41,10 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             InputBlockSize = inputBlockSize;
             HashSize = hashSize;
 
-            int bufferSize = HashFunctionsConfig.Common_HashDataBuffer_BufferSize * (inputBlockSize / 8);
+            int blockSizeInBytes = inputBlockSize / 8;
+            int bufferSize = HashFunctionsConfig.BufferSizeInBlocks * (inputBlockSize / 8);
+            dataBufferWithCallback = new BlockBufferWithUnsafeCallback(bufferSize, blockSizeInBytes, new BlockBufferWithUnsafeCallback.Callback(this.HashDataBufferCallback));
 
-            hashDataBuffer = new HashDataBuffer(bufferSize, (buffer, offset, length) => HashDataBufferCallback(buffer, offset, length));
             hashFinalCalled = false;
         }
 
@@ -53,7 +55,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// <returns>Hash value of the bytes from buffer</returns>
         public virtual long HashBytes(byte[] buffer)
         {
-            long loaded = hashDataBuffer.Load(buffer, 0, buffer.Length);
+            long loaded = dataBufferWithCallback.Load(buffer, 0, buffer.Length);
             CurrentMessageLength += loaded;
 
             return loaded;
@@ -66,7 +68,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// <returns>Hash value of all bytes readed from the stream</returns>
         public virtual long HashBytes(Stream stream)
         {
-            long loaded = hashDataBuffer.Load(stream);
+            long loaded = dataBufferWithCallback.Load(stream);
             CurrentMessageLength += loaded;
             return loaded;
         }
@@ -79,7 +81,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// <param name="length">Length of bytes to transform</param>
         public virtual long HashBytes(byte[] buffer, long offset, long length)
         {
-            long loaded = hashDataBuffer.Load(buffer, offset, length);
+            long loaded = dataBufferWithCallback.Load(buffer, offset, length);
             CurrentMessageLength += loaded;
 
             return loaded;
@@ -91,20 +93,20 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             hashFinalCalled = true;
 
             byte[] padding = GetPadding();
-            hashDataBuffer.Load(padding,0,padding.Length);
+            dataBufferWithCallback.Load(padding,0,padding.Length);
 
             // hashDataBuffer may call hashing method because after padding append,
             // buffer is filled exactly to end (exact multiply of hash input block) and callback was invoked,
             // right after Load() call
-            if (hashDataBuffer.DataLength > 0)
-                ExecuteHashing(hashDataBuffer.Buffer, 0, hashDataBuffer.DataLength);
+            dataBufferWithCallback.FlushBuffer();
+
 
             return GetCurrentHash();
         }
 
-        private void HashDataBufferCallback(byte[] buffer, long offset, long length)
+        private void HashDataBufferCallback(byte* buffer, long length)
         {
-            ExecuteHashing(buffer, offset, length);
+            ExecuteHashing(buffer, length);
             HashedBlocksCount++;
         }
 
@@ -112,7 +114,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         //this function is a main function implemented by all hash functions. This is where specific hashing for specific hash function shall be executed.
         //'length' must be multiply of the input block size.
-        protected abstract void ExecuteHashing(byte[] buffer, long offset, long length);
+        protected abstract void ExecuteHashing(byte* buffer, long length);
 
         /// <summary>
         /// Returns current hash state.
@@ -129,7 +131,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             hashFinalCalled = false;
             HashedBlocksCount = 0;
             CurrentMessageLength = 0;
-            hashDataBuffer.Clear();
+            dataBufferWithCallback.Clear();
         }
 
         protected abstract void ResetCurrentState();

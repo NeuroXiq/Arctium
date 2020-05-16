@@ -4,7 +4,7 @@ using Arctium.Shared.Helpers.Binary;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
-    static class SHA2_384_512_Shared
+    static unsafe class SHA2_384_512_Shared
     {
         static ulong[] ConstantWords = new ulong[]
         {
@@ -33,8 +33,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         public static void PerformHashComputation(
             ulong[] hashValue, 
-            byte[] buffer, 
-            long offset, 
+            byte* buffer, 
             long length, 
             ulong[] messageScheduleBuffer)
         {
@@ -49,7 +48,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             //ulong* T1_helperResultPtr = stackalloc ulong[2];
             //ulong* T2_helperResultPtr = T1_helperResultPtr + 1;
 
-            for (long i = 0, dataOffset = offset; i < blocksCount; i++, dataOffset += 128)
+            for (long i = 0, dataOffset = 0; i < blocksCount; i++, dataOffset += 128)
             {
                 hashValue.CopyTo(vars, 0);
                 PrepareMessageScheduleBuffer(buffer, dataOffset, messageScheduleBuffer);
@@ -83,13 +82,13 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             }
         }
 
-        private static void PrepareMessageScheduleBuffer(byte[] buffer, long dataOffset, ulong[] messageScheduleBuffer)
+        private static void PrepareMessageScheduleBuffer(byte* buffer, long dataOffset, ulong[] messageScheduleBuffer)
         {
             ulong[] w = messageScheduleBuffer;
 
             for (long i = 0, j = dataOffset; i < 16; i++, j += 8)
             {
-                w[i] = BinConverter.ToULongBE(buffer, j);
+                w[i] = BinConverter.ToULongBE(buffer + j);
             }
 
             for (int i = 16; i < 80; i++)

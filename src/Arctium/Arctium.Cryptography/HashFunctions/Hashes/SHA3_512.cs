@@ -2,7 +2,7 @@
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
-    public class SHA3_512 : HashFunctionBase
+    public unsafe class SHA3_512 : HashFunctionBase
     {
         const int HashSizeInBits = 512;
         const int R_SpongeParam = 1600 - (2 * HashSizeInBits);
@@ -13,9 +13,9 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             sha3Shared = new SHA3_Shared(R_SpongeParam);
         }
 
-        protected override void ExecuteHashing(byte[] buffer, long offset, long length)
+        protected override void ExecuteHashing(byte* buffer, long length)
         {
-            sha3Shared.MainHashComputation(buffer, offset, length);
+            sha3Shared.MainHashComputation(buffer, length);
         }
 
         protected override byte[] GetCurrentHash()

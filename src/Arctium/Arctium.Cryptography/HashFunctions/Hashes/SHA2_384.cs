@@ -3,7 +3,7 @@ using Arctium.Shared.Helpers.Binary;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
-    public class SHA2_384 : HashFunctionBase
+    public unsafe class SHA2_384 : HashFunctionBase
     {
         static readonly ulong[] InitialHashValue = new ulong[] 
         {
@@ -34,9 +34,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             return initial;
         }
 
-        protected override void ExecuteHashing(byte[] buffer, long offset, long length)
+        protected override void ExecuteHashing(byte* buffer, long length)
         {
-            SHA2_384_512_Shared.PerformHashComputation(hashValue, buffer, offset, length, messageScheduleBuffer);
+            SHA2_384_512_Shared.PerformHashComputation(hashValue, buffer,  length, messageScheduleBuffer);
         }
 
         protected override byte[] GetCurrentHash()

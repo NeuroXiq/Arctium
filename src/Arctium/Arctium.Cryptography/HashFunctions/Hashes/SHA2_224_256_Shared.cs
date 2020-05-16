@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
-    static class SHA2_224_256_Shared
+    static unsafe class SHA2_224_256_Shared
     {
         static uint[] ConstantWords = new uint[]
         {
@@ -44,8 +44,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// Alloced only once instead of alloc-per-call. Length must be 64 bytes.
         /// </param>
         internal static unsafe void PerformHashComputation(
-            byte[] inputBuffer,
-            long inputOffset,
+            byte* inputBuffer,
             long inputLength,
             uint[] workingVariables,
             uint[] messageScheduleBuffer)
@@ -69,7 +68,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
                     //workingVariables.CopyTo(vars, 0);
                     CopyWorkingVariables(workingVars, vars);
 
-                    long currentOffset = (i * (64)) + inputOffset;
+                    long currentOffset = (i * (64));
 
                     PrepareMessageScheduleBuffer(inputBuffer, currentOffset, w);
 
@@ -143,7 +142,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static unsafe void PrepareMessageScheduleBuffer(byte[] inputBuffer, long currentOffset, uint* w)
+        static unsafe void PrepareMessageScheduleBuffer(byte* inputBuffer, long currentOffset, uint* w)
         {
 
             w[0] = BinConverter.ToUIntBE(inputBuffer, currentOffset + (0));

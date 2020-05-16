@@ -3,7 +3,7 @@ using System;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
-    public class SHA2_224 : HashFunctionBase
+    public unsafe class SHA2_224 : HashFunctionBase
     {
         uint[] InitialHashValue = new uint[]
         {
@@ -28,9 +28,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             messageScheduleBuffer = new uint[64];
         }
 
-        protected override void ExecuteHashing(byte[] buffer, long offset, long length)
+        protected override void ExecuteHashing(byte* buffer, long length)
         {
-            SHA2_224_256_Shared.PerformHashComputation(buffer, offset, length, hashValue, messageScheduleBuffer);
+            SHA2_224_256_Shared.PerformHashComputation(buffer, length, hashValue, messageScheduleBuffer);
         }
 
         private uint[] GetInitialHashValue()

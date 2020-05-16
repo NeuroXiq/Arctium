@@ -260,6 +260,34 @@ namespace Arctium.Shared.Helpers.Binary
 
         #region byte array -> value 
 
+
+        public static ulong ToULongBE(byte* buffer)
+        {
+            return (ulong)(
+                (buffer[7] << 56) |
+                (buffer[6] << 48) |
+                (buffer[5] << 40) |
+                (buffer[4] << 32) |
+                (buffer[3] << 24) |
+                (buffer[2] << 16) |
+                (buffer[1] << 8) |
+                (buffer[0] << 0));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULongLE(byte* buffer)
+        {
+            return (ulong)(
+                (buffer[0] << 56) |
+                (buffer[1] << 48) |
+                (buffer[2] << 40) |
+                (buffer[3] << 32) |
+                (buffer[4] << 24) |
+                (buffer[5] << 16) |
+                (buffer[6] <<  8) |
+                (buffer[7] <<  0));
+        }
+
         /// <summary>
         /// Converts bytes to uint in little-endian order
         /// </summary>

@@ -16,9 +16,12 @@ namespace Arctium.Cryptography.HashFunctions.XOF
             sha3Shared = new SHA3_Shared(R_SpongeParam);
         }
 
-        protected override void Feed(byte[] buffer, long offset, long length)
+        protected unsafe override void Feed(byte[] buffer, long offset, long length)
         {
-            sha3Shared.MainHashComputation(buffer, offset, length);
+            fixed (byte* input = &buffer[offset])
+            {
+                sha3Shared.MainHashComputation(input, length);
+            }
         }
 
         public override void GenerateNextOutputBytes(byte[] buffer, long offset)
