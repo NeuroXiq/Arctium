@@ -10,9 +10,7 @@ namespace Arctium.Shared.Helpers.Buffers
     /// </summary>
     public static unsafe class MemMap
     {
-        //
-        // Unsafe
-        //
+        #region Unsafe
 
         /// <summary>
         /// Converts array of 4 unsigned integers to byte array in little-endian format
@@ -149,9 +147,97 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
 
-        //
-        // Unsafe end
-        //
+        /// <summary>
+        /// Maps 64 bytes to 16 uint values where bytes are interpreted as
+        /// litte-endian integers. Input[0] becomes least significat byte of output[0]
+        /// Input[7] is most significat byte of output[1] etc...
+        /// </summary>
+        /// <param name="input">Input memory to map</param>
+        /// <param name="output">uint output buffer of length 16</param>
+        public static void ToUInt64BytesLE(byte* input, uint* output)
+        {
+            output[0] = (uint)input[0 + 0] << 0;
+            output[0] |= (uint)input[0 + 1] << 8;
+            output[0] |= (uint)input[0 + 2] << 16;
+            output[0] |= (uint)input[0 + 3] << 24;
+
+            output[1] = (uint)input[4 + 0] << 0;
+            output[1] |= (uint)input[4 + 1] << 8;
+            output[1] |= (uint)input[4 + 2] << 16;
+            output[1] |= (uint)input[4 + 3] << 24;
+
+            output[2] = (uint)input[8 + 0] << 0;
+            output[2] |= (uint)input[8 + 1] << 8;
+            output[2] |= (uint)input[8 + 2] << 16;
+            output[2] |= (uint)input[8 + 3] << 24;
+
+            output[3] = (uint)input[12 + 0] << 0;
+            output[3] |= (uint)input[12 + 1] << 8;
+            output[3] |= (uint)input[12 + 2] << 16;
+            output[3] |= (uint)input[12 + 3] << 24;
+
+            output[4] = (uint)input[16 + 0] << 0;
+            output[4] |= (uint)input[16 + 1] << 8;
+            output[4] |= (uint)input[16 + 2] << 16;
+            output[4] |= (uint)input[16 + 3] << 24;
+
+            output[5] = (uint)input[20 + 0] << 0;
+            output[5] |= (uint)input[20 + 1] << 8;
+            output[5] |= (uint)input[20 + 2] << 16;
+            output[5] |= (uint)input[20 + 3] << 24;
+
+            output[6] = (uint)input[24 + 0] << 0;
+            output[6] |= (uint)input[24 + 1] << 8;
+            output[6] |= (uint)input[24 + 2] << 16;
+            output[6] |= (uint)input[24 + 3] << 24;
+
+            output[7] = (uint)input[28 + 0] << 0;
+            output[7] |= (uint)input[28 + 1] << 8;
+            output[7] |= (uint)input[28 + 2] << 16;
+            output[7] |= (uint)input[28 + 3] << 24;
+
+            output[8] = (uint)input[32 + 0] << 0;
+            output[8] |= (uint)input[32 + 1] << 8;
+            output[8] |= (uint)input[32 + 2] << 16;
+            output[8] |= (uint)input[32 + 3] << 24;
+
+            output[9] = (uint)input[36 + 0] << 0;
+            output[9] |= (uint)input[36 + 1] << 8;
+            output[9] |= (uint)input[36 + 2] << 16;
+            output[9] |= (uint)input[36 + 3] << 24;
+
+            output[10] = (uint)input[40 + 0] << 0;
+            output[10] |= (uint)input[40 + 1] << 8;
+            output[10] |= (uint)input[40 + 2] << 16;
+            output[10] |= (uint)input[40 + 3] << 24;
+
+            output[11] = (uint)input[44 + 0] << 0;
+            output[11] |= (uint)input[44 + 1] << 8;
+            output[11] |= (uint)input[44 + 2] << 16;
+            output[11] |= (uint)input[44 + 3] << 24;
+
+            output[12] = (uint)input[48 + 0] << 0;
+            output[12] |= (uint)input[48 + 1] << 8;
+            output[12] |= (uint)input[48 + 2] << 16;
+            output[12] |= (uint)input[48 + 3] << 24;
+
+            output[13] = (uint)input[52 + 0] << 0;
+            output[13] |= (uint)input[52 + 1] << 8;
+            output[13] |= (uint)input[52 + 2] << 16;
+            output[13] |= (uint)input[52 + 3] << 24;
+
+            output[14] = (uint)input[56 + 0] << 0;
+            output[14] |= (uint)input[56 + 1] << 8;
+            output[14] |= (uint)input[56 + 2] << 16;
+            output[14] |= (uint)input[56 + 3] << 24;
+
+            output[15] = (uint)input[60 + 0] << 0;
+            output[15] |= (uint)input[60 + 1] << 8;
+            output[15] |= (uint)input[60 + 2] << 16;
+            output[15] |= (uint)input[60 + 3] << 24;
+        }
+
+        #endregion
 
     }
 }

@@ -8,6 +8,8 @@ namespace Arctium.Shared.Helpers.Buffers
         public readonly int BlockSize;
         public readonly int BufferSize;
 
+        public long Count { get { return bytesInBuffer; } }
+
         public delegate void Callback(byte* buffer, long bytesCount);
 
         byte[] buffer;

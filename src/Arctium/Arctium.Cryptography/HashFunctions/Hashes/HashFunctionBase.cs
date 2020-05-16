@@ -98,7 +98,8 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             // hashDataBuffer may call hashing method because after padding append,
             // buffer is filled exactly to end (exact multiply of hash input block) and callback was invoked,
             // right after Load() call
-            dataBufferWithCallback.FlushBuffer();
+            if(dataBufferWithCallback.Count > 0)
+                dataBufferWithCallback.FlushBuffer();
 
 
             return GetCurrentHash();

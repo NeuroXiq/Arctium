@@ -57,6 +57,19 @@ namespace Arctium.Shared.Helpers.Buffers
         // Fixed Length Copy
         //
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Copy8Uint(uint* src, uint* dst)
+        {
+            src[0] = dst[0];
+            src[1] = dst[1];
+            src[2] = dst[2];
+            src[3] = dst[3];
+            src[4] = dst[4];
+            src[5] = dst[5];
+            src[6] = dst[6];
+            src[7] = dst[7];
+        }
+
         /// <summary>
         /// Unwided version od copy 2 uint values to second 2 uint values
         /// </summary>
