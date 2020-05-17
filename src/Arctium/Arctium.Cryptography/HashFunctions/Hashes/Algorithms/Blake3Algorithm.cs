@@ -17,6 +17,14 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             DeriveKeyMaterial = 1 << 6
         };
 
+        const uint FlagChunkStart = 1 << 0;
+        const uint FlagChunkEnd = 1 << 1;
+        const uint FlagParent = 1 << 2;
+        const uint FlagRoot = 1 << 3;
+        const uint FlagKeyedHash = 1 << 4;
+        const uint FlagDeriveKeyContext = 1 << 5;
+        const uint FlagDeriveKeyMaterial = 1 << 6;
+
         static readonly uint[] IVConstants = new uint[] {
             0x6a09e667,
             0xbb67ae85,
@@ -28,60 +36,115 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             0x5be0cd19
         };
 
-        public struct State
+        public class State
         {
-            public uint* h;
-            public long processed64BytesBlocks;
+            public uint[] h;
+            public long counter;
         }
 
-        public static void SetStateToInitial(State* state)
+        public static void ResetState(State state)
         {
-            state->processed64BytesBlocks = 0;
+            state.counter = 0;
+            if(state.h == null) state.h = new uint[8];
 
             for (int i = 0; i < 8; i++)
-                state->h[0] = IVConstants[i];
-
-
+                state.h[i] = IVConstants[i];
         }
 
-        public static void HashBytes(byte* input, long length, State* state)
+        public static void HashFullChunks(byte* input, long inputLength, State state)
         {
+            uint* inputBuffer = stackalloc uint[16];
+            uint* outputBuffer = stackalloc uint[16];
 
+            long remainingBlocks = inputLength / 64;
+
+            uint flags = 0;
+            long bytesInChunk = 0;
+            long counter = state.counter;
+
+            while (remainingBlocks > 16)
+            {
+                MemMap.ToUInt64BytesLE(input, inputBuffer);
+                for (int i = 0; i < 16; i++)
+                {
+
+                }
+
+                counter++;
+                remainingBlocks -= 16;
+            }
+        }
+
+        public static void HashLastBlocks(byte* input, long inputLength, long dataLength, State state)
+        {
+            uint* inputBuffer = stackalloc uint[16];
+            uint* outputBuffer = stackalloc uint[16];
+
+            uint blocksCount = (uint)(inputLength / 64);
+
+            uint flags = 0;
+            uint bytesInChunk = 0;
+            long counter = state.counter;
+
+            for(int i = 0; i < blocksCount; i++)
+            {
+                MemMap.ToUInt64BytesLE(input, inputBuffer);
+                flags = 0;
+                bytesInChunk = 64;
+
+                if (i == 0)
+                {
+                    flags |= FlagChunkStart;
+                }
+                if (i == blocksCount - 1)
+                {
+                    flags |= FlagChunkEnd;
+                    // test
+                    // this work, need to check when to set this flag
+                    flags |= FlagRoot;
+                    //tetsend
+                    bytesInChunk = (uint)dataLength - (64 * (blocksCount - 1));
+                }
+                
+                CompressionFunction(inputBuffer, state.h, counter, bytesInChunk, flags, outputBuffer);
+
+                input += 64;
+            }
+
+            MemDump.HexDump(outputBuffer, 16);
         }
 
 
-        static void CompressionFunction(byte* inputMessage, uint* h, uint* output)
+        static void CompressionFunction(uint* input, uint[] h, long counter, uint blockLength, uint flags, uint* output)
         {
-            uint* inputUints = stackalloc uint[16];
-            MemMap.ToUInt64BytesLE(inputMessage, inputUints);
-
             // initialize state
             uint* v = stackalloc uint[16];
 
-            // 
-            MemCpy.Copy8Uint(h, v);
+            // TODO can be removed  and put state directly in State
+            for (int i = 0; i < 8; i++) v[i] = h[i];
 
             v[8] = 0x6a09e667;
             v[9] = 0xbb67ae85;
             v[10] = 0x3c6ef372;
             v[11] = 0xa54ff53a;
+            v[12] = (uint)counter;
+            v[13] = (uint)(counter >> 32);
+            v[14] = blockLength;
+            v[15] = flags;
 
-
-            uint* input = inputUints;
             uint* permute = stackalloc uint[16];
-
 
             for (int i = 0; i < 7; i++)
             {
-                G(&v[0], &v[4], &v[8], &v[12], input[(2 * i)], input[(2 * i) + 1]);
-                G(&v[1], &v[5], &v[9], &v[13], input[(2 * i)], input[(2 * i) + 1]);
-                G(&v[2], &v[6], &v[10], &v[14], input[(2 * i)], input[(2 * i) + 1]);
-                G(&v[3], &v[7], &v[11], &v[15], input[(2 * i)], input[(2 * i) + 1]);
+                G(&v[0], &v[4], &v[8], &v[12],  input[0], input[1]);
+                G(&v[1], &v[5], &v[9], &v[13],  input[2], input[3]);
+                G(&v[2], &v[6], &v[10], &v[14], input[4], input[5]);
+                G(&v[3], &v[7], &v[11], &v[15], input[6], input[7]);
 
-                G(&v[0], &v[5], &v[10], &v[15], input[(2 * i)], input[(2 * i) + 1]);
-                G(&v[1], &v[6], &v[11], &v[12], input[(2 * i)], input[(2 * i) + 1]);
-                G(&v[2], &v[7], &v[8], &v[13], input[(2 * i)], input[(2 * i) + 1]);
-                G(&v[3], &v[4], &v[9], &v[14], input[(2 * i)], input[(2 * i) + 1]);
+                G(&v[0], &v[5], &v[10], &v[15], input[8],  input[9]);
+                G(&v[1], &v[6], &v[11], &v[12], input[10], input[11]);
+                G(&v[2], &v[7], &v[8], &v[13],  input[12], input[13]);
+                G(&v[3], &v[4], &v[9], &v[14],  input[14], input[15]);
 
                 for (int j = 0; j < 16; j++)
                 {

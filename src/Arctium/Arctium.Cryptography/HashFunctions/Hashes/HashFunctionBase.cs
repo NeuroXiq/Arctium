@@ -33,8 +33,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// <summary>
         /// Length of all bytes loaded to the hash function from buffer or stream. 
         /// This length include both: already hashed bytes of the message and not hashed yet but loaded into internal buffer.
+        /// This length do not include padding applied in HashFinal()
         /// </summary>
-        protected long CurrentMessageLength { get; set; }
+        protected long CurrentMessageLengthWithoutPadding { get; set; }
 
         protected HashFunctionBase(int inputBlockSize, int hashSize)
         {
@@ -56,7 +57,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         public virtual long HashBytes(byte[] buffer)
         {
             long loaded = dataBufferWithCallback.Load(buffer, 0, buffer.Length);
-            CurrentMessageLength += loaded;
+            CurrentMessageLengthWithoutPadding += loaded;
 
             return loaded;
         }
@@ -69,7 +70,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         public virtual long HashBytes(Stream stream)
         {
             long loaded = dataBufferWithCallback.Load(stream);
-            CurrentMessageLength += loaded;
+            CurrentMessageLengthWithoutPadding += loaded;
             return loaded;
         }
 
@@ -82,7 +83,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         public virtual long HashBytes(byte[] buffer, long offset, long length)
         {
             long loaded = dataBufferWithCallback.Load(buffer, offset, length);
-            CurrentMessageLength += loaded;
+            CurrentMessageLengthWithoutPadding += loaded;
 
             return loaded;
         }
@@ -131,7 +132,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             ResetCurrentState();
             hashFinalCalled = false;
             HashedBlocksCount = 0;
-            CurrentMessageLength = 0;
+            CurrentMessageLengthWithoutPadding = 0;
             dataBufferWithCallback.Clear();
         }
 

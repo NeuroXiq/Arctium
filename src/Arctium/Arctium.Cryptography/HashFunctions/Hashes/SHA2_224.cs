@@ -46,7 +46,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         protected override byte[] GetPadding()
         {
-            long totalMessageLength = base.CurrentMessageLength;
+            long totalMessageLength = base.CurrentMessageLengthWithoutPadding;
             return SHA2_224_256_Shared.GetPadding(totalMessageLength);
         }
 

@@ -30,7 +30,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         protected override byte[] GetPadding()
         {
-            return sha3Shared.SHA3_GetLastBlockWithPad_HashFunction(base.CurrentMessageLength);
+            return sha3Shared.SHA3_GetLastBlockWithPad_HashFunction(base.CurrentMessageLengthWithoutPadding);
         }
 
         protected override void ResetCurrentState()

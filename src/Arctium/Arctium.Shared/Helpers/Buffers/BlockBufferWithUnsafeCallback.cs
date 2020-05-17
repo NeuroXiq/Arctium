@@ -22,6 +22,12 @@ namespace Arctium.Shared.Helpers.Buffers
             buffer = new byte[bufferSize];
             BufferSize = bufferSize;
             BlockSize = blockSize;
+            this.callback = callback;
+        }
+
+        public void CopyTo(byte[] dest, long offset)
+        {
+            Array.Copy(buffer, 0, dest, offset, Count);
         }
 
         public long Load(byte[] input, long offset, long length)
