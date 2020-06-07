@@ -22,13 +22,13 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         protected BlockBufferWithUnsafeCallback dataBufferWithCallback;
 
-        private bool hashFinalCalled;
+        protected bool hashFinalCalled;
 
         /// <summary>
         /// Count of all processed blocks, include blocks with padding.
         /// </summary>
 
-        protected ulong HashedBlocksCount { get; set; }
+        // protected ulong HashedBlocksCount { get; set; }
 
         /// <summary>
         /// Length of all bytes loaded to the hash function from buffer or stream. 
@@ -109,7 +109,6 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         private void HashDataBufferCallback(byte* buffer, long length)
         {
             ExecuteHashing(buffer, length);
-            HashedBlocksCount++;
         }
 
         protected abstract byte[] GetPadding();
@@ -131,7 +130,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         {
             ResetCurrentState();
             hashFinalCalled = false;
-            HashedBlocksCount = 0;
+            // HashedBlocksCount = 0;
             CurrentMessageLengthWithoutPadding = 0;
             dataBufferWithCallback.Clear();
         }

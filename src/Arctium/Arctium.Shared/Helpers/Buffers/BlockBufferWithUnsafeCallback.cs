@@ -9,6 +9,7 @@ namespace Arctium.Shared.Helpers.Buffers
         public readonly int BufferSize;
 
         public long Count { get { return bytesInBuffer; } }
+        public byte[] Buffer { get { return buffer; } }
 
         public delegate void Callback(byte* buffer, long bytesCount);
 
@@ -25,15 +26,8 @@ namespace Arctium.Shared.Helpers.Buffers
             this.callback = callback;
         }
 
-        public void CopyTo(byte[] dest, long offset)
-        {
-            Array.Copy(buffer, 0, dest, offset, Count);
-        }
-
         public long Load(byte[] input, long offset, long length)
         {
-            long countAfterLoad = length + bytesInBuffer;
-
             long loaded = LoadMaxPossibleDataToBuffer(input, offset, length);
             long remainingToLoad = length - loaded;
 
@@ -50,6 +44,7 @@ namespace Arctium.Shared.Helpers.Buffers
             {
                 long blocksCount = remainingToLoad / buffer.Length;
                 long remainigAfterBlocks = remainingToLoad % buffer.Length;
+                long remainingOffset = (blocksCount * buffer.Length) + loaded;
 
                 // execute callback directly on input buffer instead of copy to inner buffer and then callback
                 fixed (byte* inputPtr = &input[loaded])
@@ -57,7 +52,7 @@ namespace Arctium.Shared.Helpers.Buffers
                     callback(inputPtr, blocksCount * buffer.Length);
                 }
 
-                LoadMaxPossibleDataToBuffer(input, blocksCount * buffer.Length, remainigAfterBlocks);
+                LoadMaxPossibleDataToBuffer(input, remainingOffset, remainigAfterBlocks);
             }
 
             return length;

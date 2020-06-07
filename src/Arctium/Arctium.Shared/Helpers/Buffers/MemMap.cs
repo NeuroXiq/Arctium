@@ -50,7 +50,7 @@ namespace Arctium.Shared.Helpers.Buffers
         /// <param name="length">length of the uint array (length = 2 means 8 bytes of memory)</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] ToBytesBE(uint* uintPtr, int length)
+        public static byte[] ToByteArrayBE(uint* uintPtr, int length)
         {
             byte[] buf = new byte[length * 4];
 
@@ -63,6 +63,27 @@ namespace Arctium.Shared.Helpers.Buffers
             }
 
             return buf;
+        }
+
+        /// <summary>
+        /// Converts array of the unsigned integers to byte array in little endian order
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="length">Length of the input array (count of unsigned integers)</param>
+        /// <returns></returns>
+        public static byte[] ToByteArrayLE(uint* input, int length)
+        {
+            byte[] result = new byte[length * 4];
+
+            for (int i = 0, j = 0; i < length; i++, j += 4)
+            {
+                result[j + 0] = (byte)(input[i] >>  0);
+                result[j + 1] = (byte)(input[i] >>  8);
+                result[j + 2] = (byte)(input[i] >> 16);
+                result[j + 3] = (byte)(input[i] >> 24);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -101,7 +122,7 @@ namespace Arctium.Shared.Helpers.Buffers
         /// Converts 32 bytes to 8 uint values where input bytes 
         /// are intepreted as little-endia 4-bytes integers
         /// </summary>
-        /// <param name="prekey"></param>
+        /// <param name=""></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToUInt32BytesLE(byte* input, uint* output)
         {
@@ -154,6 +175,7 @@ namespace Arctium.Shared.Helpers.Buffers
         /// </summary>
         /// <param name="input">Input memory to map</param>
         /// <param name="output">uint output buffer of length 16</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToUInt64BytesLE(byte* input, uint* output)
         {
             output[0] = (uint)input[0 + 0] << 0;
@@ -239,5 +261,24 @@ namespace Arctium.Shared.Helpers.Buffers
 
         #endregion
 
+
+        #region managed
+
+        public static byte[] ToNewByteArrayLE(uint[] input, int length)
+        {
+            byte[] result = new byte[length * 4];
+
+            for (int i = 0, j = 0; i < length; i++, j += 4)
+            {
+                result[j + 0] = (byte)(input[i] >>  0);
+                result[j + 1] = (byte)(input[i] >>  8);
+                result[j + 2] = (byte)(input[i] >> 16);
+                result[j + 3] = (byte)(input[i] >> 24);
+            }
+
+            return result;
+        }
+
+        #endregion
     }
 }

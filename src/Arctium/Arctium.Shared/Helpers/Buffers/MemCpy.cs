@@ -82,9 +82,31 @@ namespace Arctium.Shared.Helpers.Buffers
             dst[1] = source[1];
         }
 
+        public static void Copy(byte* src, byte[] dst, long count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                dst[i] = src[i];
+            }
+        }
+
         //
         // End fixed length copy
         //
+
+        /// <summary>
+        /// Creates managed version of the  unsafe array.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="length"></param>
+        public static uint[] ToArray(uint* input, int length)
+        {
+            uint[] result = new uint[length];
+
+            for (int i = 0; i < length; i++) result[i] = input[i];
+
+            return result;
+        }
 
         public static void Copy(byte* src, long srcOffset, byte* output, long outOffset, long length)
         {
@@ -136,6 +158,14 @@ namespace Arctium.Shared.Helpers.Buffers
         public static void Copy(byte* src, byte* dst, long length)
         {
             Copy(src, 0, dst, 0, length);
+        }
+
+        public static void Copy(uint[] src, uint* dst)
+        {
+            for (int i = 0; i < src.Length; i++)
+            {
+                dst[i] = src[i];
+            }
         }
     }
 }

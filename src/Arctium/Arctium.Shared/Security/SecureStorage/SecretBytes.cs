@@ -5,6 +5,9 @@ namespace Arctium.Shared.Security.SecureStorage
     //TODO secure sotrage
     public class SecretBytes : IDisposable
     {
+        private static bool logEnabled;
+
+
         byte[] secretBytes;
 
         private SecretBytes(byte[] secretBytes)

@@ -167,7 +167,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
                     long offset = length - remainingBytes;
 
                     Generate64BytesKeystream(p, q, generatedKeystream, &counter);
-                    keyCache.RefreshKey(MemMap.ToBytesBE(generatedKeystream, 16));
+                    keyCache.RefreshKey(MemMap.ToByteArrayBE(generatedKeystream, 16));
                     keyCache.UtilizeExitingKeyXor(input, inputOffset + offset, remainingBytes, output, outputOffset + offset);
                 }
             }

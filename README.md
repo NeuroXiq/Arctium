@@ -16,6 +16,7 @@ for more interesting parts of the documentation.
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
+|BLAKE3 (Hash function)     |    [BLAKE3]       |
 |Twofish (Block cipher)     |     [Twofish]     |
 |X509 V3 Certificate        | [X509Cert]        |
 |Rabbit - stream cipher (ESTREAM)| [Rabbit]     |
@@ -26,7 +27,7 @@ for more interesting parts of the documentation.
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
-
+[BLAKE3]:<docs/lookup/blake3.md>
 [Twofish]:<docs/lookup/twofish.md>
 [HC256]:<docs/lookup/hc-256.md>
 [Rabbit]:<docs/lookup/rabbit.md>
