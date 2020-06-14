@@ -259,10 +259,181 @@ namespace Arctium.Shared.Helpers.Buffers
             output[15] |= (uint)input[60 + 3] << 24;
         }
 
+
+        /// <summary>
+        /// Maps 128 bytes to 16 ulong value where byte are interpreted as 
+        /// little-endian integers. src[0] becomes least significant byte of 
+        /// dst[0] value.
+        /// </summary>
+        /// <param name="src">128 - byte array to map</param>
+        /// <param name="dst">16 - ulong array</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong128BytesLE(byte* src, ulong* dst)
+        {
+            dst[0] = (ulong)(src[0]);
+            dst[0] |= ((ulong)src[1]) << 8;
+            dst[0] |= ((ulong)src[2]) << 16;
+            dst[0] |= ((ulong)src[3]) << 24;
+            dst[0] |= ((ulong)src[4]) << 32;
+            dst[0] |= ((ulong)src[5]) << 40;
+            dst[0] |= ((ulong)src[6]) << 48;
+            dst[0] |= ((ulong)src[7]) << 56;
+
+            dst[1] = (ulong)(src[8]);
+            dst[1] |= ((ulong)src[9]) << 8;
+            dst[1] |= ((ulong)src[10]) << 16;
+            dst[1] |= ((ulong)src[11]) << 24;
+            dst[1] |= ((ulong)src[12]) << 32;
+            dst[1] |= ((ulong)src[13]) << 40;
+            dst[1] |= ((ulong)src[14]) << 48;
+            dst[1] |= ((ulong)src[15]) << 56;
+
+            dst[2] = (ulong)(src[16]);
+            dst[2] |= ((ulong)src[17]) << 8;
+            dst[2] |= ((ulong)src[18]) << 16;
+            dst[2] |= ((ulong)src[19]) << 24;
+            dst[2] |= ((ulong)src[20]) << 32;
+            dst[2] |= ((ulong)src[21]) << 40;
+            dst[2] |= ((ulong)src[22]) << 48;
+            dst[2] |= ((ulong)src[23]) << 56;
+
+            dst[3] = (ulong)(src[24]);
+            dst[3] |= ((ulong)src[25]) << 8;
+            dst[3] |= ((ulong)src[26]) << 16;
+            dst[3] |= ((ulong)src[27]) << 24;
+            dst[3] |= ((ulong)src[28]) << 32;
+            dst[3] |= ((ulong)src[29]) << 40;
+            dst[3] |= ((ulong)src[30]) << 48;
+            dst[3] |= ((ulong)src[31]) << 56;
+
+            dst[4] = (ulong)(src[32]);
+            dst[4] |= ((ulong)src[33]) << 8;
+            dst[4] |= ((ulong)src[34]) << 16;
+            dst[4] |= ((ulong)src[35]) << 24;
+            dst[4] |= ((ulong)src[36]) << 32;
+            dst[4] |= ((ulong)src[37]) << 40;
+            dst[4] |= ((ulong)src[38]) << 48;
+            dst[4] |= ((ulong)src[39]) << 56;
+
+            dst[5] = (ulong)(src[40]);
+            dst[5] |= ((ulong)src[41]) << 8;
+            dst[5] |= ((ulong)src[42]) << 16;
+            dst[5] |= ((ulong)src[43]) << 24;
+            dst[5] |= ((ulong)src[44]) << 32;
+            dst[5] |= ((ulong)src[45]) << 40;
+            dst[5] |= ((ulong)src[46]) << 48;
+            dst[5] |= ((ulong)src[47]) << 56;
+
+            dst[6] = (ulong)(src[48]);
+            dst[6] |= ((ulong)src[49]) << 8;
+            dst[6] |= ((ulong)src[50]) << 16;
+            dst[6] |= ((ulong)src[51]) << 24;
+            dst[6] |= ((ulong)src[52]) << 32;
+            dst[6] |= ((ulong)src[53]) << 40;
+            dst[6] |= ((ulong)src[54]) << 48;
+            dst[6] |= ((ulong)src[55]) << 56;
+
+            dst[7] = (ulong)(src[56]);
+            dst[7] |= ((ulong)src[57]) << 8;
+            dst[7] |= ((ulong)src[58]) << 16;
+            dst[7] |= ((ulong)src[59]) << 24;
+            dst[7] |= ((ulong)src[60]) << 32;
+            dst[7] |= ((ulong)src[61]) << 40;
+            dst[7] |= ((ulong)src[62]) << 48;
+            dst[7] |= ((ulong)src[63]) << 56;
+
+            dst[8] = (ulong)(src[64]);
+            dst[8] |= ((ulong)src[65]) << 8;
+            dst[8] |= ((ulong)src[66]) << 16;
+            dst[8] |= ((ulong)src[67]) << 24;
+            dst[8] |= ((ulong)src[68]) << 32;
+            dst[8] |= ((ulong)src[69]) << 40;
+            dst[8] |= ((ulong)src[70]) << 48;
+            dst[8] |= ((ulong)src[71]) << 56;
+
+            dst[9] = (ulong)(src[72]);
+            dst[9] |= ((ulong)src[73]) << 8;
+            dst[9] |= ((ulong)src[74]) << 16;
+            dst[9] |= ((ulong)src[75]) << 24;
+            dst[9] |= ((ulong)src[76]) << 32;
+            dst[9] |= ((ulong)src[77]) << 40;
+            dst[9] |= ((ulong)src[78]) << 48;
+            dst[9] |= ((ulong)src[79]) << 56;
+
+            dst[10] = (ulong)(src[80]);
+            dst[10] |= ((ulong)src[81]) << 8;
+            dst[10] |= ((ulong)src[82]) << 16;
+            dst[10] |= ((ulong)src[83]) << 24;
+            dst[10] |= ((ulong)src[84]) << 32;
+            dst[10] |= ((ulong)src[85]) << 40;
+            dst[10] |= ((ulong)src[86]) << 48;
+            dst[10] |= ((ulong)src[87]) << 56;
+
+            dst[11] = (ulong)(src[88]);
+            dst[11] |= ((ulong)src[89]) << 8;
+            dst[11] |= ((ulong)src[90]) << 16;
+            dst[11] |= ((ulong)src[91]) << 24;
+            dst[11] |= ((ulong)src[92]) << 32;
+            dst[11] |= ((ulong)src[93]) << 40;
+            dst[11] |= ((ulong)src[94]) << 48;
+            dst[11] |= ((ulong)src[95]) << 56;
+
+            dst[12] = (ulong)(src[96]);
+            dst[12] |= ((ulong)src[97]) << 8;
+            dst[12] |= ((ulong)src[98]) << 16;
+            dst[12] |= ((ulong)src[99]) << 24;
+            dst[12] |= ((ulong)src[100]) << 32;
+            dst[12] |= ((ulong)src[101]) << 40;
+            dst[12] |= ((ulong)src[102]) << 48;
+            dst[12] |= ((ulong)src[103]) << 56;
+
+            dst[13] = (ulong)(src[104]);
+            dst[13] |= ((ulong)src[105]) << 8;
+            dst[13] |= ((ulong)src[106]) << 16;
+            dst[13] |= ((ulong)src[107]) << 24;
+            dst[13] |= ((ulong)src[108]) << 32;
+            dst[13] |= ((ulong)src[109]) << 40;
+            dst[13] |= ((ulong)src[110]) << 48;
+            dst[13] |= ((ulong)src[111]) << 56;
+
+            dst[14] = (ulong)(src[112]);
+            dst[14] |= ((ulong)src[113]) << 8;
+            dst[14] |= ((ulong)src[114]) << 16;
+            dst[14] |= ((ulong)src[115]) << 24;
+            dst[14] |= ((ulong)src[116]) << 32;
+            dst[14] |= ((ulong)src[117]) << 40;
+            dst[14] |= ((ulong)src[118]) << 48;
+            dst[14] |= ((ulong)src[119]) << 56;
+
+            dst[15] = (ulong)(src[120]);
+            dst[15] |= ((ulong)src[121]) << 8;
+            dst[15] |= ((ulong)src[122]) << 16;
+            dst[15] |= ((ulong)src[123]) << 24;
+            dst[15] |= ((ulong)src[124]) << 32;
+            dst[15] |= ((ulong)src[125]) << 40;
+            dst[15] |= ((ulong)src[126]) << 48;
+            dst[15] |= ((ulong)src[127]) << 56;
+        }
+
         #endregion
 
 
         #region managed
+
+        public static byte[] ToByteArrayLE(ulong[] src)
+        {
+            byte[] dst = new byte[src.Length * 8];
+
+            for (int i = 0; i < src.Length; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    dst[(i * 8) + j] = (byte)(src[i] >> 8 * j);
+                }
+            }
+
+            return dst;
+        }
 
         public static byte[] ToNewByteArrayLE(uint[] input, int length)
         {

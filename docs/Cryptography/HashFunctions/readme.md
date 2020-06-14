@@ -32,6 +32,8 @@ Summary of the implemented hash functions :
 | SHA3-256    |[FIPS 202]        |  [SHA3]             | OK          |  
 | SHA3-384    |[FIPS 202]        |  [SHA3]             | OK          |  
 | SHA3-512    |[FIPS 202]        |  [SHA3]             | OK          |
+| BLAKE3      | -                |                     | OK          |
+| BLAKE2b_512 | -                |                     | OK          |
 
 ### Hashing example
 

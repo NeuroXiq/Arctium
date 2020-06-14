@@ -53,6 +53,14 @@ namespace Arctium.Shared.Helpers.Buffers
 
         #region unmanaged
 
+        public static void Copy(ulong* src, ulong[] dst)
+        {
+            for (int i = 0; i < dst.Length; i++)
+            {
+                dst[i] = src[i];
+            }
+        }
+
         //
         // Fixed Length Copy
         //
@@ -70,16 +78,30 @@ namespace Arctium.Shared.Helpers.Buffers
             src[7] = dst[7];
         }
 
+        public static void Copy(ulong[] source, ulong* dst)
+        {
+            for (int i = 0; i < source.Length; i++)
+            {
+                dst[i] = source[i];
+            }
+        }
+
         /// <summary>
         /// Unwided version od copy 2 uint values to second 2 uint values
         /// </summary>
         /// <param name="source"></param>
         /// <param name="dst"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Copy2UIntToUInt(uint* source, uint* dst)
+        public static void Copy8ULong(ulong* source, ulong* dst)
         {
             dst[0] = source[0];
             dst[1] = source[1];
+            dst[2] = source[2];
+            dst[3] = source[3];
+            dst[4] = source[4];
+            dst[5] = source[5];
+            dst[6] = source[6];
+            dst[7] = source[7];
         }
 
         public static void Copy(byte* src, byte[] dst, long count)

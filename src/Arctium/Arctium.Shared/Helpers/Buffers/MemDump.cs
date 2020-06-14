@@ -131,5 +131,14 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
+        public static void HexDump(ulong* src, int count, int ulongsInLine)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                Console.Write("{0:X8} ", src[i]);
+                if ((i + 1) % ulongsInLine == 0) Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
     }
 }

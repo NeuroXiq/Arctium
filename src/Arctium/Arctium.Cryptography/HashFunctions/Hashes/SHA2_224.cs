@@ -62,9 +62,10 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             return result;
         }
 
-        protected override void ResetCurrentState()
+        public override void ResetState()
         {
             hashValue = GetInitialHashValue();
+            base.ResetState();
         }
     }
 }

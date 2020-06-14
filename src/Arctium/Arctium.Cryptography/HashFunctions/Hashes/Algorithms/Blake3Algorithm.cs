@@ -22,12 +22,12 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
     //
     // Hashing are processed in 2 steps.
     // 1. All 1024-bytes chunks which are not the final one, calls 'HashFullChunksWhichAreNotTheLast'
-    // 2. Last chunks (length in range 0-1024) is processed by calling 'HashLastChunk' which returns blake3 hash
+    // 2. Last chunks (length in range 1-1024) is processed by calling 'HashLastChunk' which returns blake3 hash
     //  * Length of the last chunk must be a multiply of 64 (must not be 0)
     //  * HashLastChunk must be called 
     //  * Padding must be created before executing this method
 
-    static unsafe class Blake3Algorithm
+    static unsafe class BLAKE3Algorithm
     {
         const uint FlagChunkStart = 1 << 0;
         const uint FlagChunkEnd = 1 << 1;
@@ -200,7 +200,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
             Stack<TreeNode> stack = state.Stack;
 
-            if (stack.Count == 0) throw new InvalidHashStateInternalException(nameof(Blake3Algorithm), "", typeof(Blake3Algorithm));
+            if (stack.Count == 0) throw new InvalidHashStateInternalException(nameof(BLAKE3Algorithm), "", typeof(BLAKE3Algorithm));
 
             TreeNode t1, t2;
             uint* input = stackalloc uint[16];

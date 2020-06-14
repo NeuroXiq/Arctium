@@ -33,9 +33,10 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             return sha3Shared.SHA3_GetLastBlockWithPad_HashFunction(this.CurrentMessageLengthWithoutPadding);
         }
 
-        protected override void ResetCurrentState()
+        public override void ResetState()
         {
             sha3Shared.ResetState();
+            base.ResetState();
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Arctium.Shared.Helpers.Buffers
                 long remainigAfterBlocks = remainingToLoad % buffer.Length;
                 long remainingOffset = (blocksCount * buffer.Length) + loaded;
 
-                // execute callback directly on input buffer instead of copy to inner buffer and then callback
+                // execute callback directly on input buffer instead of copy to inner buffer
                 fixed (byte* inputPtr = &input[loaded])
                 {
                     callback(inputPtr, blocksCount * buffer.Length);

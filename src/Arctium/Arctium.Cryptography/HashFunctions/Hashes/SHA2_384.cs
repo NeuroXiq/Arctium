@@ -56,9 +56,10 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             return SHA2_384_512_Shared.GetPadding(CurrentMessageLengthWithoutPadding);
         }
 
-        protected override void ResetCurrentState()
+        public override void ResetState()
         {
             hashValue = GetInitialHashValue();
+            base.ResetState();
         }
     }
 }

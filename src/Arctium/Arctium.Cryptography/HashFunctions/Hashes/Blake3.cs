@@ -11,19 +11,19 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
     // So, point of the 'cachedChunk' is to hold last loaded data and in 'HashFinal' and call 'HashLastChunk' in 'HashFinal' method.
     //
 
-    public class Blake3 : HashFunctionBase
+    public class BLAKE3 : HashFunctionBase
     {
         const int InputBlockLength = 8192;
         const int HashSizeBlake3 = 256;
 
-        Blake3Algorithm.State state;
+        BLAKE3Algorithm.State state;
         byte[] cachedChunk = new byte[1024];
         bool cachedChunkHaveData = false;
 
-        public Blake3() : base(InputBlockLength, HashSizeBlake3)
+        public BLAKE3() : base(InputBlockLength, HashSizeBlake3)
         {
-            state = new Blake3Algorithm.State();
-            ResetCurrentState();
+            state = new BLAKE3Algorithm.State();
+            this.ResetState();
         }
 
         public unsafe override byte[] HashFinal()
@@ -36,13 +36,13 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             if (dataLength == 0 && !cachedChunkHaveData)
             {
                 byte* emptyBuffer = stackalloc byte[64];
-                return Blake3Algorithm.HashLastChunk(emptyBuffer, 1, 0, state);
+                return BLAKE3Algorithm.HashLastChunk(emptyBuffer, 1, 0, state);
             }
             else if (dataLength == 0 && cachedChunkHaveData)
             {
                 fixed (byte* input = &cachedChunk[0])
                 {
-                    return Blake3Algorithm.HashLastChunk(input, 16, 64, state);
+                    return BLAKE3Algorithm.HashLastChunk(input, 16, 64, state);
                 }
             }
 
@@ -50,7 +50,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             {
                 fixed (byte* input = &cachedChunk[0])
                 {
-                    Blake3Algorithm.HashFullChunksWhichAreNotTheLast(input, 1, state);
+                    BLAKE3Algorithm.HashFullChunksWhichAreNotTheLast(input, 1, state);
                 }
             }
 
@@ -70,13 +70,13 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             {
                 fixed (byte* input = &dataBufferWithCallback.Buffer[0])
                 {
-                    Blake3Algorithm.HashFullChunksWhichAreNotTheLast(input, notLastChunksCount, state);
+                    BLAKE3Algorithm.HashFullChunksWhichAreNotTheLast(input, notLastChunksCount, state);
                 }
             }
 
             fixed (byte* input = &lastChunk[0])
             {
-                return Blake3Algorithm.HashLastChunk(input, lastChunkLengthWithPadding / 64, lastBlockLength, state);
+                return BLAKE3Algorithm.HashLastChunk(input, lastChunkLengthWithPadding / 64, lastBlockLength, state);
             }   
         }
 
@@ -86,7 +86,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             {
                 fixed (byte* input = &cachedChunk[0])
                 {
-                    Blake3Algorithm.HashFullChunksWhichAreNotTheLast(input, 1, state);
+                    BLAKE3Algorithm.HashFullChunksWhichAreNotTheLast(input, 1, state);
                 }
             }
 
@@ -98,7 +98,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
             if (lengthWithoutLastChunk > 0)
             {
-                Blake3Algorithm.HashFullChunksWhichAreNotTheLast(buffer, lengthWithoutLastChunk / 1024, state);
+                BLAKE3Algorithm.HashFullChunksWhichAreNotTheLast(buffer, lengthWithoutLastChunk / 1024, state);
             }
         }
 
@@ -112,9 +112,10 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             throw new InvalidOperationException("Padding created in hash final");
         }
 
-        protected override void ResetCurrentState()
+        public override void ResetState()
         {
-            Blake3Algorithm.ResetState(state);
+            BLAKE3Algorithm.ResetState(state);
+            base.ResetState();
         }
 
         private long RoundUpTo64(long value)

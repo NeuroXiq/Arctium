@@ -94,7 +94,9 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             hashFinalCalled = true;
 
             byte[] padding = GetPadding();
-            dataBufferWithCallback.Load(padding,0,padding.Length);
+
+            if (padding != null) { dataBufferWithCallback.Load(padding, 0, padding.Length); }
+            
 
             // hashDataBuffer may call hashing method because after padding append,
             // buffer is filled exactly to end (exact multiply of hash input block) and callback was invoked,
@@ -128,13 +130,10 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// </summary>
         public virtual void ResetState()
         {
-            ResetCurrentState();
             hashFinalCalled = false;
             // HashedBlocksCount = 0;
             CurrentMessageLengthWithoutPadding = 0;
             dataBufferWithCallback.Clear();
         }
-
-        protected abstract void ResetCurrentState();
     }
 }
