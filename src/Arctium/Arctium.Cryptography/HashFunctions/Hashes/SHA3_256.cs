@@ -61,7 +61,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public override void Reset()
         {
-             sha3Shared.ResetState();
+            sha3Shared.ResetState();
             blockBuffer.Clear();
             LoadedBytes = 0;
         }

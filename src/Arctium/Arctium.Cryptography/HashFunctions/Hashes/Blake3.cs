@@ -1,6 +1,8 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
+using Arctium.Cryptography.HashFunctions.Hashes.Configuration;
 using Arctium.Shared.Helpers.Buffers;
 using System;
+using System.IO;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
@@ -11,7 +13,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
     // So, point of the 'cachedChunk' is to hold last loaded data and in 'HashFinal' and call 'HashLastChunk' in 'HashFinal' method.
     //
 
-    public class BLAKE3 : HashFunctionBase
+    public unsafe class BLAKE3 : HashFunction
     {
         const int InputBlockLength = 8192;
         const int HashSizeBlake3 = 256;
@@ -19,18 +21,36 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         BLAKE3Algorithm.State state;
         byte[] cachedChunk = new byte[1024];
         bool cachedChunkHaveData = false;
+        ByteBufferWithUnsafeCallback dataBufferWithCallback;
 
         public BLAKE3() : base(InputBlockLength, HashSizeBlake3)
         {
             state = new BLAKE3Algorithm.State();
-            this.ResetState();
+            dataBufferWithCallback = new ByteBufferWithUnsafeCallback(HashFunctionsConfig.BufferSizeInBlocks * InputBlockSizeBytes, ExecuteHashing);
+            Reset();
+        }
+
+        public override void HashBytes(byte[] buffer)
+        {
+            LoadedBytes += dataBufferWithCallback.Load(buffer);
+        }
+
+        public override long HashBytes(Stream stream)
+        {
+            long loaded = dataBufferWithCallback.Load(stream);
+
+            LoadedBytes += loaded;
+
+            return loaded;
+        }
+
+        public override void HashBytes(byte[] buffer, long offset, long length)
+        {
+            dataBufferWithCallback.Load(buffer, offset, length);
         }
 
         public unsafe override byte[] HashFinal()
         {
-            if (hashFinalCalled) throw new InvalidOperationException("Has final was called. Must reset state");
-            hashFinalCalled = true;
-
             long dataLength = dataBufferWithCallback.Count;
 
             if (dataLength == 0 && !cachedChunkHaveData)
@@ -80,7 +100,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }   
         }
 
-        protected override unsafe void ExecuteHashing(byte* buffer, long length)
+        private unsafe void ExecuteHashing(byte* buffer, long length)
         {
             if (cachedChunkHaveData)
             {
@@ -102,20 +122,10 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }
         }
 
-        protected override byte[] GetCurrentHash()
-        {
-            throw new InvalidOperationException("Overloaded in hash final");
-        }
-
-        protected override byte[] GetPadding()
-        {
-            throw new InvalidOperationException("Padding created in hash final");
-        }
-
-        public override void ResetState()
+        public override void Reset()
         {
             BLAKE3Algorithm.ResetState(state);
-            base.ResetState();
+            dataBufferWithCallback.Clear();
         }
 
         private long RoundUpTo64(long value)
@@ -125,6 +135,6 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
                 return (((value - 1) / 64) + 1) * 64;
             }
             else return 64;
-        } 
+        }
     }
 }

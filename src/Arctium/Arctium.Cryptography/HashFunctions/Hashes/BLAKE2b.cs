@@ -1,11 +1,13 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
+using Arctium.Cryptography.HashFunctions.Hashes.Configuration;
 using Arctium.Cryptography.HashFunctions.Hashes.HashHelpers;
 using Arctium.Shared.Helpers.Buffers;
 using System;
+using System.IO;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
-    public unsafe abstract class BLAKE2b : HashFunctionBase
+    public unsafe abstract class BLAKE2b : HashFunction
     {
         public const int BLAKE2bInputBlockSize = 8192;
 
@@ -15,13 +17,14 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         private BlockCache lastBlockCache;
 
+        ByteBufferWithUnsafeCallback dataBufferWithCallback;
+
         protected BLAKE2b(int hashSize) : base(BLAKE2bInputBlockSize, hashSize)
         {
             lastBlockCache = new BlockCache(InputBlockSizeInBytes);
-            this.ResetState();
+            dataBufferWithCallback = new ByteBufferWithUnsafeCallback(HashFunctionsConfig.BufferSizeInBlocks * InputBlockSizeBytes, ExecuteHashing);
+            Reset();
         }
-
-
 
         public override byte[] HashFinal()
         {
@@ -43,7 +46,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
                     BLAKE2Algorithm.HashLastBlock_BLAKE2b(input, 128, state);
                 }
             }
-            else 
+            else
             {
                 if (lastBlockCache.HaveData)
                 {
@@ -75,15 +78,16 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
                 }
 
                 // finally, hash last block
-                BLAKE2Algorithm.HashLastBlock_BLAKE2b(lastBlock, (ulong)CurrentMessageLengthWithoutPadding, state);
+                BLAKE2Algorithm.HashLastBlock_BLAKE2b(lastBlock, (ulong)LoadedBytes, state);
             }
 
             byte[] hash = BLAKE2Algorithm.GetHashFromState_BLAKE2b(state);
             lastBlockCache.ClearData();
+
             return hash;
         }
 
-        protected override unsafe void ExecuteHashing(byte* buffer, long length)
+        protected unsafe void ExecuteHashing(byte* buffer, long length)
         {
             if (lastBlockCache.HaveData)
             {
@@ -102,27 +106,43 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             }
         }
 
-        protected override byte[] GetCurrentHash()
+        public override void HashBytes(byte[] buffer)
         {
-            throw new InvalidOperationException("Hashfinal returns hash");
+            LoadedBytes += dataBufferWithCallback.Load(buffer);
         }
 
-        protected override byte[] GetPadding()
+        public override long HashBytes(Stream stream)
         {
-            if (CurrentMessageLengthWithoutPadding == 0)
+            long loaded = dataBufferWithCallback.Load(stream);
+
+            LoadedBytes += loaded;
+
+            return loaded;
+        }
+
+        public override void HashBytes(byte[] buffer, long offset, long length)
+        {
+            LoadedBytes += dataBufferWithCallback.Load(buffer, offset, length);
+        }
+
+        protected byte[] GetPadding()
+        {
+            if (LoadedBytes == 0)
             {
                 return new byte[128];
             }
 
-            long padding = CurrentMessageLengthWithoutPadding % 128;
+            long padding = LoadedBytes % 128;
 
             return padding > 0 ? new byte[padding] : null;
         }
 
-        public override void ResetState()
+        public override void Reset()
         {
-            this.state = BLAKE2Algorithm.InitializeHashState_BLAKE2b((ulong)HashSize / 8, 0);
-            base.ResetState();
+            state = BLAKE2Algorithm.InitializeHashState_BLAKE2b((ulong)HashSizeBytes, 0);
+            dataBufferWithCallback.Clear();
+            lastBlockCache.ClearData();
+            LoadedBytes = 0;
         }
     }
 }

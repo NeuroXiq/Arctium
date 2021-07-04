@@ -11,6 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="HashFunctions\BLAKE2\Blake2b_512_TestVectors.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="HashFunctions\BLAKE3\BLAKE3TestVectors.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="HashFunctions\SHA3\TestVectors\SHA3_224LongMsg.rsp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

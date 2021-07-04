@@ -1,3 +1,12 @@
-### SHA 3 ###
+# SHA 3 #
 Test Vectors Source:
 https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/Secure-Hashing
+
+
+# BLAKE3 #
+Test Vectors:
+https://github.com/BLAKE3-team/BLAKE3/blob/master/test_vectors/test_vectors.json
+
+# BLAKE2 #
+Test Vectors:
+https://raw.githubusercontent.com/BLAKE2/BLAKE2/master/testvectors/blake2-kat.json

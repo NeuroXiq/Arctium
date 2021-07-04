@@ -1,4 +1,6 @@
-﻿namespace Arctium.Cryptography.HashFunctions.Hashes
+﻿using System.IO;
+
+namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public class BLAKE2b_512 : BLAKE2b
     {

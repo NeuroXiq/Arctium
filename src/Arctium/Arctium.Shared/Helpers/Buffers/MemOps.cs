@@ -23,5 +23,14 @@ namespace Arctium.Shared.Helpers.Buffers
 
             return false;
         }
+
+        #region Unsafe
+
+        public static unsafe void Memset(byte* ptr, byte value, long count)
+        {
+            for (int i = 0; i < count; i++) *(ptr + i) = value;
+        }
+
+        #endregion
     }
 }
