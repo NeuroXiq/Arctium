@@ -6,6 +6,7 @@ namespace Arctium.Shared.Helpers.Buffers
 {
     public static unsafe class MemDump
     {
+        // TODO: This doesnt work (e.g. for SHA2_224 output, HexDump(hash) doesnt how last 2 bytes)
         /// <summary>
         /// Writes formatter byte array to the console output as a hexdump
         /// Useful in debugging

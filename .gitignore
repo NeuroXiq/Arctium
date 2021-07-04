@@ -3,6 +3,7 @@
 [Dd]ebug/
 [Rr]elase/
 IGNORE/
+src/Arctium/DEBUG_ConsoleApplicationForTests/*
 *.user
 *.suo
 *.userprefs

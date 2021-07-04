@@ -1,9 +1,12 @@
-﻿using Arctium.Shared.Helpers.Binary;
+﻿using Arctium.Cryptography.HashFunctions.Hashes.Configuration;
+using Arctium.Shared.Helpers.Binary;
+using Arctium.Shared.Helpers.Buffers;
 using System;
+using System.IO;
 
 namespace  Arctium.Cryptography.HashFunctions.Hashes
 {
-    public unsafe class SHA2_256 : HashFunctionBase
+    public unsafe class SHA2_256 : HashFunction
     {
         readonly uint[] InitialHashValue = new uint[]
         {
@@ -19,11 +22,15 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         uint[] currentHashValue;
         uint[] messageScheduleBuffer;
+        ByteBufferWithUnsafeCallback blockBuffer;
 
         public SHA2_256() : base(512, 256)
         {
             currentHashValue = GetInitialHashValue();
             messageScheduleBuffer = new uint[64];
+
+            int bufferSize = HashFunctionsConfig.BufferSizeInBlocks * InputBlockSizeBytes;
+            blockBuffer = new ByteBufferWithUnsafeCallback(bufferSize, ExecuteHashing);
         }
 
         private uint[] GetInitialHashValue()
@@ -38,13 +45,47 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             return initalValue;
         }
 
-        protected override void ExecuteHashing(byte* buffer, long length)
+        private void ExecuteHashing(byte* buffer, long length)
         {
             SHA2_224_256_Shared.PerformHashComputation(buffer, length, currentHashValue, messageScheduleBuffer);
         }
 
-        protected override byte[] GetCurrentHash()
+        public override void Reset()
         {
+            currentHashValue = GetInitialHashValue();
+            LoadedBytes = 0;
+            blockBuffer.Clear();
+        }
+
+        public override void HashBytes(byte[] buffer)
+        {
+            LoadedBytes += blockBuffer.Load(buffer);
+        }
+
+        public override long HashBytes(Stream stream)
+        {
+            long loaded = blockBuffer.Load(stream);
+            LoadedBytes += loaded;
+
+            return loaded;
+        }
+
+        public override void HashBytes(byte[] buffer, long offset, long length)
+        {
+            LoadedBytes += blockBuffer.Load(buffer, offset, length);
+        }
+
+        public override byte[] HashFinal()
+        {
+            bool isPaddingNeeded = LoadedBytes % ((long)InputBlockSizeBytes) != 0 || LoadedBytes == 0;
+
+            if (isPaddingNeeded)
+            {
+                blockBuffer.Load(SHA2_224_256_Shared.GetPadding(LoadedBytes));
+            }
+
+            if (blockBuffer.HasData) blockBuffer.FlushBuffer();
+
             byte[] hash = new byte[32];
             for (int i = 0; i < 8; i++)
             {
@@ -52,18 +93,6 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
             }
 
             return hash;
-        }
-
-        protected override byte[] GetPadding()
-        {
-            long totalMessageLength = base.CurrentMessageLengthWithoutPadding;
-            return SHA2_224_256_Shared.GetPadding(totalMessageLength);
-        }
-
-        public override void ResetState()
-        {
-            currentHashValue = GetInitialHashValue();
-            base.ResetState();
         }
     }
 }

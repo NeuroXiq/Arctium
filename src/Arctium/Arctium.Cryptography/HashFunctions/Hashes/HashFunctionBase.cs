@@ -20,7 +20,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         /// </summary>
         public int HashSize { get; private set; }
 
-        protected BlockBufferWithUnsafeCallback dataBufferWithCallback;
+        protected ByteBufferWithUnsafeCallback dataBufferWithCallback;
 
         protected bool hashFinalCalled;
 
@@ -44,7 +44,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
             int blockSizeInBytes = inputBlockSize / 8;
             int bufferSize = HashFunctionsConfig.BufferSizeInBlocks * (inputBlockSize / 8);
-            dataBufferWithCallback = new BlockBufferWithUnsafeCallback(bufferSize, blockSizeInBytes, new BlockBufferWithUnsafeCallback.Callback(this.HashDataBufferCallback));
+            dataBufferWithCallback = new ByteBufferWithUnsafeCallback(bufferSize, new ByteBufferWithUnsafeCallback.Callback(this.HashDataBufferCallback));
 
             hashFinalCalled = false;
         }

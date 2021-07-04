@@ -3,13 +3,20 @@ using System.IO;
 
 namespace Arctium.Shared.Helpers.Buffers
 {
-    public unsafe class BlockBufferWithUnsafeCallback
+    /// <summary>
+    /// If amount of data reach buffer size then specified callback is invoked
+    /// </summary>
+    public unsafe class ByteBufferWithUnsafeCallback
     {
-        public readonly int BlockSize;
         public readonly int BufferSize;
 
         public long Count { get { return bytesInBuffer; } }
         public byte[] Buffer { get { return buffer; } }
+        
+        /// <summary>
+        /// Indicates if buffer contains any data
+        /// </summary>
+        public bool HasData { get { return Count > 0; } }
 
         public delegate void Callback(byte* buffer, long bytesCount);
 
@@ -18,12 +25,16 @@ namespace Arctium.Shared.Helpers.Buffers
 
         Callback callback;
 
-        public BlockBufferWithUnsafeCallback(int bufferSize, int blockSize, Callback callback)
+        public ByteBufferWithUnsafeCallback(int bufferSize, Callback callback)
         {
             buffer = new byte[bufferSize];
             BufferSize = bufferSize;
-            BlockSize = blockSize;
             this.callback = callback;
+        }
+
+        public long Load(byte[] input)
+        {
+            return Load(input, 0, input.Length);
         }
 
         public long Load(byte[] input, long offset, long length)

@@ -160,9 +160,16 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             if (padLen < 1) padLen += bytesR;
 
             byte[] padding = new byte[padLen];
-            padding[0] = 0x06; // to message is appended { 01 } bits + padding { 1 [0...] 1 }
-            padding[padLen - 1] = 0x80;//0x80; 
 
+            if (padLen == 1)
+            {
+                padding[0] = 0x86;
+            }
+            else
+            {
+                padding[0] = 0x06; // to message is appended { 01 } bits + padding { 1 [0...] 1 }
+                padding[padLen - 1] = 0x80;//0x80; 
+            }
                 
             return padding;
         }

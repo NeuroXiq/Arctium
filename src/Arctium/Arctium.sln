@@ -13,6 +13,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DEBUG_ConsoleApplicationFor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Shared", "Arctium.Shared\Arctium.Shared.csproj", "{F113A724-8496-4940-A563-05487A765DBE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Standards", "Arctium.Standards\Arctium.Standards.csproj", "{401149C1-36AC-4130-ACB9-7EF599FB895D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{FD65799B-9506-4DE5-B4C4-E5539834106E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.RunTests", "Arctium.Tests.RunTests\Arctium.Tests.RunTests.csproj", "{353D9BD1-1070-43E1-A1FA-E9604A23FD79}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Cryptography", "Arctium.Tests.Cryptography\Arctium.Tests.Cryptography.csproj", "{16B29278-B967-4073-89D5-C96141F1522E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Core", "Arctium.Tests.Core\Arctium.Tests.Core.csproj", "{2D915473-A811-49D1-9B83-F29994759E7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,9 +49,30 @@ Global
 		{F113A724-8496-4940-A563-05487A765DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F113A724-8496-4940-A563-05487A765DBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F113A724-8496-4940-A563-05487A765DBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{401149C1-36AC-4130-ACB9-7EF599FB895D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{401149C1-36AC-4130-ACB9-7EF599FB895D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{401149C1-36AC-4130-ACB9-7EF599FB895D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{401149C1-36AC-4130-ACB9-7EF599FB895D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{353D9BD1-1070-43E1-A1FA-E9604A23FD79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{353D9BD1-1070-43E1-A1FA-E9604A23FD79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{353D9BD1-1070-43E1-A1FA-E9604A23FD79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{353D9BD1-1070-43E1-A1FA-E9604A23FD79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16B29278-B967-4073-89D5-C96141F1522E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16B29278-B967-4073-89D5-C96141F1522E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16B29278-B967-4073-89D5-C96141F1522E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16B29278-B967-4073-89D5-C96141F1522E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D915473-A811-49D1-9B83-F29994759E7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D915473-A811-49D1-9B83-F29994759E7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D915473-A811-49D1-9B83-F29994759E7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D915473-A811-49D1-9B83-F29994759E7E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{353D9BD1-1070-43E1-A1FA-E9604A23FD79} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
+		{16B29278-B967-4073-89D5-C96141F1522E} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
+		{2D915473-A811-49D1-9B83-F29994759E7E} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84BC876F-085F-432A-8A53-53C7B55C0D4A}
