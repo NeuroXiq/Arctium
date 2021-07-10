@@ -14,7 +14,7 @@ namespace Arctium.Tests.Cryptography
             results.AddRange(SHA3_Tests.Run());
             results.AddRange(BLAKE3Tests.Run());
             results.AddRange(BLAKE2b_512Tests.Run());
-            results.AddRange(Threefish_256Tests.Run());
+            results.AddRange(ThreefishTests.Run());
 
             return results.ToArray();
         }

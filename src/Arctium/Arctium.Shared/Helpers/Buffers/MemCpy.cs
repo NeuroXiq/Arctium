@@ -199,6 +199,5 @@ namespace Arctium.Shared.Helpers.Buffers
         {
             for(long i = 0; i < length; i++) dst[dstOffset + i] = src[srcOffset + i];
         }
-
     }
 }

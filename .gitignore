@@ -9,4 +9,4 @@ src/Arctium/DEBUG_ConsoleApplicationForTests/*
 *.userprefs
 *.sln.ide
 src/Arctium/.vs/*
-
+src/Arctium/Arctium.Tests.RunTests/app.config

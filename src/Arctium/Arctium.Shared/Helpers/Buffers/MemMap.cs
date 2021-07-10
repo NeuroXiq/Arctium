@@ -461,14 +461,14 @@ namespace Arctium.Shared.Helpers.Buffers
            for (long i = inputOffset, j = outputOffset; i < (8 * outputULongCount) + inputOffset; i += 8, j++)
            {
              output[j] = (ulong)(
-                    (ulong)input[i + 0] << 56 | 
-                    (ulong)input[i + 1] << 48 | 
-                    (ulong)input[i + 2] << 40 | 
-                    (ulong)input[i + 3] << 32 | 
-                    (ulong)input[i + 4] << 24 | 
-                    (ulong)input[i + 5] << 16 | 
-                    (ulong)input[i + 6] <<  8 | 
-                    (ulong)input[i + 7] <<  0);  
+                    (ulong)input[i + 7] << 56 | 
+                    (ulong)input[i + 6] << 48 | 
+                    (ulong)input[i + 5] << 40 | 
+                    (ulong)input[i + 4] << 32 | 
+                    (ulong)input[i + 3] << 24 | 
+                    (ulong)input[i + 2] << 16 | 
+                    (ulong)input[i + 1] <<  8 | 
+                    (ulong)input[i + 0] <<  0);  
 
            } 
         }
@@ -490,58 +490,58 @@ namespace Arctium.Shared.Helpers.Buffers
         public static void ToULong32BytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
         {
             output[outputOffset] = (ulong)(
-                    (ulong)input[inputOffset + 0] << 56 | 
-                    (ulong)input[inputOffset + 1] << 48 | 
-                    (ulong)input[inputOffset + 2] << 40 | 
-                    (ulong)input[inputOffset + 3] << 32 | 
-                    (ulong)input[inputOffset + 4] << 24 | 
-                    (ulong)input[inputOffset + 5] << 16 | 
-                    (ulong)input[inputOffset + 6] <<  8 | 
-                    (ulong)input[inputOffset + 7] <<  0);  
+                    (ulong)input[inputOffset + 7] << 56 | 
+                    (ulong)input[inputOffset + 6] << 48 | 
+                    (ulong)input[inputOffset + 5] << 40 | 
+                    (ulong)input[inputOffset + 4] << 32 | 
+                    (ulong)input[inputOffset + 3] << 24 | 
+                    (ulong)input[inputOffset + 2] << 16 | 
+                    (ulong)input[inputOffset + 1] <<  8 | 
+                    (ulong)input[inputOffset + 0] <<  0);  
 
              output[outputOffset + 1] = (ulong)(
-                    (ulong)input[inputOffset + 8 + 0] << 56 | 
-                    (ulong)input[inputOffset + 8 + 1] << 48 | 
-                    (ulong)input[inputOffset + 8 + 2] << 40 | 
-                    (ulong)input[inputOffset + 8 + 3] << 32 | 
-                    (ulong)input[inputOffset + 8 + 4] << 24 | 
-                    (ulong)input[inputOffset + 8 + 5] << 16 | 
-                    (ulong)input[inputOffset + 8 + 6] <<  8 | 
-                    (ulong)input[inputOffset + 8 + 7] <<  0);
+                    (ulong)input[inputOffset + 8 + 7] << 56 | 
+                    (ulong)input[inputOffset + 8 + 6] << 48 | 
+                    (ulong)input[inputOffset + 8 + 5] << 40 | 
+                    (ulong)input[inputOffset + 8 + 4] << 32 | 
+                    (ulong)input[inputOffset + 8 + 3] << 24 | 
+                    (ulong)input[inputOffset + 8 + 2] << 16 | 
+                    (ulong)input[inputOffset + 8 + 1] <<  8 | 
+                    (ulong)input[inputOffset + 8 + 0] <<  0);
 
             output[outputOffset + 2] = (ulong)(
-                    (ulong)input[inputOffset + 16 + 0] << 56 | 
-                    (ulong)input[inputOffset + 16 + 1] << 48 | 
-                    (ulong)input[inputOffset + 16 + 2] << 40 | 
-                    (ulong)input[inputOffset + 16 + 3] << 32 | 
-                    (ulong)input[inputOffset + 16 + 4] << 24 | 
-                    (ulong)input[inputOffset + 16 + 5] << 16 | 
-                    (ulong)input[inputOffset + 16 + 6] <<  8 | 
-                    (ulong)input[inputOffset + 16 + 7] <<  0);  
+                    (ulong)input[inputOffset + 16 + 7] << 56 | 
+                    (ulong)input[inputOffset + 16 + 6] << 48 | 
+                    (ulong)input[inputOffset + 16 + 5] << 40 | 
+                    (ulong)input[inputOffset + 16 + 4] << 32 | 
+                    (ulong)input[inputOffset + 16 + 3] << 24 | 
+                    (ulong)input[inputOffset + 16 + 2] << 16 | 
+                    (ulong)input[inputOffset + 16 + 1] <<  8 | 
+                    (ulong)input[inputOffset + 16 + 0] <<  0);  
 
              output[outputOffset + 3] = (ulong)(
-                    (ulong)input[inputOffset + 24 + 0] << 56 | 
-                    (ulong)input[inputOffset + 24 + 1] << 48 | 
-                    (ulong)input[inputOffset + 24 + 2] << 40 | 
-                    (ulong)input[inputOffset + 24 + 3] << 32 | 
-                    (ulong)input[inputOffset + 24 + 4] << 24 | 
-                    (ulong)input[inputOffset + 24 + 5] << 16 | 
-                    (ulong)input[inputOffset + 24 + 6] <<  8 | 
-                    (ulong)input[inputOffset + 24 + 7] <<  0);
+                    (ulong)input[inputOffset + 24 + 7] << 56 | 
+                    (ulong)input[inputOffset + 24 + 6] << 48 | 
+                    (ulong)input[inputOffset + 24 + 5] << 40 | 
+                    (ulong)input[inputOffset + 24 + 4] << 32 | 
+                    (ulong)input[inputOffset + 24 + 3] << 24 | 
+                    (ulong)input[inputOffset + 24 + 2] << 16 | 
+                    (ulong)input[inputOffset + 24 + 1] <<  8 | 
+                    (ulong)input[inputOffset + 24 + 0] <<  0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToULong8BytesLE(byte[] input, long inputOffset)
         {
             return (ulong)(
-                    (ulong)input[inputOffset + 0] << 56 | 
-                    (ulong)input[inputOffset + 1] << 48 | 
-                    (ulong)input[inputOffset + 2] << 40 | 
-                    (ulong)input[inputOffset + 3] << 32 | 
-                    (ulong)input[inputOffset + 4] << 24 | 
-                    (ulong)input[inputOffset + 5] << 16 | 
-                    (ulong)input[inputOffset + 6] <<  8 | 
-                    (ulong)input[inputOffset + 7] <<  0);  
+                    (ulong)input[inputOffset + 7] << 56 | 
+                    (ulong)input[inputOffset + 6] << 48 | 
+                    (ulong)input[inputOffset + 5] << 40 | 
+                    (ulong)input[inputOffset + 4] << 32 | 
+                    (ulong)input[inputOffset + 3] << 24 | 
+                    (ulong)input[inputOffset + 2] << 16 | 
+                    (ulong)input[inputOffset + 1] <<  8 | 
+                    (ulong)input[inputOffset + 0] <<  0);  
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -582,6 +582,20 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 24 + 5] = (byte)((input[inputOffset + 3] >> 40) & 0xFF);
             output[outputOffset + 24 + 6] = (byte)((input[inputOffset + 3] >> 48) & 0xFF);
             output[outputOffset + 24 + 7] = (byte)((input[inputOffset + 3] >> 56) & 0xFF);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong64BytesLE(byte[] inputBuffer, long inputOffset, ulong[] outputBuffer, long outputOffset)
+        {
+            ToULong32BytesLE(inputBuffer, inputOffset, outputBuffer, outputOffset);
+            ToULong32BytesLE(inputBuffer, inputOffset + 32, outputBuffer, outputOffset + 4);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytes8ULongLE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            ToBytes4ULongLE(input, inputOffset, output, outputOffset);
+            ToBytes4ULongLE(input, inputOffset + 4, output, outputOffset + 32);
         }
 
         #endregion
