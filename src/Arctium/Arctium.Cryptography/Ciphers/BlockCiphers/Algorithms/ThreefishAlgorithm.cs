@@ -67,6 +67,108 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         // Public methods
         //
         
+        public static void Decrypt1024(byte[] input, long inputOffset, byte[] output, long outputOffset, ulong t0, ulong t1, Context context)
+        {
+            ulong[] o = context.OutputBuffer;
+            ulong[] permutationBuf = context.PermutationBuffer;
+            ulong[] knwKey = context.KnwKey;
+            ulong mixout0, mixout1;
+            int subkeyNo;
+            ulong[] t = context.T;
+            t[0] = t0;
+            t[1] = t1;
+            t[2] = t0 ^ t1;
+
+            MemCpy.Copy(context.Key, knwKey);
+
+            knwKey[16] = knwKey[ 0] ^ knwKey[ 1] ^ knwKey[ 2] ^ knwKey[ 3];
+            knwKey[16] ^= knwKey[4] ^ knwKey[ 5] ^ knwKey[ 6] ^ knwKey[ 7];
+            knwKey[16] ^= knwKey[ 8] ^ knwKey[ 9] ^ knwKey[10] ^ knwKey[11];
+            knwKey[16] ^= knwKey[12] ^ knwKey[13] ^ knwKey[14] ^ knwKey[15];
+            knwKey[16] ^= C240;
+
+            MemMap.ToULong128BytesLE(input, inputOffset, o, 0);
+
+            o[0] -= knwKey[(20 + 0) % 17];
+            o[1] -= knwKey[(20 + 1) % 17];
+            o[2] -= knwKey[(20 + 2) % 17];
+            o[3] -= knwKey[(20 + 3) % 17];
+            o[4] -= knwKey[(20 + 4) % 17];
+            o[5] -= knwKey[(20 + 5) % 17];
+            o[6] -= knwKey[(20 + 6) % 17];
+            o[7] -= knwKey[(20 + 7) % 17];
+
+            o[ 8] -= knwKey[(20 + 8) %  17];
+            o[ 9] -= knwKey[(20 + 9) %  17];
+            o[10] -= knwKey[(20 + 10) % 17];
+            o[11] -= knwKey[(20 + 11) % 17];
+            o[12] -= knwKey[(20 + 12) % 17];
+            o[13] -= knwKey[(20 + 13) % 17] + t[20 % 3];
+            o[14] -= knwKey[(20 + 14) % 17] + t[(20 + 1) % 3];
+            o[15] -= knwKey[(20 + 15) % 17] + (ulong)20;
+
+            for (int i = 79; i >= 0; i--)
+            {
+                permutationBuf[0] = o[0]; permutationBuf[9] = o[1];
+                permutationBuf[2] = o[2]; permutationBuf[13] = o[3];
+                permutationBuf[6] = o[4]; permutationBuf[11] = o[5];
+                permutationBuf[4] = o[6]; permutationBuf[15] = o[7];
+                permutationBuf[10] = o[8]; permutationBuf[7] = o[9];
+                permutationBuf[12] = o[10]; permutationBuf[3] = o[11];
+                permutationBuf[14] = o[12]; permutationBuf[5] = o[13];
+                permutationBuf[8] = o[14]; permutationBuf[1] = o[15];
+
+                MemCpy.Copy(permutationBuf, o);
+
+                o[1] = BinOps.ROR(o[1] ^ o[0], Rconst1024[(8 * (i % 8)) + 0]);
+                o[0] -= o[1];
+                
+                o[3] = BinOps.ROR(o[3] ^ o[2], Rconst1024[(8 * (i % 8)) + 1]);
+                o[2] -= o[3];
+                
+                o[5] = BinOps.ROR(o[5] ^ o[4], Rconst1024[(8 * (i % 8)) + 2]);
+                o[4] -= o[5];
+                
+                o[7] = BinOps.ROR(o[7] ^ o[6], Rconst1024[(8 * (i % 8)) + 3]);
+                o[6] -= o[7];
+
+                o[9] = BinOps.ROR(o[9] ^ o[8], Rconst1024[(8 * (i % 8)) + 4]);
+                o[8] -= o[9];
+
+                o[11] = BinOps.ROR(o[11] ^ o[10], Rconst1024[(8 * (i % 8)) + 5]);
+                o[10] -= o[11];
+                
+                o[13] = BinOps.ROR(o[13] ^ o[12], Rconst1024[(8 * (i % 8)) + 6]);
+                o[12] -= o[13];
+                
+                o[15] = BinOps.ROR(o[15] ^ o[14], Rconst1024[(8 * (i % 8)) + 7]);
+                o[14] -= o[15];
+                
+                if (i % 4 == 0)
+                {
+                    subkeyNo = i / 4;
+                    o[0] -= knwKey[(subkeyNo + 0) % 17];
+                    o[1] -= knwKey[(subkeyNo + 1) % 17];
+                    o[2] -= knwKey[(subkeyNo + 2) % 17];
+                    o[3] -= knwKey[(subkeyNo + 3) % 17];
+                    o[4] -= knwKey[(subkeyNo + 4) % 17];
+                    o[5] -= knwKey[(subkeyNo + 5) % 17];
+                    o[6] -= knwKey[(subkeyNo + 6) % 17];
+                    o[7] -= knwKey[(subkeyNo + 7) % 17];
+
+                    o[8]  -= knwKey[(subkeyNo + 8) % 17];
+                    o[9]  -= knwKey[(subkeyNo + 9) % 17];
+                    o[10] -= knwKey[(subkeyNo + 10) % 17];
+                    o[11] -= knwKey[(subkeyNo + 11) % 17];
+                    o[12] -= knwKey[(subkeyNo + 12) % 17];
+                    o[13] -= knwKey[(subkeyNo + 13) % 17] + t[subkeyNo % 3];
+                    o[14] -= knwKey[(subkeyNo + 14) % 17] + t[(subkeyNo + 1) % 3];
+                    o[15] -= knwKey[(subkeyNo + 15) % 17] + (ulong)subkeyNo;
+                }
+            }
+
+            MemMap.ToBytes16ULongLE(o, 0, output, outputOffset);
+        }
         public static void Encrypt1024(byte[] input, long inputOffset, byte[] output, long outputOffset, ulong t0, ulong t1, Context context)
         {
             ulong[] o = context.OutputBuffer;
@@ -81,57 +183,93 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
             MemCpy.Copy(context.Key, knwKey);
 
-            knwKey[8] = knwKey[0] ^ knwKey[1] ^ knwKey[2] ^ knwKey[3];
-            knwKey[8] ^= knwKey[4] ^ knwKey[5] ^ knwKey[6] ^ knwKey[7];
-            knwKey[8] ^= C240;
+            knwKey[16] = knwKey[ 0] ^ knwKey[ 1] ^ knwKey[ 2] ^ knwKey[ 3];
+            knwKey[16] ^= knwKey[4] ^ knwKey[ 5] ^ knwKey[ 6] ^ knwKey[ 7];
+            knwKey[16] ^= knwKey[ 8] ^ knwKey[ 9] ^ knwKey[10] ^ knwKey[11];
+            knwKey[16] ^= knwKey[12] ^ knwKey[13] ^ knwKey[14] ^ knwKey[15];
+            knwKey[16] ^= C240;
 
-            MemMap.ToULong64BytesLE(input, inputOffset, o, 0);
+            MemMap.ToULong128BytesLE(input, inputOffset, o, 0);
 
             for (int i = 0; i < context.NumberOfRounds; i++)
             {
                 if (i % 4 == 0)
                 {
                     subkeyNo = i / 4;
-                    o[0] += knwKey[(subkeyNo + 0) % 9];
-                    o[1] += knwKey[(subkeyNo + 1) % 9];
-                    o[2] += knwKey[(subkeyNo + 2) % 9];
-                    o[3] += knwKey[(subkeyNo + 3) % 9];
-                    o[4] += knwKey[(subkeyNo + 4) % 9];
-                    o[5] += knwKey[(subkeyNo + 5) % 9] + t[subkeyNo % 3];
-                    o[6] += knwKey[(subkeyNo + 6) % 9] + t[(subkeyNo + 1) % 3];
-                    o[7] += knwKey[(subkeyNo + 7) % 9] + (ulong)subkeyNo;
+                    o[0] += knwKey[(subkeyNo + 0) % 17];
+                    o[1] += knwKey[(subkeyNo + 1) % 17];
+                    o[2] += knwKey[(subkeyNo + 2) % 17];
+                    o[3] += knwKey[(subkeyNo + 3) % 17];
+                    o[4] += knwKey[(subkeyNo + 4) % 17];
+                    o[5] += knwKey[(subkeyNo + 5) % 17];
+                    o[6] += knwKey[(subkeyNo + 6) % 17];
+                    o[7] += knwKey[(subkeyNo + 7) % 17];
+
+                    o[8] += knwKey[(subkeyNo + 8) % 17];
+                    o[9] += knwKey[(subkeyNo + 9) % 17];
+                    o[10] += knwKey[(subkeyNo + 10) % 17];
+                    o[11] += knwKey[(subkeyNo + 11) % 17];
+                    o[12] += knwKey[(subkeyNo + 12) % 17];
+                    o[13] += knwKey[(subkeyNo + 13) % 17] + t[subkeyNo % 3];
+                    o[14] += knwKey[(subkeyNo + 14) % 17] + t[(subkeyNo + 1) % 3];
+                    o[15] += knwKey[(subkeyNo + 15) % 17] + (ulong)subkeyNo;
                 }
 
-                o[0] = o[0] + o[1];
-                o[1] = BinOps.ROL(o[1], Rconst512[(4 * (i % 8)) + 0]) ^ o[0];
+                o[0] += o[1];
+                o[1] = BinOps.ROL(o[1], Rconst1024[(8 * (i % 8)) + 0]) ^ o[0];
                 
-                o[2] = o[2] + o[3];
-                o[3] = BinOps.ROL(o[3], Rconst512[(4 * (i % 8)) + 1]) ^ o[2];
+                o[2] += o[3];
+                o[3] = BinOps.ROL(o[3], Rconst1024[(8 * (i % 8)) + 1]) ^ o[2];
                 
-                o[4] = o[4] + o[5];
-                o[5] = BinOps.ROL(o[5], Rconst512[(4 * (i % 8)) + 2]) ^ o[4];
+                o[4] += o[5];
+                o[5] = BinOps.ROL(o[5], Rconst1024[(8 * (i % 8)) + 2]) ^ o[4];
                 
-                o[6] = o[6] + o[7];
-                o[7] = BinOps.ROL(o[7], Rconst512[(4 * (i % 8)) + 3]) ^ o[6];
+                o[6] += o[7];
+                o[7] = BinOps.ROL(o[7], Rconst1024[(8 * (i % 8)) + 3]) ^ o[6];
 
-                permutationBuf[0] = o[2]; permutationBuf[1] = o[1];
-                permutationBuf[2] = o[4]; permutationBuf[3] = o[7];
-                permutationBuf[4] = o[6]; permutationBuf[5] = o[5];
-                permutationBuf[6] = o[0]; permutationBuf[7] = o[3];
+                o[8] += o[9];
+                o[9] = BinOps.ROL(o[9], Rconst1024[(8 * (i % 8)) + 4]) ^ o[8];
+                
+                o[10] += o[11];
+                o[11] = BinOps.ROL(o[11], Rconst1024[(8 * (i % 8)) + 5]) ^ o[10];
+                
+                o[12] += o[13];
+                o[13] = BinOps.ROL(o[13], Rconst1024[(8 * (i % 8)) + 6]) ^ o[12];
+                
+                o[14] += o[15];
+                o[15] = BinOps.ROL(o[15], Rconst1024[(8 * (i % 8)) + 7]) ^ o[14];
+
+                permutationBuf[0] = o[0]; permutationBuf[1] = o[9];
+                permutationBuf[2] = o[2]; permutationBuf[3] = o[13];
+                permutationBuf[4] = o[6]; permutationBuf[5] = o[11];
+                permutationBuf[6] = o[4]; permutationBuf[7] = o[15];
+                permutationBuf[8] = o[10]; permutationBuf[9] = o[7];
+                permutationBuf[10] = o[12]; permutationBuf[11] = o[3];
+                permutationBuf[12] = o[14]; permutationBuf[13] = o[5];
+                permutationBuf[14] = o[8]; permutationBuf[15] = o[1];
 
                 MemCpy.Copy(permutationBuf, o);
             }
 
-            o[0] += knwKey[(18 + 0) % 9];
-            o[1] += knwKey[(18 + 1) % 9];
-            o[2] += knwKey[(18 + 2) % 9];
-            o[3] += knwKey[(18 + 3) % 9];
-            o[4] += knwKey[(18 + 4) % 9];
-            o[5] += knwKey[(18 + 5) % 9] + t[18 % 3];
-            o[6] += knwKey[(18 + 6) % 9] + t[(18 + 1) % 3];
-            o[7] += knwKey[(18 + 7) % 9] + (ulong)18;
+            o[0] += knwKey[(20 + 0) % 17];
+            o[1] += knwKey[(20 + 1) % 17];
+            o[2] += knwKey[(20 + 2) % 17];
+            o[3] += knwKey[(20 + 3) % 17];
+            o[4] += knwKey[(20 + 4) % 17];
+            o[5] += knwKey[(20 + 5) % 17];
+            o[6] += knwKey[(20 + 6) % 17];
+            o[7] += knwKey[(20 + 7) % 17];
 
-            MemMap.ToBytes8ULongLE(o, 0, output, outputOffset);
+            o[ 8] += knwKey[(20 + 8) %  17];
+            o[ 9] += knwKey[(20 + 9) %  17];
+            o[10] += knwKey[(20 + 10) % 17];
+            o[11] += knwKey[(20 + 11) % 17];
+            o[12] += knwKey[(20 + 12) % 17];
+            o[13] += knwKey[(20 + 13) % 17] + t[20 % 3];
+            o[14] += knwKey[(20 + 14) % 17] + t[(20 + 1) % 3];
+            o[15] += knwKey[(20 + 15) % 17] + (ulong)20;
+
+            MemMap.ToBytes16ULongLE(o, 0, output, outputOffset);
         }
 
         public static void Encrypt512(byte[] input, long inputOffset, byte[] output, long outputOffset, ulong t0, ulong t1, Context context)
