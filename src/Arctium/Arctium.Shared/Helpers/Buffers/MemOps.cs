@@ -6,6 +6,12 @@ namespace Arctium.Shared.Helpers.Buffers
 {
     public static class MemOps
     {
+        /// <summary>
+        /// Compares two byte arrays
+        /// </summary>
+        /// <param name="mem1"></param>
+        /// <param name="mem2"></param>
+        /// <returns></returns>
         public static bool Memcmp(byte[] mem1, byte[] mem2)
         {
             if (mem1.Length == mem2.Length)
@@ -22,6 +28,14 @@ namespace Arctium.Shared.Helpers.Buffers
             }
 
             return false;
+        }
+
+        public static void Memset(ulong[] array, long offset, long count, ulong value)
+        {
+            for(long i = offset; i < offset + count; i++) 
+            {
+                array[i] = value;
+            }
         }
 
         #region Unsafe

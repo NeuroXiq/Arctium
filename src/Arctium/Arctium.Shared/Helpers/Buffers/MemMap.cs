@@ -420,6 +420,7 @@ namespace Arctium.Shared.Helpers.Buffers
 
         #region managed
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToByteArrayLE(ulong[] src)
         {
             byte[] dst = new byte[src.Length * 8];
@@ -435,6 +436,7 @@ namespace Arctium.Shared.Helpers.Buffers
             return dst;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToNewByteArrayLE(uint[] input, int length)
         {
             byte[] result = new byte[length * 4];
@@ -448,6 +450,138 @@ namespace Arctium.Shared.Helpers.Buffers
             }
 
             return result;
+        }
+
+        ///<summary>
+        ///
+        ///<summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULongNBytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset, long outputULongCount)
+        {
+           for (long i = inputOffset, j = outputOffset; i < (8 * outputULongCount) + inputOffset; i += 8, j++)
+           {
+             output[j] = (ulong)(
+                    (ulong)input[i + 0] << 56 | 
+                    (ulong)input[i + 1] << 48 | 
+                    (ulong)input[i + 2] << 40 | 
+                    (ulong)input[i + 3] << 32 | 
+                    (ulong)input[i + 4] << 24 | 
+                    (ulong)input[i + 5] << 16 | 
+                    (ulong)input[i + 6] <<  8 | 
+                    (ulong)input[i + 7] <<  0);  
+
+           } 
+        }
+
+
+        ///<summary>
+        /// Converts array of 32 bytes to array of two ulong's. Bytes in input byte array are interpreted in Little Endian order
+        ///<summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong32BytesLE(byte[] input, ulong[] output)
+        {
+            ToULong32BytesLE(input, 0, output, 0);
+        }
+
+        ///<summary>
+        /// Converts array of 32 bytes to array of two ulong's. Bytes in input byte array are interpreted in Little Endian order
+        ///<summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong32BytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        {
+            output[outputOffset] = (ulong)(
+                    (ulong)input[inputOffset + 0] << 56 | 
+                    (ulong)input[inputOffset + 1] << 48 | 
+                    (ulong)input[inputOffset + 2] << 40 | 
+                    (ulong)input[inputOffset + 3] << 32 | 
+                    (ulong)input[inputOffset + 4] << 24 | 
+                    (ulong)input[inputOffset + 5] << 16 | 
+                    (ulong)input[inputOffset + 6] <<  8 | 
+                    (ulong)input[inputOffset + 7] <<  0);  
+
+             output[outputOffset + 1] = (ulong)(
+                    (ulong)input[inputOffset + 8 + 0] << 56 | 
+                    (ulong)input[inputOffset + 8 + 1] << 48 | 
+                    (ulong)input[inputOffset + 8 + 2] << 40 | 
+                    (ulong)input[inputOffset + 8 + 3] << 32 | 
+                    (ulong)input[inputOffset + 8 + 4] << 24 | 
+                    (ulong)input[inputOffset + 8 + 5] << 16 | 
+                    (ulong)input[inputOffset + 8 + 6] <<  8 | 
+                    (ulong)input[inputOffset + 8 + 7] <<  0);
+
+            output[outputOffset + 2] = (ulong)(
+                    (ulong)input[inputOffset + 16 + 0] << 56 | 
+                    (ulong)input[inputOffset + 16 + 1] << 48 | 
+                    (ulong)input[inputOffset + 16 + 2] << 40 | 
+                    (ulong)input[inputOffset + 16 + 3] << 32 | 
+                    (ulong)input[inputOffset + 16 + 4] << 24 | 
+                    (ulong)input[inputOffset + 16 + 5] << 16 | 
+                    (ulong)input[inputOffset + 16 + 6] <<  8 | 
+                    (ulong)input[inputOffset + 16 + 7] <<  0);  
+
+             output[outputOffset + 3] = (ulong)(
+                    (ulong)input[inputOffset + 24 + 0] << 56 | 
+                    (ulong)input[inputOffset + 24 + 1] << 48 | 
+                    (ulong)input[inputOffset + 24 + 2] << 40 | 
+                    (ulong)input[inputOffset + 24 + 3] << 32 | 
+                    (ulong)input[inputOffset + 24 + 4] << 24 | 
+                    (ulong)input[inputOffset + 24 + 5] << 16 | 
+                    (ulong)input[inputOffset + 24 + 6] <<  8 | 
+                    (ulong)input[inputOffset + 24 + 7] <<  0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULong8BytesLE(byte[] input, long inputOffset)
+        {
+            return (ulong)(
+                    (ulong)input[inputOffset + 0] << 56 | 
+                    (ulong)input[inputOffset + 1] << 48 | 
+                    (ulong)input[inputOffset + 2] << 40 | 
+                    (ulong)input[inputOffset + 3] << 32 | 
+                    (ulong)input[inputOffset + 4] << 24 | 
+                    (ulong)input[inputOffset + 5] << 16 | 
+                    (ulong)input[inputOffset + 6] <<  8 | 
+                    (ulong)input[inputOffset + 7] <<  0);  
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytes4ULongLE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            output[outputOffset + 0 + 0] = (byte)((input[inputOffset + 0] >>  0) & 0xFF);
+            output[outputOffset + 0 + 1] = (byte)((input[inputOffset + 0] >>  8) & 0xFF);
+            output[outputOffset + 0 + 2] = (byte)((input[inputOffset + 0] >> 16) & 0xFF);
+            output[outputOffset + 0 + 3] = (byte)((input[inputOffset + 0] >> 24) & 0xFF);
+            output[outputOffset + 0 + 4] = (byte)((input[inputOffset + 0] >> 32) & 0xFF);
+            output[outputOffset + 0 + 5] = (byte)((input[inputOffset + 0] >> 40) & 0xFF);
+            output[outputOffset + 0 + 6] = (byte)((input[inputOffset + 0] >> 48) & 0xFF);
+            output[outputOffset + 0 + 7] = (byte)((input[inputOffset + 0] >> 56) & 0xFF);
+
+            output[outputOffset + 8 + 0] = (byte)((input[inputOffset + 1] >>  0) & 0xFF);
+            output[outputOffset + 8 + 1] = (byte)((input[inputOffset + 1] >>  8) & 0xFF);
+            output[outputOffset + 8 + 2] = (byte)((input[inputOffset + 1] >> 16) & 0xFF);
+            output[outputOffset + 8 + 3] = (byte)((input[inputOffset + 1] >> 24) & 0xFF);
+            output[outputOffset + 8 + 4] = (byte)((input[inputOffset + 1] >> 32) & 0xFF);
+            output[outputOffset + 8 + 5] = (byte)((input[inputOffset + 1] >> 40) & 0xFF);
+            output[outputOffset + 8 + 6] = (byte)((input[inputOffset + 1] >> 48) & 0xFF);
+            output[outputOffset + 8 + 7] = (byte)((input[inputOffset + 1] >> 56) & 0xFF);
+
+            output[outputOffset + 16 + 0] = (byte)((input[inputOffset + 2] >>  0) & 0xFF);
+            output[outputOffset + 16 + 1] = (byte)((input[inputOffset + 2] >>  8) & 0xFF);
+            output[outputOffset + 16 + 2] = (byte)((input[inputOffset + 2] >> 16) & 0xFF);
+            output[outputOffset + 16 + 3] = (byte)((input[inputOffset + 2] >> 24) & 0xFF);
+            output[outputOffset + 16 + 4] = (byte)((input[inputOffset + 2] >> 32) & 0xFF);
+            output[outputOffset + 16 + 5] = (byte)((input[inputOffset + 2] >> 40) & 0xFF);
+            output[outputOffset + 16 + 6] = (byte)((input[inputOffset + 2] >> 48) & 0xFF);
+            output[outputOffset + 16 + 7] = (byte)((input[inputOffset + 2] >> 56) & 0xFF);
+
+            output[outputOffset + 24 + 0] = (byte)((input[inputOffset + 3] >>  0) & 0xFF);
+            output[outputOffset + 24 + 1] = (byte)((input[inputOffset + 3] >>  8) & 0xFF);
+            output[outputOffset + 24 + 2] = (byte)((input[inputOffset + 3] >> 16) & 0xFF);
+            output[outputOffset + 24 + 3] = (byte)((input[inputOffset + 3] >> 24) & 0xFF);
+            output[outputOffset + 24 + 4] = (byte)((input[inputOffset + 3] >> 32) & 0xFF);
+            output[outputOffset + 24 + 5] = (byte)((input[inputOffset + 3] >> 40) & 0xFF);
+            output[outputOffset + 24 + 6] = (byte)((input[inputOffset + 3] >> 48) & 0xFF);
+            output[outputOffset + 24 + 7] = (byte)((input[inputOffset + 3] >> 56) & 0xFF);
         }
 
         #endregion

@@ -28,5 +28,9 @@ namespace Arctium.Shared.Helpers.Binary
         /// Rotates right 64-bit value
         ///</summary>
         public static ulong ROR(ulong value, int r) { return (value >> r) | (value << (64 - r)); }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ROL(ulong value, int r) { return (value << r) | (value >> (64 - r)); }
+
     }
 }

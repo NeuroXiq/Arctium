@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using Hashes = Arctium.Cryptography.HashFunctions.Hashes;
 
-namespace Arctium.Tests.Cryptography.HashFunctions.BLAKE2
+namespace Arctium.Tests.Cryptography.HashFunctions
 {
     public class BLAKE2b_512Tests
     {
@@ -37,7 +37,7 @@ namespace Arctium.Tests.Cryptography.HashFunctions.BLAKE2
 
         private static HashFunctionTest[] Load()
         {
-            string[] lines = File.ReadLines("./HashFunctions/BLAKE2/Blake2b_512_TestVectors.txt").ToArray();
+            string[] lines = File.ReadLines(Files.GetFullPath("/HashFunctions/TestVectors/BLAKE2/Blake2b_512_TestVectors.txt")).ToArray();
             List<HashFunctionTest> tests = new List<HashFunctionTest>();
 
             for (int i = 0; i < lines.Length; i++)

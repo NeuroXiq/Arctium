@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
  * 
  */
 
-namespace  Arctium.Cryptography.HashFunctions.Hashes
+namespace  Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
     static unsafe class SHA2_224_256_Shared
     {

@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
 
 namespace Arctium.Cryptography.HashFunctions.XOF
 {

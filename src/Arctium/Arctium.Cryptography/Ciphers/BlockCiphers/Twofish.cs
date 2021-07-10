@@ -1,8 +1,9 @@
 ﻿using System;
+using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
 using Arctium.Cryptography.Ciphers.BlockCiphers.Shared;
 using Arctium.Cryptography.Ciphers.Helpers;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
+namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
     /*
      * This is a class which execute methods from TwofishEncryption static class
@@ -75,7 +76,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
                 expandedKeyPtr = &expandedKey[0], skeyVectorPtr = &sKeyVector[0])
             {
                 // Twofish parameters ('cipher state')
-                TwofishEncryption.TwofishParms parameters = new TwofishEncryption.TwofishParms();
+                TwofishAlgorithm.TwofishParms parameters = new TwofishAlgorithm.TwofishParms();
                 parameters.Input = inputPtr;
                 parameters.Output = outputPtr;
                 parameters.KeyLength = key.Length * 8;
@@ -96,7 +97,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
             }
         }
 
-        private void EncryptionSwitchBasedOnMode(TwofishEncryption.TwofishParms parameters, long blocksCount)
+        private void EncryptionSwitchBasedOnMode(TwofishAlgorithm.TwofishParms parameters, long blocksCount)
         {
             switch (BlockCipherMode)
             {
@@ -106,7 +107,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
             }
         }
 
-        private void DecryptionSwitchBasedOnMode(TwofishEncryption.TwofishParms parameters, long blocksCount)
+        private void DecryptionSwitchBasedOnMode(TwofishAlgorithm.TwofishParms parameters, long blocksCount)
         {
             switch (BlockCipherMode)
             {
@@ -127,7 +128,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
 
             fixed (byte* expandedKeyPtr = &expandedKey[0], sKeyVectorPtr = &sKeyVector[0], inputKeyPtr = &key[0])
             {
-                TwofishEncryption.KeySchedule(inputKeyPtr, (uint*)expandedKeyPtr, (uint*)sKeyVectorPtr, keyLengthInBits);
+                TwofishAlgorithm.KeySchedule(inputKeyPtr, (uint*)expandedKeyPtr, (uint*)sKeyVectorPtr, keyLengthInBits);
             }
         }
 
@@ -135,11 +136,11 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
 
         // Encrypt
 
-        private void EncryptECB(TwofishEncryption.TwofishParms parameters, long blocksCount)
+        private void EncryptECB(TwofishAlgorithm.TwofishParms parameters, long blocksCount)
         {
             for (int i = 0; i < blocksCount; i++)
             {
-                TwofishEncryption.EncryptBlock(parameters);
+                TwofishAlgorithm.EncryptBlock(parameters);
                 parameters.Input += 16;
                 parameters.Output += 16;
             }
@@ -147,11 +148,11 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
 
         // Decrypt
 
-        private void DecryptECB(TwofishEncryption.TwofishParms parameters, long blocksCount)
+        private void DecryptECB(TwofishAlgorithm.TwofishParms parameters, long blocksCount)
         {
             for (int i = 0; i < blocksCount; i++)
             {
-                TwofishEncryption.DecryptBlock(parameters);
+                TwofishAlgorithm.DecryptBlock(parameters);
                 parameters.Input += 16;
                 parameters.Output += 16;
             }

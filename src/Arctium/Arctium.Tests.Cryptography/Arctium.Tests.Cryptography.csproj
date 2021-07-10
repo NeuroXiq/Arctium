@@ -10,49 +10,4 @@
     <ProjectReference Include="..\Arctium.Tests.Core\Arctium.Tests.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="HashFunctions\BLAKE2\Blake2b_512_TestVectors.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\BLAKE3\BLAKE3TestVectors.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_224LongMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_224Monte.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_224ShortMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_256LongMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_256Monte.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_256ShortMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_384LongMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_384Monte.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_384ShortMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_512LongMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_512Monte.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="HashFunctions\SHA3\TestVectors\SHA3_512ShortMsg.rsp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

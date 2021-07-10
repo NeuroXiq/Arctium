@@ -3,7 +3,7 @@ using Arctium.Cryptography.Ciphers.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using System;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.Serpent
+namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
     /// <summary>
     /// Block cipher created by Ross Anderson, Eli Biham and Lars Knudsen.

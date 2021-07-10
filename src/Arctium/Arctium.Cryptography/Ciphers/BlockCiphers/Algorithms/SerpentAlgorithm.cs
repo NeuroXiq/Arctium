@@ -11,7 +11,7 @@ using Arctium.Shared.Helpers.Buffers;
 using System.Runtime.CompilerServices;
 using static Arctium.Shared.Helpers.Binary.BinOps;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.Serpent
+namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {
     public static unsafe class SerpentAlgorithm
     {

@@ -7,7 +7,7 @@ using System.IO;
 using System.Text;
 using Hashes = Arctium.Cryptography.HashFunctions.Hashes;
 
-namespace Arctium.Tests.Cryptography.HashFunctions.BLAKE3
+namespace Arctium.Tests.Cryptography.HashFunctions
 {
     public class BLAKE3Tests
     {
@@ -36,7 +36,7 @@ namespace Arctium.Tests.Cryptography.HashFunctions.BLAKE3
 
         private static HashFunctionTest[] LoadFromFile()
         {
-            string[] lines = File.ReadAllText("./HashFunctions/BLAKE3/BLAKE3TestVectors.txt").Split("\r\n");
+            string[] lines = File.ReadAllText(Files.GetFullPath("/HashFunctions/TestVectors/BLAKE3/BLAKE3TestVectors.txt")).Split("\r\n");
             List<HashFunctionTest> tests = new List<HashFunctionTest>();
 
             for (int i = 0; i < lines.Length; i++)

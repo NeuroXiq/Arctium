@@ -1,7 +1,6 @@
 ﻿using Arctium.Tests.Core;
-using Arctium.Tests.Cryptography.HashFunctions.BLAKE2;
-using Arctium.Tests.Cryptography.HashFunctions.BLAKE3;
-using Arctium.Tests.Cryptography.HashFunctions.SHA3;
+using Arctium.Tests.Cryptography.Ciphers;
+using Arctium.Tests.Cryptography.HashFunctions;
 using System.Collections.Generic;
 
 namespace Arctium.Tests.Cryptography
@@ -15,6 +14,7 @@ namespace Arctium.Tests.Cryptography
             results.AddRange(SHA3_Tests.Run());
             results.AddRange(BLAKE3Tests.Run());
             results.AddRange(BLAKE2b_512Tests.Run());
+            results.AddRange(Threefish_256Tests.Run());
 
             return results.ToArray();
         }

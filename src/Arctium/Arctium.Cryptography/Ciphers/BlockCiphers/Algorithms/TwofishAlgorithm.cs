@@ -3,7 +3,7 @@ using Arctium.Shared.Helpers.Buffers;
 using System.Runtime.CompilerServices;
 using static Arctium.Shared.Helpers.Binary.BinOps;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
+namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {
     // TODO BlockCiphers/Twofish 
     // * Create look-up tabled for RS, Q0/Q1 and MDS multiplication 
@@ -20,7 +20,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Twofish
     /// Represents enctyption algorithms for the Twofish cipher.
     /// This is unsafe class, never throws managed exceptions, input data MUST be valid
     /// </summary>
-    public static unsafe class TwofishEncryption
+    public static unsafe class TwofishAlgorithm
     {
 
         /*

@@ -189,5 +189,16 @@ namespace Arctium.Shared.Helpers.Buffers
                 dst[i] = src[i];
             }
         }
+
+        public static void Copy(ulong[] src, ulong[] dst)
+        {
+            Copy(src, 0, src.Length, dst, 0);
+        }
+
+        public static void Copy(ulong[] src, long srcOffset, long length, ulong[] dst, long dstOffset)
+        {
+            for(long i = 0; i < length; i++) dst[dstOffset + i] = src[srcOffset + i];
+        }
+
     }
 }

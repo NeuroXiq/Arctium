@@ -2,7 +2,7 @@
 using Arctium.Shared.Helpers.Binary;
 using System;
 
-namespace Arctium.Cryptography.HashFunctions.Hashes
+namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
     //TODO SHA3 Force inline, maybe unwind all loops
     unsafe class SHA3_Shared
