@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Arctium.Shared.Helpers.Buffers
@@ -36,6 +37,18 @@ namespace Arctium.Shared.Helpers.Buffers
             {
                 array[i] = value;
             }
+        }
+
+        /// <summary>
+        /// Xor source with xorWith. Results are stored in source
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Xor4ULong(ulong[] source, long ioffset, ulong[] xorWith, ulong xoffset)
+        {
+            source[ioffset + 0] ^= xorWith[xoffset + 0];
+            source[ioffset + 1] ^= xorWith[xoffset + 1];
+            source[ioffset + 2] ^= xorWith[xoffset + 2];
+            source[ioffset + 3] ^= xorWith[xoffset + 3];
         }
 
         #region Unsafe

@@ -72,7 +72,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             ulong[] o = context.OutputBuffer;
             ulong[] permutationBuf = context.PermutationBuffer;
             ulong[] knwKey = context.KnwKey;
-            ulong mixout0, mixout1;
             int subkeyNo;
             ulong[] t = context.T;
             t[0] = t0;
@@ -174,7 +173,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             ulong[] o = context.OutputBuffer;
             ulong[] permutationBuf = context.PermutationBuffer;
             ulong[] knwKey = context.KnwKey;
-            ulong mixout0, mixout1;
             int subkeyNo;
             ulong[] t = context.T;
             t[0] = t0;
@@ -277,7 +275,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             ulong[] o = context.OutputBuffer;
             ulong[] permutationBuf = context.PermutationBuffer;
             ulong[] knwKey = context.KnwKey;
-            ulong mixout0, mixout1;
             int subkeyNo;
             ulong[] t = context.T;
             t[0] = t0;
@@ -344,7 +341,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             ulong[] o = context.OutputBuffer;
             ulong[] permutationBuf = context.PermutationBuffer;
             ulong[] knwKey = context.KnwKey;
-            ulong mixout0, mixout1;
             int subkeyNo;
             ulong[] t = context.T;
             t[0] = t0;

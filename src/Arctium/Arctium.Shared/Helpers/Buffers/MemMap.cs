@@ -584,6 +584,33 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 24 + 7] = (byte)((input[inputOffset + 3] >> 56) & 0xFF);
         }
 
+        public static void ToBytes1ULongLE(ulong value, byte[] output, long offset)
+        {
+            output[offset + 0] = (byte)(value >> 0);
+            output[offset + 1] = (byte)(value >> 8);
+            output[offset + 2] = (byte)(value >> 16);
+            output[offset + 3] = (byte)(value >> 24);
+
+            output[offset + 4] = (byte)(value >> 32);
+            output[offset + 5] = (byte)(value >> 40);
+            output[offset + 6] = (byte)(value >> 48);
+            output[offset + 7] = (byte)(value >> 56);
+        }
+
+        public static void ToBytes1UIntLE(uint value, byte[] output, long offset)
+        {
+            output[offset + 0] = (byte)(value >> 0);
+            output[offset + 1] = (byte)(value >> 8);
+            output[offset + 2] = (byte)(value >> 16);
+            output[offset + 3] = (byte)(value >> 24);
+        }
+        
+        public static void ToBytes1UShortLE(ushort value, byte[] output, long offset)
+        {
+            output[offset + 0] = (byte)(value >> 0);
+            output[offset + 1] = (byte)(value >> 8);
+        }
+
         // TODO: Memmap / Unwind (like in methods above, so write 128 lines for 128 byte buffer) and check performance if better
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
