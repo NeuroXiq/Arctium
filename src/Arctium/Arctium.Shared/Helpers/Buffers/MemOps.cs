@@ -39,6 +39,11 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
+        public static void Memset(byte[] array, long offset, long count, byte value)
+        {
+            for (long i = 0; i < count; i++) array[i] = value;
+        }
+
         /// <summary>
         /// Xor source with xorWith. Results are stored in source
         /// </summary>

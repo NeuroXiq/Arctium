@@ -2,36 +2,25 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Arctium.Shared.Helpers.Buffers;
+using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public class Skein_256 : Skein
     {
-        public Skein_256(): base(256, 256) { }
-
-        public override void HashBytes(byte[] buffer)
+        public Skein_256(): base(256, 256) 
         {
-            throw new NotImplementedException();
         }
 
-        public override long HashBytes(Stream stream)
+        protected override void HashNotLastBlockBufferCallback(byte[] buffer, long offset, long length)
         {
-            throw new NotImplementedException();
+            SkeinAlgorithm.SimpleProcessNotLastBlock256(context, buffer, offset, length);
         }
 
-        public override void HashBytes(byte[] buffer, long offset, long length)
+        protected override void HashLastBlock(byte[] buffer, long offset, long length)
         {
-            throw new NotImplementedException();
-        }
-
-        public override byte[] HashFinal()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Reset()
-        {
-            throw new NotImplementedException();
+            SkeinAlgorithm.SimpleProcessLastBlock256(context, buffer, offset, length);
         }
     }
 }

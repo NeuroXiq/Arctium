@@ -39,7 +39,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             Out = 63
         };
 
-        public struct ConfigurationValue
+        public class ConfigurationValue
         {
             public uint SchemaIdentifier;
             public ushort VersionNumber;
@@ -51,12 +51,15 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             public byte[] ReservedSetToZero_1;
         }
 
-        public struct Context
+        public class Context
         {
             public ConfigurationValue Config;
             public ThreefishAlgorithm.Context ThreefishContext;
             public ulong ProcessedBytesCount;
-            public byte[] OutputBuffer;
+            public byte[] ThreefishOutputBuffer;
+            public byte[] HashOutputBuffer;
+            public byte[] HashOutputCounter;
+            public byte[] LastBlockBuffer;
             public int InternalStateSizeInBits;
             
             /// <summary>
@@ -80,11 +83,60 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
          * [126 - 126]  First
          * [127 - 127]  Last
          * */
-
         
-        public static void SimpleProcessNotLastBlocks256(Context context, byte[] input, long inputOffset, long length)
+        public static void SimpleProcessNotLastBlock1024(Context context, byte[] input, long inputOffset, long length)
         {
-            long blockCount = length / 256;
+        
+        }
+
+        public static void SimpleProcessLastBlock1024(Context context, byte[] input, long inputOffset, long length)
+        {
+        
+        }
+        
+        public static void SimpleProcessNotLastBlock512(Context context, byte[] input, long inputOffset, long length)
+        {
+            long blockCount = length / 64;
+            ulong t0, t1;
+
+            for (long i = 0; i < blockCount; i++)
+            {
+                context.ProcessedBytesCount += 64;
+                t0 = context.ProcessedBytesCount;
+                t1 = ((ulong)0 << 63) | 
+                    (context.ProcessedBytesCount == 64 ? ((ulong)1 << 62) : 0) | 
+                    (ulong)TypeValue.Msg << 56;
+
+                MemMap.ToULong64BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
+                ThreefishAlgorithm.Encrypt512(input, inputOffset, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
+
+                for (int j = 0; j < 64; j++) context.G[j] = (byte)(context.ThreefishOutputBuffer[j] ^ input[j + inputOffset]);
+
+                inputOffset += 64;
+            }
+        }
+
+        public static void SimpleProcessLastBlock512(Context context, byte[] input, long inputOffset, long length)
+        {
+            ulong t0, t1;
+            MemOps.Memset(context.LastBlockBuffer, 0, 64, 0);
+            MemCpy.Copy(input, inputOffset, context.LastBlockBuffer, 0, length);
+
+            context.ProcessedBytesCount += (ulong)length;
+            t0 = context.ProcessedBytesCount;
+            t1 = ((ulong)1 << 63) |
+                ((ulong)(context.ProcessedBytesCount > 64 ? 0 : 1) << 62) | 
+                (ulong)TypeValue.Msg << 56;
+
+            MemMap.ToULong64BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
+            ThreefishAlgorithm.Encrypt512(context.LastBlockBuffer, 0, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
+            
+            for (int i = 0; i < 64; i++) context.G[i] = (byte)(context.ThreefishOutputBuffer[i] ^ context.LastBlockBuffer[i]);
+        }
+        
+        public static void SimpleProcessNotLastBlock256(Context context, byte[] input, long inputOffset, long length)
+        {
+            long blockCount = length / 32;
             ulong t0, t1;
             byte[] lastOutput = context.G;
 
@@ -92,27 +144,83 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             {
                 context.ProcessedBytesCount += 32;
                 t0 = context.ProcessedBytesCount;
-                t1 = ((ulong)0 << 6) | // final 
-                    ((context.ProcessedBytesCount == 32) ? ((ulong)1 << 6) : (ulong)0) | // first
-                    ((ulong)TypeValue.Msg << 0) | // type
+                t1 = ((ulong)0 << 63) | // final 
+                    ((context.ProcessedBytesCount == 32) ? ((ulong)1 << 62) : (ulong)0) | // first
+                    ((ulong)TypeValue.Msg << 56) | // type
                     ((ulong)0 << 15) | // bitpad
                     ((ulong)0 << 8) | // tree level
                     ((ulong)0 << 16);
 
                 MemMap.ToULong32BytesLE(context.G, context.ThreefishContext.Key);
-                ThreefishAlgorithm.Encrypt256(input, inputOffset, context.OutputBuffer, 0, t0, t1, context.ThreefishContext); 
+                ThreefishAlgorithm.Encrypt256(input, inputOffset, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext); 
             
-                for (int j = 0; j < 16; j++) context.OutputBuffer[j] ^= input[inputOffset + j];
+                for (int j = 0; j < 32; j++) context.G[j] = (byte)(context.ThreefishOutputBuffer[j] ^ input[inputOffset + j]);
+                inputOffset += 32;
             }
         }
 
         public static void SimpleProcessLastBlock256(Context context, byte[] input, long offset, long length)
         {
+            MemOps.Memset(context.LastBlockBuffer, 0, 32, 0); 
+            MemCpy.Copy(input, offset, context.LastBlockBuffer, 0, length);
+
+            context.ProcessedBytesCount += (ulong)length;
+
+            ulong t0, t1;
+            t0 = context.ProcessedBytesCount;
+            t1 = ((ulong)1 << 63) | // final
+                (ulong)(context.ProcessedBytesCount > 32 ? 0 : ((ulong)1 << 62)) | // is first
+                (ulong)((ulong)TypeValue.Msg << 56);
+
+            MemMap.ToULong32BytesLE(context.G, context.ThreefishContext.Key);
+            ThreefishAlgorithm.Encrypt256(context.LastBlockBuffer, 0, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
+
+            for (int i = 0; i < 32; i++) context.G[i] = (byte)(context.ThreefishOutputBuffer[i] ^ context.LastBlockBuffer[i]);
         }
         
-        public static void Output(Context context, byte[] outputBuffer, ulong outputOffset)
+        public static void Output(Context context, byte[] outputBuffer, long outputOffset)
         {
-            
+            long copyOffset = outputOffset;
+            long outputLengthInBytes = (long)context.Config.OutputLength / 8;
+            long remaining = outputLengthInBytes;
+            long stateSizeInBytes = (long)context.InternalStateSizeInBits / 8;
+            ulong outputLengthInBlocks = (ulong)outputLengthInBytes / ((ulong)context.InternalStateSizeInBits / 8);
+            ulong t0, t1;
+            outputLengthInBlocks = outputLengthInBlocks == 0 ? 1 : outputLengthInBlocks;
+
+            for (ulong i = 0; i < outputLengthInBlocks; i++)
+            {
+                t1 = ((ulong)1 << 63) | // final 
+                     ((ulong)1 << 62) | // first
+                     (ulong)((ulong)TypeValue.Out << 56);
+
+                t0 = 8;
+
+                MemMap.ToBytes1ULongLE(i, context.HashOutputCounter, 0);
+
+                if (context.InternalStateSizeInBits == 256)
+                {
+                    MemMap.ToULong32BytesLE(context.G, context.ThreefishContext.Key);
+                    ThreefishAlgorithm.Encrypt256(context.HashOutputCounter, 0, context.HashOutputBuffer, 0, t0, t1, context.ThreefishContext);
+                }
+                else if (context.InternalStateSizeInBits == 512)
+                {
+                    MemMap.ToULong64BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
+                    ThreefishAlgorithm.Encrypt512(context.HashOutputCounter, 0, context.HashOutputBuffer, 0, t0, t1, context.ThreefishContext);
+                }
+                else 
+                {
+                    MemMap.ToULong128BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
+                    ThreefishAlgorithm.Encrypt1024(context.HashOutputCounter, 0, context.HashOutputBuffer, 0, t0, t1, context.ThreefishContext);
+                }
+
+                for (int j = 0; j < stateSizeInBytes; j++) outputBuffer[j] ^= context.HashOutputCounter[j];
+
+                long bytesToCopy = remaining > stateSizeInBytes ? stateSizeInBytes : remaining;
+                MemCpy.Copy(context.HashOutputBuffer, 0, outputBuffer, outputOffset + copyOffset, bytesToCopy);
+                remaining -= bytesToCopy; 
+                copyOffset += bytesToCopy;
+            }
         }
 
         /// <summary>
@@ -120,7 +228,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         /// </summary>
         public static Context SimpleInitialise(int outputLengthInBits, int internalStateSizeInBits)
         {
-
+            int internalStateSizeInBytes = internalStateSizeInBits / 8;
             ConfigurationValue config = new ConfigurationValue();
 
             config.SchemaIdentifier = ConfigSchemaIdentifierSHA3;
@@ -133,6 +241,12 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
             context.InternalStateSizeInBits = internalStateSizeInBits;
             context.Config = config;
+            context.LastBlockBuffer = new byte[internalStateSizeInBytes];
+            context.ThreefishOutputBuffer = new byte[internalStateSizeInBytes];
+            context.HashOutputCounter = new byte[internalStateSizeInBytes];
+            context.HashOutputBuffer = new byte[internalStateSizeInBytes];
+            context.ThreefishContext = ThreefishAlgorithm.Initialise(new byte[internalStateSizeInBytes]);
+            context.G = new byte[internalStateSizeInBytes];
             SetInitialChainingValue(context);
 
             return context;
@@ -149,7 +263,6 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             byte[] keyAllZeros = new byte[blockSizeInBytes];
             byte[] inputBlock = new byte[blockSizeInBytes];
             ulong t0, t1;
-            context.G = new byte[blockSizeInBytes];
 
             MemMap.ToBytes1UIntLE(config.SchemaIdentifier, inputBlock, 0);
             MemMap.ToBytes1UShortLE(config.VersionNumber, inputBlock, 4);
@@ -160,31 +273,29 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
             ThreefishAlgorithm.Context tfcontext = ThreefishAlgorithm.Initialise(keyAllZeros);
 
-            if (context.InternalStateSizeInBits == 256)
-            {
-               t0 = 32; 
-               t1 = ((ulong)1 << 63) | // first
+            t0 = (ulong)32;
+            t1 = ((ulong)1 << 63) | // first
                    ((ulong)1 << 62) | // final
                    (ulong)TypeValue.Cfg << 56;
 
+
+            if (context.InternalStateSizeInBits == 256)
+            {
                ThreefishAlgorithm.Encrypt256(inputBlock, 0, context.G, 0, t0, t1, tfcontext);
             }
             else if (context.InternalStateSizeInBits == 512)
             {
-                throw new Exception();
+                ThreefishAlgorithm.Encrypt512(inputBlock, 0, context.G, 0, t0, t1, tfcontext);
             }
             else 
             {
-                throw new Exception();
+                ThreefishAlgorithm.Encrypt1024(inputBlock, 0, context.G, 0, t0, t1, tfcontext);
             }
 
             for (int i = 0; i < context.G.Length; i++)
             {
                 context.G[i] ^= inputBlock[i];
             }
-
-            // MemDump.HexDump(context.G);
-
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

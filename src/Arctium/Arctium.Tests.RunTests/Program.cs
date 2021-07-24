@@ -12,7 +12,6 @@ namespace Arctium.Tests.RunTests
         {
             // TODO: TEST / Consider other approach of tests
             //
-            // Usually I test Hash functions anyway (just in code, create class, compute hash, compare with test vectors etc)
             // to check if it works. For now this is a very simple test automation
             //
 
