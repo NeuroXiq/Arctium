@@ -57,7 +57,6 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             public ThreefishAlgorithm.Context ThreefishContext;
             public ulong ProcessedBytesCount;
             public byte[] ThreefishOutputBuffer;
-            public byte[] HashOutputBuffer;
             public byte[] HashOutputCounter;
             public byte[] LastBlockBuffer;
             public int InternalStateSizeInBits;
@@ -138,7 +137,6 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         {
             long blockCount = length / 32;
             ulong t0, t1;
-            byte[] lastOutput = context.G;
 
             for (long i = 0; i < blockCount; i++)
             {
@@ -182,13 +180,13 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         {
             long copyOffset = outputOffset;
             long outputLengthInBytes = (long)context.Config.OutputLength / 8;
+            ulong internalStateSizeInBytes = ((ulong)context.InternalStateSizeInBits / 8);
             long remaining = outputLengthInBytes;
             long stateSizeInBytes = (long)context.InternalStateSizeInBits / 8;
-            ulong outputLengthInBlocks = (ulong)outputLengthInBytes / ((ulong)context.InternalStateSizeInBits / 8);
+            ulong iterationsCountToGenerateDate = ((ulong)outputLengthInBytes + internalStateSizeInBytes - 1) / internalStateSizeInBytes;
             ulong t0, t1;
-            outputLengthInBlocks = outputLengthInBlocks == 0 ? 1 : outputLengthInBlocks;
 
-            for (ulong i = 0; i < outputLengthInBlocks; i++)
+            for (ulong i = 0; i < iterationsCountToGenerateDate; i++)
             {
                 t1 = ((ulong)1 << 63) | // final 
                      ((ulong)1 << 62) | // first
@@ -201,24 +199,24 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
                 if (context.InternalStateSizeInBits == 256)
                 {
                     MemMap.ToULong32BytesLE(context.G, context.ThreefishContext.Key);
-                    ThreefishAlgorithm.Encrypt256(context.HashOutputCounter, 0, context.HashOutputBuffer, 0, t0, t1, context.ThreefishContext);
+                    ThreefishAlgorithm.Encrypt256(context.HashOutputCounter, 0, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
                 }
                 else if (context.InternalStateSizeInBits == 512)
                 {
                     MemMap.ToULong64BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
-                    ThreefishAlgorithm.Encrypt512(context.HashOutputCounter, 0, context.HashOutputBuffer, 0, t0, t1, context.ThreefishContext);
+                    ThreefishAlgorithm.Encrypt512(context.HashOutputCounter, 0, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
                 }
-                else 
+                else
                 {
                     MemMap.ToULong128BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
-                    ThreefishAlgorithm.Encrypt1024(context.HashOutputCounter, 0, context.HashOutputBuffer, 0, t0, t1, context.ThreefishContext);
+                    ThreefishAlgorithm.Encrypt1024(context.HashOutputCounter, 0, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
                 }
 
-                for (int j = 0; j < stateSizeInBytes; j++) outputBuffer[j] ^= context.HashOutputCounter[j];
+                for (int j = 0; j < stateSizeInBytes; j++) context.ThreefishOutputBuffer[j] ^= context.HashOutputCounter[j];
 
                 long bytesToCopy = remaining > stateSizeInBytes ? stateSizeInBytes : remaining;
-                MemCpy.Copy(context.HashOutputBuffer, 0, outputBuffer, outputOffset + copyOffset, bytesToCopy);
-                remaining -= bytesToCopy; 
+                MemCpy.Copy(context.ThreefishOutputBuffer, 0, outputBuffer, outputOffset + copyOffset, bytesToCopy);
+                remaining -= bytesToCopy;
                 copyOffset += bytesToCopy;
             }
         }
@@ -226,7 +224,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         /// <summary>
         /// Initialise Skein context that do not support tree version of algorithm
         /// </summary>
-        public static Context SimpleInitialise(int outputLengthInBits, int internalStateSizeInBits)
+        public static Context SimpleInitialise(int internalStateSizeInBits, int outputLengthInBits)
         {
             int internalStateSizeInBytes = internalStateSizeInBits / 8;
             ConfigurationValue config = new ConfigurationValue();
@@ -244,7 +242,6 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             context.LastBlockBuffer = new byte[internalStateSizeInBytes];
             context.ThreefishOutputBuffer = new byte[internalStateSizeInBytes];
             context.HashOutputCounter = new byte[internalStateSizeInBytes];
-            context.HashOutputBuffer = new byte[internalStateSizeInBytes];
             context.ThreefishContext = ThreefishAlgorithm.Initialise(new byte[internalStateSizeInBytes]);
             context.G = new byte[internalStateSizeInBytes];
             SetInitialChainingValue(context);

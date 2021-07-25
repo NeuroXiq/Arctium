@@ -6,5 +6,6 @@ namespace Arctium.Tests.Core
     {
         public string Name;
         public bool Success;
+        public Exception Exception;
     }
 }

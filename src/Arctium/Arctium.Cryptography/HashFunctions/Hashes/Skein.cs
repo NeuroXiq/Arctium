@@ -10,12 +10,23 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public abstract class Skein : HashFunction
     {
+        public enum InternalStateSize
+        {
+            Bits_256 = 256,
+            Bits_512 = 512,
+            Bits_1024 = 1024
+        }
+
+        public InternalStateSize StateSize { get; private set; }
+
         protected SkeinAlgorithm.Context context;
         protected BlockBufferWithLastBlock memBuffer;
         private byte[] lastBlock;
 
-        public Skein(int inputBlockSize, int hashSize) : base(inputBlockSize, hashSize)
+        public Skein(InternalStateSize stateSize, int hashSize) : base((int)stateSize, hashSize)
         {
+            StateSize = stateSize;
+            int inputBlockSize = (int)stateSize;
             context = SkeinAlgorithm.SimpleInitialise(inputBlockSize, hashSize);
             memBuffer = new BlockBufferWithLastBlock(inputBlockSize / 8, HashFunctionsConfig.BufferSizeInBlocks, HashNotLastBlockBufferCallback);
             lastBlock = new byte[inputBlockSize / 8];

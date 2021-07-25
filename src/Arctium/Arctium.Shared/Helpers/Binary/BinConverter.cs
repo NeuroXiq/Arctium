@@ -360,7 +360,7 @@ namespace Arctium.Shared.Helpers.Binary
         /// <summary>
         /// Converts string to byte array. Stream must contain valid 
         /// hexadecimal values, must be multiply of 2 and must not contain any delimiters (space etc.).
-        /// Only 0-9A-Z allowed
+        /// Only 0-9A-F allowed
         /// </summary>
         /// <param name="hexString"></param>
         /// <returns></returns>

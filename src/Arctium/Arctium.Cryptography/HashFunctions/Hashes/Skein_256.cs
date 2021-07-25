@@ -9,7 +9,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public class Skein_256 : Skein
     {
-        public Skein_256(): base(256, 256) 
+        public Skein_256(): base(Skein.InternalStateSize.Bits_256, 256) 
         {
         }
 

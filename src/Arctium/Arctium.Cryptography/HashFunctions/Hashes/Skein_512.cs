@@ -4,7 +4,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public class Skein_512 : Skein
     {
-        public Skein_512() : base(512, 512) { }
+        public Skein_512() : base(Skein.InternalStateSize.Bits_512, 512) { }
 
         protected override void HashNotLastBlockBufferCallback(byte[] buffer, long offset, long length)
         {

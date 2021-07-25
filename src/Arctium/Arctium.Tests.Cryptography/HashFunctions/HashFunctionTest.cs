@@ -10,6 +10,10 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 
         public byte[] ExpectedResultHash;
 
+        public HashFunctionTest()
+        {
+        }
+
         public HashFunctionTest(byte[] input, byte[] expectedOutput) 
         {
             InputBytes = input;

@@ -71,12 +71,12 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         ///<summary>
-        /// Flush data from the buffer. Flush operation never flush flush last block. If only last block is present
+        /// Flush data from the buffer. Flush operation never flush last block. If only last block is present
         /// in the buffer, then nothing is flushed. To get last block from buffer use 
         ///</summary>
         public void Flush()
         {
-            long toFlushWithoutLastBlock = (loadedInBuffer - blockSize) / blockSize;
+            long toFlushWithoutLastBlock = ((loadedInBuffer + blockSize - 1) / blockSize) - 1;
             long bytesCount = toFlushWithoutLastBlock * blockSize;
             
             if (toFlushWithoutLastBlock < 1) return;

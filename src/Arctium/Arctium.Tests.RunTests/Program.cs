@@ -30,6 +30,11 @@ namespace Arctium.Tests.RunTests
                 if (!item.Success)
                 {
                     Console.WriteLine("Fail: " + item.Name);
+
+                    if (item.Exception != null)
+                    {
+                        Console.WriteLine("Exception: {0}", item.Exception.Message);
+                    }
                 }
             }
         }
