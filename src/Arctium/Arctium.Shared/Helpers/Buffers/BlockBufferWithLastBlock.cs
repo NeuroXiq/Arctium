@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace Arctium.Shared.Helpers.Buffers
@@ -122,6 +120,11 @@ namespace Arctium.Shared.Helpers.Buffers
             loadedInBuffer = 0;
 
             return lastBlockLength;
+        }
+
+        public void Reset()
+        {
+            loadedInBuffer = 0;
         }
     }
 }

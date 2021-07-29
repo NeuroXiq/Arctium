@@ -46,7 +46,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public override void Reset()
         {
-        
+            context = SkeinAlgorithm.SimpleInitialise((int)StateSize, HashSizeBits);
+            memBuffer.Reset();
         }
 
         public override byte[] HashFinal()

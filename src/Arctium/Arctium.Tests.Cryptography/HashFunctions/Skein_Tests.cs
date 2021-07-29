@@ -17,11 +17,11 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 
             List<SkeinTest> tests = LoadVariousTests();
             List<SkeinTest> katTests = LoadKatTests();
-            List<SkeinTest> xLargeInputTests = LoadExtremelyLargeInputTests();
+            //List<SkeinTest> xLargeInputTests = LoadExtremelyLargeInputTests();
 
             foreach (SkeinTest test in tests) { RunTest(test, results); }
             foreach (SkeinTest test in katTests) { RunTest(test, results); }
-            foreach (SkeinTest test in xLargeInputTests) { RunTest(test, results); }
+            //foreach (SkeinTest test in xLargeInputTests) { RunTest(test, results); }
 
             return results.ToArray();
         }

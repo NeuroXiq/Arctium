@@ -1,17 +1,30 @@
-﻿/*
+﻿/* 
+ *  Niels Ferguson Microsoft Corp., niels@microsoft.com
+ *  Stefan Lucks Bauhaus-Universitat Weimar, stefan.lucks@uni-weimar.de
+ *  Bruce Schneier BT Group plc, schneier@schneier.com
+ *  Doug Whiting Hifn, Inc. dwhiting@exar.com
+ *  Mihir Bellare University of California San Diego, mihir@cs.ucsd.edu
+ *  Tadayoshi Kohno University of Washington, yoshi@cs.washington.edu
+ *  Jon Callas PGP Corp., jon@pgp.com
+ *  Jesse Walker Intel Corp., jesse.walker@intel.com
  *
- *
+ * Implemented by NeuroXiq 2021
  * - - - -
+ * Notes:
  *  Simple prefix means 'simple' from specification. Simple hashing doesn't support
  *  tree version of algorithm, that means that Three leaf size, fanout and height = 0.
  *  For detailslook at 'Simple Hashing' in specification.
- *
+ *  
  * */
 
-using System;
-using System.Collections.Generic;
+// TODO: Hash Functions / Skein / Try to optimize Threefish 'EncryptXXX' function.
+// Unfortunately code is slow. Need to optimize it.
+// 1. Change outoup buffer from array (o[0], o[1]) into variables (ulong o1, ulong o2, ulong o3) etc.
+// 2. Maybe remove permutation part from code, and instead of using permustation buffer compute everything 
+//    and use variables directly? (like in skein reference implementation)
+//
+
 using System.Runtime.CompilerServices;
-using System.Text;
 using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
 using Arctium.Shared.Helpers.Buffers;
 
@@ -322,11 +335,5 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
                 context.G[i] ^= inputBlock[i];
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void UBI512() {}
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void UBI1024() {}
     }
 }
