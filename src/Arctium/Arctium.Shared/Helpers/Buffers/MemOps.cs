@@ -41,7 +41,7 @@ namespace Arctium.Shared.Helpers.Buffers
 
         public static void Memset(byte[] array, long offset, long count, byte value)
         {
-            for (long i = 0; i < count; i++) array[i] = value;
+            for (long i = 0; i < count; i++) array[i + offset] = value;
         }
 
         /// <summary>

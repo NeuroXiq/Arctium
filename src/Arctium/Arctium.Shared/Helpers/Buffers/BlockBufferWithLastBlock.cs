@@ -51,11 +51,11 @@ namespace Arctium.Shared.Helpers.Buffers
             this.callback(byteBuffer, 0, byteBuffer.Length);
             loadedInBuffer = 0;
 
-            if (remaining > buffer.Length)
+            if (remaining > byteBuffer.Length)
             {
-                long lastBlockOffset = (length / blockSize) * blockSize;
-                lastBlockOffset = length % blockSize == 0 ? lastBlockOffset - 1 : lastBlockOffset;
-                long lastBlockLength = length - (lastBlockOffset * blockSize) + 1;
+                long lastBlockOffset = (((length + blockSize - 1) / blockSize) - 1) * blockSize;
+                lastBlockOffset += offset;
+                long lastBlockLength = length - lastBlockOffset - offset;
                 long bytesCountFullBlocks = remaining - lastBlockLength;
 
                 this.callback(buffer, loadOffset, bytesCountFullBlocks);

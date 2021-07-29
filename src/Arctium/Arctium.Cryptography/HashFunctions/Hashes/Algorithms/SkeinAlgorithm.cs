@@ -85,12 +85,40 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         
         public static void SimpleProcessNotLastBlock1024(Context context, byte[] input, long inputOffset, long length)
         {
-        
+            long blockCount = length / 128;
+            ulong t0, t1;
+
+            for (long i = 0; i < blockCount; i++)
+            {
+                context.ProcessedBytesCount += 128;
+                t0 = context.ProcessedBytesCount;
+                t1 = ((ulong)0) << 63 | 
+                    (t0 == 128 ? ((ulong)1 << 62) : 0) |
+                    (ulong)TypeValue.Msg << 56;
+
+                MemMap.ToULong128BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
+                ThreefishAlgorithm.Encrypt1024(input, inputOffset, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
+
+                for (long j = 0; j < 128; j++) context.G[j] = (byte)(context.ThreefishOutputBuffer[j] ^ input[j + inputOffset]);
+                inputOffset += 128;
+            }
         }
 
         public static void SimpleProcessLastBlock1024(Context context, byte[] input, long inputOffset, long length)
         {
-        
+            ulong t0, t1;
+            context.ProcessedBytesCount += (ulong)length;
+            t0 = context.ProcessedBytesCount;
+            t1 = (ulong)1 << 63 | // final
+                ((t0 <= 128) ? ((ulong)1 << 62) : 0) | // first
+                (ulong)TypeValue.Msg << 56;
+
+            MemOps.Memset(context.LastBlockBuffer, 0, 128, 0);
+            MemCpy.Copy(input, inputOffset, context.LastBlockBuffer, 0, length);
+            MemMap.ToULong128BytesLE(context.G, 0, context.ThreefishContext.Key, 0);
+
+            ThreefishAlgorithm.Encrypt1024(context.LastBlockBuffer, 0, context.ThreefishOutputBuffer, 0, t0, t1, context.ThreefishContext);
+            for (long j = 0; j < 128; j++) context.G[j] = (byte)(context.LastBlockBuffer[j] ^ context.ThreefishOutputBuffer[j]);
         }
         
         public static void SimpleProcessNotLastBlock512(Context context, byte[] input, long inputOffset, long length)

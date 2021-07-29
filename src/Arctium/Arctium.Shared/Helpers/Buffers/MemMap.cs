@@ -621,17 +621,17 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong128BytesLE(byte[] inputBuffer, long inputOffset, ulong[] outputBuffer, long outputOffset)
+        {
+            ToULong64BytesLE(inputBuffer, inputOffset, outputBuffer, outputOffset);
+            ToULong64BytesLE(inputBuffer, inputOffset + 64, outputBuffer, outputOffset + 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToBytes8ULongLE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
         {
             ToBytes4ULongLE(input, inputOffset, output, outputOffset);
             ToBytes4ULongLE(input, inputOffset + 4, output, outputOffset + 32);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ToULong128BytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
-        {
-            ToULong64BytesLE(input, inputOffset, output, outputOffset);
-            ToULong64BytesLE(input, inputOffset + 64, output, outputOffset + 8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
