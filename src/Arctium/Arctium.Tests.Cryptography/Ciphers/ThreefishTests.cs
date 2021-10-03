@@ -3,6 +3,7 @@ using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Tests.Core;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Helpers.Binary;
+using Arctium.Shared.Helpers;
 
 namespace Arctium.Tests.Cryptography.Ciphers
 {

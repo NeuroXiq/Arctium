@@ -12,19 +12,22 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public long DataLength { get; private set; }
 
+        private readonly long blockSize;
+
         //invoked when Buffer is full.
         Action<byte[], long, long> limitReachedCallback;
         long bufferSize;
 
-        public BlockBufferWithCallback(long bufferSize, Action<byte[], long, long> limitReachedCallback)
+        public BlockBufferWithCallback(long bufferSize, long blockSize, Action<byte[], long, long> limitReachedCallback)
         {
             Buffer = new byte[bufferSize];
             this.bufferSize = bufferSize;
             this.limitReachedCallback = limitReachedCallback;
             DataLength = 0;
+            this.blockSize = blockSize;
         }
 
-        public void Clear()
+        public void Reset()
         {
             DataLength = 0;
         }
@@ -43,7 +46,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
                 if (DataLength == bufferSize)
                 {
-                    limitReachedCallback(buffer, 0, DataLength);
+                    limitReachedCallback(Buffer, 0, DataLength);
                     DataLength = 0;
                 }
                 return totalCopied;
@@ -94,6 +97,33 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             } while (readLength > 0);
 
             return totalRead;
+        }
+
+        public long Flush(byte[] outBytesNotAlignedWithBlockLength, long outOffset, out long notAlignedBytesLength)
+        {
+            if (DataLength == 0)
+            {
+                notAlignedBytesLength = 0;
+
+                return 0;    
+            }
+
+            long fullBlocksLengthInBytes = (DataLength / blockSize) * blockSize;
+            long remainingBytes = DataLength - fullBlocksLengthInBytes;
+
+            if (fullBlocksLengthInBytes > 0)
+            {
+                limitReachedCallback(Buffer, 0, fullBlocksLengthInBytes);
+            }
+
+            Array.Copy(Buffer, fullBlocksLengthInBytes, outBytesNotAlignedWithBlockLength, outOffset, remainingBytes);
+
+            long dataLengthCpy = DataLength;
+            DataLength = 0;
+
+            notAlignedBytesLength = remainingBytes;
+
+            return dataLengthCpy;
         }
     }
 }

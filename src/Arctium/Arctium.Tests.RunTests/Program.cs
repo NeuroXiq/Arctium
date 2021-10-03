@@ -23,7 +23,7 @@ namespace Arctium.Tests.RunTests
             }
 
             Files.SetArctiumFilesPath(dir);
-            TestResult[] results = AllTests.Run();
+            TestResult[] results = AllTests.RunShortTests();
 
             foreach (var item in results)
             {

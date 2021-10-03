@@ -16,6 +16,7 @@ for more interesting parts of the documentation.
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
+|JH (Hash function, 224, 256, 384, 512)      |    [JH]        |
 |Skein (Hash function)      |    [Skein]        |
 |BLAKE2b (Hash function)    |    [BLAKE2b]      |
 |BLAKE3 (Hash function)     |    [BLAKE3]       |
@@ -29,6 +30,7 @@ for more interesting parts of the documentation.
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
+[JH]:<docs/lookup/jh.md>
 [Skein]:<docs/lookup/skein.md>
 [BLAKE2b]:<docs/lookup/blake2b.md>
 [BLAKE3]:<docs/lookup/blake3.md>

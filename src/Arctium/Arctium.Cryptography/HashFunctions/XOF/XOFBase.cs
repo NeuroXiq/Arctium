@@ -44,6 +44,7 @@ namespace Arctium.Cryptography.HashFunctions.XOF
 
             bufferWithCallback = new BlockBufferWithCallback(
                 inputBlockBitLength * XOFConfiguration.XOFBase.CallbackBufferBlockCount,
+                inputBlockBitLength / 8,
                 new Action<byte[],long,long>(Feed));;
 
             FeedBytesCount = 0;
@@ -76,13 +77,13 @@ namespace Arctium.Cryptography.HashFunctions.XOF
                 Feed(bufferWithCallback.Buffer, 0, bufferWithCallback.DataLength);
             }
 
-            bufferWithCallback.Clear();
+            bufferWithCallback.Reset();
         }
 
         public virtual void Reset()
         {
             this.FeedBytesCount = 0;
-            this.bufferWithCallback.Clear();
+            this.bufferWithCallback.Reset();
             ResetState();
         }
 

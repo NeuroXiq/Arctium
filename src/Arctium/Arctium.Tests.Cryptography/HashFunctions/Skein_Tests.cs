@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Tests.Core;

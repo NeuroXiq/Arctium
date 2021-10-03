@@ -6,7 +6,6 @@ namespace Arctium.Shared.Helpers.Buffers
 {
     public static unsafe class MemDump
     {
-        // TODO: This doesnt work (e.g. for SHA2_224 output, HexDump(hash) doesnt how last 2 bytes)
         /// <summary>
         /// Writes formatter byte array to the console output as a hexdump
         /// Useful in debugging
@@ -16,100 +15,36 @@ namespace Arctium.Shared.Helpers.Buffers
         /// <param name="delimiterAfterNthByte"></param>
         /// <param name="delimiter"></param>
         /// <param name="format"></param>
-        public static void HexDump(byte[] buffer, 
+        public static void HexDump(byte[] buffer,
+            int offset = 0,
+            int length = -1,
             int chunksCountInLine = 4,
             int chunkLength = 4,
             string delimiter = " ")
         {
-            int linesCount = (buffer.Length / (chunkLength * chunksCountInLine));
-            int lastCount = buffer.Length % (chunkLength * chunksCountInLine);
+            if (length == -1) length = buffer.Length;
 
-            int currentIndex = 0;
+            StringBuilder result = new StringBuilder(buffer.Length);
 
-            for (int i = 0; i < linesCount; i++)
+            int writtedBytes = 0;
+
+            while (writtedBytes < length)
             {
-                string currentLine = "";
-                for (int j = 0; j < chunksCountInLine - 1; j++)
+                int remaining = length - writtedBytes;
+                int maxTake =  remaining >= chunkLength ? chunkLength : remaining;
+
+                for (int i = 0; i < maxTake; i++) result.Append(string.Format("{0:X2}", buffer[i + offset + writtedBytes]));
+                writtedBytes += maxTake;
+
+                if (maxTake == chunkLength)
                 {
-
-                    // format one chunk (eg. 4 byte )
-                    for (int k = 0; k < chunkLength; k++)
-                    {
-                        currentLine += string.Format("{0:X2}", buffer[currentIndex]);
-                        currentIndex++;
-                    }
-
-                    // add delimiter after chunk, but only if this is not the last chunk
-                    currentLine += delimiter;
-                }
-
-                // format last chunk (eg. 4 byte )
-                for (int k = 0; k < chunkLength; k++)
-                {
-                    currentLine += string.Format("{0:X2}", buffer[currentIndex]);
-                    currentIndex++;
-                }
-
-                // and do not add delimiter
-
-                Console.WriteLine(currentLine);
-            }
-
-            string lastLine = "";
-
-            for (int i = 0; i < lastCount; i++)
-            {
-                for (int j = 0; j < chunkLength && i < lastCount; j++)
-                {
-                    lastLine += string.Format("{0:X2}", buffer[currentIndex]);
-                    currentIndex++;
-                    i++;
-
-                    if (j == chunkLength - 1) lastLine += delimiter;
-
+                    if ((writtedBytes / chunkLength) % chunksCountInLine == 0) result.AppendLine();
+                    else result.Append(delimiter);
                 }
             }
 
-            Console.WriteLine(lastLine);
-
-
-
-            //string line = "";
-            //string allLines = "";
-            //int appendedBytes = 0;
-
-            //for (int i = 0; i < linesCount; i++)
-            //{
-            //    for (int j = 0; j < lineLength; j++)
-            //    {
-            //        line += string.Format(format, buffer[j + (i * lineLength)]);
-
-            //        appendedBytes++;
-            //        if (appendedBytes % delimiterAfterNthByte == 0)
-            //            line += delimiter;
-            //    }
-
-            //    allLines += line + "\r\n";
-            //    line = "";
-            //}
-
-            //string lastLine = "";
-
-            //for (int i = 0; i < lastCount; i++)
-            //{
-            //    lastLine += string.Format(format, buffer[i + (linesCount * lineLength)]);
-
-            //    appendedBytes++;
-            //    if (appendedBytes % delimiterAfterNthByte == 0)
-            //        line += delimiter;
-            //}
-
-            //allLines += lastLine;
-
-            //Console.WriteLine(allLines);
-
+            Console.WriteLine(result.ToString());
         }
-
 
         public static void HexDump(byte* p, int length, int groupLength = -1)
         {
@@ -120,7 +55,6 @@ namespace Arctium.Shared.Helpers.Buffers
                 if ((i + 1) % groupLength == 0) Console.Write(" ");
             }
         }
-
 
         public static void HexDump(uint* ptr, int length, int width = 4)
         {

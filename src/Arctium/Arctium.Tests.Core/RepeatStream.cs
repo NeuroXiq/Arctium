@@ -22,7 +22,10 @@ namespace Arctium.Tests.Core
         int remaining;
         int cursor;
 
-        public RepeatStream(byte[] bytesToRepeat, int repeatCount)
+        public RepeatStream(byte[] bytesToRepeat, 
+            int repeatCount,
+            int randomGeneratorMinReadCount,
+            int randomGeneratorMaxReadCount)
         {
             this.bytesToRepeat = new byte[bytesToRepeat.Length];
             this.remaining = this.bytesToRepeat.Length * repeatCount;

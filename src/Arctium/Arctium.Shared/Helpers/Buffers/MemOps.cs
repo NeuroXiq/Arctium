@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Arctium.Shared.Helpers.Buffers
+namespace Arctium.Shared.Helpers
 {
     public static class MemOps
     {
@@ -54,6 +54,19 @@ namespace Arctium.Shared.Helpers.Buffers
             source[ioffset + 1] ^= xorWith[xoffset + 1];
             source[ioffset + 2] ^= xorWith[xoffset + 2];
             source[ioffset + 3] ^= xorWith[xoffset + 3];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Xor8ULong(ulong[] source, long srcOffset, ulong[] xorWith, ulong xorWithOffset)
+        {
+            source[srcOffset + 0] ^= xorWith[xorWithOffset + 0];
+            source[srcOffset + 1] ^= xorWith[xorWithOffset + 1];
+            source[srcOffset + 2] ^= xorWith[xorWithOffset + 2];
+            source[srcOffset + 3] ^= xorWith[xorWithOffset + 3];
+            source[srcOffset + 4] ^= xorWith[xorWithOffset + 4];
+            source[srcOffset + 5] ^= xorWith[xorWithOffset + 5];
+            source[srcOffset + 6] ^= xorWith[xorWithOffset + 6];
+            source[srcOffset + 7] ^= xorWith[xorWithOffset + 7];
         }
 
         #region Unsafe

@@ -1,4 +1,4 @@
-﻿namespace Arctium.Cryptography.HashFunctions.Hashes.Configuration
+﻿namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public static class HashFunctionsConfig
     {

@@ -24,7 +24,7 @@ namespace Arctium.Tests.Core
                     katFileData.Add(new KatFileData() 
                     {
                        Len = long.Parse(len),
-                       Msg = BinConverter.FromString(msg),
+                       Msg = len != "0" ? BinConverter.FromString(msg) : new byte[0],
                        MD = BinConverter.FromString(md)
                     });
                 }
@@ -32,6 +32,7 @@ namespace Arctium.Tests.Core
 
             return new KatFile()
             {
+                FileName = Path.GetFileName(file),
                 KatFileData = katFileData.ToArray()
             };
         }

@@ -597,6 +597,19 @@ namespace Arctium.Shared.Helpers.Buffers
             output[offset + 7] = (byte)(value >> 56);
         }
 
+        public static void ToBytes1ULongBE(ulong value, byte[] output, long offset)
+        {
+            output[offset + 7] = (byte)(value >> 0);
+            output[offset + 6] = (byte)(value >> 8);
+            output[offset + 5] = (byte)(value >> 16);
+            output[offset + 4] = (byte)(value >> 24);
+
+            output[offset + 3] = (byte)(value >> 32);
+            output[offset + 2] = (byte)(value >> 40);
+            output[offset + 1] = (byte)(value >> 48);
+            output[offset + 0] = (byte)(value >> 56);
+        }
+
         public static void ToBytes1UIntLE(uint value, byte[] output, long offset)
         {
             output[offset + 0] = (byte)(value >> 0);
@@ -639,6 +652,72 @@ namespace Arctium.Shared.Helpers.Buffers
         {
             ToBytes8ULongLE(input, inputOffset, output, outputOffset);
             ToBytes8ULongLE(input, inputOffset + 8, output, outputOffset + 64);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong64BytesBE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                long k = inputOffset + (i * 8);
+
+                output[i + outputOffset] = 
+                    ((ulong)input[k + 0] << 56) |
+                    ((ulong)input[k + 1] << 48) |
+                    ((ulong)input[k + 2] << 40) |
+                    ((ulong)input[k + 3] << 32) |
+                    ((ulong)input[k + 4] << 24) |
+                    ((ulong)input[k + 5] << 16) |
+                    ((ulong)input[k + 6] << 08) |
+                    ((ulong)input[k + 7] << 00);
+            } 
+        }
+
+        public static void ToBytes8ULongBE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            for (int i = 0; i < 8; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));
+        }
+
+        public static void ToBytes6ULongBE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            for (int i = 0; i < 6; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));
+        }
+
+        public static void ToBytes3ULongBE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            for (int i = 0; i < 3; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));
+        }
+
+        public static void ToBytes4ULongBE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            for (int i = 0; i < 4; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));
+        }
+
+        public static void ToULong128BytesBE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        {
+            for (long i = outputOffset; i < 16 + outputOffset; i++)
+            {
+                long k = inputOffset + (i * 8);
+
+                output[i] =
+                    ((ulong)input[k + 0] << 56) |
+                    ((ulong)input[k + 1] << 48) |
+                    ((ulong)input[k + 2] << 40) |
+                    ((ulong)input[k + 3] << 32) |
+                    ((ulong)input[k + 4] << 24) |
+                    ((ulong)input[k + 5] << 16) |
+                    ((ulong)input[k + 6] << 08) |
+                    ((ulong)input[k + 7] << 00);
+            }
+        }
+
+
+        public static void ToBytes1UIntBE(uint input, byte[] output, long outputOffset)
+        {
+            output[0] = (byte)(input >> 24);
+            output[1] = (byte)(input >> 16);
+            output[2] = (byte)(input >> 08);
+            output[3] = (byte)(input >> 00);
         }
 
         #endregion
