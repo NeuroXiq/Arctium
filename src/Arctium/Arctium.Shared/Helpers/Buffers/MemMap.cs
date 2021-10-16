@@ -655,7 +655,7 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ToULong64BytesBE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        public static unsafe void ToULong64BytesBE(byte* input, long inputOffset, ulong* output, long outputOffset)
         {
             for (int i = 0; i < 8; i++)
             {

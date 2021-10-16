@@ -13,32 +13,18 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 {
     public class BLAKE2b_512Tests
     {
-        public static TestResult[] Run()
+        public static List<HashFunctionTest> Short;
+
+        static BLAKE2b_512Tests()
         {
-            List<TestResult> results = new List<TestResult>();
-            HashFunctionTest[] tests = Load();
-            Hashes.BLAKE2b_512 blake2b512 = new Hashes.BLAKE2b_512();
+            Short = new List<HashFunctionTest>();
 
-            foreach(HashFunctionTest test in tests)
-            {
-                blake2b512.HashBytes(test.InputBytes);
-                byte[] result = blake2b512.HashFinal();
-
-                results.Add(new TestResult()
-                {
-                    Name = string.Format("BLAKE2B_512 / TestVectors /Input Length {0}", test.InputBytes.Length),
-                    Success = MemOps.Memcmp(result, test.ExpectedResultHash)
-                });
-
-                blake2b512.Reset();
-            }
-
-            return results.ToArray();
+            LoadFromFile();
         }
 
-        private static HashFunctionTest[] Load()
+        private static void LoadFromFile()
         {
-            string[] lines = File.ReadLines(Files.GetFullPath("/HashFunctions/TestVectors/BLAKE2/Blake2b_512_TestVectors.txt")).ToArray();
+            string[] lines = File.ReadLines(Files.HashFunctions.Blake2b512TestVectors).ToArray();
             List<HashFunctionTest> tests = new List<HashFunctionTest>();
 
             for (int i = 0; i < lines.Length; i++)
@@ -60,14 +46,13 @@ namespace Arctium.Tests.Cryptography.HashFunctions
                     input = new byte[0];
                 }
 
-                tests.Add(new HashFunctionTest()
+                Short.Add(new HashFunctionTest()
                 {
                     ExpectedResultHash = expectedHash,
-                    InputBytes = input
+                    InputBytes = input,
+                    Name = $"BLAKE2B512 / InputLen: {input.Length}"
                 });
             }
-
-            return tests.ToArray();
         }
     }
 }

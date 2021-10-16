@@ -7,9 +7,18 @@ namespace Arctium.Tests.Core
         public string Name;
         public bool Success;
         public Exception Exception;
+        public Test Test;
 
         public TestResult()
-        { }
+        {
+            
+        }
+
+        public TestResult(Test test, bool issuccess)
+        {
+            Test = test;
+            Success = issuccess;
+        }
 
         public TestResult(string name, bool success)
         {
@@ -17,9 +26,11 @@ namespace Arctium.Tests.Core
             Success = success;
         }
 
-        public TestResult(Exception e)
+        public TestResult(Test t, Exception e, bool success)
         {
             Exception = e;
+            Success = success;
+            Test = t;
         }
     }
 }

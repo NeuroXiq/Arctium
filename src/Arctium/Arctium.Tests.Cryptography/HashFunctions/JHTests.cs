@@ -1,76 +1,54 @@
-﻿using Arctium.Cryptography.HashFunctions.Hashes;
-using Arctium.Shared.Helpers;
-using Arctium.Tests.Core;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Arctium.Tests.Cryptography.HashFunctions
 {
     public static class JHTests
     {
-        public static TestResult[] Run()
+        public static List<HashFunctionTest> Short224;
+        public static List<HashFunctionTest> Short256;
+        public static List<HashFunctionTest> Short384;
+        public static List<HashFunctionTest> Short512;
+
+        public static List<HashFunctionTest> Long224 = new List<HashFunctionTest>();
+        public static List<HashFunctionTest> Long256 = new List<HashFunctionTest>();
+        public static List<HashFunctionTest> Long384 = new List<HashFunctionTest>();
+        public static List<HashFunctionTest> Long512 = new List<HashFunctionTest>();
+
+        static JHTests()
         {
             string jhDir = Files.JHTestVectorsDirFullPath;
 
-            var short224 = FileParser.ParseKAT(jhDir + "ShortMsgKAT_224.txt");
-            var short256 = FileParser.ParseKAT(jhDir + "ShortMsgKAT_256.txt");
-            var short384 = FileParser.ParseKAT(jhDir + "ShortMsgKAT_384.txt");
-            var short512 = FileParser.ParseKAT(jhDir + "ShortMsgKAT_512.txt");
+            Short224 = HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-224", Files.HashFunctions.JH224ShortMsgKat);
+            Short256 = HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-256", Files.HashFunctions.JH256ShortMsgKat);
+            Short384 = HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-384", Files.HashFunctions.JH384ShortMsgKat);
+            Short512 = HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-512", Files.HashFunctions.JH512ShortMsgKat);
 
-            var long224 = FileParser.ParseKAT(jhDir + "LongMsgKAT_224.txt");
-            var long256 = FileParser.ParseKAT(jhDir + "LongMsgKAT_256.txt");
-            var long384 = FileParser.ParseKAT(jhDir + "LongMsgKAT_384.txt");
-            var long512 = FileParser.ParseKAT(jhDir + "LongMsgKAT_512.txt");
+            Short224.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-224", Files.HashFunctions.JH224LongMsgKat));
+            Short256.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-256", Files.HashFunctions.JH256LongMsgKat));
+            Short384.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-384", Files.HashFunctions.JH384LongMsgKat));
+            Short512.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("JH-512", Files.HashFunctions.JH512LongMsgKat));
 
-            List<TestResult> results = new List<TestResult>();
+            
 
-            results.AddRange(ExecuteTests(new JH_224(), short224));
-            results.AddRange(ExecuteTests(new JH_256(), short256));
-            results.AddRange(ExecuteTests(new JH_384(), short384));
-            results.AddRange(ExecuteTests(new JH_512(), short512));
+            Long224.Add(HashFunctionTestHelper.LoadTestExtremelyLongAsStream("JH-224",
+                16777216,
+                "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno",
+                "B4ABC2827D3547D19B517C673DE2DF2666AE95A0E73ECB213E5C95D4"));
 
-            results.AddRange(ExecuteTests(new JH_224(), long224));
-            results.AddRange(ExecuteTests(new JH_256(), long256));
-            results.AddRange(ExecuteTests(new JH_384(), long384));
-            results.AddRange(ExecuteTests(new JH_512(), long512));
+            Long256.Add(HashFunctionTestHelper.LoadTestExtremelyLongAsStream("JH-256",
+                16777216,
+                "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno",
+                "58FFBDE520764DFC03B29598ACD70655BB2C245A3D73FDD6EB9E1BC221AF579B"));
 
-            return results.ToArray();
-        }
+            Long384.Add(HashFunctionTestHelper.LoadTestExtremelyLongAsStream("JH-384",
+                16777216,
+                "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno",
+                "836EC726CA5280BBC490A25389D1F507CECED047E9E3DAF0ED3DAA5D9AEDE2DDA89C8B7995F7855A3354AFBFFF1B4935"));
 
-        public static TestResult[] RunLongTests()
-        {
-            /* Copy - paste from 'ExtremelyLongMsgKAT_' */
-
-            return null;
-
-        }
-
-        static List<TestResult> ExecuteTests(JH hash, KatFile katFile)
-        {
-            List<TestResult> results = new List<TestResult>();
-
-            try
-            {
-                foreach (var kfd in katFile.KatFileData)
-                {
-                    if (kfd.Len != 0 && kfd.Len % 8 != 0) continue;
-
-                    hash.Reset();
-                    
-                    hash.HashBytes(kfd.Msg);
-                    byte[] result = hash.HashFinal();
-
-                    bool success = MemOps.Memcmp(result, kfd.MD);
-                    results.Add(new TestResult($"JH_{hash.HashSizeBits} / KAT file name: {katFile.FileName} / Len: {kfd.Len}", success));
-                }
-            }
-            catch (Exception e)
-            {
-                results.Add(new TestResult(e));
-            }
-
-            return results;
+            Long512.Add(HashFunctionTestHelper.LoadTestExtremelyLongAsStream("JH-512",
+                16777216,
+                "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno",
+                "A3053657024A43187CF8C1C82194D5D944A7408EE3B584801309292DEFF8080F88183B5642318456C7C05998C9A70D0F784E4C42D9EBCBA7F2CA25B3FBDE2CE5"));
         }
     }
 }

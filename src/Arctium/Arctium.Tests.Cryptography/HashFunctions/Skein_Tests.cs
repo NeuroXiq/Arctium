@@ -1,9 +1,4 @@
-﻿using Arctium.Cryptography.HashFunctions.Hashes;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Binary;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Tests.Core;
-using System;
+﻿using Arctium.Shared.Helpers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -12,182 +7,61 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 {
     public static class Skein_Tests
     {
-        public static TestResult[] Run()
+        public static List<HashFunctionTest> Short512_224;
+        public static List<HashFunctionTest> Short512_256;
+        public static List<HashFunctionTest> Short512_384;
+        public static List<HashFunctionTest> Short512_512;
+        public static List<HashFunctionTest> Short512_1024;
+
+        public static List<HashFunctionTest> Short256_224;
+        public static List<HashFunctionTest> Short256_256;
+        public static List<HashFunctionTest> Short256_384;
+        public static List<HashFunctionTest> Short256_512;
+        public static List<HashFunctionTest> Short256_1024;
+
+        public static List<HashFunctionTest> Short1024_224;
+        public static List<HashFunctionTest> Short1024_256;
+        public static List<HashFunctionTest> Short1024_384;
+        public static List<HashFunctionTest> Short1024_512;
+        public static List<HashFunctionTest> Short1024_1024;
+        public static List<HashFunctionTest> Long512_224;
+
+        static Skein_Tests()
         {
-            List<TestResult> results = new List<TestResult>();
+            Short512_224 = HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-224", Files.HashFunctions.Skein224ShortMsgKat);
+            Short512_256 = HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-256", Files.HashFunctions.Skein256ShortMsgKat);
+            Short512_384 = HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-384", Files.HashFunctions.Skein384ShortMsgKat);
+            Short512_512 = HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-512", Files.HashFunctions.Skein512ShortMsgKat);
+            Short512_224.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-224", Files.HashFunctions.Skein224LongMsgKat));
+            Short512_256.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-256", Files.HashFunctions.Skein256LongMsgKat));
+            Short512_384.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-384", Files.HashFunctions.Skein384LongMsgKat));
+            Short512_512.AddRange(HashFunctionTestHelper.LoadTestsFromSLKatFile("Skein-512-512", Files.HashFunctions.Skein512LongMsgKat));
 
-            List<SkeinTest> tests = LoadVariousTests();
-            List<SkeinTest> katTests = LoadKatTests();
-            //List<SkeinTest> xLargeInputTests = LoadExtremelyLargeInputTests();
+            Short512_1024 = new List<HashFunctionTest>();
 
-            foreach (SkeinTest test in tests) { RunTest(test, results); }
-            foreach (SkeinTest test in katTests) { RunTest(test, results); }
-            //foreach (SkeinTest test in xLargeInputTests) { RunTest(test, results); }
+            Short256_224 = new List<HashFunctionTest>();
+            Short256_256 = new List<HashFunctionTest>();
+            Short256_384 = new List<HashFunctionTest>();
+            Short256_512 = new List<HashFunctionTest>();
+            Short256_1024 = new List<HashFunctionTest>();
+            Short1024_224 = new List<HashFunctionTest>();
+            Short1024_256 = new List<HashFunctionTest>();
+            Short1024_384 = new List<HashFunctionTest>();
+            Short1024_512 = new List<HashFunctionTest>();
+            Short1024_1024= new List<HashFunctionTest>();
 
-            return results.ToArray();
+            Long512_224 = new List<HashFunctionTest>();
+            Long512_224.Add(HashFunctionTestHelper.LoadTestExtremelyLongAsStream("Skein-512-224",
+                16777216,
+                "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno",
+                "E07F56F9A844208558172F43754E120B7B8299BF44AC735A60FF521B"));
+
+            LoadVariousTests();
         }
 
-        static void RunTest(SkeinTest test, List<TestResult> results)
+        private static void LoadVariousTests()
         {
-            TestResult result = new TestResult();
-            result.Name = test.Name;
-            byte[] actualResult = new byte[0];
-
-            try
-            {
-                if (test.Type == "various")
-                {
-                    actualResult = ComputeHashTestVarious(test);
-                }
-                else if (test.Type == "kat")
-                {
-                    actualResult = ComputeHashTestKat(test);
-                }
-                else 
-                {
-                    actualResult = ComputeXt(test); 
-                }
-
-                result.Success = MemOps.Memcmp(actualResult, test.ExpectedHash);
-            }
-            catch (Exception e)
-            {
-                result.Success = false;
-                result.Exception = e;
-            }
-
-            result.Success = MemOps.Memcmp(actualResult, test.ExpectedHash);
-            results.Add(result);
-        }
-
-        static byte[] ComputeXt(SkeinTest test)
-        {
-            Skein_VAR skein = new Skein_VAR(Skein.InternalStateSize.Bits_512, test.ExpectedHash.Length * 8);
-
-            byte[] input = new byte[100000 * test.Text.Length];
-
-            for (int i = 0; i < test.Text.Length; i++) input[i] = test.Text[i % test.Text.Length];
-
-            int fullBufCount = (test.Repeat * test.Text.Length) / input.Length;
-            int lastBufCount = test.Repeat % (input.Length / test.Text.Length);
-
-
-            for (int i =0; i < fullBufCount; i++)
-            {
-                skein.HashBytes(input);
-                Console.WriteLine(fullBufCount - i);
-            }
-
-            skein.HashBytes(input, 0, lastBufCount * test.Text.Length);
-
-
-            return skein.HashFinal();
-        }
-
-        static byte[] ComputeHashTestKat(SkeinTest test)
-        {
-            Skein_VAR skein = new Skein_VAR(Skein.InternalStateSize.Bits_512, test.HashSize);
-            skein.HashBytes(test.Input);
-
-            return skein.HashFinal();
-        }
-
-        static byte[] ComputeHashTestVarious(SkeinTest test)
-        {
-            byte[] actualResult = new byte[0];
-            if (test.InternalStateSize == 256 && test.ExpectedHash.Length == 32)
-            {
-                Skein_256 s = new Skein_256();
-
-                s.HashBytes(test.Input);
-                actualResult = s.HashFinal();
-            }
-            else if (test.InternalStateSize == 512 && test.ExpectedHash.Length == 64)
-            {
-                Skein_512 s = new Skein_512();
-
-                s.HashBytes(test.Input);
-                actualResult = s.HashFinal();
-            }
-            else if (test.InternalStateSize == 1024 && test.ExpectedHash.Length == 128)
-            {
-                Skein_1024 s = new Skein_1024();
-                
-                s.HashBytes(test.Input);
-                actualResult = s.HashFinal();
-            }
-            else
-            {
-                Skein_VAR s = new Skein_VAR((Skein.InternalStateSize)test.InternalStateSize, test.HashSize);
-
-                s.HashBytes(test.Input);
-                actualResult = s.HashFinal();
-            }
-
-            return actualResult;
-        }
-
-        private static List<SkeinTest> LoadExtremelyLargeInputTests()
-        {
-            return new List<SkeinTest>()
-            {
-                new SkeinTest()
-                {
-                    Name = "Hash Function / Skein / ExtremelyLargeInput / 1",
-                    Type = "xt",
-                    Repeat = 16777216,
-                    Text = Encoding.ASCII.GetBytes("abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno"),
-                    ExpectedHash = BinConverter.FromString("E07F56F9A844208558172F43754E120B7B8299BF44AC735A60FF521B"),
-                }
-            };
-        }
-
-        private static List<SkeinTest> LoadKatTests()
-        {
-            string[] katFiles = new string[] 
-            {
-                "ShortMsgKAT_224.txt",
-                "ShortMsgKAT_256.txt",
-                "ShortMsgKAT_384.txt",
-                "ShortMsgKAT_512.txt",
-                "LongMsgKAT_224.txt",
-                "LongMsgKAT_256.txt", 
-                "LongMsgKAT_384.txt",
-                "LongMsgKAT_512.txt"
-            };
-
-            List<KatFile> parsed = new List<KatFile>();
-            List<SkeinTest> tests = new List<SkeinTest>();
-
-            foreach (string fname in katFiles)
-            {
-                parsed.Add(FileParser.ParseKAT(Files.GetFullPath(Files.SkeinTestVectorsDir + fname)));
-            }
-
-            foreach (KatFile kfile in parsed)
-            {
-                foreach (KatFileData kdata in kfile.KatFileData)
-                {
-                   if (kdata.Len % 8 != 0) continue;
-                   tests.Add(new SkeinTest() 
-                   {
-                        Name = $"Hash Function / Skein(512, {kdata.MD.Length * 8}) / KAT({kdata.Msg.Length})",
-                        ExpectedHash = kdata.MD,
-                        HashSize = kdata.MD.Length * 8,
-                        Input = kdata.Len > 0 ? kdata.Msg : new byte[0],
-                        Type = "kat"
-                   }); 
-                }
-            }
-
-            return tests;
-        }
-
-        private static List<SkeinTest> LoadVariousTests()
-        {
-            List<SkeinTest> tests = new List<SkeinTest>();
-            string fileName = Files.GetFullPath("HashFunctions/TestVectors/Skein/skeintests.txt");
-            string[] lines = File.ReadAllLines(fileName);
+            string[] lines = File.ReadAllLines(Files.HashFunctions.SkeinSkeinTestsTxt);
 
             for (int i = 0; i < lines.Length; i+=4)
             {
@@ -196,47 +70,31 @@ namespace Arctium.Tests.Cryptography.HashFunctions
                 string data = lines[i + 2].Split(' ')[1];
                 string result = lines[i + 3].Split(' ')[1];
 
-                tests.Add(new SkeinTest()
-                {
-                    ExpectedHash = BinConverter.FromString(result),
-                    HashSize = int.Parse(hashSize),
-                    Input = data != "(none)" ? BinConverter.FromString(data) : new byte[0],
-                    InternalStateSize = int.Parse(internalSize),
-                    Name = string.Format("Hash Function / Skein({0},{1}) / InputLen: {2} / various", internalSize, hashSize, data.Length / 2),
-                    Type = "various"
-                });
+                int internalSizeInt = int.Parse(internalSize);
+                int hashSizeInt = int.Parse(hashSize);
+                byte[] expectedHash = BinConverter.FromString(result);
+                byte[] input = data == "(none)" ? new byte[0] : BinConverter.FromString(data);
+
+                var test = new HashFunctionTest(input, expectedHash, $"Skein-{internalSizeInt}-{hashSizeInt}");
+
+                if (internalSizeInt == 256 && hashSizeInt == 224)  Short256_224.Add(test);
+                if (internalSizeInt == 256 && hashSizeInt == 256)  Short256_256.Add(test);
+                if (internalSizeInt == 256 && hashSizeInt == 384)  Short256_384.Add(test);
+                if (internalSizeInt == 256 && hashSizeInt == 512)  Short256_512.Add(test);
+                if (internalSizeInt == 256 && hashSizeInt == 1024) Short256_1024.Add(test);
+
+                if (internalSizeInt == 512 && hashSizeInt == 224)  Short512_224.Add(test);
+                if (internalSizeInt == 512 && hashSizeInt == 256)  Short512_256.Add(test);
+                if (internalSizeInt == 512 && hashSizeInt == 384)  Short512_384.Add(test);
+                if (internalSizeInt == 512 && hashSizeInt == 512)  Short512_512.Add(test);
+                if (internalSizeInt == 512 && hashSizeInt == 1024) Short512_1024.Add(test);
+
+                if (internalSizeInt == 1024 && hashSizeInt == 224)  Short1024_224.Add(test);
+                if (internalSizeInt == 1024 && hashSizeInt == 256)  Short1024_256.Add(test);
+                if (internalSizeInt == 1024 && hashSizeInt == 384)  Short1024_384.Add(test);
+                if (internalSizeInt == 1024 && hashSizeInt == 512)  Short1024_512.Add(test);
+                if (internalSizeInt == 1024 && hashSizeInt == 1024) Short1024_1024.Add(test);
             }
-
-            return tests;
         }
-
-        static HashFunctionTest Skein256Cases()
-        {
-            return null;
-
-        }
-
-        static TestResult[] Skein512()
-        {
-            return new TestResult[0];
-        }
-
-        static TestResult[] Skein1024()
-        {
-            return new TestResult[0];
-        }
-
-    }
-
-    class SkeinTest
-    {
-        public byte[] Input;
-        public byte[] ExpectedHash;
-        public int HashSize;
-        public int InternalStateSize;
-        public string Name;
-        public string Type;
-        public byte[] Text;
-        public int Repeat;
     }
 }

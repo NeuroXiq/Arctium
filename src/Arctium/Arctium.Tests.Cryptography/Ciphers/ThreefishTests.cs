@@ -17,7 +17,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
             public byte[] ExpectedOutput;
         }
 
-        public static TestResult[] Run()
+        public static List<TestResult> Run()
         {
             ThreefishTest[] tests256 = ThreefishTests256();
             ThreefishTest[] tests512 = ThreefishTests512();
@@ -86,7 +86,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
                            Success = MemOps.Memcmp(output1024, test.Input)
                         });
             }
-            return results.ToArray();
+            return results;
         }
 
         private static ThreefishTest[] ThreefishTests512()

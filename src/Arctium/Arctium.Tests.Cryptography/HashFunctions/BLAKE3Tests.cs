@@ -12,6 +12,15 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 {
     public class BLAKE3Tests
     {
+        public static List<HashFunctionTest> Short;
+
+        static BLAKE3Tests()
+        {
+            Short = new List<HashFunctionTest>();
+
+            LoadFromFile();
+        }
+
         public static TestResult[] Run()
         {
             HashFunctionTest[] tests = LoadFromFile();
@@ -37,7 +46,7 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 
         private static HashFunctionTest[] LoadFromFile()
         {
-            string[] lines = File.ReadAllText(Files.GetFullPath("/HashFunctions/TestVectors/BLAKE3/BLAKE3TestVectors.txt")).Split("\r\n");
+            string[] lines = File.ReadAllText(Files.HashFunctions.Blake3TestVectors).Split("\r\n");
             List<HashFunctionTest> tests = new List<HashFunctionTest>();
 
             for (int i = 0; i < lines.Length; i++)
@@ -55,11 +64,12 @@ namespace Arctium.Tests.Cryptography.HashFunctions
                     input[j] = (byte)(j % 251);
                 }
 
-                tests.Add(new HashFunctionTest()
+                Short.Add(new HashFunctionTest()
                 {
                     ExpectedResultHash = expectedHash,
-                    InputBytes = input
-                });
+                    InputBytes = input,
+                    Name = $"BLAKE3 / BLAKE3TestVectors.txt / InputLen: {input.Length}"
+                }); ;
             }
 
             return tests.ToArray();

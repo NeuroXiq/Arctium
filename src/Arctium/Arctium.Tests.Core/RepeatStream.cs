@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Tests.Core
@@ -18,19 +19,35 @@ namespace Arctium.Tests.Core
 
         public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+        public int RepeatStreamCursorPosition => cursor;
+        public int RepeatStreamRepeatCount => repeatCount;
+
         byte[] bytesToRepeat;
         int remaining;
         int cursor;
+        int toWriteOnNextCall;
+        int maxWrite;
+        int minWrite;
+        int repeatCount;
+        private Action<int> dataReadedCallback;
 
         public RepeatStream(byte[] bytesToRepeat, 
             int repeatCount,
-            int randomGeneratorMinReadCount,
-            int randomGeneratorMaxReadCount)
+            int minWrite,
+            int maxWrite)
         {
             this.bytesToRepeat = new byte[bytesToRepeat.Length];
             this.remaining = this.bytesToRepeat.Length * repeatCount;
             this.cursor = 0;
+            this.maxWrite = maxWrite;
+            this.minWrite = minWrite;
+            this.repeatCount = repeatCount;
             MemCpy.Copy(bytesToRepeat, this.bytesToRepeat);
+        }
+
+        public void SetDataReadedCallback(Action<int> callback)
+        {
+            this.dataReadedCallback = callback;
         }
 
         public override void Flush()
@@ -40,6 +57,30 @@ namespace Arctium.Tests.Core
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (count < 1 || cursor == repeatCount - 1) return 0;
+
+            int remainingBytes = repeatCount - cursor;
+
+            int toWriteCount = count < toWriteOnNextCall ? count : toWriteOnNextCall;
+            toWriteCount = toWriteCount > remainingBytes ? remainingBytes : toWriteCount;
+
+            for (int i = 0; i < toWriteCount; i++)
+            {
+                buffer[offset + i] = bytesToRepeat[cursor % bytesToRepeat.Length];
+
+                cursor++;
+            }
+
+
+            toWriteOnNextCall++;
+            toWriteOnNextCall = toWriteOnNextCall > maxWrite ? minWrite : toWriteOnNextCall;
+
+
+
+            dataReadedCallback?.Invoke(toWriteCount);
+
+            return toWriteCount;
+
             int loadedToBuf = 0;
 
             if (remaining > 0)
