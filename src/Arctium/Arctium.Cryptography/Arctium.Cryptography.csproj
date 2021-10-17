@@ -22,8 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Ciphers\Asymmetric\" />
     <Folder Include="Ciphers\Aead\" />
+    <Folder Include="Ciphers\Asymmetric\Algorithms\" />
     <Folder Include="Ciphers\StreamCiphers\Exceptions\" />
     <Folder Include="HashFunctions\CRC\" />
     <Folder Include="HashFunctions\Checksums\" />

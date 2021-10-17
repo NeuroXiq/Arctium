@@ -9,7 +9,8 @@
     <Folder Include="ASN1\Serialization\PER\" />
     <Folder Include="ASN1\Serialization\X690\BER\BuildInDecoders\Constructed\" />
     <Folder Include="ASN1\Serialization\X690\DER\BuildInDecoders\Primitive\" />
-    <Folder Include="ASN1\Standards\X400\Decoders\X690Decoders\" />
+    <Folder Include="X400\Decoders\X690Decoders\" />
+    <Folder Include="Cryptography\PKCS1\" />
   </ItemGroup>
 
   <ItemGroup>
