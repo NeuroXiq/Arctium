@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Arctium.Connection\Arctium.Connection.csproj" />
     <ProjectReference Include="..\Arctium.Cryptography\Arctium.Cryptography.csproj" />
+    <ProjectReference Include="..\Arctium.Standards\Arctium.Standards.csproj" />
   </ItemGroup>
 
 </Project>

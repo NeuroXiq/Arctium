@@ -7,7 +7,6 @@ namespace Arctium.Shared.Security.SecureStorage
     {
         private static bool logEnabled;
 
-
         byte[] secretBytes;
 
         private SecretBytes(byte[] secretBytes)

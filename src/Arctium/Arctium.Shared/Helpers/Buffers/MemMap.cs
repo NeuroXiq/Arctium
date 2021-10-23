@@ -714,10 +714,22 @@ namespace Arctium.Shared.Helpers.Buffers
 
         public static void ToBytes1UIntBE(uint input, byte[] output, long outputOffset)
         {
-            output[0] = (byte)(input >> 24);
-            output[1] = (byte)(input >> 16);
-            output[2] = (byte)(input >> 08);
-            output[3] = (byte)(input >> 00);
+            output[outputOffset + 0] = (byte)(input >> 24);
+            output[outputOffset + 1] = (byte)(input >> 16);
+            output[outputOffset + 2] = (byte)(input >> 08);
+            output[outputOffset + 3] = (byte)(input >> 00);
+        }
+
+        public static byte[] ToNewByteArrayBE(uint value)
+        {
+            byte[] r = new byte[4];
+
+            r[0] = (byte)((value >> 24) & 0xff);
+            r[1] = (byte)((value >> 16) & 0xff);
+            r[2] = (byte)((value >> 08) & 0xff);
+            r[3] = (byte)((value >> 00) & 0xff);
+
+            return r;
         }
 
         #endregion

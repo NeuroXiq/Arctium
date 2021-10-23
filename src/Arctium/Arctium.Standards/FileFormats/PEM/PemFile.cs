@@ -39,11 +39,16 @@ namespace Arctium.Standards.FileFormat.PEM
             string file = File.ReadAllText(fileName);
             file = file.TrimEnd('\r', '\n');
 
-            string[] lines = file.Split("\r\n");
+            return FromString(file);
+        }
+
+        public static PemFile FromString(string content)
+        {
+            string[] lines = content.Split("\r\n");
             if (lines.Length < 3) Throw("Invalid file format. Minimum lines count is 3");
 
-            string beginLabel = GetLabel(lines[0],"BEGIN");
-            string endLabel = GetLabel(lines[lines.Length - 1],"END");
+            string beginLabel = GetLabel(lines[0], "BEGIN");
+            string endLabel = GetLabel(lines[lines.Length - 1], "END");
 
             int b64len = (lines.Length - 3) * 64 + lines[lines.Length - 2].Length;
 
@@ -57,7 +62,7 @@ namespace Arctium.Standards.FileFormat.PEM
                 try
                 {
                     byte[] decodedLine = Convert.FromBase64String(lines[i]);
-                    Buffer.BlockCopy(decodedLine, 0, decodedData, (i-1) * 48, decodedLine.Length);
+                    Buffer.BlockCopy(decodedLine, 0, decodedData, (i - 1) * 48, decodedLine.Length);
                 }
                 catch (ArgumentException e)
                 {
@@ -67,9 +72,7 @@ namespace Arctium.Standards.FileFormat.PEM
             }
 
             return new PemFile(beginLabel, endLabel, decodedData);
-
         }
-
 
         private static string GetLabel(string line, string blockName)
         {
