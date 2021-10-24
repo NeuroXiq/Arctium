@@ -436,16 +436,34 @@ namespace Arctium.Standards.PKCS1.v2_2
         }
 
 
-        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M)
+        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, int sLen = 0)
         {
-            byte[] EM = EMSA_PSS_ENCODE(M, privateKey.ModulusBitsCount - 1);
+            byte[] EM = EMSA_PSS_ENCODE(M, privateKey.ModulusBitsCount - 1, sLen);
             BigInteger sAsInt = RSASP1(privateKey, EM);
             byte[] sAsBytes = I2OSP(sAsInt, privateKey.ModulusByteCount);
             
             return sAsBytes;
         }
 
-        public static byte[] RSASSA_PSS_GENERATE() { return null; }
+        public static bool RSASSA_PSS_VERIFY(PublicKey publicKey, byte[] M, byte[] S, int sLen = 0)
+        {
+            int k = publicKey.ModulusByteCount, emLen = -1;
+            BigInteger m;
+            byte[] EM;
+
+            emLen = publicKey.ModulusBitsCount / 8;
+
+            if (publicKey.ModulusBitsCount % 8 != 0) emLen++;
+
+            if (S.Length != k) Throw("Invalid Signature");
+            
+            m = RSAVP1(publicKey, S);
+            EM = I2OSP(m, emLen);
+
+            bool result = EMSA_PSS_VERIFY(M, EM, publicKey.ModulusBitsCount - 1, sLen);
+
+            return result;
+        }
 
         public static byte[] RSASSA_PKCS1_v1_5_GENERATE() { return null; }
 
@@ -455,7 +473,10 @@ namespace Arctium.Standards.PKCS1.v2_2
         {
             SHA1Managed sha1 = new SHA1Managed();
             byte[] M_, H, DB, mHash, salt, dbMask, EM;
-            int hLen = 20, emLen = emBits / 8, bitsCountToSetToZero = -1;
+            int hLen = 20, emLen, bitsCountToSetToZero = -1;
+
+            emLen = emBits / 8;
+            if (emBits % 8 != 0) emLen++;
 
             mHash = sha1.ComputeHash(M);
             
@@ -492,7 +513,47 @@ namespace Arctium.Standards.PKCS1.v2_2
            return EM;
         }
 
-        public static byte[] EMSA_PSS_VERIFY() { return null; }
+        public static bool EMSA_PSS_VERIFY(byte[] M, byte[] EM, int emBits, int sLen = 0)
+        {
+            SHA1Managed sha1 = new SHA1Managed();
+            byte[] mHash, dbMask, maskedDB, DB, M_, H_, H;
+            int emLen, hLen = 20, zeroBitsCount;
+
+            emLen = emBits / 8;
+            if (emBits % 8 != 0) emLen++;
+
+            mHash = sha1.ComputeHash(M);
+            if (emLen < hLen + sLen + 2) Throw("inconsistent");
+
+            if (EM[EM.Length - 1] != 0xbc) Throw("inconsistent");
+
+            zeroBitsCount = (8 * emLen) - emBits;
+            for (int i = 0; i < zeroBitsCount; i++)
+                if ((EM[i / 8] & (1 << (7 - (i % 8)))) != 0) Throw("inconsistent");
+
+            H = new byte[hLen];
+            Buffer.BlockCopy(EM, emLen - hLen - 1, H, 0, hLen);
+
+            maskedDB = new byte[emLen - hLen - 1];
+            DB = new byte[maskedDB.Length];
+            Buffer.BlockCopy(EM, 0, maskedDB, 0, emLen - hLen - 1);
+            dbMask = MGF(H, emLen - hLen);
+
+            
+            for (int i = 0; i < DB.Length; i++) DB[i] = (byte)(dbMask[i] ^ maskedDB[i]);
+
+            for (int i = 0; i < zeroBitsCount; i++)
+                DB[i / 8] &= (byte)~(1 << (7 - (i % 8)));
+
+            M_ = new byte[8 + hLen + sLen];
+            Buffer.BlockCopy(DB, DB.Length - sLen, M_, M_.Length - sLen, sLen);
+            Buffer.BlockCopy(mHash, 0, M_, 8, hLen);
+            H_ = sha1.ComputeHash(M_);
+
+            bool consistent = MemOps.Memcmp(H_, H);
+
+            return consistent;
+        }
 
         public static byte[] EMSA_PKCS1_v1_5() { return null; }
 
