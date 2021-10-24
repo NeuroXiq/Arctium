@@ -1,8 +1,5 @@
 ﻿namespace Arctium.Standards.PKCS1.v2_2
 {
-    /// <summary>
-    /// Leading zeros must be removed (all filed except version must not start with zero byte, this is due internal implementation)
-    /// </summary>
     public class RSAPrivateKey
     {
         public int Version;

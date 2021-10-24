@@ -16,8 +16,10 @@ namespace Arctium.CryptoFunctions
         {
             for (int i = 0; i < count; i++)
             {
-                buffer[i] = (byte)classicRandom.Next();
+                buffer[i + offset] = (byte)classicRandom.Next();
             }
         }
+
+        public void GenerateBytes(byte[] buffer, int count) { GenerateBytes(buffer, 0, count); }
     }
 }

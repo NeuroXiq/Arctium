@@ -38,8 +38,7 @@ namespace Arctium.Standards.PKCS1.v2_2.ASN1
 
         private RSAPublicKey MapModelToObject(RSAPublicKeyModel pkModel)
         {
-            return new RSAPublicKey(TrimLeadingZeroBytes(pkModel.Modulus.BinaryValue), 
-                TrimLeadingZeroBytes(pkModel.PublicExponent.BinaryValue));
+            return new RSAPublicKey(pkModel.Modulus.BinaryValue, pkModel.PublicExponent.BinaryValue);
         }
 
         private RSAPublicKeyModel DecodeDeserializedRsaPublicKeyToModel(DerDecoded deserialized)
@@ -56,14 +55,14 @@ namespace Arctium.Standards.PKCS1.v2_2.ASN1
             RSAPrivateKey privateKey = new RSAPrivateKey();
 
             privateKey.Version = (int)pkModel.Version.ToULong();
-            privateKey.Modulus = TrimLeadingZeroBytes(pkModel.Modulus.BinaryValue);
-            privateKey.PublicExponent = TrimLeadingZeroBytes(pkModel.PublicExponent.BinaryValue);
-            privateKey.PrivateExponent = TrimLeadingZeroBytes(pkModel.PrivateExponent.BinaryValue);
-            privateKey.Prime1 = TrimLeadingZeroBytes(pkModel.Prime1.BinaryValue);
-            privateKey.Prime2 = TrimLeadingZeroBytes(pkModel.Prime2.BinaryValue);
-            privateKey.Exponent1 = TrimLeadingZeroBytes(pkModel.Exponent1.BinaryValue);
-            privateKey.Exponent2 = TrimLeadingZeroBytes(pkModel.Exponent2.BinaryValue);
-            privateKey.Coefficient = TrimLeadingZeroBytes(pkModel.Coefficient.BinaryValue);
+            privateKey.Modulus = pkModel.Modulus.BinaryValue;
+            privateKey.PublicExponent = pkModel.PublicExponent.BinaryValue;
+            privateKey.PrivateExponent = pkModel.PrivateExponent.BinaryValue;
+            privateKey.Prime1 = pkModel.Prime1.BinaryValue;
+            privateKey.Prime2 = pkModel.Prime2.BinaryValue;
+            privateKey.Exponent1 = pkModel.Exponent1.BinaryValue;
+            privateKey.Exponent2 = pkModel.Exponent2.BinaryValue;
+            privateKey.Coefficient = pkModel.Coefficient.BinaryValue;
 
             if (pkModel.OtherPrimeInfos != null)
             {
@@ -122,25 +121,6 @@ namespace Arctium.Standards.PKCS1.v2_2.ASN1
 
 
             return model;
-        }
-
-        private byte[] TrimLeadingZeroBytes(byte[] array)
-        {
-            int nonZeroByteIndex = 0;
-            while (array[nonZeroByteIndex] == 0 && nonZeroByteIndex < array.Length) nonZeroByteIndex++;
-
-            if (nonZeroByteIndex >= array.Length) throw new ArgumentException("cannot trim leading zeroes because all bytes are zero");
-
-            if (nonZeroByteIndex != 0)
-            {
-                byte[] newArray = new byte[array.Length - nonZeroByteIndex];
-
-                Buffer.BlockCopy(array, nonZeroByteIndex, newArray, 0, array.Length - nonZeroByteIndex);
-
-                array = newArray;
-            }
-
-            return array;
         }
     }
 }

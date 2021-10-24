@@ -23,6 +23,154 @@ namespace Arctium.Standards.PKCS1.v2_2
     /// </summary>
     public static class PKCS1v2_2API
     {
+        public class PublicKey
+        {
+            public int ModulusByteCount;
+            public int ModulusBitsCount;
+
+            public BigInteger Modulus;
+            public BigInteger PublicExponent;
+
+            public PublicKey(RSAPublicKey publicKey)
+            {
+                Modulus = new BigInteger(new ReadOnlySpan<byte>(publicKey.Modulus), true, true);
+                PublicExponent = new BigInteger(new ReadOnlySpan<byte>(publicKey.PublicExponent), true, true);
+                ModulusByteCount = Modulus.GetByteCount(true);
+            }
+
+            public PublicKey(byte[] n, byte[] e)
+            {
+                Modulus = new BigInteger(new ReadOnlySpan<byte>(n), true, true);
+                PublicExponent = new BigInteger(new ReadOnlySpan<byte>(e), true, true);
+                ModulusByteCount = Modulus.GetByteCount(true);
+                ModulusBitsCount = BitsCountInModulus(n);
+            }
+        }
+
+        public class PrivateKeyCRT
+        {
+            public int ModulusByteCount;
+
+            /// <summary>
+            /// e
+            /// </summary>
+            public BigInteger PublicExponent;
+
+            /// <summary>
+            /// d
+            /// </summary>
+            public BigInteger PrivateExponent;
+
+            /// <summary>
+            /// p
+            /// </summary>
+            public BigInteger Prime1;
+
+            /// <summary>
+            /// q
+            /// </summary>
+            public BigInteger Prime2;
+
+            /// <summary>
+            /// d mod p - 1
+            /// </summary>
+            public BigInteger Exponent1;
+
+            /// <summary>
+            /// d mod q - 1
+            /// </summary>
+            public BigInteger Exponent2;
+
+            /// <summary>
+            /// (inverse of q) mod p
+            /// </summary>
+            public BigInteger Coefficient;
+
+            /// <summary>
+            /// (inverse of q) mod p
+            /// </summary>
+            public BigInteger Modulus;
+
+            /// <summary>
+            /// Modulus length in bits
+            /// <summary>
+            public int ModulusBitsCount;
+
+            public OtherPrimeInfo[] OtherPrimeInfos { get { throw new NotImplementedException(); } }
+
+            public PrivateKeyCRT(RSAPrivateKey privateKey)
+            {
+                PublicExponent = new BigInteger(new ReadOnlySpan<byte>(privateKey.PublicExponent), true, true);
+                PrivateExponent = new BigInteger(new ReadOnlySpan<byte>(privateKey.PrivateExponent), true, true);
+                Prime1 = new BigInteger(new ReadOnlySpan<byte>(privateKey.Prime1), true, true);
+                Prime2 = new BigInteger(new ReadOnlySpan<byte>(privateKey.Prime2), true, true);
+                Exponent1 = new BigInteger(new ReadOnlySpan<byte>(privateKey.Exponent1), true, true);
+                Exponent2 = new BigInteger(new ReadOnlySpan<byte>(privateKey.Exponent2), true, true);
+                Coefficient = new BigInteger(new ReadOnlySpan<byte>(privateKey.Coefficient), true, true);
+                Modulus = new BigInteger(new ReadOnlySpan<byte>(privateKey.Modulus), true, true);
+                ModulusByteCount = Modulus.GetByteCount(true);
+                ModulusBitsCount = BitsCountInModulus(privateKey.Modulus);
+            }
+        }
+
+        public class PrivateKeyNDPair
+        {
+            public int ModulusByteCount;
+            public int ModulusBitsCount;
+
+            /// <summary>
+            /// n
+            /// </summary>
+            public BigInteger Modulus;
+
+            /// <summary>
+            /// d
+            /// </summary>
+            public BigInteger PrivateExponent;
+
+            public PrivateKeyNDPair(byte[] n, byte[] d)
+            {
+                Modulus = new BigInteger(new ReadOnlySpan<byte>(n), true, true);
+                PrivateExponent = new BigInteger(new ReadOnlySpan<byte>(d), true, true);
+                ModulusByteCount = Modulus.GetByteCount(true);
+                ModulusBitsCount = BitsCountInModulus(n);
+            }
+        }
+
+        public class PrivateKey
+        {
+            public PrivateKeyNDPair PrivateKeyNDPair;
+            public PrivateKeyCRT PrivateKeyCRT;
+            public int ModulusByteCount;
+            public int ModulusBitsCount;
+
+            public PrivateKey(PrivateKeyNDPair ndPair)
+            {
+                PrivateKeyNDPair = ndPair;
+                ModulusByteCount = ndPair.ModulusByteCount;
+                ModulusBitsCount = ndPair.ModulusBitsCount;
+            }
+
+            public PrivateKey(PrivateKeyCRT crt)
+            {
+                PrivateKeyCRT = crt;
+                ModulusByteCount = crt.ModulusByteCount;
+                ModulusBitsCount = crt.ModulusBitsCount;
+            }
+        }
+
+        static int BitsCountInModulus(byte[] modulus)
+        {
+            int minus = 0;
+            for (int i = 0; i < modulus.Length * 8; i++)
+            {
+                if ((modulus[i / 8] & (1 << (7 - (i % 8)))) == 0) minus++;
+                else break;
+            }
+
+            return (modulus.Length * 8) - minus;
+        }
+
         /// <summary>
         /// Indicates if exception (if any) should contain more detailed informations about
         /// failure. Should be false
@@ -56,11 +204,11 @@ namespace Arctium.Standards.PKCS1.v2_2
 
         /* EncryptionSchemes */
 
-        public static byte[] RSAEP(RSAPublicKey publicKey, byte[] m)
+        public static BigInteger RSAEP(PublicKey publicKey, byte[] m)
         {
             BigInteger mAsInt = new BigInteger(new ReadOnlySpan<byte>(m), true, true);
-            BigInteger nAsInt = new BigInteger(new ReadOnlySpan<byte>(publicKey.Modulus), true, true);
-            BigInteger eAsInt = new BigInteger(new ReadOnlySpan<byte>(publicKey.PublicExponent), true, true);
+            BigInteger nAsInt = publicKey.Modulus;
+            BigInteger eAsInt = publicKey.PublicExponent;
 
             if (mAsInt > (nAsInt - 1))
             {
@@ -69,29 +217,29 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             BigInteger c = BigInteger.ModPow(mAsInt, eAsInt, nAsInt);
 
-            return c.ToByteArray(true, true);
+            return c;
         }
 
-        public static byte[] RSADP(PrivateKeyNDPair k, byte[] ciphertext)
+        public static BigInteger RSADP(PrivateKeyNDPair k, byte[] ciphertext)
         {
-            BigInteger n = new BigInteger(new ReadOnlySpan<byte>(k.n), true, true);
-            BigInteger d = new BigInteger(new ReadOnlySpan<byte>(k.d), true, true);
+            BigInteger n = k.Modulus;
+            BigInteger d = k.PrivateExponent;
             BigInteger m = new BigInteger(new ReadOnlySpan<byte>(ciphertext), true, true);
 
             if (m > n - 1) throw new ArgumentException("ciphertext representative out of range");
 
             BigInteger plaintext = BigInteger.ModPow(m, d, n);
 
-            return plaintext.ToByteArray();
+            return plaintext;
         }
 
-        public static byte[] RSADP(RSAPrivateKey k, byte[] ciphertext)
+        public static BigInteger RSADP(PrivateKeyCRT k, byte[] ciphertext)
         {
-            BigInteger p = new BigInteger(new ReadOnlySpan<byte>(k.Prime1), true, true);
-            BigInteger q = new BigInteger(new ReadOnlySpan<byte>(k.Prime2), true, true);
-            BigInteger dP = new BigInteger(new ReadOnlySpan<byte>(k.Exponent1), true, true);
-            BigInteger dQ = new BigInteger(new ReadOnlySpan<byte>(k.Exponent2), true, true);
-            BigInteger qInv = new BigInteger(new ReadOnlySpan<byte>(k.Coefficient), true, true);
+            BigInteger p = k.Prime1;
+            BigInteger q = k.Prime2;
+            BigInteger dP = k.Exponent1;
+            BigInteger dQ = k.Exponent2;
+            BigInteger qInv = k.Coefficient;
             BigInteger c = new BigInteger(new ReadOnlySpan<byte>(ciphertext), true, true);
 
             BigInteger m1 = BigInteger.ModPow(c, dP, p);
@@ -101,32 +249,30 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             BigInteger h = (qInv * (m1 - m2)) % p;
             BigInteger plaintextAsNumber = m2 + (q * h);
-            byte[] plaintext = plaintextAsNumber.ToByteArray(true, true);
 
-            if (plaintext.Length < k.Modulus.Length)
-            {
-                byte[] aligned = new byte[k.Modulus.Length];
-
-                Buffer.BlockCopy(plaintext, 0, aligned, aligned.Length - plaintext.Length, plaintext.Length);
-
-                plaintext = aligned;
-            }
-
-            return plaintext;
+            return plaintextAsNumber;
         }
 
-        public static byte[] RSASP1(PrivateKeyNDPair k, byte[] m) { return RSADP(k, m); }
+        /// <summary>
+        ///
+        /// <summary>
+        public static BigInteger RSADP(PrivateKey privateKey, byte[] ciphertext)
+        {
+            if (privateKey.PrivateKeyNDPair != null) return RSADP(privateKey.PrivateKeyNDPair, ciphertext);
+            
+            return RSADP(privateKey.PrivateKeyCRT, ciphertext);
+        }
 
-        public static byte[] RSASP1(RSAPrivateKey k, byte[] m) { return RSADP(k, m); }
+        public static BigInteger RSASP1(PrivateKey k, byte[] m) { return RSADP(k, m); }
 
-        public static byte[] RSAVP1(RSAPublicKey publicKey, byte[] m) { return RSAEP(publicKey, m); }
+        public static BigInteger RSAVP1(PublicKey publicKey, byte[] m) { return RSAEP(publicKey, m); }
 
-        public static byte[] RSAES_OAEP_ENCRYPT(RSAPublicKey publicKey, byte[] M, byte[] L = null)
+        public static byte[] RSAES_OAEP_ENCRYPT(PublicKey publicKey, byte[] M, byte[] L = null)
         {
             if (L == null) L = new byte[0];
 
             SHA1Managed sha1 = new SHA1Managed();
-            int k = publicKey.Modulus.Length;
+            int k = publicKey.ModulusByteCount;
             int padLength = k - M.Length - (2*20) - 2;
             
             byte[] lhash = sha1.ComputeHash(L);
@@ -135,7 +281,7 @@ namespace Arctium.Standards.PKCS1.v2_2
             Array.Copy(lhash, 0, DB, 0, lhash.Length);
             DB[padLength + lhash.Length] = 0x01;
             Array.Copy(M, 0, DB, DB.Length - M.Length, M.Length);
-            byte[] seed = RandomGenerator.GenerateNewByteArray(lhash.Length);
+            byte[] seed = RandomGenerator.GenerateNonZeroNewByteArray(lhash.Length);
             byte[] dbMask = MGF(seed, k - lhash.Length - 1);
             byte[] maskedDB = new byte[DB.Length];
             for (int i = 0; i < maskedDB.Length; i++) maskedDB[i] = (byte)(DB[i] ^ dbMask[i]);
@@ -146,13 +292,11 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             Array.Copy(maskedSeed, 0, EB, 1, maskedSeed.Length);
             Array.Copy(maskedDB, 0, EB, 1 + maskedSeed.Length, maskedDB.Length);
-            MemDump.HexDump(EB);
-            byte[] c = RSAEP(publicKey, EB);
+            BigInteger ciphertextAsInteger = RSAEP(publicKey, EB);
+            byte[] ciphertextAsBytes = I2OSP(ciphertextAsInteger, publicKey.ModulusByteCount);
 
-
-            return c;
+            return ciphertextAsBytes;
         }
-
         private static byte[] MGF(byte[] mgfSeed, int maskLen) { return MGF1(mgfSeed, maskLen); }
 
         /// <summary>
@@ -185,17 +329,31 @@ namespace Arctium.Standards.PKCS1.v2_2
             return result;
         }
 
-        public static byte[] RSAES_OAEP_DECRYPT(RSAPrivateKey privateKey, byte[] c, byte[] L = null)
+        public static byte[] I2OSP(BigInteger integer, int k)
+        {
+            byte[] m = integer.ToByteArray(true, true);
+
+            if (m.Length == k) return m;
+            if (m.Length > k) Throw("I2OSP: INTERNAL ERROR mlen > k");
+
+            byte[] r = new byte[k];
+            Buffer.BlockCopy(m, 0, r, k - m.Length, m.Length);
+
+            return r;
+        }
+
+        public static byte[] RSAES_OAEP_DECRYPT(PrivateKey privateKey, byte[] c, byte[] L = null)
         {
             int hLen = 20;
-            int k = privateKey.Modulus.Length;
+            int k = privateKey.ModulusByteCount;
             SHA1Managed sha1 = new SHA1Managed();
 
             if (L == null) L = new byte[0];
-            if (c.Length != privateKey.Modulus.Length) Throw("DECRYPTION ERROR: C length is not equal to length of the Private Key Modulus in bytes");
-            if (privateKey.Modulus.Length < 2 * hLen + 2) Throw("DECRYPTION ERROR: Modulus length < 2 * hLen + 2)");
+            if (c.Length != privateKey.ModulusByteCount) Throw("DECRYPTION ERROR: C length is not equal to length of the Private Key Modulus in bytes");
+            if (privateKey.ModulusByteCount < 2 * hLen + 2) Throw("DECRYPTION ERROR: Modulus length < 2 * hLen + 2)");
 
-            byte[] m = RSADP(privateKey, c);
+            BigInteger mAsInteger = RSADP(privateKey, c);
+            byte[] m = I2OSP(mAsInteger, privateKey.ModulusByteCount);
             byte[] lHash = sha1.ComputeHash(L);
             byte Y = m[0];
             byte[] maskedSeed = new byte[hLen];
@@ -238,13 +396,54 @@ namespace Arctium.Standards.PKCS1.v2_2
             return M;
         }
 
-        public static byte[] RSAES_PKCS1_v1_5_ENCRYPT() { return null; }
+        public static byte[] RSAES_PKCS1_v1_5_ENCRYPT(PublicKey publicKey, byte[] M)
+        {
+            int k = publicKey.ModulusByteCount, mLen = M.Length;
+            byte[] EM;
 
-        public static byte[] RSAES_PKCS1_v1_5_DECRYPT() { return null; }
+            if (mLen > k - 11) Throw("Message too long");
+
+            EM = new byte[k];
+
+            EM[0] = 0x00;
+            EM[1] = 0x02;
+            EM[k - mLen - 1] = 0x00; 
+            RandomGenerator.GenerateNonZero(EM, 2, k - mLen - 3);
+            Buffer.BlockCopy(M, 0, EM, EM.Length - mLen, mLen);
+            
+            BigInteger ciphertextAsInteger = RSAEP(publicKey, EM);
+            byte[] ciphertextAsBytes = I2OSP(ciphertextAsInteger, k);
+
+            return ciphertextAsBytes;
+        }
+
+        public static byte[] RSAES_PKCS1_v1_5_DECRYPT(PrivateKey privateKey, byte[] M)
+        {
+            int k = privateKey.ModulusByteCount, psLength = 0;
+            if (M.Length != k) Throw("decryption error");
+
+            BigInteger mAsInteger = RSADP(privateKey, M);
+            byte[] EB = I2OSP(mAsInteger, k);
+            
+            while (psLength + 2 < k && EB[psLength + 2] != 0) psLength++;
+
+            if (EB[0] != 0x00 || EB[1] != 0x02 || psLength < 8 || psLength + 2 == k) Throw("Decryption Error");
+            
+            byte[] plaintext = new byte[k - 3 - psLength];
+            Buffer.BlockCopy(EB, k - plaintext.Length, plaintext, 0, plaintext.Length);
+
+            return plaintext;
+        }
 
 
-        public static byte[] RSASSA_PSS_VERIFY() { return null; }
-
+        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M)
+        {
+            byte[] EM = EMSA_PSS_ENCODE(M, privateKey.ModulusBitsCount - 1);
+            BigInteger sAsInt = RSASP1(privateKey, EM);
+            byte[] sAsBytes = I2OSP(sAsInt, privateKey.ModulusByteCount);
+            
+            return sAsBytes;
+        }
 
         public static byte[] RSASSA_PSS_GENERATE() { return null; }
 
@@ -252,7 +451,46 @@ namespace Arctium.Standards.PKCS1.v2_2
 
         public static byte[] RSASSA_PKCS1_v1_5_VERIFY() { return null; }
 
-        public static byte[] EMSA_PSS_ENCODE() { return null; }
+        public static byte[] EMSA_PSS_ENCODE(byte[] M, int emBits, int sLen = 0)
+        {
+            SHA1Managed sha1 = new SHA1Managed();
+            byte[] M_, H, DB, mHash, salt, dbMask, EM;
+            int hLen = 20, emLen = emBits / 8, bitsCountToSetToZero = -1;
+
+            mHash = sha1.ComputeHash(M);
+            
+            if (emLen < hLen + sLen + 2) Throw("Encoding error");
+
+            M_ = new byte[8 + hLen + sLen];
+            salt = new byte[sLen];
+
+            RandomGenerator.Generate(salt, 0, sLen);
+            Buffer.BlockCopy(salt, 0, M_, M_.Length - sLen, sLen);
+            Buffer.BlockCopy(mHash, 0, M_, 8, hLen);
+
+            H = sha1.ComputeHash(M_);
+            DB = new byte[emLen - hLen - 1];
+            DB[emLen - sLen - hLen  - 2] = 0x01;
+            Buffer.BlockCopy(salt, 0, DB, emLen - sLen - hLen - 1, sLen);
+            dbMask = MGF(H, emLen - hLen - 1);
+            
+            for (int i = 0; i < dbMask.Length; i++) DB[i] ^= dbMask[i];
+
+            bitsCountToSetToZero = (8 * emLen) - emBits;
+            
+            for (int i = 0; i < bitsCountToSetToZero; i++)
+            {
+                byte clearBit = (byte)(~(1 << (7 - (i % 8))));
+                DB[i / 8] &= clearBit;
+            }
+
+           EM = new byte[DB.Length + hLen + 1];
+           Buffer.BlockCopy(DB, 0, EM, 0, DB.Length);
+           Buffer.BlockCopy(H, 0, EM, DB.Length, hLen);
+           EM[EM.Length - 1] = 0xbc;
+
+           return EM;
+        }
 
         public static byte[] EMSA_PSS_VERIFY() { return null; }
 
@@ -262,7 +500,7 @@ namespace Arctium.Standards.PKCS1.v2_2
         {
             if (!ShowDetailedMessageInException)
             {
-                msg = "DECRYPTION ERROR";
+                msg = "ERROR";
             }
 
             throw new PKCS1v2_2StandardException(msg);
