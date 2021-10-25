@@ -13,6 +13,7 @@ using Arctium.Standards.PKCS1.v2_2.ASN1;
 using System;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Collections.Generic;
 
 namespace Arctium.Standards.PKCS1.v2_2
 {
@@ -158,6 +159,32 @@ namespace Arctium.Standards.PKCS1.v2_2
                 ModulusBitsCount = crt.ModulusBitsCount;
             }
         }
+
+        enum DigestInfoHashFunction
+        {
+            MD2,
+            MD5,
+            SHA1,
+            SHA224,
+            SHA256,
+            SHA384,
+            SHA512,
+            SHA512_224,
+            SHA512_256
+        }
+
+        static readonly Dictionary<DigestInfoHashFunction, byte[]> DigestInfoDerEncodedAlgoId = new Dictionary<DigestInfoHashFunction, byte[]>()
+        {
+            { DigestInfoHashFunction.MD2,        new byte[] { 0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x02, 0x05, 0x00, 0x04, 0x10  } },
+            { DigestInfoHashFunction.MD5,        new byte[] { 0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x02, 0x05, 0x05, 0x00, 0x04, 0x10  } },
+            { DigestInfoHashFunction.SHA1,       new byte[] { 0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14  } },
+            { DigestInfoHashFunction.SHA224,     new byte[] { 0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c  } },
+            { DigestInfoHashFunction.SHA256,     new byte[] { 0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20  } },
+            { DigestInfoHashFunction.SHA384,     new byte[] { 0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30  } },
+            { DigestInfoHashFunction.SHA512,     new byte[] { 0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40  } },
+            { DigestInfoHashFunction.SHA512_224, new byte[] { 0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x05, 0x05, 0x00, 0x04, 0x1c  } },
+            { DigestInfoHashFunction.SHA512_256, new byte[] { 0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x06, 0x05, 0x00, 0x04, 0x20  } }
+        };
 
         static int BitsCountInModulus(byte[] modulus)
         {
@@ -465,7 +492,17 @@ namespace Arctium.Standards.PKCS1.v2_2
             return result;
         }
 
-        public static byte[] RSASSA_PKCS1_v1_5_GENERATE() { return null; }
+        public static byte[] RSASSA_PKCS1_v1_5_GENERATE(PrivateKey privateKey, byte[] M)
+        {
+            byte[] EM, sAsBytes;
+            BigInteger sAsInteger;
+
+            EM = EMSA_PKCS1_v1_5_ENCODE(M, privateKey.ModulusByteCount);
+            sAsInteger = RSASP1(privateKey, EM);
+            sAsBytes = I2OSP(sAsInteger, privateKey.ModulusByteCount);
+
+            return sAsBytes;
+        }
 
         public static byte[] RSASSA_PKCS1_v1_5_VERIFY() { return null; }
 
@@ -555,7 +592,31 @@ namespace Arctium.Standards.PKCS1.v2_2
             return consistent;
         }
 
-        public static byte[] EMSA_PKCS1_v1_5() { return null; }
+        public static byte[] EMSA_PKCS1_v1_5_ENCODE(byte[] M, int emLen)
+        {
+            SHA1Managed sha1 = new SHA1Managed();
+            byte[] H, EM, derEncodedAlgo;
+            int tLen;
+
+            H = sha1.ComputeHash(M);
+            derEncodedAlgo = DigestInfoDerEncodedAlgoId[DigestInfoHashFunction.SHA1];
+
+            tLen = H.Length + derEncodedAlgo.Length;
+
+            if (emLen < tLen + 11) Throw("intended encoded message too short");
+
+            EM = new byte[emLen];
+            
+            EM[0] = 0x00;
+            EM[1] = 0x01;
+            for (int i = 2; i < emLen - tLen - 1; i++) EM[i] = 0xFF;
+            EM[emLen - tLen - 1] = 0x00;
+
+            Buffer.BlockCopy(derEncodedAlgo, 0, EM, EM.Length - tLen, derEncodedAlgo.Length);
+            Buffer.BlockCopy(H, 0, EM, EM.Length - tLen + derEncodedAlgo.Length, H.Length);
+
+            return EM;
+        }
 
         private static void Throw(string msg)
         {
