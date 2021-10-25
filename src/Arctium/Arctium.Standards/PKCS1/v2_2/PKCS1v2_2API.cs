@@ -504,7 +504,19 @@ namespace Arctium.Standards.PKCS1.v2_2
             return sAsBytes;
         }
 
-        public static byte[] RSASSA_PKCS1_v1_5_VERIFY() { return null; }
+        public static bool RSASSA_PKCS1_v1_5_VERIFY(PublicKey publicKey, byte[] M, byte[] S)
+        {
+            BigInteger mAsInteger;
+            byte[] EM, EM_;
+
+            if (S.Length != publicKey.ModulusByteCount) Throw("Invalid signature");
+
+            mAsInteger = RSAVP1(publicKey, S);
+            EM = I2OSP(mAsInteger, publicKey.ModulusByteCount);
+            EM_ = EMSA_PKCS1_v1_5_ENCODE(M, publicKey.ModulusByteCount);
+
+            return MemOps.Memcmp(EM_, EM);
+        }
 
         public static byte[] EMSA_PSS_ENCODE(byte[] M, int emBits, int sLen = 0)
         {
