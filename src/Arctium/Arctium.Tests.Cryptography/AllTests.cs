@@ -120,7 +120,7 @@ namespace Arctium.Tests.Cryptography
             {
                 var t = Task.Factory.StartNew<List<TestResult>>((argAsObj) =>
                 {
-                    Thread.CurrentThread.Priority = ThreadPriority.Highest;
+                    Thread.CurrentThread.Priority = ThreadPriority.Lowest;
                     arg items = argAsObj as arg;
                     int totalPercent = items.items.Count * 100;
                     int[] completedPerFunc = new int[items.items.Count];
@@ -227,6 +227,8 @@ namespace Arctium.Tests.Cryptography
 
                 new HashFunctionWithTests(new BLAKE2b_512(), BLAKE2b_512Tests.Short),
                 new HashFunctionWithTests(new BLAKE3(), BLAKE3Tests.Short),
+
+                new HashFunctionWithTests(new SHA1(), SHA1Tests.Short),
             };
         }
 

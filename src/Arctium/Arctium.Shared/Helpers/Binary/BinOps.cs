@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Arctium.Shared.Helpers.Binary
 {
+    /// <summary>
+    /// Binary Operations
+    /// </summary>
     public static class BinOps
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

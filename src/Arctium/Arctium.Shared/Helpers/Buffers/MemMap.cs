@@ -12,6 +12,14 @@ namespace Arctium.Shared.Helpers.Buffers
     {
         #region Unsafe
 
+        
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytes4UIntLE(byte* src, long srcOffset, uint* dst, long destOffset)
+        {
+            
+        }
+
         /// <summary>
         /// Converts array of 4 unsigned integers to byte array in little-endian format
         /// </summary>
@@ -117,6 +125,37 @@ namespace Arctium.Shared.Helpers.Buffers
             output[3] |= (uint)input[15] << 24;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt64BytesBE(byte* input, long inputOffset, uint* output, long outputOffset)
+        {
+            long o = outputOffset, i = inputOffset;
+
+            for (int k = 0; k < 16; k++)
+            {
+                output[0 + o]  = (uint)input[3 + i] << 0;
+                output[0 + o] |= (uint)input[2 + i] << 8;
+                output[0 + o] |= (uint)input[1 + i] << 16;
+                output[0 + o] |= (uint)input[0 + i] << 24;
+
+                output[1 + o]  = (uint)input[7 + i] << 0;
+                output[1 + o] |= (uint)input[6 + i] << 8;
+                output[1 + o] |= (uint)input[5 + i] << 16;
+                output[1 + o] |= (uint)input[4 + i] << 24;
+
+                output[2 + o]  = (uint)input[11 + i] << 0;
+                output[2 + o] |= (uint)input[10 + i] << 8;
+                output[2 + o] |= (uint)input[9  + i] << 16;
+                output[2 + o] |= (uint)input[8  + i] << 24;
+
+                output[3 + o]  = (uint)input[15 + i] << 0;
+                output[3 + o] |= (uint)input[14 + i] << 8;
+                output[3 + o] |= (uint)input[13 + i] << 16;
+                output[3 + o] |= (uint)input[12 + i] << 24;
+
+                o += 4;
+                i += 16;
+            }
+        }
 
         /// <summary>
         /// Converts 32 bytes to 8 uint values where input bytes 
@@ -730,6 +769,17 @@ namespace Arctium.Shared.Helpers.Buffers
             r[3] = (byte)((value >> 00) & 0xff);
 
             return r;
+        }
+
+        public static void ToBytes5UIntBE(uint[] input, long inOffset, byte[] output, long outOffset)
+        {
+            for (long i = 0; i < 5; i++)
+            {
+                output[outOffset + 0 + (i * 4)] = (byte)(input[i + inOffset] >> 24);
+                output[outOffset + 1 + (i * 4)] = (byte)(input[i + inOffset] >> 16);
+                output[outOffset + 2 + (i * 4)] = (byte)(input[i + inOffset] >> 08);
+                output[outOffset + 3 + (i * 4)] = (byte)(input[i + inOffset] >> 00);
+            }
         }
 
         #endregion

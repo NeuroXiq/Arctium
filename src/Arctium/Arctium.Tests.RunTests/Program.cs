@@ -36,10 +36,10 @@ namespace Arctium.Tests.RunTests
             List<Task<List<TestResult>>> allTasks = new List<Task<List<TestResult>>>();
 
             List<Task<List<TestResult>>> shortTasks = AllTests.Run(ProgressCallback);
-            //List<Task<List<TestResult>>> longTasks = AllTests.RunLong(ProgressCallback);
+            List<Task<List<TestResult>>> longTasks = AllTests.RunLong(ProgressCallback);
 
             allTasks.AddRange(shortTasks);
-            //allTasks.AddRange(longTasks);
+            allTasks.AddRange(longTasks);
 
             Task.Factory.StartNew(() => RefreshProgress());
 
@@ -47,9 +47,9 @@ namespace Arctium.Tests.RunTests
             List<TestResult> shortResults = shortTasks.SelectMany(task => task.Result).ToList();
             ShowResults(shortResults);
 
-            //Task.WaitAll(longTasks.ToArray());
-            //List<TestResult> longResults = longTasks.SelectMany(task => task.Result).ToList();
-            //ShowResults(longResults);
+            Task.WaitAll(longTasks.ToArray());
+            List<TestResult> longResults = longTasks.SelectMany(task => task.Result).ToList();
+            ShowResults(longResults);
 
             stopRefresh = true;
             
