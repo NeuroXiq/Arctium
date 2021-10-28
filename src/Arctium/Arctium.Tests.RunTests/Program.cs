@@ -45,18 +45,19 @@ namespace Arctium.Tests.RunTests
 
             Task.WaitAll(shortTasks.ToArray());
             List<TestResult> shortResults = shortTasks.SelectMany(task => task.Result).ToList();
-            ShowResults(shortResults);
+            
 
-            Task.WaitAll(longTasks.ToArray());
-            List<TestResult> longResults = longTasks.SelectMany(task => task.Result).ToList();
-            ShowResults(longResults);
+            // Task.WaitAll(longTasks.ToArray());
+            // List<TestResult> longResults = longTasks.SelectMany(task => task.Result).ToList();
+            // ShowResults(longResults);
 
             stopRefresh = true;
             
             stopwatch.Stop();
             
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            
+
+            ShowResults(shortResults);
             var all = allTasks.SelectMany(s => s.Result);
         }
 

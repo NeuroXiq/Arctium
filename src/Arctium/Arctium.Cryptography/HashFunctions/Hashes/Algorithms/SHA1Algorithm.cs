@@ -48,6 +48,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         public static void HashLastBlock(Context context, byte[] lastBlock, long offset, long length)
         {
             byte[] last;
+            context.TotalMessageLengthInBytes += (ulong)length;
 
             if (length < 55)
             {

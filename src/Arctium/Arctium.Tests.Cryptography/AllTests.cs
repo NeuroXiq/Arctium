@@ -199,34 +199,34 @@ namespace Arctium.Tests.Cryptography
         {
             return new List<HashFunctionWithTests>
             {
-                new HashFunctionWithTests(new JH_224(), JHTests.Short224),
-                new HashFunctionWithTests(new JH_256(), JHTests.Short256),
-                new HashFunctionWithTests(new JH_384(), JHTests.Short384),
-                new HashFunctionWithTests(new JH_512(), JHTests.Short512),
-
-                new HashFunctionWithTests(new SHA3_224(), SHA3_Tests.Short224),
-                new HashFunctionWithTests(new SHA3_256(), SHA3_Tests.Short256),
-                new HashFunctionWithTests(new SHA3_384(), SHA3_Tests.Short384),
-                new HashFunctionWithTests(new SHA3_512(), SHA3_Tests.Short512),
-
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 224), Skein_Tests.Short256_224),
-                new HashFunctionWithTests(new Skein_256(), Skein_Tests.Short256_256),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 384), Skein_Tests.Short256_384),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 512), Skein_Tests.Short256_512),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 1024), Skein_Tests.Short256_1024),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 224), Skein_Tests.Short512_224),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 256), Skein_Tests.Short512_256),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 384), Skein_Tests.Short512_384),
-                new HashFunctionWithTests(new Skein_512(), Skein_Tests.Short512_512),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 1024), Skein_Tests.Short512_1024),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 224), Skein_Tests.Short1024_224),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 256), Skein_Tests.Short1024_256),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 384), Skein_Tests.Short1024_384),
-                new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 512), Skein_Tests.Short1024_512),
-                new HashFunctionWithTests(new Skein_1024(), Skein_Tests.Short1024_1024),
-
-                new HashFunctionWithTests(new BLAKE2b_512(), BLAKE2b_512Tests.Short),
-                new HashFunctionWithTests(new BLAKE3(), BLAKE3Tests.Short),
+                // new HashFunctionWithTests(new JH_224(), JHTests.Short224),
+                // new HashFunctionWithTests(new JH_256(), JHTests.Short256),
+                // new HashFunctionWithTests(new JH_384(), JHTests.Short384),
+                // new HashFunctionWithTests(new JH_512(), JHTests.Short512),
+                // 
+                // new HashFunctionWithTests(new SHA3_224(), SHA3_Tests.Short224),
+                // new HashFunctionWithTests(new SHA3_256(), SHA3_Tests.Short256),
+                // new HashFunctionWithTests(new SHA3_384(), SHA3_Tests.Short384),
+                // new HashFunctionWithTests(new SHA3_512(), SHA3_Tests.Short512),
+                // 
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 224), Skein_Tests.Short256_224),
+                // new HashFunctionWithTests(new Skein_256(), Skein_Tests.Short256_256),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 384), Skein_Tests.Short256_384),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 512), Skein_Tests.Short256_512),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 1024), Skein_Tests.Short256_1024),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 224), Skein_Tests.Short512_224),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 256), Skein_Tests.Short512_256),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 384), Skein_Tests.Short512_384),
+                // new HashFunctionWithTests(new Skein_512(), Skein_Tests.Short512_512),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 1024), Skein_Tests.Short512_1024),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 224), Skein_Tests.Short1024_224),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 256), Skein_Tests.Short1024_256),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 384), Skein_Tests.Short1024_384),
+                // new HashFunctionWithTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 512), Skein_Tests.Short1024_512),
+                // new HashFunctionWithTests(new Skein_1024(), Skein_Tests.Short1024_1024),
+                // 
+                // new HashFunctionWithTests(new BLAKE2b_512(), BLAKE2b_512Tests.Short),
+                // new HashFunctionWithTests(new BLAKE3(), BLAKE3Tests.Short),
 
                 new HashFunctionWithTests(new SHA1(), SHA1Tests.Short),
             };

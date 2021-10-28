@@ -12,8 +12,8 @@ using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.PKCS1.v2_2.ASN1;
 using System;
 using System.Numerics;
-using System.Security.Cryptography;
 using System.Collections.Generic;
+using Arctium.Cryptography.HashFunctions.Hashes;
 
 namespace Arctium.Standards.PKCS1.v2_2
 {
@@ -160,7 +160,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             }
         }
 
-        enum DigestInfoHashFunction
+        public delegate byte[] MGF(HashFunction hashFunction, byte[] seed, int outputLength);
+
+        public enum DigestInfoHashFunction
         {
             MD2,
             MD5,
@@ -294,25 +296,26 @@ namespace Arctium.Standards.PKCS1.v2_2
 
         public static BigInteger RSAVP1(PublicKey publicKey, byte[] m) { return RSAEP(publicKey, m); }
 
-        public static byte[] RSAES_OAEP_ENCRYPT(PublicKey publicKey, byte[] M, byte[] L = null)
+        public static byte[] RSAES_OAEP_ENCRYPT(PublicKey publicKey, byte[] M, byte[] L = null, HashFunction hashFunction = null, MGF mgf = null)
         {
             if (L == null) L = new byte[0];
+            if (hashFunction == null) hashFunction = new SHA1();
+            if (mgf == null) mgf = MGF1;
 
-            SHA1Managed sha1 = new SHA1Managed();
             int k = publicKey.ModulusByteCount;
-            int padLength = k - M.Length - (2*20) - 2;
+            int padLength = k - M.Length - (2 * hashFunction.HashSizeBytes) - 2;
             
-            byte[] lhash = sha1.ComputeHash(L);
+            byte[] lhash = ComputeHash(hashFunction, L);
             byte[] DB = new byte[padLength + lhash.Length + 1 + M.Length];
 
             Array.Copy(lhash, 0, DB, 0, lhash.Length);
             DB[padLength + lhash.Length] = 0x01;
             Array.Copy(M, 0, DB, DB.Length - M.Length, M.Length);
             byte[] seed = RandomGenerator.GenerateNonZeroNewByteArray(lhash.Length);
-            byte[] dbMask = MGF(seed, k - lhash.Length - 1);
+            byte[] dbMask = mgf(hashFunction, seed, k - lhash.Length - 1);
             byte[] maskedDB = new byte[DB.Length];
             for (int i = 0; i < maskedDB.Length; i++) maskedDB[i] = (byte)(DB[i] ^ dbMask[i]);
-            byte[] seedMask = MGF(maskedDB, lhash.Length);
+            byte[] seedMask = mgf(hashFunction, maskedDB, lhash.Length);
             byte[] maskedSeed = new byte[seed.Length];
             for (int i = 0; i < maskedSeed.Length; i++) maskedSeed[i] = (byte)(seedMask[i] ^ seed[i]);
             byte[] EB = new byte[k];
@@ -324,7 +327,8 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             return ciphertextAsBytes;
         }
-        private static byte[] MGF(byte[] mgfSeed, int maskLen) { return MGF1(mgfSeed, maskLen); }
+
+        // private static byte[] MGF(byte[] mgfSeed, int maskLen) { return MGF1(mgfSeed, maskLen); }
 
         /// <summary>
         /// Mask Generation Function 1 defined in PKCS1 v2.2 (Hash algorithm: SHA1)
@@ -333,20 +337,20 @@ namespace Arctium.Standards.PKCS1.v2_2
         /// <param name="mgfSeed"></param>
         /// <param name="maskLen"></param>
         /// <returns></returns>
-        public static byte[] MGF1(byte[] mgfSeed, int maskLen)
+        public static byte[] MGF1(HashFunction hashFunction, byte[] mgfSeed, int maskLen)
         {
-            SHA1Managed sha1 = new SHA1Managed();
-            int counterMax = (int)((maskLen + 19) / 20);
-            byte[] T = new byte[counterMax * 20];
+            int hLen = hashFunction.HashSizeBytes;
+            int counterMax = (int)((maskLen + 19) / hLen);
+            byte[] T = new byte[counterMax * hLen];
             byte[] toHash = new byte[mgfSeed.Length + 4];
             Array.Copy(mgfSeed, 0, toHash, 0, mgfSeed.Length);
 
             for (int i = 0; i < counterMax; i++)
             {
                 MemMap.ToBytes1UIntBE((uint)i, toHash, toHash.Length - 4);
-                byte[] hashed = sha1.ComputeHash(toHash);
+                byte[] hashed = ComputeHash(hashFunction, toHash);
 
-                Array.Copy(hashed, 0, T, i * 20, hashed.Length);
+                Array.Copy(hashed, 0, T, i * hLen, hashed.Length);
             }
 
             byte[] result = new byte[maskLen];
@@ -369,11 +373,13 @@ namespace Arctium.Standards.PKCS1.v2_2
             return r;
         }
 
-        public static byte[] RSAES_OAEP_DECRYPT(PrivateKey privateKey, byte[] c, byte[] L = null)
+        public static byte[] RSAES_OAEP_DECRYPT(PrivateKey privateKey, byte[] c, byte[] L = null, HashFunction hashFunction = null, MGF mgf = null)
         {
-            int hLen = 20;
+            if (hashFunction == null) hashFunction = new SHA1();
+            if (mgf == null) mgf = MGF1;
+
+            int hLen = hashFunction.HashSizeBytes;
             int k = privateKey.ModulusByteCount;
-            SHA1Managed sha1 = new SHA1Managed();
 
             if (L == null) L = new byte[0];
             if (c.Length != privateKey.ModulusByteCount) Throw("DECRYPTION ERROR: C length is not equal to length of the Private Key Modulus in bytes");
@@ -381,7 +387,7 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             BigInteger mAsInteger = RSADP(privateKey, c);
             byte[] m = I2OSP(mAsInteger, privateKey.ModulusByteCount);
-            byte[] lHash = sha1.ComputeHash(L);
+            byte[] lHash = ComputeHash(hashFunction, L);
             byte Y = m[0];
             byte[] maskedSeed = new byte[hLen];
             byte[] maskedDB = new byte[k - hLen - 1];
@@ -389,16 +395,16 @@ namespace Arctium.Standards.PKCS1.v2_2
             Buffer.BlockCopy(m, 1, maskedSeed, 0, maskedSeed.Length);
             Buffer.BlockCopy(m, 1 + maskedSeed.Length, maskedDB, 0, maskedDB.Length);
 
-            byte[] seedMask = MGF(maskedDB, hLen);
+            byte[] seedMask = mgf(hashFunction, maskedDB, hLen);
             byte[] seed = new byte[hLen];
             for (int i = 0; i < seed.Length; i++) seed[i] = (byte)(seedMask[i] ^ maskedSeed[i]);
-            byte[] dbMask = MGF(seed, k - hLen - 1);
+            byte[] dbMask = mgf(hashFunction, seed, k - hLen - 1);
             byte[] DB = new byte[maskedDB.Length];
             for (int i = 0; i < maskedDB.Length; i++) DB[i] = (byte)(maskedDB[i] ^ dbMask[i]);
 
             byte[] lHash_ = new byte[hLen];
 
-            Buffer.BlockCopy(DB, 0, lHash_, 0, 20);
+            Buffer.BlockCopy(DB, 0, lHash_, 0, hLen);
 
             if (!MemOps.Memcmp(lHash_, lHash)) Throw("DECRYPTION ERROR: Hash of the label doesn't equal hash of the decrypted message");
 
@@ -463,16 +469,16 @@ namespace Arctium.Standards.PKCS1.v2_2
         }
 
 
-        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, int sLen = 0)
+        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
-            byte[] EM = EMSA_PSS_ENCODE(M, privateKey.ModulusBitsCount - 1, sLen);
+            byte[] EM = EMSA_PSS_ENCODE(M, privateKey.ModulusBitsCount - 1, sLen, hashFunction, mgf);
             BigInteger sAsInt = RSASP1(privateKey, EM);
             byte[] sAsBytes = I2OSP(sAsInt, privateKey.ModulusByteCount);
             
             return sAsBytes;
         }
 
-        public static bool RSASSA_PSS_VERIFY(PublicKey publicKey, byte[] M, byte[] S, int sLen = 0)
+        public static bool RSASSA_PSS_VERIFY(PublicKey publicKey, byte[] M, byte[] S, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
             int k = publicKey.ModulusByteCount, emLen = -1;
             BigInteger m;
@@ -487,24 +493,24 @@ namespace Arctium.Standards.PKCS1.v2_2
             m = RSAVP1(publicKey, S);
             EM = I2OSP(m, emLen);
 
-            bool result = EMSA_PSS_VERIFY(M, EM, publicKey.ModulusBitsCount - 1, sLen);
+            bool result = EMSA_PSS_VERIFY(M, EM, publicKey.ModulusBitsCount - 1, sLen, hashFunction, mgf);
 
             return result;
         }
 
-        public static byte[] RSASSA_PKCS1_v1_5_GENERATE(PrivateKey privateKey, byte[] M)
+        public static byte[] RSASSA_PKCS1_v1_5_GENERATE(PrivateKey privateKey, byte[] M, DigestInfoHashFunction hashFunctionType = DigestInfoHashFunction.SHA1)
         {
             byte[] EM, sAsBytes;
             BigInteger sAsInteger;
 
-            EM = EMSA_PKCS1_v1_5_ENCODE(M, privateKey.ModulusByteCount);
+            EM = EMSA_PKCS1_v1_5_ENCODE(M, privateKey.ModulusByteCount, hashFunctionType);
             sAsInteger = RSASP1(privateKey, EM);
             sAsBytes = I2OSP(sAsInteger, privateKey.ModulusByteCount);
 
             return sAsBytes;
         }
 
-        public static bool RSASSA_PKCS1_v1_5_VERIFY(PublicKey publicKey, byte[] M, byte[] S)
+        public static bool RSASSA_PKCS1_v1_5_VERIFY(PublicKey publicKey, byte[] M, byte[] S, DigestInfoHashFunction hashFunctionType = DigestInfoHashFunction.SHA1)
         {
             BigInteger mAsInteger;
             byte[] EM, EM_;
@@ -513,21 +519,23 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             mAsInteger = RSAVP1(publicKey, S);
             EM = I2OSP(mAsInteger, publicKey.ModulusByteCount);
-            EM_ = EMSA_PKCS1_v1_5_ENCODE(M, publicKey.ModulusByteCount);
+            EM_ = EMSA_PKCS1_v1_5_ENCODE(M, publicKey.ModulusByteCount, hashFunctionType);
 
             return MemOps.Memcmp(EM_, EM);
         }
 
-        public static byte[] EMSA_PSS_ENCODE(byte[] M, int emBits, int sLen = 0)
+        public static byte[] EMSA_PSS_ENCODE(byte[] M, int emBits, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
-            SHA1Managed sha1 = new SHA1Managed();
+            if (hashFunction == null) hashFunction = new SHA1();
+            if (mgf == null) mgf = MGF1;
+
             byte[] M_, H, DB, mHash, salt, dbMask, EM;
-            int hLen = 20, emLen, bitsCountToSetToZero = -1;
+            int hLen = hashFunction.HashSizeBytes, emLen, bitsCountToSetToZero = -1;
 
             emLen = emBits / 8;
             if (emBits % 8 != 0) emLen++;
 
-            mHash = sha1.ComputeHash(M);
+            mHash = ComputeHash(hashFunction, M);
             
             if (emLen < hLen + sLen + 2) Throw("Encoding error");
 
@@ -538,11 +546,11 @@ namespace Arctium.Standards.PKCS1.v2_2
             Buffer.BlockCopy(salt, 0, M_, M_.Length - sLen, sLen);
             Buffer.BlockCopy(mHash, 0, M_, 8, hLen);
 
-            H = sha1.ComputeHash(M_);
+            H = ComputeHash(hashFunction, M_);
             DB = new byte[emLen - hLen - 1];
             DB[emLen - sLen - hLen  - 2] = 0x01;
             Buffer.BlockCopy(salt, 0, DB, emLen - sLen - hLen - 1, sLen);
-            dbMask = MGF(H, emLen - hLen - 1);
+            dbMask = mgf(hashFunction, H, emLen - hLen - 1);
             
             for (int i = 0; i < dbMask.Length; i++) DB[i] ^= dbMask[i];
 
@@ -562,16 +570,18 @@ namespace Arctium.Standards.PKCS1.v2_2
            return EM;
         }
 
-        public static bool EMSA_PSS_VERIFY(byte[] M, byte[] EM, int emBits, int sLen = 0)
+        public static bool EMSA_PSS_VERIFY(byte[] M, byte[] EM, int emBits, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
-            SHA1Managed sha1 = new SHA1Managed();
+            if (hashFunction == null) hashFunction = new SHA1();
+            if (mgf == null) mgf = MGF1;
+
             byte[] mHash, dbMask, maskedDB, DB, M_, H_, H;
-            int emLen, hLen = 20, zeroBitsCount;
+            int emLen, hLen = hashFunction.HashSizeBytes, zeroBitsCount;
 
             emLen = emBits / 8;
             if (emBits % 8 != 0) emLen++;
 
-            mHash = sha1.ComputeHash(M);
+            mHash = ComputeHash(hashFunction, M);
             if (emLen < hLen + sLen + 2) Throw("inconsistent");
 
             if (EM[EM.Length - 1] != 0xbc) Throw("inconsistent");
@@ -586,7 +596,7 @@ namespace Arctium.Standards.PKCS1.v2_2
             maskedDB = new byte[emLen - hLen - 1];
             DB = new byte[maskedDB.Length];
             Buffer.BlockCopy(EM, 0, maskedDB, 0, emLen - hLen - 1);
-            dbMask = MGF(H, emLen - hLen);
+            dbMask = mgf(hashFunction, H, emLen - hLen);
 
             
             for (int i = 0; i < DB.Length; i++) DB[i] = (byte)(dbMask[i] ^ maskedDB[i]);
@@ -597,21 +607,21 @@ namespace Arctium.Standards.PKCS1.v2_2
             M_ = new byte[8 + hLen + sLen];
             Buffer.BlockCopy(DB, DB.Length - sLen, M_, M_.Length - sLen, sLen);
             Buffer.BlockCopy(mHash, 0, M_, 8, hLen);
-            H_ = sha1.ComputeHash(M_);
+            H_ = ComputeHash(hashFunction, M_);
 
             bool consistent = MemOps.Memcmp(H_, H);
 
             return consistent;
         }
 
-        public static byte[] EMSA_PKCS1_v1_5_ENCODE(byte[] M, int emLen)
+        public static byte[] EMSA_PKCS1_v1_5_ENCODE(byte[] M, int emLen, DigestInfoHashFunction hashFunctionType)
         {
-            SHA1Managed sha1 = new SHA1Managed();
+            HashFunction hashFunction = HashFunctionFactory(hashFunctionType);
             byte[] H, EM, derEncodedAlgo;
             int tLen;
 
-            H = sha1.ComputeHash(M);
-            derEncodedAlgo = DigestInfoDerEncodedAlgoId[DigestInfoHashFunction.SHA1];
+            H = ComputeHash(hashFunction, M);
+            derEncodedAlgo = DigestInfoDerEncodedAlgoId[hashFunctionType];
 
             tLen = H.Length + derEncodedAlgo.Length;
 
@@ -628,6 +638,34 @@ namespace Arctium.Standards.PKCS1.v2_2
             Buffer.BlockCopy(H, 0, EM, EM.Length - tLen + derEncodedAlgo.Length, H.Length);
 
             return EM;
+        }
+
+        private static HashFunction HashFunctionFactory(DigestInfoHashFunction hashFunctionType)
+        {
+            switch (hashFunctionType)
+            {
+                case DigestInfoHashFunction.MD2: throw new NotSupportedException();
+                case DigestInfoHashFunction.MD5:  throw new NotSupportedException();     
+                case DigestInfoHashFunction.SHA1: return new SHA1();     
+                case DigestInfoHashFunction.SHA224: return new SHA2_224();
+                case DigestInfoHashFunction.SHA256: return new SHA2_256();
+                case DigestInfoHashFunction.SHA384: return new SHA2_384();   
+                case DigestInfoHashFunction.SHA512: return new SHA2_512();
+                case DigestInfoHashFunction.SHA512_224: throw new NotSupportedException();
+                case DigestInfoHashFunction.SHA512_256: throw new NotSupportedException();
+                default: throw new ArgumentException();
+            }
+        }
+        
+        private static byte[] ComputeHash(HashFunction hash, byte[] m)
+        {
+            byte[] result;
+
+            hash.HashBytes(m);
+            result = hash.HashFinal();
+            hash.Reset();
+
+            return result;
         }
 
         private static void Throw(string msg)
