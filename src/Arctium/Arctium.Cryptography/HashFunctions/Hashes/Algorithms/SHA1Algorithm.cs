@@ -50,7 +50,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             byte[] last;
             context.TotalMessageLengthInBytes += (ulong)length;
 
-            if (length < 55)
+            if (length < 56)
             {
                 last = new byte[64];
             }
@@ -65,8 +65,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
             fixed (byte* b = &last[0])
             {
-                HashBlock(context, b); 
-                if (last.Length > 64) HashBlock(context, b + 64);
+                
+                HashFullBlocks(context, b, 0, last.Length);
             }
         }
 

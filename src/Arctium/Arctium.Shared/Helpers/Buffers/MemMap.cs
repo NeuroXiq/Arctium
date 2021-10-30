@@ -130,7 +130,7 @@ namespace Arctium.Shared.Helpers.Buffers
         {
             long o = outputOffset, i = inputOffset;
 
-            for (int k = 0; k < 16; k++)
+            for (int k = 0; k < 4; k++)
             {
                 output[0 + o]  = (uint)input[3 + i] << 0;
                 output[0 + o] |= (uint)input[2 + i] << 8;

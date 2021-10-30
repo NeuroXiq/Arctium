@@ -11,7 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Arctium.Tests.Core\Arctium.Tests.Core.csproj" />
     <ProjectReference Include="..\Arctium.Tests.Cryptography\Arctium.Tests.Cryptography.csproj" />
+    <ProjectReference Include="..\Arctium.Tests.Standards\Arctium.Tests.Standards.csproj" />
   </ItemGroup>
 
 </Project>

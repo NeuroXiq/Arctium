@@ -13,6 +13,8 @@ namespace Arctium.Tests.RunTests
 {
     class Program
     {
+        static Stopwatch stopwatch = new Stopwatch();
+
         static void Main(string[] args)
         {
             // TODO: TEST / Consider other approach of tests
@@ -27,10 +29,21 @@ namespace Arctium.Tests.RunTests
                 throw new InvalidOperationException("Cannot find directory with test externall files specified in app.config file in RunTests project.");
             }
 
-            Stopwatch stopwatch = new Stopwatch();
+            Files.SetArctiumFilesPath(dir);
+            
+
+            RunTests.Run();
+            Console.WriteLine("enter to run old");
+            Console.Read();
+
+            RunOld();
+        }
+
+        static void RunOld()
+        {
             stopwatch.Start();
 
-            Files.SetArctiumFilesPath(dir);
+            
 
             List<TestResult> allResults = new List<TestResult>();
             List<Task<List<TestResult>>> allTasks = new List<Task<List<TestResult>>>();
@@ -45,16 +58,16 @@ namespace Arctium.Tests.RunTests
 
             Task.WaitAll(shortTasks.ToArray());
             List<TestResult> shortResults = shortTasks.SelectMany(task => task.Result).ToList();
-            
+
 
             // Task.WaitAll(longTasks.ToArray());
             // List<TestResult> longResults = longTasks.SelectMany(task => task.Result).ToList();
             // ShowResults(longResults);
 
             stopRefresh = true;
-            
+
             stopwatch.Stop();
-            
+
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
             ShowResults(shortResults);

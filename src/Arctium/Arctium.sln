@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Cryptography"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Core", "Arctium.Tests.Core\Arctium.Tests.Core.csproj", "{2D915473-A811-49D1-9B83-F29994759E7E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.Tests.Standards", "Arctium.Tests.Standards\Arctium.Tests.Standards.csproj", "{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,6 +105,14 @@ Global
 		{2D915473-A811-49D1-9B83-F29994759E7E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2D915473-A811-49D1-9B83-F29994759E7E}.Release|x86.ActiveCfg = Release|x86
 		{2D915473-A811-49D1-9B83-F29994759E7E}.Release|x86.Build.0 = Release|x86
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Debug|x86.Build.0 = Debug|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Release|x86.ActiveCfg = Release|Any CPU
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -111,6 +121,7 @@ Global
 		{353D9BD1-1070-43E1-A1FA-E9604A23FD79} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
 		{16B29278-B967-4073-89D5-C96141F1522E} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
 		{2D915473-A811-49D1-9B83-F29994759E7E} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
+		{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F} = {FD65799B-9506-4DE5-B4C4-E5539834106E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84BC876F-085F-432A-8A53-53C7B55C0D4A}

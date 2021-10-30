@@ -212,12 +212,12 @@ namespace Arctium.Standards.PKCS1.v2_2
         /// </summary>
         /// <param name="derEncodedBytes"></param>
         /// <returns></returns>
-        public static RSAPublicKey DecodePublicKeyFromDerEncodedBytes(byte[] derEncodedBytes)
-        {
-            PKCS1DerDecoder derDecoder = new PKCS1DerDecoder();
-
-            return derDecoder.DecodeRsaPublicKey(derEncodedBytes);
-        }
+        // public static RSAPublicKey DecodePublicKeyFromDerEncodedBytes(byte[] derEncodedBytes)
+        // {
+        //     PKCS1DerDecoder derDecoder = new PKCS1DerDecoder();
+        // 
+        //     return derDecoder.DecodeRsaPublicKey(derEncodedBytes);
+        // }
 
         /// <summary>
         /// Leading zeroes are trimmed
@@ -304,7 +304,9 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             int k = publicKey.ModulusByteCount;
             int padLength = k - M.Length - (2 * hashFunction.HashSizeBytes) - 2;
-            
+            if (k - (2 * hashFunction.HashSizeBytes) - 2 < 1) Throw("invalid hash function (hash length greater that possible encryption)");
+            if (M.Length > k - (2 * hashFunction.HashSizeBytes) - 2) Throw("message too long");
+
             byte[] lhash = ComputeHash(hashFunction, L);
             byte[] DB = new byte[padLength + lhash.Length + 1 + M.Length];
 
@@ -313,6 +315,7 @@ namespace Arctium.Standards.PKCS1.v2_2
             Array.Copy(M, 0, DB, DB.Length - M.Length, M.Length);
             byte[] seed = RandomGenerator.GenerateNonZeroNewByteArray(lhash.Length);
             byte[] dbMask = mgf(hashFunction, seed, k - lhash.Length - 1);
+            
             byte[] maskedDB = new byte[DB.Length];
             for (int i = 0; i < maskedDB.Length; i++) maskedDB[i] = (byte)(DB[i] ^ dbMask[i]);
             byte[] seedMask = mgf(hashFunction, maskedDB, lhash.Length);
@@ -322,6 +325,7 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             Array.Copy(maskedSeed, 0, EB, 1, maskedSeed.Length);
             Array.Copy(maskedDB, 0, EB, 1 + maskedSeed.Length, maskedDB.Length);
+            
             BigInteger ciphertextAsInteger = RSAEP(publicKey, EB);
             byte[] ciphertextAsBytes = I2OSP(ciphertextAsInteger, publicKey.ModulusByteCount);
 
@@ -340,7 +344,7 @@ namespace Arctium.Standards.PKCS1.v2_2
         public static byte[] MGF1(HashFunction hashFunction, byte[] mgfSeed, int maskLen)
         {
             int hLen = hashFunction.HashSizeBytes;
-            int counterMax = (int)((maskLen + 19) / hLen);
+            int counterMax = (int)((maskLen + (hLen - 1)) / hLen);
             byte[] T = new byte[counterMax * hLen];
             byte[] toHash = new byte[mgfSeed.Length + 4];
             Array.Copy(mgfSeed, 0, toHash, 0, mgfSeed.Length);
@@ -387,6 +391,7 @@ namespace Arctium.Standards.PKCS1.v2_2
 
             BigInteger mAsInteger = RSADP(privateKey, c);
             byte[] m = I2OSP(mAsInteger, privateKey.ModulusByteCount);
+            
             byte[] lHash = ComputeHash(hashFunction, L);
             byte Y = m[0];
             byte[] maskedSeed = new byte[hLen];
@@ -399,6 +404,7 @@ namespace Arctium.Standards.PKCS1.v2_2
             byte[] seed = new byte[hLen];
             for (int i = 0; i < seed.Length; i++) seed[i] = (byte)(seedMask[i] ^ maskedSeed[i]);
             byte[] dbMask = mgf(hashFunction, seed, k - hLen - 1);
+            
             byte[] DB = new byte[maskedDB.Length];
             for (int i = 0; i < maskedDB.Length; i++) DB[i] = (byte)(maskedDB[i] ^ dbMask[i]);
 

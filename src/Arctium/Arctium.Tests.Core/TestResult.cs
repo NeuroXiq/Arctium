@@ -32,5 +32,12 @@ namespace Arctium.Tests.Core
             Success = success;
             Test = t;
         }
+
+        public TestResult(string testName, Exception e, bool success)
+        {
+            Name = testName;
+            Exception = e;
+            Success = success;
+        }
     }
 }

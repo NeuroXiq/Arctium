@@ -14,7 +14,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public SHA1(): base(512, 160)
         {
-            membuf = new BlockBufferWithCallback(HashFunctionsConfig.BufferSizeInBlocks * 16, 16, BufferCallback);
+            membuf = new BlockBufferWithCallback(HashFunctionsConfig.BufferSizeInBlocks * 16, base.InputBlockSizeBytes, BufferCallback);
             context = SHA1Algorithm.InitializeContext();
         }
 
@@ -28,7 +28,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         public override byte[] HashFinal()
         {
             byte[] hash = new byte[20];
-            byte[] lastNotFullBlockBytes = new byte[16];
+            byte[] lastNotFullBlockBytes = new byte[64];
             long lastBytesCount;
 
             membuf.Flush(lastNotFullBlockBytes, 0, out lastBytesCount);
