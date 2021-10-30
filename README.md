@@ -16,7 +16,8 @@ for more interesting parts of the documentation.
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
-|JH (Hash function, 224, 256, 384, 512)      |    [JH]        |
+|PKCS#1 v2.2 (RFC 8017)     |    [PKCS1v2_2]        |
+|SHA1 (Hash function)       |    [SHA1]        |
 |Skein (Hash function)      |    [Skein]        |
 |BLAKE2b (Hash function)    |    [BLAKE2b]      |
 |BLAKE3 (Hash function)     |    [BLAKE3]       |
@@ -30,6 +31,8 @@ for more interesting parts of the documentation.
 |TLS 1.2                    | [TLS12 Info]      |
 |TLS 1.2 Examples           | [TLS12 examples]  |
 
+[PKCS1v2_2]:<docs/lookup/pkcs1v2_2.md>
+[SHA1]:<docs/lookup/sha1.md>
 [JH]:<docs/lookup/jh.md>
 [Skein]:<docs/lookup/skein.md>
 [BLAKE2b]:<docs/lookup/blake2b.md>

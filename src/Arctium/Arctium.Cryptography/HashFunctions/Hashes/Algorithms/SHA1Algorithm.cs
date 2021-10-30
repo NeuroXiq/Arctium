@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+ * SHA1 Algorithm
+ * - - - - -
+ * Implemented by NeuroXiq 2021
+ * */
+
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;

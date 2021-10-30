@@ -3,6 +3,8 @@
  * PKCS #1: RSA Cryptography Specifications Version 2.2
  * RFC 8017
  * 
+ *-----------------------------------------------------
+ * Implemented by NeuroXiq 2021
  * 
  */
 
@@ -21,6 +23,8 @@ namespace Arctium.Standards.PKCS1.v2_2
     /// Implementation of PKCS#1 v2.2
     /// PKCS #1: RSA Cryptography Specifications Version 2.2
     /// RFC 8017
+    /// <br/>
+    /// All methods can throw exception, need to handle them  
     /// </summary>
     public static class PKCS1v2_2API
     {
@@ -48,6 +52,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             }
         }
 
+        /// <summary>
+        /// Represents RSA private key in Chinese reminder theory (dP. dQ, qInv, public exponent, modulus)
+        /// </summary>
         public class PrivateKeyCRT
         {
             public int ModulusByteCount;
@@ -114,6 +121,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             }
         }
 
+        /// <summary>
+        /// Represents RSA private key as a private exponent and modulus pair (d, n)
+        /// </summary>
         public class PrivateKeyNDPair
         {
             public int ModulusByteCount;
@@ -138,6 +148,10 @@ namespace Arctium.Standards.PKCS1.v2_2
             }
         }
 
+        /// <summary>
+        /// Represents RSA private key. Key can be represented in two forms: CRT or ND pair. Internally algorithm just looks
+        /// which is not null and use proper key
+        /// </summary>
         public class PrivateKey
         {
             public PrivateKeyNDPair PrivateKeyNDPair;
@@ -160,8 +174,15 @@ namespace Arctium.Standards.PKCS1.v2_2
             }
         }
 
+        /// <summary>
+        /// Represents mask generation function. This implementation supports
+        /// custom mask generation function and this delegate represents function form
+        /// </summary>
         public delegate byte[] MGF(HashFunction hashFunction, byte[] seed, int outputLength);
 
+        /// <summary>
+        /// Possible hash function for PKCS1 signatures. Not all are supported.
+        /// <summary>
         public enum DigestInfoHashFunction
         {
             MD2,
@@ -283,7 +304,7 @@ namespace Arctium.Standards.PKCS1.v2_2
         }
 
         /// <summary>
-        ///
+        /// NOT PART OF API / public if needed to use externally
         /// <summary>
         public static BigInteger RSADP(PrivateKey privateKey, byte[] ciphertext)
         {
@@ -292,10 +313,22 @@ namespace Arctium.Standards.PKCS1.v2_2
             return RSADP(privateKey.PrivateKeyCRT, ciphertext);
         }
 
+        /// <summary>
+        /// NOT PART OF API / public because maybe it will be useful
+        /// <summary>
         public static BigInteger RSASP1(PrivateKey k, byte[] m) { return RSADP(k, m); }
 
+        /// <summary>
+        /// NOT PART OF API / public if needed to use externally
+        /// </summary>
         public static BigInteger RSAVP1(PublicKey publicKey, byte[] m) { return RSAEP(publicKey, m); }
 
+
+        /// <summary>
+        /// Encryption scheme with Optimal Assymetric Encryption Padding (OAEP). 
+        /// Label, hash function and MGF are optional and can be customized. If optional values are null,
+        /// then default values are:L = empty label (0 bytes), hashFunction = SHA1, mgf = MGF1 (from standard)
+        /// </summary>
         public static byte[] RSAES_OAEP_ENCRYPT(PublicKey publicKey, byte[] M, byte[] L = null, HashFunction hashFunction = null, MGF mgf = null)
         {
             if (L == null) L = new byte[0];
@@ -364,6 +397,11 @@ namespace Arctium.Standards.PKCS1.v2_2
             return result;
         }
 
+
+
+        /// <summary>
+        /// NOT PART OF API / public if needed to use externally
+        /// <summary>
         public static byte[] I2OSP(BigInteger integer, int k)
         {
             byte[] m = integer.ToByteArray(true, true);
@@ -377,6 +415,11 @@ namespace Arctium.Standards.PKCS1.v2_2
             return r;
         }
 
+        /// <summary>
+        /// Decrypts RSA encoded message with Optimal Assymetric Encryption Padding (OEAP). 
+        /// Label, HashFunction and MGF functions are optional and must be same for encryption and decryption.
+        /// If not specified, default values: Label = null (0 bytes), hash function = SHA1, mgf = MGF1
+        /// </summary>
         public static byte[] RSAES_OAEP_DECRYPT(PrivateKey privateKey, byte[] c, byte[] L = null, HashFunction hashFunction = null, MGF mgf = null)
         {
             if (hashFunction == null) hashFunction = new SHA1();
@@ -435,6 +478,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             return M;
         }
 
+        /// <summary>
+        /// Old Encryption scheme with PKCS 1.5 padding
+        /// </summary>
         public static byte[] RSAES_PKCS1_v1_5_ENCRYPT(PublicKey publicKey, byte[] M)
         {
             int k = publicKey.ModulusByteCount, mLen = M.Length;
@@ -456,6 +502,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             return ciphertextAsBytes;
         }
 
+        /// <summary>
+        /// Old decryption scheme with PKCS 1.5 padding
+        /// </summary>
         public static byte[] RSAES_PKCS1_v1_5_DECRYPT(PrivateKey privateKey, byte[] M)
         {
             int k = privateKey.ModulusByteCount, psLength = 0;
@@ -475,6 +524,11 @@ namespace Arctium.Standards.PKCS1.v2_2
         }
 
 
+        /// <summary>
+        /// PSS Signature. Method generated Probabilistic Signature Scheme and returns signature as byte array.
+        /// sLen (seed length), hash function and MGF are optional. 
+        /// If not specified, then sLen = 0, hashFunction = SHA1 and MGF = MGF1 (from standard)
+        /// </summary>
         public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
             byte[] EM = EMSA_PSS_ENCODE(M, privateKey.ModulusBitsCount - 1, sLen, hashFunction, mgf);
@@ -484,6 +538,12 @@ namespace Arctium.Standards.PKCS1.v2_2
             return sAsBytes;
         }
 
+        /// <summary>
+        /// PSS Signature verification. If signature is valid returns true otherwise false.
+        /// M - Message to verify, S - Signature.
+        /// sLen (seed length), hash function and MGF are optional. If not specified, then:
+        /// sLen = 0 (0 bytes), hash function = SHA1, mgf = MGF1
+        /// </summary>
         public static bool RSASSA_PSS_VERIFY(PublicKey publicKey, byte[] M, byte[] S, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
             int k = publicKey.ModulusByteCount, emLen = -1;
@@ -504,6 +564,10 @@ namespace Arctium.Standards.PKCS1.v2_2
             return result;
         }
 
+        /// <summary>
+        /// Old signature scheme generations PKCS 1.5 . Generates signature are returns signature as byte array.
+        /// M - message to be signed
+        /// </summary>
         public static byte[] RSASSA_PKCS1_v1_5_GENERATE(PrivateKey privateKey, byte[] M, DigestInfoHashFunction hashFunctionType = DigestInfoHashFunction.SHA1)
         {
             byte[] EM, sAsBytes;
@@ -516,6 +580,10 @@ namespace Arctium.Standards.PKCS1.v2_2
             return sAsBytes;
         }
 
+        /// <summary>
+        /// Old Signature verification scheme PKCS 1.5. If signature is valid returns true otherwise false.
+        /// M - message to be verified, S - signature
+        /// </summary>
         public static bool RSASSA_PKCS1_v1_5_VERIFY(PublicKey publicKey, byte[] M, byte[] S, DigestInfoHashFunction hashFunctionType = DigestInfoHashFunction.SHA1)
         {
             BigInteger mAsInteger;
@@ -530,6 +598,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             return MemOps.Memcmp(EM_, EM);
         }
 
+        /// <summary>
+        /// NOT PART OF API / public if needed to use externally
+        /// </summary>
         public static byte[] EMSA_PSS_ENCODE(byte[] M, int emBits, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
             if (hashFunction == null) hashFunction = new SHA1();
@@ -576,6 +647,9 @@ namespace Arctium.Standards.PKCS1.v2_2
            return EM;
         }
 
+        /// <summary>
+        /// NOT PART OF API / public if needed to use externally
+        /// </summary>
         public static bool EMSA_PSS_VERIFY(byte[] M, byte[] EM, int emBits, int sLen = 0, HashFunction hashFunction = null, MGF mgf = null)
         {
             if (hashFunction == null) hashFunction = new SHA1();
@@ -620,6 +694,9 @@ namespace Arctium.Standards.PKCS1.v2_2
             return consistent;
         }
 
+        /// <summary>
+        /// NOT PART OF API / public if needed to use externally
+        /// </summary>
         public static byte[] EMSA_PKCS1_v1_5_ENCODE(byte[] M, int emLen, DigestInfoHashFunction hashFunctionType)
         {
             HashFunction hashFunction = HashFunctionFactory(hashFunctionType);
