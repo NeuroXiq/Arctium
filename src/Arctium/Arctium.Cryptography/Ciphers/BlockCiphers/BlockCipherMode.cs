@@ -1,4 +1,4 @@
-﻿namespace Arctium.Cryptography.Ciphers.BlockCiphers.Shared
+﻿namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
     /// <summary>
     /// Block cipher mode of operations

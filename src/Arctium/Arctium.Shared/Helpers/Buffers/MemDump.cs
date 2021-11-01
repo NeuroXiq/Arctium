@@ -75,5 +75,17 @@ namespace Arctium.Shared.Helpers.Buffers
             }
             Console.WriteLine();
         }
+
+        public static void HexDump(uint[] memory)
+        {
+            for (int i = 0; i < memory.Length; i++)
+            {
+                if (i != 0 && i % 4 == 0) Console.WriteLine();
+                Console.Write("{0:X8} ", memory[i]);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine();
+        }
     }
 }

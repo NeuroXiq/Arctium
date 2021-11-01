@@ -12,13 +12,41 @@ namespace Arctium.Shared.Helpers.Buffers
     {
         #region Unsafe
 
-        
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ToBytes4UIntLE(byte* src, long srcOffset, uint* dst, long destOffset)
+        public static void ToBytes1UIntBE(uint v, byte* output, long outOffset)
         {
-            
+            output[outOffset + 0] = (byte)((v >> 24) & 0xFF);
+            output[outOffset + 1] = (byte)((v >> 16) & 0xFF);
+            output[outOffset + 2] = (byte)((v >> 08) & 0xFF);
+            output[outOffset + 3] = (byte)((v >> 00) & 0xFF);
         }
+
+        public static uint ToNewUInt4BytesBE(byte* input, long inOffset)
+        {
+            uint r = 0;
+            r |= (uint)((input[inOffset + 0]) << 24);
+            r |= (uint)((input[inOffset + 1]) << 16);
+            r |= (uint)((input[inOffset + 2]) << 08);
+            r |= (uint)((input[inOffset + 3]) << 00);
+
+            return r;
+        }
+
+        public static void ToUInt16BytesBE(byte* src, long srcOffset, uint* dst, long dstOffset)
+        {
+            long so = srcOffset;
+
+            for (int i = 0; i < 4; i++)
+            {
+                dst[i + dstOffset] = 
+                    (uint)(src[so + 0] << 24) |
+                    (uint)(src[so + 1] << 16) |
+                    (uint)(src[so + 2] << 08) |
+                    (uint)(src[so + 3] << 00); 
+
+                so += 4;
+            } 
+        }
+        
 
         /// <summary>
         /// Converts array of 4 unsigned integers to byte array in little-endian format
@@ -782,6 +810,56 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt16BytesBE(byte[] src, long srcOffset, uint[] dst, long destOffset)
+        {
+            long so = srcOffset;
+
+            for (int i = 0; i < 4; i++)
+            {
+                dst[i + destOffset] = 
+                            (uint)(src[so + 0] << 24) | 
+                            (uint)(src[so + 1] << 16) | 
+                            (uint)(src[so + 2] << 08) | 
+                            (uint)(src[so + 3] << 00);
+
+                so += 4;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt24BytesBE(byte[] src, long srcOffset, uint[] dst, long destOffset)
+        {
+            long so = srcOffset;
+
+            for (int i = 0; i < 6; i++)
+            {
+                dst[i + destOffset] = 
+                            (uint)(src[so + 0] << 24) | 
+                            (uint)(src[so + 1] << 16) | 
+                            (uint)(src[so + 2] << 08) | 
+                            (uint)(src[so + 3] << 00);
+
+                so += 4;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt32BytesBE(byte[] src, long srcOffset, uint[] dst, long destOffset)
+        {
+            long so = srcOffset;
+
+            for (int i = 0; i < 8; i++)
+            {
+                dst[i + destOffset] = 
+                            (uint)(src[so + 0] << 24) | 
+                            (uint)(src[so + 1] << 16) | 
+                            (uint)(src[so + 2] << 08) | 
+                            (uint)(src[so + 3] << 00);
+
+                so += 4;
+            }
+        }
         #endregion
     }
 }
