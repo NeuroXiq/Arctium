@@ -120,7 +120,7 @@ namespace Arctium.Tests.RunTests
             var instance = Activator.CreateInstance(testClass);
             List<TestResult> testResults = new List<TestResult>();
             List<List<MethodInfo>> groups = SplitToEqualSizeGroups(members, 4);
-            consoleOutput.TotalTests = members.Count;
+            consoleOutput.TotalTests += members.Count;
 
             foreach (var g in groups)
             {

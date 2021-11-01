@@ -93,33 +93,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             ExpandKey(key, context.ExpandedKey);
         }
 
-        public static void Encrypt192(Context context, byte* input, long inOffset, byte* output, long outOffset, long length)
-        {
-        
-        }
-
-        public static void Decrypt192(Context context, byte* input, long inOffset, byte* output, long outOffset, long length)
-        {
-        
-        }
-        public static void Encrypt256(Context context, byte* input, long inOffset, byte* output, long outOffset, long length)
-        {
-        
-        }
-
-        public static void Decrypt256(Context context, byte* input, long inOffset, byte* output, long outOffset, long length)
-        {
-        
-        }
-
-        public static void Encrypt128(Context context, byte* input, long inOffset, byte* output, long outOffset, long length)
-        {
-            for (long i = 0; i < length; i += 16)
-            {
-                EncryptSingleBlock(context, input + i, inOffset, output, outOffset, 10);
-            }
-        }
-
         public static void DecryptSingleBlock(Context context, byte* input, long inOffset, byte* output, long outOffset, int rounds)
         {
             byte* state = stackalloc byte[16];
@@ -216,10 +189,10 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
             for (long i = 0; i < 4; i++)
             {
-                output[0 + (i * 4) + outOffset] = state[inOffset + i + 0];
-                output[1 + (i * 4) + outOffset] = state[inOffset + i + 4];
-                output[2 + (i * 4) + outOffset] = state[inOffset + i + 8];
-                output[3 + (i * 4) + outOffset] = state[inOffset + i + 12];
+                output[0 + (i * 4) + outOffset] = state[i + 0];
+                output[1 + (i * 4) + outOffset] = state[i + 4];
+                output[2 + (i * 4) + outOffset] = state[i + 8];
+                output[3 + (i * 4) + outOffset] = state[i + 12];
             }
         }
 
