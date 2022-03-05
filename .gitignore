@@ -10,3 +10,4 @@ src/Arctium/DEBUG_ConsoleApplicationForTests/*
 *.sln.ide
 src/Arctium/.vs/*
 src/Arctium/Arctium.Tests.RunTests/app.config
+src/Arctium/DEBUG_ConsoleApplicationForTests/**
