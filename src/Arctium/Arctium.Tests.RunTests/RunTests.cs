@@ -9,90 +9,147 @@ using Arctium.Tests.Core.Attributes;
 using Arctium.Tests.Core;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace Arctium.Tests.RunTests
 {
     public class RunTests
     {
+        class FinishedTestsInfo
+        {
+            public string ClassName;
+            public string MethodName;
+            public List<TestResult> Results;
+
+            public FinishedTestsInfo(string className, string methodName, List<TestResult> results)
+            {
+                ClassName = className;
+                MethodName = methodName;
+                Results = results;
+            }
+        }
+
         class ConsoleOutput
         {
             object _lock = new object();
-            int testfailcursorline = 4;
+            int appendFinishedTestCursorTop = 4;
             int totalSuccess = 0;
             int totalFail = 0;
+            private string displayFormat;
             List<TestResult> allTests;
 
             public int TotalTests = 0;
             int finishedTests = 0;
 
-            public ConsoleOutput()
+            public ConsoleOutput(string displayFormat)
             {
+                this.displayFormat = displayFormat;
                 allTests = new List<TestResult>();
             }
 
-            public void ShowFinishedTestResults(List<TestResult> results)
+            public void ShowFinishedTestResults(FinishedTestsInfo info)
             {
                 Monitor.Enter(_lock);
 
                 finishedTests++;
-                allTests.AddRange(results);
-                List<TestResult> fails = new List<TestResult>();
+                allTests.AddRange(info.Results);
 
-                foreach (var t in results)
+                foreach (var t in info.Results)
                 {
-                    if (t.Success) { totalSuccess++; continue; }
-
-                    totalFail++;
-                    fails.Add(t);
+                    if (t.Success)
+                    {
+                        totalSuccess++;
+                    }
+                    else
+                    {
+                        totalFail++;
+                    }
                 }
 
-                UpdateStatusInConsoleWindow(fails);
+                AppendFinishedTestsList(info);
 
                 Monitor.Exit(_lock);
             }
 
-            private void UpdateStatusInConsoleWindow(List<TestResult> fails)
+            private void AppendFinishedTestsList(FinishedTestsInfo info)
             {
-                foreach (var t in fails)
+                if (displayFormat == "allTests")
                 {
-                    string m = t.Name;
-
-                    if (t.Exception != null)
+                    foreach (var t in info.Results)
                     {
-                        m += "(" + t.Exception.Message + ")";
+                        string m = t.Name;
+                        // appendFinishedTestCursorTop++;
+                        // Console.CursorTop = appendFinishedTestCursorTop - 1;
+
+                        if (!t.Success)
+                        {
+                            if (t.Exception != null)
+                            {
+                                m += "(" + t.Exception.Message + ")";
+                            }
+
+                            m = "FAIL: " + m;
+                            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                        }
+
+                        Console.WriteLine(m);
+
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                    }
+                }
+                else if (displayFormat == "liveSummary")
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Console.SetCursorPosition(0, i);
+                        for (int j = 0; j < 20; j++) Console.Write(" ");
                     }
 
-                    Console.CursorTop = testfailcursorline;
-                    testfailcursorline++;
-                    Console.WriteLine(m);
+                    Console.SetCursorPosition(0, 0);
+                    Console.Write("success: " + totalSuccess);
+                    Console.SetCursorPosition(0, 1);
+                    Console.Write("fail: " + totalFail);
+                    Console.SetCursorPosition(0, 2);
+                    Console.Write(string.Format("completed: {0} / {1} ({2:0.00}%)", finishedTests, TotalTests, 100 * ((double)finishedTests / TotalTests)));
                 }
-
-                for (int i = 0; i < 3; i++)
+                else if (displayFormat == "class-summary")
                 {
-                    Console.SetCursorPosition(0, i);
-                    for (int j = 0; j < 20; j++) Console.Write(" ");
-                }
 
-                Console.SetCursorPosition(0, 0);
-                Console.Write("success: " + totalSuccess);
-                Console.SetCursorPosition(0, 1);
-                Console.Write("fail: " + totalFail);
-                Console.SetCursorPosition(0, 2);
-                Console.Write(string.Format("completed: {0} / {1} ({2:0.00}%)", finishedTests, TotalTests, 100*((double)finishedTests / TotalTests)));
+                }
+                else throw new Exception("invalid value for tests display format");
             }
         }
 
-        static ConsoleOutput consoleOutput = new ConsoleOutput();
+        static ConsoleOutput consoleOutput = new ConsoleOutput(ConfigurationManager.AppSettings.Get("console-tests-display-format"));
         static List<Task> tasks = new List<Task>();
 
         public static void Run()
         {
-            FindTests();
+            var tests = FindTestClasses();
+            var filteredTests = FilterTests(tests);
+
+            foreach (var testClass in filteredTests)
+            {
+                RunTestsFromClass(testClass);
+            }
+
             Task.WaitAll(tasks.ToArray());
             Console.WriteLine("- END -");
         }
 
-        static void FindTests()
+        static List<Type> FilterTests(List<Type> tests)
+        {
+            string filter = ConfigurationManager.AppSettings.Get("filter-tests-by-class-name");
+
+            if (!string.IsNullOrEmpty(filter))
+            {
+                return tests.Where(t => t.Name == filter).ToList();
+            }
+
+            return tests;
+        }
+
+        static List<Type> FindTestClasses()
         {
             var testAssemblies = typeof(RunTests).Assembly.GetReferencedAssemblies().Where(asm => asm.Name.StartsWith("Arctium."));
             var assemblies = testAssemblies.Select(asm => Assembly.Load(asm));
@@ -107,10 +164,7 @@ namespace Arctium.Tests.RunTests
                 }
             }
 
-            foreach (var testClass in testClasses)
-            {
-                RunTestsFromClass(testClass);
-            }
+            return testClasses;
         }
 
         private static void RunTestsFromClass(Type testClass)
@@ -118,7 +172,7 @@ namespace Arctium.Tests.RunTests
             var members = testClass.GetMethods().Where(method => method.GetCustomAttributes(typeof(TestMethodAttribute)).Any()).ToList();
             members = members.OrderBy(method => method.GetCustomAttribute<TestMethodAttribute>().ExpectedDurationInSeconds).ToList();
             var instance = Activator.CreateInstance(testClass);
-            List<TestResult> testResults = new List<TestResult>();
+            // List<TestResult> testResults = new List<TestResult>();
             List<List<MethodInfo>> groups = SplitToEqualSizeGroups(members, 4);
             consoleOutput.TotalTests += members.Count;
 
@@ -131,8 +185,10 @@ namespace Arctium.Tests.RunTests
                     {
                         object objResults = meth.Invoke(instance, new object[0]);
                         List<TestResult> res = (List<TestResult>)objResults;
-                        testResults.AddRange(res);
-                        ShowResulsts(res);
+                        // testResults.AddRange(res);
+
+                        var finishedInfo = new FinishedTestsInfo(meth.DeclaringType.Name, meth.Name, res);
+                        consoleOutput.ShowFinishedTestResults(finishedInfo);
                     }
                 }, g);
 
@@ -143,9 +199,8 @@ namespace Arctium.Tests.RunTests
         private static List<List<MethodInfo>> SplitToEqualSizeGroups(List<MethodInfo> methods, int groupsCount)
         {
             List<List<MethodInfo>> results = new List<List<MethodInfo>>();
-            int itemsInGroup = methods.Count / groupsCount;
+            int itemsInGroup = (methods.Count / groupsCount) + 1;
             itemsInGroup = itemsInGroup < 1 ? 1 : itemsInGroup;
-            int remainder = methods.Count % groupsCount;
 
             for (int i = 0; i < groupsCount; i++)
             {
@@ -160,17 +215,12 @@ namespace Arctium.Tests.RunTests
                 results.Add(group);
             }
 
-            for (int i = 0; i < remainder; i++)
-            {
-                results[results.Count - 1].Add(methods[methods.Count - 1 - i]);
-            }
+            //for (int i = 0; i < remainder; i++)
+            //{
+            //    results[results.Count - 1].Add(methods[methods.Count - 1 - i]);
+            //}
 
             return results;
-        }
-
-        private static void ShowResulsts(List<TestResult> results)
-        {
-            consoleOutput.ShowFinishedTestResults(results);
         }
 
         static void ReferenceAssemblies()

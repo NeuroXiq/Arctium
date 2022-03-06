@@ -1,11 +1,15 @@
-﻿using Arctium.Shared.Helpers.Binary;
+﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Shared.Helpers.Binary;
+using Arctium.Tests.Core;
+using Arctium.Tests.Core.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Arctium.Tests.Cryptography.HashFunctions
 {
-    public static class SHA1Tests
+    [TestsClass]
+    public class SHA1Tests
     {
         public static List<HashFunctionTest> Short;
 
@@ -61,6 +65,12 @@ namespace Arctium.Tests.Cryptography.HashFunctions
             return new HashFunctionTest(Encoding.ASCII.GetBytes(new String('A', aCount)),
                 BinConverter.FromString(hash),
                 $"SHA1 / A COUNT: {aCount}");
+        }
+
+        [TestMethod]
+        public List<TestResult> SHA1_ShortTests()
+        {
+            return ExecuteHashFunctionTests.RunTests(new SHA1(), Short);
         }
     }
 }

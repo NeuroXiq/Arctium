@@ -17,6 +17,7 @@ namespace Arctium.Tests.Core
         public TestResult(Test test, bool issuccess)
         {
             Test = test;
+            Name = test.Name;
             Success = issuccess;
         }
 

@@ -1,7 +1,9 @@
-﻿using Arctium.Shared.Helpers;
+﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Tests.Core;
+using Arctium.Tests.Core.Attributes;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +12,7 @@ using Hashes = Arctium.Cryptography.HashFunctions.Hashes;
 
 namespace Arctium.Tests.Cryptography.HashFunctions
 {
+    [TestsClass]
     public class BLAKE3Tests
     {
         public static List<HashFunctionTest> Short;
@@ -73,6 +76,16 @@ namespace Arctium.Tests.Cryptography.HashFunctions
             }
 
             return tests.ToArray();
+        }
+
+        [TestMethod]
+        public List<TestResult> BLAKE3_ShortTests()
+        {
+            List<TestResult> results = new List<TestResult>();
+
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new BLAKE3(), BLAKE3Tests.Short));
+
+            return results;
         }
     }
 }

@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Tests.Core;
+using Arctium.Tests.Core.Attributes;
+using System.Collections.Generic;
 
 namespace Arctium.Tests.Cryptography.HashFunctions
 {
-    public static class JHTests
+    [TestsClass]
+    public class JHTests
     {
         public static List<HashFunctionTest> Short224;
         public static List<HashFunctionTest> Short256;
@@ -49,6 +53,33 @@ namespace Arctium.Tests.Cryptography.HashFunctions
                 16777216,
                 "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno",
                 "A3053657024A43187CF8C1C82194D5D944A7408EE3B584801309292DEFF8080F88183B5642318456C7C05998C9A70D0F784E4C42D9EBCBA7F2CA25B3FBDE2CE5"));
+        }
+
+        [TestMethod]
+        public List<TestResult> JH_ShortTests()
+        {
+            List<TestResult> results = new List<TestResult>();
+
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_224(), JHTests.Short224));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_256(), JHTests.Short256));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_384(), JHTests.Short384));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_512(), JHTests.Short512));
+            
+
+            return results;
+        }
+
+        [TestMethod(120)]
+        public List<TestResult> JH_LongTests()
+        {
+            List<TestResult> results = new List<TestResult>();
+
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_224(), JHTests.Long224));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_256(), JHTests.Long256));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_384(), JHTests.Long384));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new JH_512(), JHTests.Long512));
+
+            return results;
         }
     }
 }

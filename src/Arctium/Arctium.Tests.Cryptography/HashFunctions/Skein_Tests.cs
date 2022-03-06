@@ -1,11 +1,15 @@
-﻿using Arctium.Shared.Helpers.Binary;
+﻿using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Shared.Helpers.Binary;
+using Arctium.Tests.Core;
+using Arctium.Tests.Core.Attributes;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace Arctium.Tests.Cryptography.HashFunctions
 {
-    public static class Skein_Tests
+    [TestsClass]
+    public class Skein_Tests
     {
         public static List<HashFunctionTest> Short512_224;
         public static List<HashFunctionTest> Short512_256;
@@ -95,6 +99,35 @@ namespace Arctium.Tests.Cryptography.HashFunctions
                 if (internalSizeInt == 1024 && hashSizeInt == 512)  Short1024_512.Add(test);
                 if (internalSizeInt == 1024 && hashSizeInt == 1024) Short1024_1024.Add(test);
             }
+        }
+
+        [TestMethod(120)]
+        public List<TestResult> Skein_LongTests()
+        {
+            return ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 224), Skein_Tests.Long512_224);
+        }
+
+        [TestMethod]
+        public List<TestResult> Skein_ShortTests()
+        {
+            List<TestResult> results = new List<TestResult>();
+
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 224), Skein_Tests.Short256_224));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_256(), Skein_Tests.Short256_256));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 384), Skein_Tests.Short256_384));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 512), Skein_Tests.Short256_512));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_256, 1024), Skein_Tests.Short256_1024));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 224), Skein_Tests.Short512_224));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 256), Skein_Tests.Short512_256));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 384), Skein_Tests.Short512_384));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_512(), Skein_Tests.Short512_512));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_512, 1024), Skein_Tests.Short512_1024));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 224), Skein_Tests.Short1024_224));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 256), Skein_Tests.Short1024_256));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 384), Skein_Tests.Short1024_384));
+            results.AddRange(ExecuteHashFunctionTests.RunTests(new Skein_VAR(Skein.InternalStateSize.Bits_1024, 512), Skein_Tests.Short1024_512));
+
+            return results;
         }
     }
 }
