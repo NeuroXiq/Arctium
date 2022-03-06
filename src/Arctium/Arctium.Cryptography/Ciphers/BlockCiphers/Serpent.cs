@@ -18,15 +18,10 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         int[] validKeyLengths = new int[] { 256 };
 
-        public Serpent(byte[] key, byte[] initializationVector, BlockCipherMode mode) : base(key, initializationVector, CipherInputBlockLength, mode)
+        public Serpent(byte[] key) : base(key, CipherInputBlockLength)
         {
             if (key == null) throw new ArgumentNullException("key");
             CiphersValidation.ThrowIfInvalidKeyLength("Serpent", validKeyLengths, key.Length);
-        }
-
-        public Serpent(byte[] key, BlockCipherMode mode) : base(key, null, CipherInputBlockLength, mode)
-        {
-
         }
 
         /// <summary>

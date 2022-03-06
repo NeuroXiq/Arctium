@@ -9,7 +9,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         private readonly int roundsCount;
 
-        public AES(byte[] key, BlockCipherMode mode) : base(key, 128, mode)
+        public AES(byte[] key) : base(key, 128)
         {
             if (key.Length != 16 && key.Length != 24 && key.Length != 32) throw new ArgumentException("key len invalid");
             if (key.Length == 16) roundsCount = 10;

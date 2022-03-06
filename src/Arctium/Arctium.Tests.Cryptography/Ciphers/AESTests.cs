@@ -60,7 +60,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
                 byte[] input = keyInputOutput[i].Item2;
                 byte[] output = keyInputOutput[i].Item3;
 
-                AES aes = new AES(key, BlockCipherMode.ECB);
+                AES aes = new AES(key);
 
                 aes.Encrypt(input, 0, outp, 0, 16);
                 aes.Decrypt(outp, 0, decrOutput, 0, 16);
@@ -90,7 +90,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
 
             for (int i = 0; i < input.Length; i++) input[i] = (byte)i;
 
-            AES aes = new AES(key, BlockCipherMode.ECB);
+            AES aes = new AES(key);
 
             for (int i = 0; i < blocksCount; i++)
             {

@@ -8,22 +8,15 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         public readonly int InputBlockLengthBytes;
 
-        public BlockCipherMode BlockCipherMode { get; private set; }
-
         protected byte[] key;
-        protected byte[] initializationVector;
 
-        protected BlockCipher(byte[] key, byte[] initializationVector, int inputBlockLengthBits, BlockCipherMode mode)
+        protected BlockCipher(byte[] key, int inputBlockLengthBits)
         {
             InputBlockLengthBits = inputBlockLengthBits;
             InputBlockLengthBytes = InputBlockLengthBits / 8;
-            BlockCipherMode = mode;
             
             this.key = key;
-            this.initializationVector = initializationVector;
         }
-
-        public BlockCipher(byte[] key, int inputBlockLength, BlockCipherMode mode) : this (key, null, inputBlockLength, mode) { }
 
         public abstract long Encrypt(byte[] input, long offset, byte[] output, long outputOffset, long length);
 
