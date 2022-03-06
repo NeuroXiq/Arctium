@@ -93,26 +93,6 @@ namespace Arctium.Cryptography.HashFunctions.CRC
             }
         }
 
-        public void asdf()
-        {
-            //for (int i = 0; i < 256; i += 4)
-            //{
-            //    r = 0;
-            //    RBP((byte)i);
-            //    System.Console.Write("0x{0:X8}, ", r >> 32);
-            //    r = 0;
-            //    RBP((byte)(i + 1));
-            //    System.Console.Write("0x{0:X8}, ", r >> 32);
-            //    r = 0;
-            //    RBP((byte)(i + 2));
-            //    System.Console.Write("0x{0:X8}, ", r >> 32);
-            //    r = 0;
-            //    RBP((byte)(i + 3));
-            //    System.Console.Write("0x{0:X8}, ", r >> 32);
-            //    System.Console.WriteLine();
-            //}
-        }
-
         private void ProcessByte(byte byteToProcess)
         {
             byte inputByte = inputReflected ? Reflect(byteToProcess) : byteToProcess;
