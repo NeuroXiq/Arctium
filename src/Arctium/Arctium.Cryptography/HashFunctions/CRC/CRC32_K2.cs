@@ -10,7 +10,7 @@
         /// <summary>
         /// Initializes new instance of CRC32_C (castagnoli)
         /// </summary>
-        public CRC32_K2() : base(Polynomial)
+        public CRC32_K2() : base("CRC32_K", Polynomial, 0xFFFFFFF, 0xFFFFFFF, true, true)
         {
         }
     }

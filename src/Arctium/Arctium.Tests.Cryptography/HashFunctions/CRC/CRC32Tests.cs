@@ -24,11 +24,12 @@ namespace Arctium.Tests.Cryptography.HashFunctions.CRC
                 CRC32.DefaultResultReflected,
                 CRC32.DefaultFinalXorValue);
 
-            var customized = new CRC32(0x12345678,
+            var customized = new CRC32("custom crc",
+                0x12345678,
                 0xabcdef12,
+                0x9876adcf,
                 false,
-                false,
-                0x9876adcf);
+                false);
 
             results.AddRange(Run("CRC-32 / Default Instance", DefaultInstanceTests(), new CRC32()));
             results.AddRange(Run("CRC-32 / InputReflectedFalse Instance", InputReflectedFalse(), crcInputReflectedFalse));

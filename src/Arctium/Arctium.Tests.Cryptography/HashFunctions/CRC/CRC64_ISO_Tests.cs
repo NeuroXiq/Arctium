@@ -8,16 +8,16 @@ using System.Text;
 namespace Arctium.Tests.Cryptography.HashFunctions.CRC
 {
     [TestsClass]
-    public class CRC64_ECMA182_Tests
+    public class CRC64_ISO_Tests
     {
-        public CRC64_ECMA182_Tests() { }
+        public CRC64_ISO_Tests() { }
 
         [TestMethod]
-        public List<TestResult> CRC64_ECMA182_StandardTests()
+        public List<TestResult> CRC64_ISO_StandardTests()
         {
             var tests = Tests();
             List<TestResult> testResults = new List<TestResult>();
-            var crc32c = PredefinedCRC.CRC64_ECMA182();
+            var crc32c = PredefinedCRC.CRC64_GO_ISO();
 
             foreach (var test in tests)
             {
@@ -27,7 +27,7 @@ namespace Arctium.Tests.Cryptography.HashFunctions.CRC
 
                 var result = crc32c.Result();
 
-                testResults.Add(new TestResult("CRC64_ECMA182", result == test.Value));
+                testResults.Add(new TestResult("CRC64_ISO", result == test.Value));
             }
 
             return testResults;
@@ -38,14 +38,14 @@ namespace Arctium.Tests.Cryptography.HashFunctions.CRC
             return new List<KeyValuePair<byte[], ulong>>()
             {
                 Test(new byte[0], 0),
-                Test(new byte[] { 0xE6 },   0x2C57B3B8EB0BDFC5 ),
+                Test(new byte[] { 0xE6 }, 0xE830000000000000),
                 Test(new byte[] {
                     0xdd,0x9b,0xC3,0xE2,0xF1,0x33,0x22,0x11,0xE2,0xE1,
                     0x01,0x02,0x03,0x04,0xF1,0x33,0xff,0xee,0xdd,0xaa,
                     0xdd,0x9b,0x81,0x90,0xF6,0xe5,0xd3,0xc3,0xb2,0xa1,
-                }, 0xEB287FCD161A7CE0),
-                Test(Encoding.ASCII.GetBytes("qwertyasdfzxcv!@#$"), 0x3401844774682F8E),
-                Test(new byte[] { 0x00, 0x01, 0x02, 0x03, 0xff, 0xf3, 0xf1, 0x44, 0xe1 }, 0x151701D7B9A365B7),
+                }, 0xC8B71CCE639E00B1),
+                Test(Encoding.ASCII.GetBytes("qwertyasdfzxcv!@#$"), 0x92ED226FC8B2A877),
+                Test(new byte[] { 0x00, 0x01, 0x02, 0x03, 0xff, 0xf3, 0xf1, 0x44, 0xe1 }, 0x8976A7D4BF6D2C9E),
                 Test(new byte[]
                 {
                     0x00, 0x01, 0x02, 0x03,
@@ -112,7 +112,7 @@ namespace Arctium.Tests.Cryptography.HashFunctions.CRC
 0xF4, 0xF5, 0xF6, 0xF7,
 0xF8, 0xF9, 0xFA, 0xFB,
 0xFC, 0xFD, 0xFE, 0xFF,
-                }, 0x62B0DA1C1B130A91)
+                }, 0x89F7EAA7B75C07DD)
             };
         }
 

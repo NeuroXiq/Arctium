@@ -10,6 +10,7 @@ using Arctium.Tests.Core;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Configuration;
+using System.Text.RegularExpressions;
 
 namespace Arctium.Tests.RunTests
 {
@@ -139,11 +140,11 @@ namespace Arctium.Tests.RunTests
 
         static List<Type> FilterTests(List<Type> tests)
         {
-            string filter = ConfigurationManager.AppSettings.Get("filter-tests-by-class-name");
+            string filter = ConfigurationManager.AppSettings.Get("filter-tests-by-regex-class-name");
 
             if (!string.IsNullOrEmpty(filter))
             {
-                return tests.Where(t => t.Name == filter).ToList();
+                return tests.Where(t => Regex.Match(t.Name, filter).Success).ToList();
             }
 
             return tests;

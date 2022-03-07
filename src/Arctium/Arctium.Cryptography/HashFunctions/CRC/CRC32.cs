@@ -6,42 +6,13 @@ namespace Arctium.Cryptography.HashFunctions.CRC
     /// Implementation of standard CRC-32 algorithms.
     /// For default state see default constructor summary
     /// </summary>
-    public class CRC32
+    public class CRC32 : CRC<uint>
     {
         public const uint DefaultPolynomial = 0x04C11DB7;
         public const uint DefaultInitialValue = 0xFFFFFFFF;
         public const uint DefaultFinalXorValue = 0xFFFFFFFF;
         public const bool DefaultInputReflected = true;
         public const bool DefaultResultReflected = true;
-
-        /// <summary>
-        /// Plynomial used in CRC calculations
-        /// </summary>
-        public readonly uint Polynomial;
-
-        /// <summary>
-        /// Indicates if all bits in input bytes are reversed. E.g
-        /// if this value is true then following byte: 01000011 is reversed into 11000010 and then processed
-        /// </summary>
-        public readonly bool InputReflected;
-
-        /// <summary>
-        /// Indicates if all bits in result uint are reversed. Similar like InputReflected but 32 bit value is reversed/>
-        /// </summary>
-        public readonly bool ResultReflected;
-        
-        /// <summary>
-        /// Initial value for 
-        /// </summary>
-        public readonly uint InitialValue;
-
-        /// <summary>
-        /// Result will be xored with FinalXorValue right before return it
-        /// </summary>
-        public readonly uint FinalXorValue;
-
-        private uint[] lookupTable;
-        private uint r = 0;
 
         /// <summary>
         /// Initializes new instance of CRC-32 with default values.
@@ -54,37 +25,41 @@ namespace Arctium.Cryptography.HashFunctions.CRC
         /// inputReflected = true
         /// )
         /// </summary>
-        public CRC32() : this(DefaultPolynomial,
+        public CRC32() : this("CRC-32 (default instance)",
+            DefaultPolynomial,
             DefaultInitialValue,
+            DefaultFinalXorValue,
             DefaultInputReflected,
-            DefaultResultReflected,
-            DefaultFinalXorValue)
-        { }
-
-        /// <summary>
-        /// Constructor with specified polynomial. All other fields to default
-        /// </summary>
-        /// <param name="polynomial">CRC polynomial</param>
-        public CRC32(uint polynomial) : this(polynomial,
-            DefaultInitialValue,
-            DefaultInputReflected,
-            DefaultResultReflected,
-            DefaultFinalXorValue)
+            DefaultResultReflected)
         { }
 
         public CRC32(uint polynomial,
             uint initialValue,
             bool inputReflected,
             bool resultReflected,
-            uint finalXorValue)
+            uint finalXorValue) : this(null,
+                polynomial,
+                initialValue,
+                finalXorValue,
+                inputReflected,
+                resultReflected)
         {
-            this.Polynomial = polynomial;
-            this.InitialValue = initialValue;
-            this.InputReflected = inputReflected;
-            this.ResultReflected = resultReflected;
-            this.FinalXorValue = finalXorValue;
+        }
+
+        public CRC32(string name,
+            uint polynomial,
+            uint initialValue,
+            uint finalXorValue,
+            bool inputReflected,
+            bool resultReflected) : base(
+                name,
+                polynomial,
+                initialValue,
+                finalXorValue,
+                inputReflected,
+                resultReflected)
+        {
             SetLookupTable();
-            Reset();
         }
 
         private void SetLookupTable()
@@ -121,42 +96,25 @@ namespace Arctium.Cryptography.HashFunctions.CRC
             }
         }
 
-        /// <summary>
-        /// Process next chunk of bytes
-        /// </summary>
-        /// <param name="bytes">Bytes to process</param>
-        public void Process(byte[] bytes)
+        protected override void ProcessByte(byte byteToProcess)
         {
-            foreach (var item in bytes)
-            {
-                ProcessByte(item);
-            }
-        }
+            // byte inputByte = InputReflected ? Reflect(byteToProcess) : byteToProcess;
 
-        private void ProcessByte(byte byteToProcess)
-        {
-            byte inputByte = InputReflected ? Reflect(byteToProcess) : byteToProcess;
-
-            uint c = ((uint)inputByte << 24) ^ r;
+            uint c = ((uint)byteToProcess << 24) ^ currentValue;
 
             uint q = (uint)(c >> 24);
             uint v = lookupTable[q];
 
-            r = ((r << 8) ^ (v));
-        }
-
-        public void Reset()
-        {
-            this.r = InitialValue;
+            currentValue = (currentValue << 8) ^ (v);
         }
 
         /// <summary>
         /// Returns current CRC value
         /// </summary>
         /// <returns></returns>
-        public uint Result()
+        public override uint Result()
         {
-            uint result = r ^ this.FinalXorValue;
+            uint result = currentValue ^ this.FinalXorValue;
             
             return ResultReflected ? Reflect(result) : result;
         }
@@ -173,22 +131,6 @@ namespace Arctium.Cryptography.HashFunctions.CRC
             }
 
             return reflectedUint;
-        }
-
-        private static byte Reflect(byte value)
-        {
-            byte reflectedByte = 0;
-
-            reflectedByte |= (byte)((value & 0x80) >> 7);
-            reflectedByte |= (byte)((value & 0x40) >> 5);
-            reflectedByte |= (byte)((value & 0x20) >> 3);
-            reflectedByte |= (byte)((value & 0x10) >> 1);
-            reflectedByte |= (byte)((value & 0x01) << 7);
-            reflectedByte |= (byte)((value & 0x02) << 5);
-            reflectedByte |= (byte)((value & 0x04) << 3);
-            reflectedByte |= (byte)((value & 0x08) << 1);
-
-            return reflectedByte;
         }
 
         private static readonly uint[] LookupTable = new uint[]
