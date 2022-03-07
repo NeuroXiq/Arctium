@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Arctium.Connection.Tls.Tls13
+namespace Arctium.Connection.Tls.Tls13.API
 {
-    class Tls13ServerConnectionResult
+    class Tls1_3ClientStream
     {
     }
 }

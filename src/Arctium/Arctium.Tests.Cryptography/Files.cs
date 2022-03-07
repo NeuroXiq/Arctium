@@ -4,7 +4,6 @@
     {
         static string HFTV => GetFullPath("HashFunctions/TestVectors/");
 
-        public const string SkeinTestVectorsDir = "HashFunctions/TestVectors/Skein/";
         public static string JHTestVectorsDirFullPath => GetFullPath("HashFunctions/TestVectors/JH/");
 
         static string CryptographyFilesFolder = null;

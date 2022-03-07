@@ -36,7 +36,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
         /// Creates new instance of the Twofish cipher. 
         /// </summary>
         /// <param name="key">Secret bytes</param>
-        public Twofish(byte[] key, BlockCipherMode mode) : base(key,null, InputBlockLengthInBits, mode)
+        public Twofish(byte[] key) : base(key,InputBlockLengthInBits)
         {
             CiphersValidation.ThrowIfInvalidKeyLength(nameof(Twofish), validKeyLengths, key.Length * 8);
 
@@ -99,22 +99,12 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         private void EncryptionSwitchBasedOnMode(TwofishAlgorithm.TwofishParms parameters, long blocksCount)
         {
-            switch (BlockCipherMode)
-            {
-                case BlockCipherMode.ECB: EncryptECB(parameters, blocksCount); break;
-                default:
-                    throw new NotSupportedException("Twofish not suppotted for " + BlockCipherMode.ToString());
-            }
+            EncryptECB(parameters, blocksCount);
         }
 
         private void DecryptionSwitchBasedOnMode(TwofishAlgorithm.TwofishParms parameters, long blocksCount)
         {
-            switch (BlockCipherMode)
-            {
-                case BlockCipherMode.ECB: DecryptECB(parameters, blocksCount); break;
-                default:
-                    throw new NotSupportedException("Twofish not suppotted for " + BlockCipherMode.ToString());
-            }
+            DecryptECB(parameters, blocksCount);
         }
 
 

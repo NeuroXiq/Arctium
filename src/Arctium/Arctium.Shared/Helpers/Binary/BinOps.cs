@@ -48,5 +48,48 @@ namespace Arctium.Shared.Helpers.Binary
                 ((value & 0x000000000000FF00) << 40) |
                 ((value & 0x00000000000000FF) << 56);
         }
+
+
+        /// <summary>
+        /// Reverse bits in input value. That means that bit on position (bits zero indexed) 63 appears on position
+        /// 0, bit on position 2 appears on 62 etc.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static ulong BitReflect(ulong value)
+        {
+            ulong result = 0;
+
+            for (int i = 0; i < 64; i++)
+            {
+                if ((value & ((ulong)1 << i)) != 0)
+                {
+                    result |= ((ulong)1 << (63 - i));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reverse bits in input value. That means that bit on position (bits zero indexed) 2 appears on position
+        /// 5, bit on position 1 appears on 6 etc.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static byte BitReflect(byte value)
+        {
+            byte result = 0;
+
+            for (int i = 0; i < 8; i++)
+            {
+                if ((value & ((byte)1 << i)) != 0)
+                {
+                    result |= (byte)((byte)1 << (7 - i));
+                }
+            }
+
+            return result;
+        }
     }
 }

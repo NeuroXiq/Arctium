@@ -4,9 +4,11 @@ using Arctium.Tests.Core;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers;
+using Arctium.Tests.Core.Attributes;
 
 namespace Arctium.Tests.Cryptography.Ciphers
 {
+    [TestsClass]
     public class ThreefishTests
     {
         private class ThreefishTest
@@ -17,6 +19,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
             public byte[] ExpectedOutput;
         }
 
+        [TestMethod]
         public static List<TestResult> Run()
         {
             ThreefishTest[] tests256 = ThreefishTests256();

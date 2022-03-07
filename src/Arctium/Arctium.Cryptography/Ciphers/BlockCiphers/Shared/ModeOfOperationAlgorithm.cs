@@ -4,8 +4,9 @@ using System.Text;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Shared
 {
-    unsafe class ModeOfOperationAlgorithm
+    public unsafe class ModeOfOperationAlgorithm
     {
+
         delegate void EncryptionFunctionDelegate(byte* buffer, long inOffset, byte* output, long outOffset, long length);
         EncryptionFunctionDelegate encryptFunc;
 
