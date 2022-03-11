@@ -5,6 +5,7 @@ using Arctium.Tests.Core;
 using Arctium.Tests.Core.Attributes;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Arctium.Tests.Cryptography.HashFunctions
@@ -58,7 +59,6 @@ namespace Arctium.Tests.Cryptography.HashFunctions
             var lines = messageDigetsOfAll512StringsContainingSingleBit.Split("\r\n");
             var whirlpool = new Whirlpool();
             var results = new List<TestResult>();
-            List<Tuple<byte[], byte[]>> inputWithHash = new List<Tuple<byte[], byte[]>>();
 
             foreach (var line in lines)
             {
@@ -79,6 +79,36 @@ namespace Arctium.Tests.Cryptography.HashFunctions
             }
 
             return results;
+        }
+
+        [TestMethod]
+        public List<TestResult> Whirlpool_1MB_Data()
+        {
+            byte[] b = new byte[256 * 256 + 1234567];
+
+            for (int i = 0; i < 256; i++)
+            {
+                for (int j = 0; j < 256; j++)
+                {
+                    b[(256 * i) + j] = (byte)j;
+                }
+            }
+
+            var s = new MemoryStream(b, 0, b.Length);
+
+            Whirlpool wp = new Whirlpool();
+
+            wp.HashBytes(s);
+
+            var hash = wp.HashFinal();
+            var expected = BinConverter.FromString("dc3ad4a6769623a8b026128d0e4a976e5fcf02d0bd40040701ad7ea025c655bd8554ee19671cef5b9fc7093597f40f77fdd41cfc7e5ca7095129a74c6ecc1e9e");
+
+
+            List<TestResult> result = new List<TestResult>();
+
+            result.Add(new TestResult("whirlpool 1MB data", MemOps.Memcmp(expected, hash)));
+
+            return result;
         }
 
 
@@ -1116,6 +1146,8 @@ L =    0: 19FA61D75522A4669B44E39C1D2E1726C530232130D407F89AFEE0964997F7A73E83BE
     L = 1022: 1E029FC287A55B9845214205C8DA46BF703D87E4FEB8768B95F4E2ED38122A8119209BCBCACA7C451D46843FACE05DA9E8B36B97A69094E1A14D41D09B5D8E0E
     L = 1023: BA1F1AB4572FED30B77E651B0ECE6FD6C68296E92A8121550B08606FB0DF72C8604D5A593252C27EF985740C27AE43361A439F8E966C3BCF4B757E533E13A4B8
 ";
+
+        // Below is a copy-paste of test vectors from whirlpool package
 
         /*  
          *   Message digests of all 512-bit strings S containing a single 1-bit:

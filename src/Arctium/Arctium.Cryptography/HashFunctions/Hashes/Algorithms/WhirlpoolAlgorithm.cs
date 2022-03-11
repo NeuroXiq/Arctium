@@ -17,7 +17,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         {
             for (long i = offset; i < length + offset; i += BlockLenBytes)
             {
-                ProcessBlock(state, buffer, offset + i);
+                ProcessBlock(state, buffer, i);
                 state.ProcessedBytes += 64;
             }
         }
