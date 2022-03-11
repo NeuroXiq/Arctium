@@ -740,6 +740,25 @@ namespace Arctium.Shared.Helpers.Buffers
             } 
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void ToULong64BytesBE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                long k = inputOffset + (i * 8);
+
+                output[i + outputOffset] =
+                    ((ulong)input[k + 0] << 56) |
+                    ((ulong)input[k + 1] << 48) |
+                    ((ulong)input[k + 2] << 40) |
+                    ((ulong)input[k + 3] << 32) |
+                    ((ulong)input[k + 4] << 24) |
+                    ((ulong)input[k + 5] << 16) |
+                    ((ulong)input[k + 6] << 08) |
+                    ((ulong)input[k + 7] << 00);
+            }
+        }
+
         public static void ToBytes8ULongBE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
         {
             for (int i = 0; i < 8; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));

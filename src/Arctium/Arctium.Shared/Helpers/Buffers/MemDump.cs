@@ -6,6 +6,24 @@ namespace Arctium.Shared.Helpers.Buffers
 {
     public static unsafe class MemDump
     {
+        public static void HexDump(ulong[] buffer,
+            int offset = 0,
+            int length = -1,
+            int chinksCountInLine = 4,
+            int chinkLength = 4,
+            string delimiter = " ")
+        {
+            int len = length == -1 ? buffer.Length : length;
+            byte[] helper = new byte[len * 8];
+
+            for (int i = 0; i < len; i++)
+            {
+                MemMap.ToBytes1ULongBE(buffer[i + offset], helper, (i) * 8);
+            }
+
+            HexDump(helper, 0, helper.Length, chinksCountInLine, chinkLength, delimiter);
+        }
+
         /// <summary>
         /// Writes formatter byte array to the console output as a hexdump
         /// Useful in debugging
