@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28917.182
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32126.317
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium", "Arctium\Arctium.csproj", "{743055C2-E01B-409E-AC73-38C9EB48ED03}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Connection", "Arctium.Connection\Arctium.Connection.csproj", "{18BBFE7D-6F60-4A9D-9910-54C4DD124E36}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Cryptography", "Arctium.Cryptography\Arctium.Cryptography.csproj", "{5B070346-35AE-4DA3-89C7-29226FDAF826}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DEBUG_ConsoleApplicationForTests", "DEBUG_ConsoleApplicationForTests\DEBUG_ConsoleApplicationForTests.csproj", "{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Shared", "Arctium.Shared\Arctium.Shared.csproj", "{F113A724-8496-4940-A563-05487A765DBE}"
 EndProject
@@ -23,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Cryptography"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Core", "Arctium.Tests.Core\Arctium.Tests.Core.csproj", "{2D915473-A811-49D1-9B83-F29994759E7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.Tests.Standards", "Arctium.Tests.Standards\Arctium.Tests.Standards.csproj", "{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium.Tests.Standards", "Arctium.Tests.Standards\Arctium.Tests.Standards.csproj", "{20377BC4-1FAD-492A-9AD2-6DCAC4245E2F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,14 +55,6 @@ Global
 		{5B070346-35AE-4DA3-89C7-29226FDAF826}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5B070346-35AE-4DA3-89C7-29226FDAF826}.Release|x86.ActiveCfg = Release|x86
 		{5B070346-35AE-4DA3-89C7-29226FDAF826}.Release|x86.Build.0 = Release|x86
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Debug|x86.ActiveCfg = Debug|x86
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Debug|x86.Build.0 = Debug|x86
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Release|x86.ActiveCfg = Release|x86
-		{C8E5D3DF-1134-4D5D-9AE0-FFAECC97CC0B}.Release|x86.Build.0 = Release|x86
 		{F113A724-8496-4940-A563-05487A765DBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F113A724-8496-4940-A563-05487A765DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F113A724-8496-4940-A563-05487A765DBE}.Debug|x86.ActiveCfg = Debug|x86

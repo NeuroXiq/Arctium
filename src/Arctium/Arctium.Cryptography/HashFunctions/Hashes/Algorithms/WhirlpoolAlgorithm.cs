@@ -1,4 +1,24 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿/*
+ * Whirlpool hash function
+ * 
+ * Original Authors:
+ * - - - - - -
+ * The WHIRLPOOL Hashing Function
+ *  Paulo S.L.M. Barreto1 and Vincent Rijmen
+ *  1 Scopus Tecnologia S. A.
+ *  Av. Mutinga, 4105 - Pirituba
+ *  BR–05110–000 S˜ao Paulo (SP), Brazil
+ *  pbarreto@scopus.com.br
+ *  2 Cryptomathic NV,
+ *  Lei 8A,
+ *  B–3000 Leuven, Belgium
+ *  vincent.rijmen@cryptomathic.com
+ * - - - - - -
+ * 
+ * Implemented by NeuroXiq 2022
+ */
+
+using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
@@ -80,7 +100,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         }
 
         // Private methods
-
+        
         private static void ProcessBlock(State state, byte[] buffer, long offset)
         {
             ulong[] ulongInput = state.ULongInput;

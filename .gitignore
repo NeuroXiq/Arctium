@@ -4,7 +4,8 @@
 [Rr]elase/
 IGNORE/
 src/Arctium/DEBUG_ConsoleApplicationForTests/**
-src/Arctium/DEBUG_ConsoleApplicationForTests/*
+src/Arctium/DEBUG_ConsoleApplicationForTests/**
+src/Arctium/DEBUG_ConsoleApplicationForTests/
 *.user
 *.suo
 *.userprefs
