@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Arctium.Shared.Helpers.Buffers;
+﻿using System.IO;
 using Arctium.Shared;
 using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
 
@@ -17,7 +11,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public RIPEMD_160() : base(512, 160) 
         {
-            blockBuffer = new BlockBufferWithCallback(GlobalConfig.DefaultHashBufferBlockCount * 64, 64, HashBytes);
+            blockBuffer = new BlockBufferWithCallback(GlobalConfig.DefaultHashBufferBlockCount * 512, 64, HashBytes);
             state = RIPEMDAlgorithm.Init();
         }
 
