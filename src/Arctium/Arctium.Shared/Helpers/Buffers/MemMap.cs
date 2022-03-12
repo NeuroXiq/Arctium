@@ -185,6 +185,38 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt64BytesBE(byte[] input, long inputOffset, uint[] output, long outputOffset)
+        {
+            long o = outputOffset, i = inputOffset;
+
+            for (int k = 0; k < 4; k++)
+            {
+                output[0 + o] = (uint)input[3 + i] << 0;
+                output[0 + o] |= (uint)input[2 + i] << 8;
+                output[0 + o] |= (uint)input[1 + i] << 16;
+                output[0 + o] |= (uint)input[0 + i] << 24;
+
+                output[1 + o] = (uint)input[7 + i] << 0;
+                output[1 + o] |= (uint)input[6 + i] << 8;
+                output[1 + o] |= (uint)input[5 + i] << 16;
+                output[1 + o] |= (uint)input[4 + i] << 24;
+
+                output[2 + o] = (uint)input[11 + i] << 0;
+                output[2 + o] |= (uint)input[10 + i] << 8;
+                output[2 + o] |= (uint)input[9 + i] << 16;
+                output[2 + o] |= (uint)input[8 + i] << 24;
+
+                output[3 + o] = (uint)input[15 + i] << 0;
+                output[3 + o] |= (uint)input[14 + i] << 8;
+                output[3 + o] |= (uint)input[13 + i] << 16;
+                output[3 + o] |= (uint)input[12 + i] << 24;
+
+                o += 4;
+                i += 16;
+            }
+        }
+
         /// <summary>
         /// Converts 32 bytes to 8 uint values where input bytes 
         /// are intepreted as little-endia 4-bytes integers
@@ -324,6 +356,92 @@ namespace Arctium.Shared.Helpers.Buffers
             output[15] |= (uint)input[60 + 1] << 8;
             output[15] |= (uint)input[60 + 2] << 16;
             output[15] |= (uint)input[60 + 3] << 24;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt64BytesLE(byte[] input, long inputOffset, uint[] output, long outputOffset)
+        {
+            long i = inputOffset, o = outputOffset;
+
+            output[o + 0] = (uint)input[i + 0 + 0] << 0;
+            output[o + 0] |= (uint)input[i + 0 + 1] << 8;
+            output[o + 0] |= (uint)input[i + 0 + 2] << 16;
+            output[o + 0] |= (uint)input[i + 0 + 3] << 24;
+
+            output[o + 1] = (uint)input[i + 4 + 0] << 0;
+            output[o + 1] |= (uint)input[i + 4 + 1] << 8;
+            output[o + 1] |= (uint)input[i + 4 + 2] << 16;
+            output[o + 1] |= (uint)input[i + 4 + 3] << 24;
+
+            output[o + 2] = (uint)input[i + 8 + 0] << 0;
+            output[o + 2] |= (uint)input[i + 8 + 1] << 8;
+            output[o + 2] |= (uint)input[i + 8 + 2] << 16;
+            output[o + 2] |= (uint)input[i + 8 + 3] << 24;
+
+            output[o + 3] = (uint)input[i + 12 + 0] << 0;
+            output[o + 3] |= (uint)input[i + 12 + 1] << 8;
+            output[o + 3] |= (uint)input[i + 12 + 2] << 16;
+            output[o + 3] |= (uint)input[i + 12 + 3] << 24;
+
+            output[o + 4] = (uint)input[i + 16 + 0] << 0;
+            output[o + 4] |= (uint)input[i + 16 + 1] << 8;
+            output[o + 4] |= (uint)input[i + 16 + 2] << 16;
+            output[o + 4] |= (uint)input[i + 16 + 3] << 24;
+
+            output[o + 5] = (uint)input[i + 20 + 0] << 0;
+            output[o + 5] |= (uint)input[i + 20 + 1] << 8;
+            output[o + 5] |= (uint)input[i + 20 + 2] << 16;
+            output[o + 5] |= (uint)input[i + 20 + 3] << 24;
+
+            output[o + 6] = (uint)input[i + 24 + 0] << 0;
+            output[o + 6] |= (uint)input[i + 24 + 1] << 8;
+            output[o + 6] |= (uint)input[i + 24 + 2] << 16;
+            output[o + 6] |= (uint)input[i + 24 + 3] << 24;
+
+            output[o + 7] = (uint)input[i + 28 + 0] << 0;
+            output[o + 7] |= (uint)input[i + 28 + 1] << 8;
+            output[o + 7] |= (uint)input[i + 28 + 2] << 16;
+            output[o + 7] |= (uint)input[i + 28 + 3] << 24;
+
+            output[o + 8] = (uint)input[i + 32 + 0] << 0;
+            output[o + 8] |= (uint)input[i + 32 + 1] << 8;
+            output[o + 8] |= (uint)input[i + 32 + 2] << 16;
+            output[o + 8] |= (uint)input[i + 32 + 3] << 24;
+
+            output[o + 9] = (uint)input[i + 36 + 0] << 0;
+            output[o + 9] |= (uint)input[i + 36 + 1] << 8;
+            output[o + 9] |= (uint)input[i + 36 + 2] << 16;
+            output[o + 9] |= (uint)input[i + 36 + 3] << 24;
+
+            output[o + 10] = (uint)input[i + 40 + 0] << 0;
+            output[o + 10] |= (uint)input[i + 40 + 1] << 8;
+            output[o + 10] |= (uint)input[i + 40 + 2] << 16;
+            output[o + 10] |= (uint)input[i + 40 + 3] << 24;
+
+            output[o + 11] = (uint)input[i + 44 + 0] << 0;
+            output[o + 11] |= (uint)input[i + 44 + 1] << 8;
+            output[o + 11] |= (uint)input[i + 44 + 2] << 16;
+            output[o + 11] |= (uint)input[i + 44 + 3] << 24;
+
+            output[o + 12] = (uint)input[i + 48 + 0] << 0;
+            output[o + 12] |= (uint)input[i + 48 + 1] << 8;
+            output[o + 12] |= (uint)input[i + 48 + 2] << 16;
+            output[o + 12] |= (uint)input[i + 48 + 3] << 24;
+
+            output[o + 13] = (uint)input[i + 52 + 0] << 0;
+            output[o + 13] |= (uint)input[i + 52 + 1] << 8;
+            output[o + 13] |= (uint)input[i + 52 + 2] << 16;
+            output[o + 13] |= (uint)input[i + 52 + 3] << 24;
+
+            output[o + 14] = (uint)input[i + 56 + 0] << 0;
+            output[o + 14] |= (uint)input[i + 56 + 1] << 8;
+            output[o + 14] |= (uint)input[i + 56 + 2] << 16;
+            output[o + 14] |= (uint)input[i + 56 + 3] << 24;
+
+            output[o + 15] = (uint)input[i + 60 + 0] << 0;
+            output[o + 15] |= (uint)input[i + 60 + 1] << 8;
+            output[o + 15] |= (uint)input[i + 60 + 2] << 16;
+            output[o + 15] |= (uint)input[i + 60 + 3] << 24;
         }
 
 
@@ -826,6 +944,17 @@ namespace Arctium.Shared.Helpers.Buffers
                 output[outOffset + 1 + (i * 4)] = (byte)(input[i + inOffset] >> 16);
                 output[outOffset + 2 + (i * 4)] = (byte)(input[i + inOffset] >> 08);
                 output[outOffset + 3 + (i * 4)] = (byte)(input[i + inOffset] >> 00);
+            }
+        }
+
+        public static void ToBytes5UIntLE(uint[] input, long inOffset, byte[] output, long outOffset)
+        {
+            for (long i = 0; i < 5; i++)
+            {
+                output[outOffset + 0 + (i * 4)] = (byte)(input[i + inOffset] >> 00);
+                output[outOffset + 1 + (i * 4)] = (byte)(input[i + inOffset] >> 08);
+                output[outOffset + 2 + (i * 4)] = (byte)(input[i + inOffset] >> 16);
+                output[outOffset + 3 + (i * 4)] = (byte)(input[i + inOffset] >> 24);
             }
         }
 
