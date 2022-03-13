@@ -16,6 +16,12 @@ for more interesting parts of the documentation.
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
+|CRC-8                  |    -        |
+|CRC-16                  |    -        |
+|CRC-32                  |    -        |
+|RadioGatun-64                  |    -        |
+|RadioGatun-32                  |    -        |
+|Whirlpool                  |    -        |
 |PKCS#1 v2.2 (RFC 8017)     |    [PKCS1v2_2]        |
 |SHA1 (Hash function)       |    [SHA1]        |
 |Skein (Hash function)      |    [Skein]        |
