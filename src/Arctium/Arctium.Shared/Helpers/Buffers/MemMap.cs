@@ -1008,7 +1008,7 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static void ToULong24BytesLE(byte[] src, long srcOffset, ulong[] output, long outputOffset)
         {
             long i = srcOffset, o = outputOffset;

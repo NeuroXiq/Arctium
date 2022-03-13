@@ -42,6 +42,9 @@
 
             public static readonly string Blake2b512TestVectors = HFTV + "BLAKE2/Blake2b_512_TestVectors.txt";
             public static readonly string Blake3TestVectors = HFTV + "BLAKE3/BLAKE3TestVectors.txt";
+
+            public static readonly string RadioGatun64TestVectors = HFTV + "radiogatun/RG64-testvectors";
+            public static readonly string RadioGatun32TestVectors = HFTV + "radiogatun/RG32-testvectors";
         }
 
         public static void SetArctiumFilesPath(string fullPath)

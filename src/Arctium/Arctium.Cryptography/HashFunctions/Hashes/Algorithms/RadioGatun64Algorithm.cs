@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Binary;
+using System.Runtime.CompilerServices;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
-    public static class RadioGatunAlgorithm
+    public static class RadioGatun64Algorithm
     {
         // Number of Blank Rounds
         const int Nb = 16;
@@ -18,6 +19,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         {
             public ulong[] a;
             public ulong[] b;
+            public ulong[] A;
+            public ulong[] B;
         }
 
         public static State Init()
@@ -25,6 +28,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             State state = new State();
             state.a = new ulong[19];
             state.b = new ulong[3 * 13];
+            state.A = new ulong[19];
+            state.B = new ulong[3 * 13];
 
             Reset(state);
 
@@ -50,9 +55,9 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         {
             ulong[] input = new ulong[3];
 
-            for (long i = offset; i < offset + length; i += 24)
+            for (long j = offset; j < offset + length; j += 24)
             {
-                MemMap.ToULong24BytesLE(buffer, i, input, 0);
+                MemMap.ToULong24BytesLE(buffer, j, input, 0);
 
                 state.b[0] ^= input[0];
                 state.b[1] ^= input[1];
@@ -67,8 +72,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
         static void R(State state)
         {
-            ulong[] B = new ulong[3 * 13];
-            ulong[] A = new  ulong[19];
+            ulong[] B = state.B;
+            ulong[] A = state.A;
             ulong[] b = state.b;
             ulong[] a = state.a;
 
@@ -93,8 +98,13 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
             for (int i = 0; i < 3; i++) A[i + 13] ^= b[(3 * 12) + i];
 
+            ulong[] aCpy = state.a;
+            ulong[] bCpy = state.b;
+
             state.a = A;
             state.b = B;
+            state.A = aCpy;
+            state.B = bCpy;
         }
 
 

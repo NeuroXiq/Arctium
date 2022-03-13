@@ -5,15 +5,15 @@ using System.IO;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
-    public class RadioGatun : HashFunction
+    public class RadioGatun64 : HashFunction
     {
         BlockBufferWithCallback blockBuffer;
-        RadioGatunAlgorithm.State state;
+        RadioGatun64Algorithm.State state;
 
-        public RadioGatun() : base(192, 256)
+        public RadioGatun64() : base(192, 256)
         {
             blockBuffer = new BlockBufferWithCallback(GlobalConfig.DefaultHashBufferBlockCount * InputBlockSizeBytes, InputBlockSizeBytes, HashBytes);
-            state = RadioGatunAlgorithm.Init();
+            state = RadioGatun64Algorithm.Init();
         }
 
         public override void HashBytes(byte[] buffer) => blockBuffer.Load(buffer, 0, buffer.Length);
@@ -22,7 +22,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public override void HashBytes(byte[] buffer, long offset, long length)
         {
-            RadioGatunAlgorithm.Process192BitBlocks(state, buffer, offset, length);
+            RadioGatun64Algorithm.Process192BitBlocks(state, buffer, offset, length);
         }
 
         public override byte[] HashFinal()
@@ -33,8 +33,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
             blockBuffer.Flush(bytesNotAligned, 0, out lastBlockLength);
 
-            RadioGatunAlgorithm.ProcessLastBlock(state, bytesNotAligned, 0, lastBlockLength);
-            RadioGatunAlgorithm.GetHash(state, hash, 0);
+            RadioGatun64Algorithm.ProcessLastBlock(state, bytesNotAligned, 0, lastBlockLength);
+            RadioGatun64Algorithm.GetHash(state, hash, 0);
 
 
             return hash;
@@ -42,7 +42,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public override void Reset()
         {
-            RadioGatunAlgorithm.Reset(state);
+            RadioGatun64Algorithm.Reset(state);
         }
     }
 }
