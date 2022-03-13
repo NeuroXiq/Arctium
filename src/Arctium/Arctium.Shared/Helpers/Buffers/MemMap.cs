@@ -37,16 +37,16 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int i = 0; i < 4; i++)
             {
-                dst[i + dstOffset] = 
+                dst[i + dstOffset] =
                     (uint)(src[so + 0] << 24) |
                     (uint)(src[so + 1] << 16) |
                     (uint)(src[so + 2] << 08) |
-                    (uint)(src[so + 3] << 00); 
+                    (uint)(src[so + 3] << 00);
 
                 so += 4;
-            } 
+            }
         }
-        
+
 
         /// <summary>
         /// Converts array of 4 unsigned integers to byte array in little-endian format
@@ -113,8 +113,8 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int i = 0, j = 0; i < length; i++, j += 4)
             {
-                result[j + 0] = (byte)(input[i] >>  0);
-                result[j + 1] = (byte)(input[i] >>  8);
+                result[j + 0] = (byte)(input[i] >> 0);
+                result[j + 1] = (byte)(input[i] >> 8);
                 result[j + 2] = (byte)(input[i] >> 16);
                 result[j + 3] = (byte)(input[i] >> 24);
             }
@@ -160,22 +160,22 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int k = 0; k < 4; k++)
             {
-                output[0 + o]  = (uint)input[3 + i] << 0;
+                output[0 + o] = (uint)input[3 + i] << 0;
                 output[0 + o] |= (uint)input[2 + i] << 8;
                 output[0 + o] |= (uint)input[1 + i] << 16;
                 output[0 + o] |= (uint)input[0 + i] << 24;
 
-                output[1 + o]  = (uint)input[7 + i] << 0;
+                output[1 + o] = (uint)input[7 + i] << 0;
                 output[1 + o] |= (uint)input[6 + i] << 8;
                 output[1 + o] |= (uint)input[5 + i] << 16;
                 output[1 + o] |= (uint)input[4 + i] << 24;
 
-                output[2 + o]  = (uint)input[11 + i] << 0;
+                output[2 + o] = (uint)input[11 + i] << 0;
                 output[2 + o] |= (uint)input[10 + i] << 8;
-                output[2 + o] |= (uint)input[9  + i] << 16;
-                output[2 + o] |= (uint)input[8  + i] << 24;
+                output[2 + o] |= (uint)input[9 + i] << 16;
+                output[2 + o] |= (uint)input[8 + i] << 24;
 
-                output[3 + o]  = (uint)input[15 + i] << 0;
+                output[3 + o] = (uint)input[15 + i] << 0;
                 output[3 + o] |= (uint)input[14 + i] << 8;
                 output[3 + o] |= (uint)input[13 + i] << 16;
                 output[3 + o] |= (uint)input[12 + i] << 24;
@@ -604,7 +604,6 @@ namespace Arctium.Shared.Helpers.Buffers
 
 
         #region managed
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToByteArrayLE(ulong[] src)
         {
@@ -628,8 +627,8 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int i = 0, j = 0; i < length; i++, j += 4)
             {
-                result[j + 0] = (byte)(input[i] >>  0);
-                result[j + 1] = (byte)(input[i] >>  8);
+                result[j + 0] = (byte)(input[i] >> 0);
+                result[j + 1] = (byte)(input[i] >> 8);
                 result[j + 2] = (byte)(input[i] >> 16);
                 result[j + 3] = (byte)(input[i] >> 24);
             }
@@ -643,19 +642,19 @@ namespace Arctium.Shared.Helpers.Buffers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToULongNBytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset, long outputULongCount)
         {
-           for (long i = inputOffset, j = outputOffset; i < (8 * outputULongCount) + inputOffset; i += 8, j++)
-           {
-             output[j] = (ulong)(
-                    (ulong)input[i + 7] << 56 | 
-                    (ulong)input[i + 6] << 48 | 
-                    (ulong)input[i + 5] << 40 | 
-                    (ulong)input[i + 4] << 32 | 
-                    (ulong)input[i + 3] << 24 | 
-                    (ulong)input[i + 2] << 16 | 
-                    (ulong)input[i + 1] <<  8 | 
-                    (ulong)input[i + 0] <<  0);  
+            for (long i = inputOffset, j = outputOffset; i < (8 * outputULongCount) + inputOffset; i += 8, j++)
+            {
+                output[j] = (ulong)(
+                       (ulong)input[i + 7] << 56 |
+                       (ulong)input[i + 6] << 48 |
+                       (ulong)input[i + 5] << 40 |
+                       (ulong)input[i + 4] << 32 |
+                       (ulong)input[i + 3] << 24 |
+                       (ulong)input[i + 2] << 16 |
+                       (ulong)input[i + 1] << 8 |
+                       (ulong)input[i + 0] << 0);
 
-           } 
+            }
         }
 
 
@@ -675,65 +674,65 @@ namespace Arctium.Shared.Helpers.Buffers
         public static void ToULong32BytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
         {
             output[outputOffset] = (ulong)(
-                    (ulong)input[inputOffset + 7] << 56 | 
-                    (ulong)input[inputOffset + 6] << 48 | 
-                    (ulong)input[inputOffset + 5] << 40 | 
-                    (ulong)input[inputOffset + 4] << 32 | 
-                    (ulong)input[inputOffset + 3] << 24 | 
-                    (ulong)input[inputOffset + 2] << 16 | 
-                    (ulong)input[inputOffset + 1] <<  8 | 
-                    (ulong)input[inputOffset + 0] <<  0);  
+                    (ulong)input[inputOffset + 7] << 56 |
+                    (ulong)input[inputOffset + 6] << 48 |
+                    (ulong)input[inputOffset + 5] << 40 |
+                    (ulong)input[inputOffset + 4] << 32 |
+                    (ulong)input[inputOffset + 3] << 24 |
+                    (ulong)input[inputOffset + 2] << 16 |
+                    (ulong)input[inputOffset + 1] << 8 |
+                    (ulong)input[inputOffset + 0] << 0);
 
-             output[outputOffset + 1] = (ulong)(
-                    (ulong)input[inputOffset + 8 + 7] << 56 | 
-                    (ulong)input[inputOffset + 8 + 6] << 48 | 
-                    (ulong)input[inputOffset + 8 + 5] << 40 | 
-                    (ulong)input[inputOffset + 8 + 4] << 32 | 
-                    (ulong)input[inputOffset + 8 + 3] << 24 | 
-                    (ulong)input[inputOffset + 8 + 2] << 16 | 
-                    (ulong)input[inputOffset + 8 + 1] <<  8 | 
-                    (ulong)input[inputOffset + 8 + 0] <<  0);
+            output[outputOffset + 1] = (ulong)(
+                   (ulong)input[inputOffset + 8 + 7] << 56 |
+                   (ulong)input[inputOffset + 8 + 6] << 48 |
+                   (ulong)input[inputOffset + 8 + 5] << 40 |
+                   (ulong)input[inputOffset + 8 + 4] << 32 |
+                   (ulong)input[inputOffset + 8 + 3] << 24 |
+                   (ulong)input[inputOffset + 8 + 2] << 16 |
+                   (ulong)input[inputOffset + 8 + 1] << 8 |
+                   (ulong)input[inputOffset + 8 + 0] << 0);
 
             output[outputOffset + 2] = (ulong)(
-                    (ulong)input[inputOffset + 16 + 7] << 56 | 
-                    (ulong)input[inputOffset + 16 + 6] << 48 | 
-                    (ulong)input[inputOffset + 16 + 5] << 40 | 
-                    (ulong)input[inputOffset + 16 + 4] << 32 | 
-                    (ulong)input[inputOffset + 16 + 3] << 24 | 
-                    (ulong)input[inputOffset + 16 + 2] << 16 | 
-                    (ulong)input[inputOffset + 16 + 1] <<  8 | 
-                    (ulong)input[inputOffset + 16 + 0] <<  0);  
+                    (ulong)input[inputOffset + 16 + 7] << 56 |
+                    (ulong)input[inputOffset + 16 + 6] << 48 |
+                    (ulong)input[inputOffset + 16 + 5] << 40 |
+                    (ulong)input[inputOffset + 16 + 4] << 32 |
+                    (ulong)input[inputOffset + 16 + 3] << 24 |
+                    (ulong)input[inputOffset + 16 + 2] << 16 |
+                    (ulong)input[inputOffset + 16 + 1] << 8 |
+                    (ulong)input[inputOffset + 16 + 0] << 0);
 
-             output[outputOffset + 3] = (ulong)(
-                    (ulong)input[inputOffset + 24 + 7] << 56 | 
-                    (ulong)input[inputOffset + 24 + 6] << 48 | 
-                    (ulong)input[inputOffset + 24 + 5] << 40 | 
-                    (ulong)input[inputOffset + 24 + 4] << 32 | 
-                    (ulong)input[inputOffset + 24 + 3] << 24 | 
-                    (ulong)input[inputOffset + 24 + 2] << 16 | 
-                    (ulong)input[inputOffset + 24 + 1] <<  8 | 
-                    (ulong)input[inputOffset + 24 + 0] <<  0);
+            output[outputOffset + 3] = (ulong)(
+                   (ulong)input[inputOffset + 24 + 7] << 56 |
+                   (ulong)input[inputOffset + 24 + 6] << 48 |
+                   (ulong)input[inputOffset + 24 + 5] << 40 |
+                   (ulong)input[inputOffset + 24 + 4] << 32 |
+                   (ulong)input[inputOffset + 24 + 3] << 24 |
+                   (ulong)input[inputOffset + 24 + 2] << 16 |
+                   (ulong)input[inputOffset + 24 + 1] << 8 |
+                   (ulong)input[inputOffset + 24 + 0] << 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToULong8BytesLE(byte[] input, long inputOffset)
         {
             return (ulong)(
-                    (ulong)input[inputOffset + 7] << 56 | 
-                    (ulong)input[inputOffset + 6] << 48 | 
-                    (ulong)input[inputOffset + 5] << 40 | 
-                    (ulong)input[inputOffset + 4] << 32 | 
-                    (ulong)input[inputOffset + 3] << 24 | 
-                    (ulong)input[inputOffset + 2] << 16 | 
-                    (ulong)input[inputOffset + 1] <<  8 | 
-                    (ulong)input[inputOffset + 0] <<  0);  
+                    (ulong)input[inputOffset + 7] << 56 |
+                    (ulong)input[inputOffset + 6] << 48 |
+                    (ulong)input[inputOffset + 5] << 40 |
+                    (ulong)input[inputOffset + 4] << 32 |
+                    (ulong)input[inputOffset + 3] << 24 |
+                    (ulong)input[inputOffset + 2] << 16 |
+                    (ulong)input[inputOffset + 1] << 8 |
+                    (ulong)input[inputOffset + 0] << 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToBytes4ULongLE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
         {
-            output[outputOffset + 0 + 0] = (byte)((input[inputOffset + 0] >>  0) & 0xFF);
-            output[outputOffset + 0 + 1] = (byte)((input[inputOffset + 0] >>  8) & 0xFF);
+            output[outputOffset + 0 + 0] = (byte)((input[inputOffset + 0] >> 0) & 0xFF);
+            output[outputOffset + 0 + 1] = (byte)((input[inputOffset + 0] >> 8) & 0xFF);
             output[outputOffset + 0 + 2] = (byte)((input[inputOffset + 0] >> 16) & 0xFF);
             output[outputOffset + 0 + 3] = (byte)((input[inputOffset + 0] >> 24) & 0xFF);
             output[outputOffset + 0 + 4] = (byte)((input[inputOffset + 0] >> 32) & 0xFF);
@@ -741,8 +740,8 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 0 + 6] = (byte)((input[inputOffset + 0] >> 48) & 0xFF);
             output[outputOffset + 0 + 7] = (byte)((input[inputOffset + 0] >> 56) & 0xFF);
 
-            output[outputOffset + 8 + 0] = (byte)((input[inputOffset + 1] >>  0) & 0xFF);
-            output[outputOffset + 8 + 1] = (byte)((input[inputOffset + 1] >>  8) & 0xFF);
+            output[outputOffset + 8 + 0] = (byte)((input[inputOffset + 1] >> 0) & 0xFF);
+            output[outputOffset + 8 + 1] = (byte)((input[inputOffset + 1] >> 8) & 0xFF);
             output[outputOffset + 8 + 2] = (byte)((input[inputOffset + 1] >> 16) & 0xFF);
             output[outputOffset + 8 + 3] = (byte)((input[inputOffset + 1] >> 24) & 0xFF);
             output[outputOffset + 8 + 4] = (byte)((input[inputOffset + 1] >> 32) & 0xFF);
@@ -750,8 +749,8 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 8 + 6] = (byte)((input[inputOffset + 1] >> 48) & 0xFF);
             output[outputOffset + 8 + 7] = (byte)((input[inputOffset + 1] >> 56) & 0xFF);
 
-            output[outputOffset + 16 + 0] = (byte)((input[inputOffset + 2] >>  0) & 0xFF);
-            output[outputOffset + 16 + 1] = (byte)((input[inputOffset + 2] >>  8) & 0xFF);
+            output[outputOffset + 16 + 0] = (byte)((input[inputOffset + 2] >> 0) & 0xFF);
+            output[outputOffset + 16 + 1] = (byte)((input[inputOffset + 2] >> 8) & 0xFF);
             output[outputOffset + 16 + 2] = (byte)((input[inputOffset + 2] >> 16) & 0xFF);
             output[outputOffset + 16 + 3] = (byte)((input[inputOffset + 2] >> 24) & 0xFF);
             output[outputOffset + 16 + 4] = (byte)((input[inputOffset + 2] >> 32) & 0xFF);
@@ -759,8 +758,8 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 16 + 6] = (byte)((input[inputOffset + 2] >> 48) & 0xFF);
             output[outputOffset + 16 + 7] = (byte)((input[inputOffset + 2] >> 56) & 0xFF);
 
-            output[outputOffset + 24 + 0] = (byte)((input[inputOffset + 3] >>  0) & 0xFF);
-            output[outputOffset + 24 + 1] = (byte)((input[inputOffset + 3] >>  8) & 0xFF);
+            output[outputOffset + 24 + 0] = (byte)((input[inputOffset + 3] >> 0) & 0xFF);
+            output[outputOffset + 24 + 1] = (byte)((input[inputOffset + 3] >> 8) & 0xFF);
             output[outputOffset + 24 + 2] = (byte)((input[inputOffset + 3] >> 16) & 0xFF);
             output[outputOffset + 24 + 3] = (byte)((input[inputOffset + 3] >> 24) & 0xFF);
             output[outputOffset + 24 + 4] = (byte)((input[inputOffset + 3] >> 32) & 0xFF);
@@ -802,7 +801,7 @@ namespace Arctium.Shared.Helpers.Buffers
             output[offset + 2] = (byte)(value >> 16);
             output[offset + 3] = (byte)(value >> 24);
         }
-        
+
         public static void ToBytes1UShortLE(ushort value, byte[] output, long offset)
         {
             output[offset + 0] = (byte)(value >> 0);
@@ -846,7 +845,7 @@ namespace Arctium.Shared.Helpers.Buffers
             {
                 long k = inputOffset + (i * 8);
 
-                output[i + outputOffset] = 
+                output[i + outputOffset] =
                     ((ulong)input[k + 0] << 56) |
                     ((ulong)input[k + 1] << 48) |
                     ((ulong)input[k + 2] << 40) |
@@ -855,7 +854,7 @@ namespace Arctium.Shared.Helpers.Buffers
                     ((ulong)input[k + 5] << 16) |
                     ((ulong)input[k + 6] << 08) |
                     ((ulong)input[k + 7] << 00);
-            } 
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -965,10 +964,10 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int i = 0; i < 4; i++)
             {
-                dst[i + destOffset] = 
-                            (uint)(src[so + 0] << 24) | 
-                            (uint)(src[so + 1] << 16) | 
-                            (uint)(src[so + 2] << 08) | 
+                dst[i + destOffset] =
+                            (uint)(src[so + 0] << 24) |
+                            (uint)(src[so + 1] << 16) |
+                            (uint)(src[so + 2] << 08) |
                             (uint)(src[so + 3] << 00);
 
                 so += 4;
@@ -982,10 +981,10 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int i = 0; i < 6; i++)
             {
-                dst[i + destOffset] = 
-                            (uint)(src[so + 0] << 24) | 
-                            (uint)(src[so + 1] << 16) | 
-                            (uint)(src[so + 2] << 08) | 
+                dst[i + destOffset] =
+                            (uint)(src[so + 0] << 24) |
+                            (uint)(src[so + 1] << 16) |
+                            (uint)(src[so + 2] << 08) |
                             (uint)(src[so + 3] << 00);
 
                 so += 4;
@@ -999,15 +998,123 @@ namespace Arctium.Shared.Helpers.Buffers
 
             for (int i = 0; i < 8; i++)
             {
-                dst[i + destOffset] = 
-                            (uint)(src[so + 0] << 24) | 
-                            (uint)(src[so + 1] << 16) | 
-                            (uint)(src[so + 2] << 08) | 
+                dst[i + destOffset] =
+                            (uint)(src[so + 0] << 24) |
+                            (uint)(src[so + 1] << 16) |
+                            (uint)(src[so + 2] << 08) |
                             (uint)(src[so + 3] << 00);
 
                 so += 4;
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong24BytesLE(byte[] src, long srcOffset, ulong[] output, long outputOffset)
+        {
+            long i = srcOffset, o = outputOffset;
+
+            output[o + 0] =
+                ((ulong)src[i + 0] << 00) |
+                ((ulong)src[i + 1] << 08) |
+                ((ulong)src[i + 2] << 16) |
+                ((ulong)src[i + 3] << 24) |
+                ((ulong)src[i + 4] << 32) |
+                ((ulong)src[i + 5] << 40) |
+                ((ulong)src[i + 6] << 48) |
+                ((ulong)src[i + 7] << 56);
+
+            i += 8;
+
+            output[o + 1] =
+                ((ulong)src[i + 0] << 00) |
+                ((ulong)src[i + 1] << 08) |
+                ((ulong)src[i + 2] << 16) |
+                ((ulong)src[i + 3] << 24) |
+                ((ulong)src[i + 4] << 32) |
+                ((ulong)src[i + 5] << 40) |
+                ((ulong)src[i + 6] << 48) |
+                ((ulong)src[i + 7] << 56);
+
+            i += 8;
+
+            output[o + 2] =
+                ((ulong)src[i + 0] << 00) |
+                ((ulong)src[i + 1] << 08) |
+                ((ulong)src[i + 2] << 16) |
+                ((ulong)src[i + 3] << 24) |
+                ((ulong)src[i + 4] << 32) |
+                ((ulong)src[i + 5] << 40) |
+                ((ulong)src[i + 6] << 48) |
+                ((ulong)src[i + 7] << 56);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong24BytesBE(byte[] src, long srcOffset, ulong[] output, long outputOffset)
+        {
+            long i = srcOffset, o = outputOffset;
+
+            output[o + 0] =
+                ((ulong)src[i + 7] << 00) |
+                ((ulong)src[i + 6] << 08) |
+                ((ulong)src[i + 5] << 16) |
+                ((ulong)src[i + 4] << 24) |
+                ((ulong)src[i + 3] << 32) |
+                ((ulong)src[i + 2] << 40) |
+                ((ulong)src[i + 1] << 48) |
+                ((ulong)src[i + 0] << 56);
+
+            i += 8;
+
+            output[o + 1] =
+                ((ulong)src[i + 7] << 00) |
+                ((ulong)src[i + 6] << 08) |
+                ((ulong)src[i + 5] << 16) |
+                ((ulong)src[i + 4] << 24) |
+                ((ulong)src[i + 3] << 32) |
+                ((ulong)src[i + 2] << 40) |
+                ((ulong)src[i + 1] << 48) |
+                ((ulong)src[i + 0] << 56);
+
+            i += 8;
+
+            output[o + 2] =
+                ((ulong)src[i + 7] << 00) |
+                ((ulong)src[i + 6] << 08) |
+                ((ulong)src[i + 5] << 16) |
+                ((ulong)src[i + 4] << 24) |
+                ((ulong)src[i + 3] << 32) |
+                ((ulong)src[i + 2] << 40) |
+                ((ulong)src[i + 1] << 48) |
+                ((ulong)src[i + 0] << 56);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytes2ULongLE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            long i = inputOffset, o = outputOffset;
+
+            output[o + 0] = (byte)(input[i] >> 00);
+            output[o + 1] = (byte)(input[i] >> 08);
+            output[o + 2] = (byte)(input[i] >> 16);
+            output[o + 3] = (byte)(input[i] >> 24);
+            output[o + 4] = (byte)(input[i] >> 32);
+            output[o + 5] = (byte)(input[i] >> 40);
+            output[o + 6] = (byte)(input[i] >> 48);
+            output[o + 7] = (byte)(input[i] >> 56);
+
+            o += 8;
+            i += 1;
+
+            output[o + 0] = (byte)(input[i] >> 00);
+            output[o + 1] = (byte)(input[i] >> 08);
+            output[o + 2] = (byte)(input[i] >> 16);
+            output[o + 3] = (byte)(input[i] >> 24);
+            output[o + 4] = (byte)(input[i] >> 32);
+            output[o + 5] = (byte)(input[i] >> 40);
+            output[o + 6] = (byte)(input[i] >> 48);
+            output[o + 7] = (byte)(input[i] >> 56);
+        }
+
         #endregion
     }
 }

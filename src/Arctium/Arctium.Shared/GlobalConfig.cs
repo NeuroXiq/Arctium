@@ -2,6 +2,6 @@
 {
     public static class GlobalConfig
     {
-        public static int DefaultHashBufferBlockCount = 0x20;
+        public static int DefaultHashBufferBlockCount = 0x100;
     }
 }
