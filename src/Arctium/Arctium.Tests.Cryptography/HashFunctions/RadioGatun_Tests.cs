@@ -13,10 +13,11 @@ namespace Arctium.Tests.Cryptography.HashFunctions
     internal class RadioGatun_Tests
     {
         private List<HashFunctionTest> RadioGatun64Tests;
+        private List<HashFunctionTest> RadioGatun32Tests;
 
         public RadioGatun_Tests()
         {
-            LoadRadioGatun64Tests();
+            LoadRadioGatunTests();
         }
 
         [TestMethod]
@@ -27,12 +28,28 @@ namespace Arctium.Tests.Cryptography.HashFunctions
             return ExecuteHashFunctionTests.RunTests(radioGatun64, RadioGatun64Tests);
         }
 
-        private void LoadRadioGatun64Tests()
+        [TestMethod]
+        public List<TestResult> RadioGatun32_Tests()
         {
-            RadioGatun64Tests = new List<HashFunctionTest>();
-            var allLines = File.ReadAllLines(Files.HashFunctions.RadioGatun64TestVectors);
+            RadioGatun32 radioGatun32 = new RadioGatun32();
 
-            for (int i = 0; i < allLines.Length; i+=3)
+            return ExecuteHashFunctionTests.RunTests(radioGatun32, RadioGatun32Tests);
+        }
+
+        private void LoadRadioGatunTests()
+        {
+            var allLines64 = File.ReadAllLines(Files.HashFunctions.RadioGatun64TestVectors);
+            var allLines32 = File.ReadAllLines(Files.HashFunctions.RadioGatun32TestVectors);
+
+            RadioGatun64Tests = Parse(allLines64);
+            RadioGatun32Tests = Parse(allLines32);
+        }
+
+        private List<HashFunctionTest> Parse(string[] allLines)
+        {
+            List<HashFunctionTest> tests = new List<HashFunctionTest>();
+
+            for (int i = 0; i < allLines.Length; i += 3)
             {
                 string name = allLines[i + 0];
                 string inputString = allLines[i + 1];
@@ -43,8 +60,10 @@ namespace Arctium.Tests.Cryptography.HashFunctions
 
                 name = name.Length > 64 ? name.Substring(0, 64) + "[...]" : name;
 
-                RadioGatun64Tests.Add(new HashFunctionTest(inputBytes, expectedHashBytes, name));
+                tests.Add(new HashFunctionTest(inputBytes, expectedHashBytes, name));
             }
+
+            return tests;
         }
     }
 }

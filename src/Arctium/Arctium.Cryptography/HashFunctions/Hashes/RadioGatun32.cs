@@ -25,6 +25,12 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             RadioGatun32Algorithm.Process96BitBlocks(state, buffer, offset, length);
         }
 
+        /// <summary>
+        /// First call to this method generates call. Second and more calls works as Extendable Output Function
+        /// that uses current hash state to generate next output. This means that multiple calls to this method
+        /// gives different hashed. Only first hash is corrent RadioGatun hash
+        /// </summary>
+        /// <returns></returns>
         public override byte[] HashFinal()
         {
             byte[] hash = new byte[32];
