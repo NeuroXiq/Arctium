@@ -53,6 +53,14 @@ namespace Arctium.Shared.Helpers.Buffers
 
         #region unmanaged
 
+        public static void Copy(uint* src, long srcOffset, uint[] dst, long destOffset, long length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                dst[destOffset + i] = src[i];
+            }
+        }
+
         public static void Copy(ulong* src, ulong[] dst)
         {
             for (int i = 0; i < dst.Length; i++)

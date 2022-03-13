@@ -39,6 +39,14 @@ namespace Arctium.Shared.Helpers
             }
         }
 
+        public static void Memset(uint[] array, long offset, long count, uint value)
+        {
+            for (long i = offset; i < offset + count; i++)
+            {
+                array[i] = value;
+            }
+        }
+
         public static void Memset(byte[] array, long offset, long count, byte value)
         {
             for (long i = 0; i < count; i++) array[i + offset] = value;

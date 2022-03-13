@@ -12,6 +12,42 @@ namespace Arctium.Shared.Helpers.Buffers
     {
         #region Unsafe
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt24BytesLE(byte* src, uint* dst)
+        {
+            dst[0] =
+                (uint)(src[0] << 00) |
+                (uint)(src[1] << 08) |
+                (uint)(src[2] << 16) |
+                (uint)(src[3] << 24);
+
+            src += 4;
+
+            dst[1] =
+                (uint)(src[0] << 00) |
+                (uint)(src[1] << 08) |
+                (uint)(src[2] << 16) |
+                (uint)(src[3] << 24);
+
+            src += 4;
+
+            dst[2] =
+                (uint)(src[0] << 00) |
+                (uint)(src[1] << 08) |
+                (uint)(src[2] << 16) |
+                (uint)(src[3] << 24);
+
+            src += 4;
+
+            dst[3] =
+                (uint)(src[0] << 00) |
+                (uint)(src[1] << 08) |
+                (uint)(src[2] << 16) |
+                (uint)(src[3] << 24);
+
+            src += 4;
+        }
+
         public static void ToBytes1UIntBE(uint v, byte* output, long outOffset)
         {
             output[outOffset + 0] = (byte)((v >> 24) & 0xFF);
@@ -1151,6 +1187,25 @@ namespace Arctium.Shared.Helpers.Buffers
             output[o + 5] = (byte)(input[i] >> 40);
             output[o + 6] = (byte)(input[i] >> 48);
             output[o + 7] = (byte)(input[i] >> 56);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytes2UIntLE(uint[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            long o = outputOffset, i = inputOffset;
+
+            output[o + 0] = (byte)(input[i] >> 00);
+            output[o + 1] = (byte)(input[i] >> 08);
+            output[o + 2] = (byte)(input[i] >> 16);
+            output[o + 3] = (byte)(input[i] >> 24);
+
+            i++;
+            o += 4;
+
+            output[o + 0] = (byte)(input[i] >> 00);
+            output[o + 1] = (byte)(input[i] >> 08);
+            output[o + 2] = (byte)(input[i] >> 16);
+            output[o + 3] = (byte)(input[i] >> 24);
         }
 
         #endregion
