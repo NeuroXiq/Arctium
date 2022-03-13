@@ -1009,6 +1009,44 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+        public static void ToULong24BytesLE(byte* src, ulong* output)
+        {
+            output[0] =
+                ((ulong)src[0] << 00) |
+                ((ulong)src[1] << 08) |
+                ((ulong)src[2] << 16) |
+                ((ulong)src[3] << 24) |
+                ((ulong)src[4] << 32) |
+                ((ulong)src[5] << 40) |
+                ((ulong)src[6] << 48) |
+                ((ulong)src[7] << 56);
+
+            src += 8;
+
+            output[1] =
+                ((ulong)src[0] << 00) |
+                ((ulong)src[1] << 08) |
+                ((ulong)src[2] << 16) |
+                ((ulong)src[3] << 24) |
+                ((ulong)src[4] << 32) |
+                ((ulong)src[5] << 40) |
+                ((ulong)src[6] << 48) |
+                ((ulong)src[7] << 56);
+
+            src += 8;
+
+            output[2] =
+                ((ulong)src[0] << 00) |
+                ((ulong)src[1] << 08) |
+                ((ulong)src[2] << 16) |
+                ((ulong)src[3] << 24) |
+                ((ulong)src[4] << 32) |
+                ((ulong)src[5] << 40) |
+                ((ulong)src[6] << 48) |
+                ((ulong)src[7] << 56);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public static void ToULong24BytesLE(byte[] src, long srcOffset, ulong[] output, long outputOffset)
         {
             long i = srcOffset, o = outputOffset;
