@@ -222,6 +222,70 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt64BytesBE(byte[] input, long inputOffset, uint* output, long outputOffset)
+        {
+            long o = outputOffset, i = inputOffset;
+
+            for (int k = 0; k < 4; k++)
+            {
+                output[0 + o] = (uint)input[3 + i] << 0;
+                output[0 + o] |= (uint)input[2 + i] << 8;
+                output[0 + o] |= (uint)input[1 + i] << 16;
+                output[0 + o] |= (uint)input[0 + i] << 24;
+
+                output[1 + o] = (uint)input[7 + i] << 0;
+                output[1 + o] |= (uint)input[6 + i] << 8;
+                output[1 + o] |= (uint)input[5 + i] << 16;
+                output[1 + o] |= (uint)input[4 + i] << 24;
+
+                output[2 + o] = (uint)input[11 + i] << 0;
+                output[2 + o] |= (uint)input[10 + i] << 8;
+                output[2 + o] |= (uint)input[9 + i] << 16;
+                output[2 + o] |= (uint)input[8 + i] << 24;
+
+                output[3 + o] = (uint)input[15 + i] << 0;
+                output[3 + o] |= (uint)input[14 + i] << 8;
+                output[3 + o] |= (uint)input[13 + i] << 16;
+                output[3 + o] |= (uint)input[12 + i] << 24;
+
+                o += 4;
+                i += 16;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToUInt64BytesBE(byte* input, long inputOffset, uint[] output, long outputOffset)
+        {
+            long o = outputOffset, i = inputOffset;
+
+            for (int k = 0; k < 4; k++)
+            {
+                output[0 + o] = (uint)input[3 + i] << 0;
+                output[0 + o] |= (uint)input[2 + i] << 8;
+                output[0 + o] |= (uint)input[1 + i] << 16;
+                output[0 + o] |= (uint)input[0 + i] << 24;
+
+                output[1 + o] = (uint)input[7 + i] << 0;
+                output[1 + o] |= (uint)input[6 + i] << 8;
+                output[1 + o] |= (uint)input[5 + i] << 16;
+                output[1 + o] |= (uint)input[4 + i] << 24;
+
+                output[2 + o] = (uint)input[11 + i] << 0;
+                output[2 + o] |= (uint)input[10 + i] << 8;
+                output[2 + o] |= (uint)input[9 + i] << 16;
+                output[2 + o] |= (uint)input[8 + i] << 24;
+
+                output[3 + o] = (uint)input[15 + i] << 0;
+                output[3 + o] |= (uint)input[14 + i] << 8;
+                output[3 + o] |= (uint)input[13 + i] << 16;
+                output[3 + o] |= (uint)input[12 + i] << 24;
+
+                o += 4;
+                i += 16;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToUInt64BytesBE(byte[] input, long inputOffset, uint[] output, long outputOffset)
         {
             long o = outputOffset, i = inputOffset;
@@ -830,6 +894,19 @@ namespace Arctium.Shared.Helpers.Buffers
             output[offset + 0] = (byte)(value >> 56);
         }
 
+        public static void ToBytes1ULongBE(ulong value, byte* output, long offset)
+        {
+            output[offset + 7] = (byte)(value >> 0);
+            output[offset + 6] = (byte)(value >> 8);
+            output[offset + 5] = (byte)(value >> 16);
+            output[offset + 4] = (byte)(value >> 24);
+
+            output[offset + 3] = (byte)(value >> 32);
+            output[offset + 2] = (byte)(value >> 40);
+            output[offset + 1] = (byte)(value >> 48);
+            output[offset + 0] = (byte)(value >> 56);
+        }
+
         public static void ToBytes1UIntLE(uint value, byte[] output, long offset)
         {
             output[offset + 0] = (byte)(value >> 0);
@@ -913,6 +990,11 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         public static void ToBytes8ULongBE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            for (int i = 0; i < 8; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));
+        }
+
+        public static void ToBytes8ULongBE(ulong* input, long inputOffset, byte* output, long outputOffset)
         {
             for (int i = 0; i < 8; i++) ToBytes1ULongBE(input[i + inputOffset], output, outputOffset + (i * 8));
         }
@@ -1206,6 +1288,35 @@ namespace Arctium.Shared.Helpers.Buffers
             output[o + 1] = (byte)(input[i] >> 08);
             output[o + 2] = (byte)(input[i] >> 16);
             output[o + 3] = (byte)(input[i] >> 24);
+        }
+
+        public static void ToBytes16UIntBE(uint[] input, long inputOffset, byte[] output, long outputOffset)
+        {
+            long o = outputOffset, io = inputOffset;
+
+            for (int i = 0; i < 64; i++)
+            {
+                int shift = (24 - (8 * (i % 4)));
+                output[o + i] = (byte)(input[io + (i / 4)] >> shift);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToBytes8ULongBE(ulong* src, long srcOffset, byte[] dest, long destOffset)
+        {
+            long od = destOffset, so = srcOffset;
+
+            for (int i = 0; i < 8; i++)
+            {
+                dest[od + (i * 8) + 0] = (byte)(src[so + i] >> 56);
+                dest[od + (i * 8) + 1] = (byte)(src[so + i] >> 48);
+                dest[od + (i * 8) + 2] = (byte)(src[so + i] >> 40);
+                dest[od + (i * 8) + 3] = (byte)(src[so + i] >> 32);
+                dest[od + (i * 8) + 4] = (byte)(src[so + i] >> 24);
+                dest[od + (i * 8) + 5] = (byte)(src[so + i] >> 16);
+                dest[od + (i * 8) + 6] = (byte)(src[so + i] >> 08);
+                dest[od + (i * 8) + 7] = (byte)(src[so + i] >> 00);
+            }
         }
 
         #endregion

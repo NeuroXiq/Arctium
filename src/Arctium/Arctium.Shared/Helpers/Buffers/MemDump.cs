@@ -6,6 +6,12 @@ namespace Arctium.Shared.Helpers.Buffers
 {
     public static unsafe class MemDump
     {
+        public static void HexDump(ulong value)
+        {
+            Console.WriteLine("{0:X16}", value);
+        }
+
+
         public static void HexDump(ulong[] buffer,
             int offset = 0,
             int length = -1,

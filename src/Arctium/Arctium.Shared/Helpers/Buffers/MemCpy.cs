@@ -34,6 +34,17 @@ namespace Arctium.Shared.Helpers.Buffers
             return length;
         }
 
+        public static long Copy(byte* inputBuffer, long offset, byte[] outputBuffer, long outputOffset, long length)
+        {
+            long copyEnd = offset + length;
+            for (long i = offset, j = outputOffset; i < copyEnd; i++, outputOffset++)
+            {
+                outputBuffer[outputOffset] = inputBuffer[i];
+            }
+
+            return length;
+        }
+
         public static long Copy(byte[] source, byte[] destination)
         {
             if (source.Length != destination.Length)
