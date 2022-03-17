@@ -1,8 +1,23 @@
-﻿using System;
+﻿/*
+ *  GOST R 34.11-2012: Hash Function
+ *  RFC 6986
+ *  https://github.com/adegtyarev/streebog
+ * 
+ * 
+ * --------
+ * Implemented By NeuroXiq 2022
+ * 
+ * 1. After ProcessLastBlock state is desetroyed and only method allowed to call is GetHash
+ * 2. At the bottom of the file sampe code used to generate lookup tables
+ * 3. Code implements Both variants 512/256 bits because there is no any difference in algorithm,
+ *   just output is truncated
+ * 
+ * TODO / Hsh functions / Streebog / consider better implementation of reversing array,
+ *      Maybe unwind 'E' loop
+ */
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 
@@ -22,6 +37,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             public uint[] Epsilon;
             public byte[] h;
             public ulong N;
+            public byte[] temp;
         }
 
         public static State Init(HashSize hashSize)
@@ -31,6 +47,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             state.Epsilon = new uint[16];
             state.N = 0;
             state.HashSize = hashSize;
+            state.temp = new byte[64];
 
             Reset(state);
 
@@ -48,18 +65,28 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
         public static void Process512BitBlocks(State state, byte[] buffer, long offset, long length)
         {
-            for (long i = 0; i < length; i += 64)
+            byte[] temp = state.temp;
+
+            for (long i = offset; i < length + offset; i += 64)
             {
-                g(state, buffer, offset + i);
+                // need to reved input, instead of processing 'ABCD' it will process 'DCBA'
+                for (int j = 0; j < 64; j++) temp[j] = buffer[63 + i - j];
+                
+                g(state, temp, 0);
                 state.N += 512;
-                AddToEpsilon(state, buffer, offset);
+                AddToEpsilon(state, temp, 0);
             }
         }
 
         public static void GetHash(State state, byte[] outBuffer, long outOffset)
         {
             int hashSize = state.HashSize == HashSize.Size256 ? 32 : 64;
-            MemCpy.Copy(state.h, 0, outBuffer, outOffset, hashSize);
+            // MemCpy.Copy(state.h, 0, outBuffer, outOffset, hashSize);
+
+            for (int i = 0; i < hashSize; i++)
+            {
+                outBuffer[i] = state.h[hashSize - i - 1];
+            }
         }
 
         static void g(State state, byte[] input, long inputOffset)
@@ -147,7 +174,8 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             nBytes = new byte[64];
             epsilonBytes = new byte[64];
 
-            MemCpy.Copy(buffer, offset, lastBlock, 64 - length, length);
+            // MemCpy.Copy(buffer, offset, lastBlock, 64 - length, length);
+            for (int i = 0; i < length; i++) lastBlock[63 - i] = buffer[offset + i];
 
             lastBlock[64 - length - 1] = 0x01;
 

@@ -16,6 +16,8 @@ for more interesting parts of the documentation.
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
+|Streebog-256|    -        |
+|Streebog-512                  |    -        |
 |CRC-8                  |    -        |
 |CRC-16                  |    -        |
 |CRC-32                  |    -        |

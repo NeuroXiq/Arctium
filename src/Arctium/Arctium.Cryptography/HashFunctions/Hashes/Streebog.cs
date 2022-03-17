@@ -31,7 +31,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         public override byte[] HashFinal()
         {
             byte[] lastBlock = new byte[64];
-            byte[] hash = new byte[64];
+            byte[] hash = new byte[HashSizeBytes];
             long lastBytesLength;
 
             blockBuffer.Flush(lastBlock, 0, out lastBytesLength);
@@ -46,11 +46,21 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         public override void Reset() => StreebogAlgorithm.Reset(state);
     }
 
+    /// <summary>
+    /// GOST R 34.11-2012 / Streebog hash function.
+    /// RFC 6986
+    /// 256 bits output size
+    /// </summary>
     public class Streebog_256 : Streebog
     {
         public Streebog_256() : base(256) { }
     }
 
+    /// <summary>
+    /// GOST R 34.11-2012 / Streebog hash function.
+    /// RFC 6986
+    /// 512 bits output size
+    /// </summary>
     public class Streebog_512 : Streebog
     {
         public Streebog_512() : base(512) { }
