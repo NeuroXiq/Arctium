@@ -60,10 +60,27 @@ namespace Arctium.Tests.Cryptography.Ciphers
                 byte[] input = keyInputOutput[i].Item2;
                 byte[] output = keyInputOutput[i].Item3;
 
-                AES aes = new AES(key);
 
-                aes.Encrypt(input, 0, outp, 0, 16);
-                aes.Decrypt(outp, 0, decrOutput, 0, 16);
+                if (key.Length == 16)
+                {
+                    AES_128 aes = new AES_128(key);
+                    aes.Encrypt(input, 0, outp, 0, 16);
+                    aes.Decrypt(outp, 0, decrOutput, 0, 16);
+                }
+                else if (key.Length == 24)
+                {
+                    AES_192 aes = new AES_192(key);
+
+                    aes.Encrypt(input, 0, outp, 0, 16);
+                    aes.Decrypt(outp, 0, decrOutput, 0, 16);
+                }
+                else
+                {
+                    AES aes = new AES(key);
+
+                    aes.Encrypt(input, 0, outp, 0, 16);
+                    aes.Decrypt(outp, 0, decrOutput, 0, 16);
+                }
 
                 string tname = $"AES / Key: {key.Length * 8}, tupleNo: {i}";
                 bool okEncrypt = MemOps.Memcmp(output, outp);
