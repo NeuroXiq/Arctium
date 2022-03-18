@@ -206,15 +206,15 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         }
 
         // TEST CODE
-        public static void EncryptBlock192(Context context, byte* input, long inOffset, byte* output, long outOffset)
+        public static void EncryptBlock256(Context context, byte* input, long inOffset, byte* output, long outOffset)
         {
             byte* state = stackalloc byte[16];
             byte b1, b2, b3, b4;
             uint k;
             uint[] roundKey = context.ExpandedKey;
             uint temp = 0;
+            int p1, p2, p3, p4;
 
-            
             for (long i = 0; i < 4; i++)
             {
                 state[0 + (i * 4)] = input[inOffset + i + 00]; 
@@ -226,6 +226,11 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             
             for (int i = 0; i < 4; i++)
             {
+                // p1 = (4 * 0) + i;
+                // p2 = (4 * 1) + ((i + ((12 + 2) * 1)) /* + 200*/ % 4);
+                // p3 = (4 * 2) + ((i + ((12 + 2) * 2)) /* + 200*/ % 4);
+                // p4 = (4 * 3) + ((i + ((12 + 2) * 3)) /* + 200*/ % 4);
+
                 k = roundKey[i + (0 * 4)];
                 state[i + (00)] ^= (byte)((k >> 24) & 0xFF);
                 state[i + (04)] ^= (byte)((k >> 16) & 0xFF);
@@ -233,18 +238,18 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 state[i + (12)] ^= (byte)((k >> 00) & 0xFF);
             }
 
-            int p1, p2, p3, p4;
+            
 
-            for (int i = 1; i < 12; i++)
+            for (int i = 1; i < 14; i++)
             {
 
                 for (int j = 0; j < 4; j++)
                 {
                     
                     p1 = (4 * 0) + j;
-                    p2 = (4 * 1) + ((j + (i * 1) /* + 200*/ ) % 4);
-                    p3 = (4 * 2) + ((j + (i * 2) /* + 200*/ ) % 4);
-                    p4 = (4 * 3) + ((j + (i * 3) /* + 200*/ ) % 4);
+                    p2 = (4 * 1) + ((j + ((0 + i) * 1) /* + 200*/ ) % 4);
+                    p3 = (4 * 2) + ((j + ((0 + i) * 2) /* + 200*/ ) % 4);
+                    p4 = (4 * 3) + ((j + ((0 + i) * 3) /* + 200*/ ) % 4);
 
                     b1 = state[p1];
                     b2 = state[p2];
@@ -266,18 +271,17 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             }
 
             // SubBytes(state);
-
-
-
             // ShiftRows(state); ShiftRows(state);
-            // AddRoundKey(state, context.ExpandedKey, 12);
-
+            // AddRoundKey(state, context.ExpandedKey, 14);
+            // MapStateBytes(state, output);
+            //return;
+            
             for (int i = 0; i < 4; i++)
             {
                 p1 = (4 * 0) + i;
-                p2 = (4 * 1) + ((i ) % 4);
-                p3 = (4 * 2) + ((i ) % 4);
-                p4 = (4 * 3) + ((i ) % 4);
+                p2 = (4 * 1) +(((2) * 1 + i) % 4);
+                p3 = (4 * 2) +(((2) * 2 + i) % 4);
+                p4 = (4 * 3) +(((2) * 3 + i) % 4);
 
                 b1 = state[p1];
                 b2 = state[p2];
@@ -289,24 +293,23 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 b3 = sbox[b3];
                 b4 = sbox[b4];
 
-                k = context.ExpandedKey[(12 * 4) + i];
+                k = context.ExpandedKey[(14 * 4) + i];
+                // MemDump.HexDump(state, 16);
+                //     Console.WriteLine(  ); ;
 
-                state[p1] = (byte)(b1 ^ (k >> 24));
-                state[p2] = (byte)(b2 ^ (k >> 16));
-                state[p3] = (byte)(b3 ^ (k >> 08));
-                state[p4] = (byte)(b4 ^ (k >> 00));
+                output[0 + (i * 4) + outOffset] = (byte)(b1 ^ (k >> 24));
+                output[1 + (i * 4) + outOffset] = (byte)(b2 ^ (k >> 16));
+                output[2 + (i * 4) + outOffset] = (byte)(b3 ^ (k >> 08));
+                output[3 + (i * 4) + outOffset] = (byte)(b4 ^ (k >> 00));
             }
 
             for (long i = 0; i < 4; i++)
             {
-                output[0 + (i * 4) + outOffset] = state[i + 0];
-                output[1 + (i * 4) + outOffset] = state[i + 4];
-                output[2 + (i * 4) + outOffset] = state[i + 8];
-                output[3 + (i * 4) + outOffset] = state[i + 12];
+                
             }
         }
 
-        public static void DecryptSingleBlock192(Context context, byte* input, long inOffset, byte* output, long outOffset, int rounds)
+        public static void DecryptSingleBlock256(Context context, byte* input, long inOffset, byte* output, long outOffset, int rounds)
         {
             byte* state = stackalloc byte[16];
             uint key;
@@ -325,7 +328,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
             for (int i = 0; i < 4; i++)
             {
-                key = context.ExpandedKey[4 * 12 + i];
+                key = context.ExpandedKey[4 * rounds + i];
             
                 state[(0 * 4) + i] ^= (byte)(key >> 24);
                 state[(1 * 4) + i] ^= (byte)(key >> 16);
@@ -341,9 +344,9 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 for (int k = 0; k < 4; k++)
                 {
                     p1 = (4 * 0) + k;
-                    p2 = (4 * 1) + ((k + (i * 1)) /* + 200*/ % 4);
-                    p3 = (4 * 2) + ((k + (i * 2)) /* + 200*/ % 4);
-                    p4 = (4 * 3) + ((k + (i * 3)) /* + 200*/ % 4);
+                    p2 = (4 * 1) + ((k + ((2 + i) * 1)) /* + 200*/ % 4);
+                    p3 = (4 * 2) + ((k + ((2 + i) * 2)) /* + 200*/ % 4);
+                    p4 = (4 * 3) + ((k + ((2 + i) * 3)) /* + 200*/ % 4);
 
                     byte b1 = state[p1];
                     byte b2 = state[p2];
@@ -388,6 +391,12 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 
             }
 
+            // InvShiftRows(state); InvShiftRows(state);
+            // InvSubBytes(state);
+            // AddRoundKey(state, context.ExpandedKey, 0);
+            // 
+            // MapStateBytes(state, output + outOffset);
+            
             for (int k = 0; k < 4; k++)
             {
                 //p1 = (4 * 0) + k;
@@ -396,9 +405,9 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 //p4 = (4 * 3) + ((k + 3) % 4);
 
                 p1 = (4 * 0) + k;
-                p2 = (4 * 1) + k; //(k + (2 * 1)) % 4); /* + 200*/
-                p3 = (4 * 2) + k; //(k + (2 * 2)) % 4); /* + 200*/
-                p4 = (4 * 3) + k; //((k + (2 * 3)) % 4); /* + 200*/
+                p2 = (4 * 1) + ((k + (2 * 1)) % 4); /* + 200*/
+                p3 = (4 * 2) + ((k + (2 * 2)) % 4); /* + 200*/
+                p4 = (4 * 3) + ((k + (2 * 3)) % 4); /* + 200*/
 
                 byte b1 = state[p1];
                 byte b2 = state[p2];
@@ -1486,6 +1495,216 @@ public static readonly uint[] T4 = new uint[]
          * END OF ALGORITHM
          * 
          */
+
+        public static void GENERATE_CODE_DECRYPT_256()
+        {
+            Console.WriteLine("byte* state = stackalloc byte[16];");
+            Console.WriteLine("uint key, res;");
+            Console.WriteLine("uint[] expandedKey = context.ExpandedKey;");
+            Console.WriteLine("byte b1, b2, b3, b4;");
+            // MapStateBytes(input + inOffset, state);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Console.WriteLine($"state[{00 + i}] = input[{(4 * i) + 0}];");
+                Console.WriteLine($"state[{04 + i}] = input[{(4 * i) + 1}];");
+                Console.WriteLine($"state[{08 + i}] = input[{(4 * i) + 2}];");
+                Console.WriteLine($"state[{12 + i}] = input[{(4 * i) + 3}];");
+            }
+
+            // AddRoundKey(state, context.ExpandedKey, rounds);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Console.WriteLine($"key = expandedKey[{4 * 14 + i}];");
+                Console.WriteLine($"state[{(0 * 4) + i}] ^= (byte)(key >> 24);");
+                Console.WriteLine($"state[{(1 * 4) + i}] ^= (byte)(key >> 16);");
+                Console.WriteLine($"state[{(2 * 4) + i}] ^= (byte)(key >> 08);");
+                Console.WriteLine($"state[{(3 * 4) + i}] ^= (byte)(key >> 00);");
+            }
+
+            int p1, p2, p3, p4;
+
+            for (int i = 14 - 1; i >= 1; i--)
+            {
+                // InvShiftRows(state);
+                for (int k = 0; k < 4; k++)
+                {
+                    p1 = (4 * 0) + k;
+                    p2 = (4 * 1) + ((k + ((2 + i) * 1)) /* + 200*/ % 4);
+                    p3 = (4 * 2) + ((k + ((2 + i) * 2)) /* + 200*/ % 4);
+                    p4 = (4 * 3) + ((k + ((2 + i) * 3)) /* + 200*/ % 4);
+
+                    Console.WriteLine($"b1 = state[{p1}];");
+                    Console.WriteLine($"b2 = state[{p2}];");
+                    Console.WriteLine($"b3 = state[{p3}];");
+                    Console.WriteLine($"b4 = state[{p4}];");
+                    Console.WriteLine($"b1 = InverseSbox[b1];");
+                    Console.WriteLine($"b2 = InverseSbox[b2];");
+                    Console.WriteLine($"b3 = InverseSbox[b3];");
+                    Console.WriteLine($"b4 = InverseSbox[b4];");
+
+                    // uint col = ((uint)inverseSbox[b1] << 24) | ((uint)inverseSbox[b2] << 16) | ((uint)inverseSbox[b3] << 08) | ((uint)inverseSbox[b4] << 00);
+
+                    Console.WriteLine($"key = expandedKey[{k + (i * 4)}];");
+                    Console.WriteLine($"b1 ^= (byte)(key >> 24);");
+                    Console.WriteLine($"b2 ^= (byte)(key >> 16);");
+                    Console.WriteLine($"b3 ^= (byte)(key >> 08);");
+                    Console.WriteLine($"b4 ^= (byte)(key >> 00);");
+
+                    
+
+                    for (int j = 0; j < 4; j++)
+                    {
+
+                    }
+
+                    Console.WriteLine($"res = InvT1[b1] ^ InvT2[b2] ^ InvT3[b3] ^ InvT4[b4];");
+                    Console.WriteLine($"state[{p1}] = (byte)(res >> 24);");
+                    Console.WriteLine($"state[{p2}] = (byte)(res >> 16);");
+                    Console.WriteLine($"state[{p3}] = (byte)(res >> 08);");
+                    Console.WriteLine($"state[{p4}] = (byte)(res >> 00);");
+                }
+
+                // InvShiftRows(state);
+                // InvSubBytes(state);
+                // AddRoundKey(state, context.ExpandedKey, i);
+                // 
+                // InvMixColumns(state);
+
+
+            }
+
+            for (int k = 0; k < 4; k++)
+            {
+                //p1 = (4 * 0) + k;
+                //p2 = (4 * 1) + ((k + 3) % 4);
+                //p3 = (4 * 2) + ((k + 0) % 4);
+                //p4 = (4 * 3) + ((k + 3) % 4);
+
+                p1 = (4 * 0) + k;
+                p2 = (4 * 1) + ((k + (2 * 1)) % 4); /* + 200*/
+                p3 = (4 * 2) + ((k + (2 * 2)) % 4); /* + 200*/
+                p4 = (4 * 3) + ((k + (2 * 3)) % 4); /* + 200*/
+
+                Console.WriteLine($"b1 = state[{p1}];");
+                Console.WriteLine($"b2 = state[{p2}];");
+                Console.WriteLine($"b3 = state[{p3}];");
+                Console.WriteLine($"b4 = state[{p4}];");
+                Console.WriteLine("b1 = InverseSbox[b1];");
+                Console.WriteLine("b2 = InverseSbox[b2];");
+                Console.WriteLine("b3 = InverseSbox[b3];");
+                Console.WriteLine("b4 = InverseSbox[b4];");
+
+                Console.WriteLine($"key = expandedKey[{k + (0 * 4)}];");
+                // col ^= key;
+
+                Console.WriteLine($"b1 ^= (byte)(key >> 24);");
+                Console.WriteLine($"b2 ^= (byte)(key >> 16);");
+                Console.WriteLine($"b3 ^= (byte)(key >> 08);");
+                Console.WriteLine($"b4 ^= (byte)(key >> 00);");
+                Console.WriteLine($"output[{(4 * k) + 0}] = b1;");
+                Console.WriteLine($"output[{(4 * k) + 1}] = b2;");
+                Console.WriteLine($"output[{(4 * k) + 2}] = b3;");
+                Console.WriteLine($"output[{(4 * k) + 3}] = b4;");
+            }
+        }
+        
+        public static void GENERATE_CODE_ENCRYPT_256()
+        {
+            Console.WriteLine("byte* state = stackalloc byte[16];");
+            Console.WriteLine("byte b1, b2, b3, b4;");
+            Console.WriteLine("uint k;");
+            Console.WriteLine("uint[] roundKey = context.ExpandedKey;");
+            Console.WriteLine("uint xored = 0;");
+            int p1, p2, p3, p4;
+
+            for (long i = 0; i < 4; i++)
+            {
+                Console.WriteLine($"state[{0 + (i * 4)}] = input[{i + 00}];");
+                Console.WriteLine($"state[{1 + (i * 4)}] = input[{i + 04}];");
+                Console.WriteLine($"state[{2 + (i * 4)}] = input[{i + 08}];");
+                Console.WriteLine($"state[{3 + (i * 4)}] = input[{i + 12}];");
+            }
+
+
+            for (int i = 0; i < 4; i++)
+            {
+                // p1 = (4 * 0) + i;
+                // p2 = (4 * 1) + ((i + ((12 + 2) * 1)) /* + 200*/ % 4);
+                // p3 = (4 * 2) + ((i + ((12 + 2) * 2)) /* + 200*/ % 4);
+                // p4 = (4 * 3) + ((i + ((12 + 2) * 3)) /* + 200*/ % 4);
+
+                Console.WriteLine($"k = roundKey[{i + (0 * 4)}];");
+                Console.WriteLine($"state[{i + (00)}] ^= (byte)((k >> 24) & 0xFF);");
+                Console.WriteLine($"state[{i + (04)}] ^= (byte)((k >> 16) & 0xFF);");
+                Console.WriteLine($"state[{i + (08)}] ^= (byte)((k >> 08) & 0xFF);");
+                Console.WriteLine($"state[{i + (12)}] ^= (byte)((k >> 00) & 0xFF);");
+            }
+
+
+
+            for (int i = 1; i < 14; i++)
+            {
+
+                for (int j = 0; j < 4; j++)
+                {
+
+                    p1 = (4 * 0) + j;
+                    p2 = (4 * 1) + ((j + ((0 + i) * 1) /* + 200*/ ) % 4);
+                    p3 = (4 * 2) + ((j + ((0 + i) * 2) /* + 200*/ ) % 4);
+                    p4 = (4 * 3) + ((j + ((0 + i) * 3) /* + 200*/ ) % 4);
+
+                    Console.WriteLine($"b1 = state[{p1}];");
+                    Console.WriteLine($"b2 = state[{p2}];");
+                    Console.WriteLine($"b3 = state[{p3}];");
+                    Console.WriteLine($"b4 = state[{p4}];");
+
+                    Console.WriteLine("xored = T1[b1] ^ T2[b2] ^ T3[b3] ^ T4[b4];");
+
+                    Console.WriteLine($"k = roundKey[{j + (i * 4)}];");
+                    Console.WriteLine("xored ^= k;");
+
+                    Console.WriteLine($"state[{p1}] = (byte)(xored >> 24);");
+                    Console.WriteLine($"state[{p2}] = (byte)(xored >> 16);");
+                    Console.WriteLine($"state[{p3}] = (byte)(xored >> 08);");
+                    Console.WriteLine($"state[{p4}] = (byte)(xored >> 00);");
+                }
+            }
+
+            // SubBytes(state);
+            // ShiftRows(state); ShiftRows(state);
+            // AddRoundKey(state, context.ExpandedKey, 14);
+            // MapStateBytes(state, output);
+            //return;
+
+            for (int i = 0; i < 4; i++)
+            {
+                p1 = (4 * 0) + i;
+                p2 = (4 * 1) + (((2) * 1 + i) % 4);
+                p3 = (4 * 2) + (((2) * 2 + i) % 4);
+                p4 = (4 * 3) + (((2) * 3 + i) % 4);
+
+                Console.WriteLine($"b1 = state[{p1}];");
+                Console.WriteLine($"b2 = state[{p2}];");
+                Console.WriteLine($"b3 = state[{p3}];");
+                Console.WriteLine($"b4 = state[{p4}];");
+                Console.WriteLine($"b1 = sbox[b1];");
+                Console.WriteLine($"b2 = sbox[b2];");
+                Console.WriteLine($"b3 = sbox[b3];");
+                Console.WriteLine($"b4 = sbox[b4];");
+
+                Console.WriteLine($"k = roundKey[{(14 * 4) + i}];");
+                // MemDump.HexDump(state, 16);
+                //     Console.WriteLine(  ); ;
+
+                Console.WriteLine($"output[{0 + (i * 4)}] = (byte)(b1 ^ (k >> 24));");
+                Console.WriteLine($"output[{1 + (i * 4)}] = (byte)(b2 ^ (k >> 16));");
+                Console.WriteLine($"output[{2 + (i * 4)}] = (byte)(b3 ^ (k >> 08));");
+                Console.WriteLine($"output[{3 + (i * 4)}] = (byte)(b4 ^ (k >> 00));");
+            }
+        }
+
 
         public static void GENERATE_CODE_DECRYPT_192()
         {
