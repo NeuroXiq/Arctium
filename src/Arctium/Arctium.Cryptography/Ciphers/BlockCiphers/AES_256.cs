@@ -1,9 +1,4 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
@@ -13,6 +8,8 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         public AES_256(byte[] key) : base(key, 128)
         {
+            
+
             context = AESAlgorithm.Initialize(key);
         }
 

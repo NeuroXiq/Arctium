@@ -3,10 +3,13 @@
  * Authors: Vincent Rijmen, Joan Daemen
  * 
  * ----------------------------------------
- * Implemented by NeuroXiq 2021 
+ * Implemented by NeuroXiq 2021
+ * 
+ * 
+ * AES after optimization still not very fast.
+ * Encrypts 1GB in ~5.5/6.0 seconds (.NET implementation in 0.7s) when using AESOptimizedAlgorithm.cs file
+ * but much better than previously.
  */
-
-// TODO: Cryptography / Optimize AES encryption (MIX COLUMNS) because very slow, use 'fast aes' from doc
 
 using System;
 using Arctium.Shared.Helpers.Buffers;
@@ -25,6 +28,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         static AESAlgorithm()
         {
             // Allocate eight tables, 256 uint
+            // with pointers works little faster
             uint* tables = (uint*)Marshal.AllocHGlobal(8 * (4 * 256));
             byte* sboxPtrs = (byte*)Marshal.AllocHGlobal(512);
 
@@ -204,246 +208,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 state[i + (4 * 3)] = r3;
             }
         }
-
-        // TEST CODE
-        public static void EncryptBlock256(Context context, byte* input, long inOffset, byte* output, long outOffset)
-        {
-            byte* state = stackalloc byte[16];
-            byte b1, b2, b3, b4;
-            uint k;
-            uint[] roundKey = context.ExpandedKey;
-            uint temp = 0;
-            int p1, p2, p3, p4;
-
-            for (long i = 0; i < 4; i++)
-            {
-                state[0 + (i * 4)] = input[inOffset + i + 00]; 
-                state[1 + (i * 4)] = input[inOffset + i + 04]; 
-                state[2 + (i * 4)] = input[inOffset + i + 08]; 
-                state[3 + (i * 4)] = input[inOffset + i + 12];
-            }
-
-            
-            for (int i = 0; i < 4; i++)
-            {
-                // p1 = (4 * 0) + i;
-                // p2 = (4 * 1) + ((i + ((12 + 2) * 1)) /* + 200*/ % 4);
-                // p3 = (4 * 2) + ((i + ((12 + 2) * 2)) /* + 200*/ % 4);
-                // p4 = (4 * 3) + ((i + ((12 + 2) * 3)) /* + 200*/ % 4);
-
-                k = roundKey[i + (0 * 4)];
-                state[i + (00)] ^= (byte)((k >> 24) & 0xFF);
-                state[i + (04)] ^= (byte)((k >> 16) & 0xFF);
-                state[i + (08)] ^= (byte)((k >> 08) & 0xFF);
-                state[i + (12)] ^= (byte)((k >> 00) & 0xFF);
-            }
-
-            
-
-            for (int i = 1; i < 14; i++)
-            {
-
-                for (int j = 0; j < 4; j++)
-                {
-                    
-                    p1 = (4 * 0) + j;
-                    p2 = (4 * 1) + ((j + ((0 + i) * 1) /* + 200*/ ) % 4);
-                    p3 = (4 * 2) + ((j + ((0 + i) * 2) /* + 200*/ ) % 4);
-                    p4 = (4 * 3) + ((j + ((0 + i) * 3) /* + 200*/ ) % 4);
-
-                    b1 = state[p1];
-                    b2 = state[p2];
-                    b3 = state[p3];
-                    b4 = state[p4];
-
-                    uint xored = T1[b1] ^ T2[b2] ^ T3[b3] ^ T4[b4];
-
-
-                    int roundNo = i;
-                    k = context.ExpandedKey[j + (roundNo * 4)];
-                    xored ^= k;
-
-                    state[p1] = (byte)(xored >> 24);
-                    state[p2] = (byte)(xored >> 16);
-                    state[p3] = (byte)(xored >> 08);
-                    state[p4] = (byte)(xored >> 00);
-                }
-            }
-
-            // SubBytes(state);
-            // ShiftRows(state); ShiftRows(state);
-            // AddRoundKey(state, context.ExpandedKey, 14);
-            // MapStateBytes(state, output);
-            //return;
-            
-            for (int i = 0; i < 4; i++)
-            {
-                p1 = (4 * 0) + i;
-                p2 = (4 * 1) +(((2) * 1 + i) % 4);
-                p3 = (4 * 2) +(((2) * 2 + i) % 4);
-                p4 = (4 * 3) +(((2) * 3 + i) % 4);
-
-                b1 = state[p1];
-                b2 = state[p2];
-                b3 = state[p3];
-                b4 = state[p4];
-
-                b1 = sbox[b1];
-                b2 = sbox[b2];
-                b3 = sbox[b3];
-                b4 = sbox[b4];
-
-                k = context.ExpandedKey[(14 * 4) + i];
-                // MemDump.HexDump(state, 16);
-                //     Console.WriteLine(  ); ;
-
-                output[0 + (i * 4) + outOffset] = (byte)(b1 ^ (k >> 24));
-                output[1 + (i * 4) + outOffset] = (byte)(b2 ^ (k >> 16));
-                output[2 + (i * 4) + outOffset] = (byte)(b3 ^ (k >> 08));
-                output[3 + (i * 4) + outOffset] = (byte)(b4 ^ (k >> 00));
-            }
-
-            for (long i = 0; i < 4; i++)
-            {
-                
-            }
-        }
-
-        public static void DecryptSingleBlock256(Context context, byte* input, long inOffset, byte* output, long outOffset, int rounds)
-        {
-            byte* state = stackalloc byte[16];
-            uint key;
-            uint[] expandedKey = context.ExpandedKey;
-            // MapStateBytes(input + inOffset, state);
-            
-            for (int i = 0; i < 4; i++)
-            {
-                state[00 + i] = input[(4 * i) + 0];
-                state[04 + i] = input[(4 * i) + 1];
-                state[08 + i] = input[(4 * i) + 2];
-                state[12 + i] = input[(4 * i) + 3];
-            }
-
-            // AddRoundKey(state, context.ExpandedKey, rounds);
-
-            for (int i = 0; i < 4; i++)
-            {
-                key = context.ExpandedKey[4 * rounds + i];
-            
-                state[(0 * 4) + i] ^= (byte)(key >> 24);
-                state[(1 * 4) + i] ^= (byte)(key >> 16);
-                state[(2 * 4) + i] ^= (byte)(key >> 08);
-                state[(3 * 4) + i] ^= (byte)(key >> 00);
-            }
-
-            int p1, p2, p3, p4;
-
-            for (int i = rounds - 1; i >= 1; i--)
-            {
-                // InvShiftRows(state);
-                for (int k = 0; k < 4; k++)
-                {
-                    p1 = (4 * 0) + k;
-                    p2 = (4 * 1) + ((k + ((2 + i) * 1)) /* + 200*/ % 4);
-                    p3 = (4 * 2) + ((k + ((2 + i) * 2)) /* + 200*/ % 4);
-                    p4 = (4 * 3) + ((k + ((2 + i) * 3)) /* + 200*/ % 4);
-
-                    byte b1 = state[p1];
-                    byte b2 = state[p2];
-                    byte b3 = state[p3];
-                    byte b4 = state[p4];
-
-                    b1 = inverseSbox[b1];
-                    b2 = inverseSbox[b2];
-                    b3 = inverseSbox[b3];
-                    b4 = inverseSbox[b4];
-
-                    // uint col = ((uint)inverseSbox[b1] << 24) | ((uint)inverseSbox[b2] << 16) | ((uint)inverseSbox[b3] << 08) | ((uint)inverseSbox[b4] << 00);
-
-                    key = context.ExpandedKey[k + (i * 4)];
-                    // col ^= key;
-
-                    b1 ^= (byte)(key >> 24);
-                    b2 ^= (byte)(key >> 16);
-                    b3 ^= (byte)(key >> 08);
-                    b4 ^= (byte)(key >> 00);
-
-                    uint res = 0;
-
-                    for (int j = 0; j < 4; j++)
-                    {
-                      
-                    }
-
-                    res = InvT1[b1] ^ InvT2[b2] ^ InvT3[b3] ^ InvT4[b4];
-                    state[p1] = (byte)(res >> 24);
-                    state[p2] = (byte)(res >> 16);
-                    state[p3] = (byte)(res >> 08);
-                    state[p4] = (byte)(res >> 00);
-                }
-
-                // InvShiftRows(state);
-                // InvSubBytes(state);
-                // AddRoundKey(state, context.ExpandedKey, i);
-                // 
-                // InvMixColumns(state);
-
-                
-            }
-
-            // InvShiftRows(state); InvShiftRows(state);
-            // InvSubBytes(state);
-            // AddRoundKey(state, context.ExpandedKey, 0);
-            // 
-            // MapStateBytes(state, output + outOffset);
-            
-            for (int k = 0; k < 4; k++)
-            {
-                //p1 = (4 * 0) + k;
-                //p2 = (4 * 1) + ((k + 3) % 4);
-                //p3 = (4 * 2) + ((k + 0) % 4);
-                //p4 = (4 * 3) + ((k + 3) % 4);
-
-                p1 = (4 * 0) + k;
-                p2 = (4 * 1) + ((k + (2 * 1)) % 4); /* + 200*/
-                p3 = (4 * 2) + ((k + (2 * 2)) % 4); /* + 200*/
-                p4 = (4 * 3) + ((k + (2 * 3)) % 4); /* + 200*/
-
-                byte b1 = state[p1];
-                byte b2 = state[p2];
-                byte b3 = state[p3];
-                byte b4 = state[p4];
-
-                b1 = inverseSbox[b1];
-                b2 = inverseSbox[b2];
-                b3 = inverseSbox[b3];
-                b4 = inverseSbox[b4];
-
-                key = context.ExpandedKey[k + (0 * 4)];
-                // col ^= key;
-
-                b1 ^= (byte)(key >> 24);
-                b2 ^= (byte)(key >> 16);
-                b3 ^= (byte)(key >> 08);
-                b4 ^= (byte)(key >> 00);
-
-                output[(4 * k) + 0] = b1;
-                output[(4 * k) + 1] = b2;
-                output[(4 * k) + 2] = b3;
-                output[(4 * k) + 3] = b4;
-            }
-
-            
-
-            // InvShiftRows(state); InvShiftRows(state);
-            // InvSubBytes(state);
-            // AddRoundKey(state, context.ExpandedKey, 0);
-            // 
-            // MapStateBytes(state, output + outOffset);
-        }
-
-        // TEST CODE
-
 
         static void MixColumns2(byte* state, byte* roundKey)
         {
@@ -1493,6 +1257,12 @@ public static readonly uint[] T4 = new uint[]
 
         /* ------------------------------------------------
          * END OF ALGORITHM
+         * 
+         */
+
+        /*
+         * Methods used to generate expanded version of round
+         * 
          * 
          */
 
