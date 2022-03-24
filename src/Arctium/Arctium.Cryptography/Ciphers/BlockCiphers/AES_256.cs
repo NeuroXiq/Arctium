@@ -8,8 +8,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         public AES_256(byte[] key) : base(key, 128)
         {
-            
-
             context = AESAlgorithm.Initialize(key);
         }
 

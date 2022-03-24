@@ -829,6 +829,48 @@ namespace Arctium.Shared.Helpers.Buffers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULong8BytesBE(byte[] input, long inputOffset)
+        {
+            return (ulong)(
+                    (ulong)input[inputOffset + 0] << 56 |
+                    (ulong)input[inputOffset + 1] << 48 |
+                    (ulong)input[inputOffset + 2] << 40 |
+                    (ulong)input[inputOffset + 3] << 32 |
+                    (ulong)input[inputOffset + 4] << 24 |
+                    (ulong)input[inputOffset + 5] << 16 |
+                    (ulong)input[inputOffset + 6] << 8 |
+                    (ulong)input[inputOffset + 7] << 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULong8BytesBE(byte* input, long inputOffset)
+        {
+            return (ulong)(
+                    (ulong)input[inputOffset + 0] << 56 |
+                    (ulong)input[inputOffset + 1] << 48 |
+                    (ulong)input[inputOffset + 2] << 40 |
+                    (ulong)input[inputOffset + 3] << 32 |
+                    (ulong)input[inputOffset + 4] << 24 |
+                    (ulong)input[inputOffset + 5] << 16 |
+                    (ulong)input[inputOffset + 6] << 8 |
+                    (ulong)input[inputOffset + 7] << 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ToULong8BytesBE(byte* input, long inputOffset, ulong* output, long outputOffset)
+        {
+            output[outputOffset] = (ulong)(
+                    (ulong)input[inputOffset + 0] << 56 |
+                    (ulong)input[inputOffset + 1] << 48 |
+                    (ulong)input[inputOffset + 2] << 40 |
+                    (ulong)input[inputOffset + 3] << 32 |
+                    (ulong)input[inputOffset + 4] << 24 |
+                    (ulong)input[inputOffset + 5] << 16 |
+                    (ulong)input[inputOffset + 6] << 8 |
+                    (ulong)input[inputOffset + 7] << 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToBytes4ULongLE(ulong[] input, long inputOffset, byte[] output, long outputOffset)
         {
             output[outputOffset + 0 + 0] = (byte)((input[inputOffset + 0] >> 0) & 0xFF);
@@ -892,6 +934,18 @@ namespace Arctium.Shared.Helpers.Buffers
             output[offset + 2] = (byte)(value >> 40);
             output[offset + 1] = (byte)(value >> 48);
             output[offset + 0] = (byte)(value >> 56);
+        }
+
+        public static void ToBytes1ULongBE(ulong* input, long inputOffset, byte* output, long offset)
+        {
+            output[offset + 7] = (byte)(input[inputOffset] >> 0);
+            output[offset + 6] = (byte)(input[inputOffset] >> 8);
+            output[offset + 5] = (byte)(input[inputOffset] >> 16);
+            output[offset + 4] = (byte)(input[inputOffset] >> 24);
+            output[offset + 3] = (byte)(input[inputOffset] >> 32);
+            output[offset + 2] = (byte)(input[inputOffset] >> 40);
+            output[offset + 1] = (byte)(input[inputOffset] >> 48);
+            output[offset + 0] = (byte)(input[inputOffset] >> 56);
         }
 
         public static void ToBytes1ULongBE(ulong value, byte* output, long offset)
@@ -1319,6 +1373,19 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
+        public static void ToULong16BytesBE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        {
+            output[outputOffset] = ToULong8BytesBE(input, inputOffset);
+            output[outputOffset + 1] = ToULong8BytesBE(input, inputOffset + 8);
+        }
+
+        public static void ToULong32BytesBE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
+        {
+            output[outputOffset + 0] = ToULong8BytesBE(input, inputOffset);
+            output[outputOffset + 1] = ToULong8BytesBE(input, inputOffset + 8);
+            output[outputOffset + 2] = ToULong8BytesBE(input, inputOffset + 16);
+            output[outputOffset + 3] = ToULong8BytesBE(input, inputOffset + 24);
+        }
         #endregion
     }
 }
