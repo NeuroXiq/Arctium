@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Arctium.Shared.Helpers.Binary
@@ -380,5 +381,17 @@ namespace Arctium.Shared.Helpers.Binary
             return parsed;
         }
 
+        public static byte[] FromString(string s, string byteDelimiter)
+        {
+            string[] bytes = s.Split(byteDelimiter);
+            byte[] parsed = new byte[bytes.Length];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                parsed[i] = byte.Parse(bytes[i], System.Globalization.NumberStyles.HexNumber);
+            }
+
+            return parsed;
+        }
     }
 }

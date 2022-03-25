@@ -3,6 +3,7 @@
     public static class Files
     {
         static string HFTV => GetFullPath("HashFunctions/TestVectors/");
+        static string CIPH => GetFullPath("ciphers-test-vectors/");
 
         public static string JHTestVectorsDirFullPath => GetFullPath("HashFunctions/TestVectors/JH/");
 
@@ -47,6 +48,13 @@
             public static readonly string RadioGatun32TestVectors = HFTV + "radiogatun/RG32-testvectors";
             public static readonly string Streebog512TestVectors = HFTV + "streebog/v512.txt";
             public static readonly string Streebog256TestVectors = HFTV + "streebog/v256.txt";
+        }
+
+        public static class Ciphers
+        {
+            public static readonly string Camellia128 = CIPH + "camellia/camellia-128.txt";
+            public static readonly string Camellia192 = CIPH + "camellia/camellia-192.txt";
+            public static readonly string Camellia256 = CIPH + "camellia/camellia-256.txt";
         }
 
         public static void SetArctiumFilesPath(string fullPath)
