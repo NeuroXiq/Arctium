@@ -9,16 +9,13 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         {
             public ulong[] KeySchedule;
 
-            public ulong KL_l, KL_r, KA_l, KA_r, KB_l, KB_r;
+            public ulong KL_l, KL_r, KR_l, KR_r, KA_l, KA_r, KB_l, KB_r;
         }
 
         public static State Init(byte[] key)
         {
             ulong[] ulkey = new ulong[4];
-
             State state = new State();
-            state.KeySchedule = new ulong[key.Length == 16 ? 18 : 24];
-
 
             if (key.Length == 16)
             {
@@ -46,6 +43,8 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
             state.KL_l = ulkey[0];
             state.KL_r = ulkey[1];
+            state.KR_l = ulkey[2];
+            state.KR_r = ulkey[3];
             state.KA_l = kll;
             state.KA_r = klr;
 
@@ -110,18 +109,136 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
         static ulong[] KeySchedule192_256(State state)
         {
-            ulong[] key = new ulong[32];
+            ulong[] k = new ulong[32];
+            ulong ll = state.KL_l, lr = state.KL_r,
+                  al = state.KA_l, ar = state.KA_r,
+                  bl = state.KB_l, br = state.KB_r,
+                  rl = state.KR_l, rr = state.KR_r;
 
-            return key;
+
+            k[0] = bl;
+            k[1] = br;
+
+            k[2] = (rl << 15) | (rr >> 49);
+            k[3] = (rr << 15) | (rl >> 49);
+            k[4] = (al << 15) | (ar >> 49);
+            k[5] = (ar << 15) | (al >> 49);
+
+            //fl
+            k[6] = (rl << 30) | (rr >> 34);
+            k[7] = (rr << 30) | (rl >> 34);
+
+
+            k[8] = (bl << 30) | (br >> 34);
+            k[9] = (br << 30) | (bl >> 34);
+
+            k[10] = (ll << 45) | (lr >> 19);
+            k[11] = (lr << 45) | (ll >> 19);
+
+            k[12] = (al << 45) | (ar >> 19);
+            k[13] = (ar << 45) | (al >> 19);
+
+            //fl
+            k[14] = (ll << 60) | (lr >> 4);
+            k[15] = (lr << 60) | (ll >> 4);
+
+
+            k[16] = (rl << 60) | (rr >> 4);
+            k[17] = (rr << 60) | (rl >> 4);
+            k[18] = (bl << 60) | (br >> 4);
+            k[19] = (br << 60) | (bl >> 4);
+
+
+            k[20] = (lr << 13) | (ll >> 51);
+            k[21] = (ll << 13) | (lr >> 51);
+
+
+            //fl
+            k[22] = (ar << 13) | (al >> 51);
+            k[23] = (al << 13) | (ar >> 51);
+
+
+            k[24] = (rr << 30) | (rl >> 34);
+            k[25] = (rl << 30) | (rr >> 34);
+            k[26] = (ar << 30) | (al >> 34);
+            k[27] = (al << 30) | (ar >> 34);
+
+            k[28] = (lr << 47) | (ll >> 17);
+            k[29] = (ll << 47) | (lr >> 17);
+
+
+            k[30] = (br << 47) | (bl >> 17);
+            k[31] = (bl << 47) | (br >> 17);
+
+            return k;
+        }
+
+        public static void EncryptBlock192_256(State state, byte* input, byte* output)
+        {
+            ulong l, r, lprim, rprim;
+            ulong[] k = state.KeySchedule;
+
+            l = MemMap.ToULong8BytesBE(input, 0);
+            r = MemMap.ToULong8BytesBE(input, 8);
+
+            l ^= state.KL_l;
+            r ^= state.KL_r;
+
+            Encrypt64(&l, &r, k[0]);
+            Encrypt64(&l, &r, k[1]);
+            Encrypt64(&l, &r, k[2]);
+            Encrypt64(&l, &r, k[3]);
+            Encrypt64(&l, &r, k[4]);
+            Encrypt64(&l, &r, k[5]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[6]);
+            r = FL1(rprim,k[7]);
+            
+            Encrypt64(&l, &r, k[8]); 
+            Encrypt64(&l, &r, k[9]); 
+            Encrypt64(&l, &r, k[10]);
+            Encrypt64(&l, &r, k[11]);
+            Encrypt64(&l, &r, k[12]);
+            Encrypt64(&l, &r, k[13]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[14]);
+            r = FL1(rprim,k[15]);
+
+            Encrypt64(&l, &r, k[16]);
+            Encrypt64(&l, &r, k[17]);
+            Encrypt64(&l, &r, k[18]);
+            Encrypt64(&l, &r, k[19]);
+            Encrypt64(&l, &r, k[20]);
+            Encrypt64(&l, &r, k[21]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[22]);
+            r = FL1(rprim,k[23]);
+
+            Encrypt64(&l, &r, k[24]);
+            Encrypt64(&l, &r, k[25]);
+            Encrypt64(&l, &r, k[26]);
+            Encrypt64(&l, &r, k[27]);
+            Encrypt64(&l, &r, k[28]);
+            Encrypt64(&l, &r, k[29]);
+
+            r ^= k[30];
+            l ^= k[31];
+
+            MemMap.ToBytes1ULongBE(r, output, 0);
+            MemMap.ToBytes1ULongBE(l, output, 8);
         }
 
         public static void EncryptBlock(State state, byte* input, byte* output)
         {
             ulong l, r, lprim, rprim;
             ulong[] k = state.KeySchedule;
-            // ulong ll = state.Key[0], lr = state.Key[1], al = state.Key[4], ar = state.Key[5];
-
-            ulong ll = state.KL_l, lr = state.KL_r, al = state.KA_l, ar = state.KA_r;
+            ulong ll = state.KL_l, lr = state.KL_r;
 
             l = MemMap.ToULong8BytesBE(input, 0);
             r = MemMap.ToULong8BytesBE(input, 8);
@@ -129,45 +246,39 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             l ^= ll;
             r ^= lr;
 
-            Encrypt64(&l, &r, k[0]);// ROL_L(al, ar, 0));
+            Encrypt64(&l, &r, k[0]);
             Encrypt64(&l, &r, k[1]);
-            Encrypt64(&l, &r, k[2]);//ROL_L(ll, lr, 15));
-            Encrypt64(&l, &r, k[3]);// ROL_R(ll, lr, 15));
-            Encrypt64(&l, &r, k[4]);// ROL_L(al, ar, 15));
-            Encrypt64(&l, &r, k[5]);// ROL_R(al, ar, 15));
+            Encrypt64(&l, &r, k[2]);
+            Encrypt64(&l, &r, k[3]);
+            Encrypt64(&l, &r, k[4]);
+            Encrypt64(&l, &r, k[5]);
 
-            // FL
-            // lprim = l;
-            // F(&lprim, ROL_R(al, ar, 15));
             lprim = l;
             rprim = r;
-            l = FL(lprim, k[6]);// ROL_L(al, ar, 30));
-            r = FL1(rprim,k[7]);// ROL_R(al, ar, 30));
+            l = FL(lprim, k[6]);
+            r = FL1(rprim,k[7]);
             
-            Encrypt64(&l, &r, k[8]); //ROL_L(ll, lr, 45));
-            Encrypt64(&l, &r, k[9]); //ROL_R(ll, lr, 45));
-            Encrypt64(&l, &r, k[10]); //ROL_L(al, ar, 45));
-            Encrypt64(&l, &r, k[11]); //ROL_R(ll, lr, 60));
-            Encrypt64(&l, &r, k[12]); //ROL_L(al, ar, 60));
-            Encrypt64(&l, &r, k[13]); //ROL_R(al, ar, 60));
+            Encrypt64(&l, &r, k[8]); 
+            Encrypt64(&l, &r, k[9]); 
+            Encrypt64(&l, &r, k[10]);
+            Encrypt64(&l, &r, k[11]);
+            Encrypt64(&l, &r, k[12]);
+            Encrypt64(&l, &r, k[13]);
 
-            //fl
-            // lprim = l;
-            // F(&lprim, ROL_R(al, ar, 60));
             lprim = l;
             rprim = r;
-            l = FL(lprim, k[14]);// ROL_L(ll, lr, 77));
-            r = FL1(rprim,k[15]);// ROL_R(ll, lr, 77));
+            l = FL(lprim, k[14]);
+            r = FL1(rprim,k[15]);
 
-            Encrypt64(&l, &r, k[16]); // ROL_L(ll, lr, 94));
-            Encrypt64(&l, &r, k[17]); // ROL_R(ll, lr, 94));
-            Encrypt64(&l, &r, k[18]); // ROL_L(al, ar, 94));
-            Encrypt64(&l, &r, k[19]); // ROL_R(al, ar, 94));
-            Encrypt64(&l, &r, k[20]); // ROL_L(ll, lr, 111));
-            Encrypt64(&l, &r, k[21]); // ROL_R(ll, lr, 111));
+            Encrypt64(&l, &r, k[16]);
+            Encrypt64(&l, &r, k[17]);
+            Encrypt64(&l, &r, k[18]);
+            Encrypt64(&l, &r, k[19]);
+            Encrypt64(&l, &r, k[20]);
+            Encrypt64(&l, &r, k[21]);
 
-            r ^= k[22]; //ROL_L(al, ar, 111);
-            l ^= k[23]; //ROL_R(al, ar, 111);
+            r ^= k[22];
+            l ^= k[23];
 
             MemMap.ToBytes1ULongBE(r, output, 0);
             MemMap.ToBytes1ULongBE(l, output, 8);
@@ -241,32 +352,142 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
         public static void DecryptBlock(State state, byte* input, byte* output)
         {
-        
+            ulong l, r, lprim, rprim;
+            ulong[] k = state.KeySchedule;
+
+            r = MemMap.ToULong8BytesBE(input, 0);
+            l = MemMap.ToULong8BytesBE(input, 8);
+
+            r ^= k[22];
+            l ^= k[23];
+
+            ulong c = r;
+            r = l;
+            l = c;
+
+            Encrypt64(&l, &r, k[21]);
+            Encrypt64(&l, &r, k[20]);
+            Encrypt64(&l, &r, k[19]);
+            Encrypt64(&l, &r, k[18]);
+            Encrypt64(&l, &r, k[17]);
+            Encrypt64(&l, &r, k[16]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[15]);
+            r = FL1(rprim,k[14]);
+            
+            Encrypt64(&l, &r, k[13]); 
+            Encrypt64(&l, &r, k[12]); 
+            Encrypt64(&l, &r, k[11]);
+            Encrypt64(&l, &r, k[10]);
+            Encrypt64(&l, &r, k[9]);
+            Encrypt64(&l, &r, k[8]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[7]);
+            r = FL1(rprim,k[6]);
+
+            Encrypt64(&l, &r, k[5]);
+            Encrypt64(&l, &r, k[4]);
+            Encrypt64(&l, &r, k[3]);
+            Encrypt64(&l, &r, k[2]);
+            Encrypt64(&l, &r, k[1]);
+            Encrypt64(&l, &r, k[0]);
+
+            l ^= state.KL_r;
+            r ^= state.KL_l;
+
+            MemMap.ToBytes1ULongBE(l, output, 8);
+            MemMap.ToBytes1ULongBE(r, output, 0);
+        }
+
+        public static void DecryptBlock192_256(State state, byte* input, byte* output)
+        {
+            ulong l, r, lprim, rprim;
+            ulong[] k = state.KeySchedule;
+
+            r = MemMap.ToULong8BytesBE(input, 0);
+            l = MemMap.ToULong8BytesBE(input, 8);
+
+            r ^= k[30];
+            l ^= k[31];
+
+            ulong c = r;
+            r = l;
+            l = c;
+
+            Encrypt64(&l, &r, k[29]);
+            Encrypt64(&l, &r, k[28]);
+            Encrypt64(&l, &r, k[27]);
+            Encrypt64(&l, &r, k[26]);
+            Encrypt64(&l, &r, k[25]);
+            Encrypt64(&l, &r, k[24]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[23]);
+            r = FL1(rprim,k[22]);
+
+            Encrypt64(&l, &r, k[21]);
+            Encrypt64(&l, &r, k[20]);
+            Encrypt64(&l, &r, k[19]);
+            Encrypt64(&l, &r, k[18]);
+            Encrypt64(&l, &r, k[17]);
+            Encrypt64(&l, &r, k[16]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[15]);
+            r = FL1(rprim,k[14]);
+            
+            Encrypt64(&l, &r, k[13]); 
+            Encrypt64(&l, &r, k[12]); 
+            Encrypt64(&l, &r, k[11]);
+            Encrypt64(&l, &r, k[10]);
+            Encrypt64(&l, &r, k[9]);
+            Encrypt64(&l, &r, k[8]);
+
+            lprim = l;
+            rprim = r;
+            l = FL(lprim, k[7]);
+            r = FL1(rprim,k[6]);
+
+            Encrypt64(&l, &r, k[5]);
+            Encrypt64(&l, &r, k[4]);
+            Encrypt64(&l, &r, k[3]);
+            Encrypt64(&l, &r, k[2]);
+            Encrypt64(&l, &r, k[1]);
+            Encrypt64(&l, &r, k[0]);
+
+            l ^= state.KL_r;
+            r ^= state.KL_l;
+
+            MemMap.ToBytes1ULongBE(l, output, 8);
+            MemMap.ToBytes1ULongBE(r, output, 0);
         }
 
         static void Encrypt64(ulong *l, ulong *r, ulong k)
         {
             ulong lCopy = *l;
-            F(l, k);
-            *l ^= *r;
+            ulong w = *l ^ k;
+            
+            w = sp0[(w >> 56) & 0xFF] ^
+                sp1[(w >> 48) & 0xFF] ^
+                sp2[(w >> 40) & 0xFF] ^
+                sp3[(w >> 32) & 0xFF] ^
+                sp4[(w >> 24) & 0xFF] ^
+                sp5[(w >> 16) & 0xFF] ^
+                sp6[(w >> 08) & 0xFF] ^
+                sp7[(w >> 00) & 0xFF];
+
+            *l = w ^ *r;
             *r = lCopy;
         }
 
         private static void F(ulong* x, ulong k)
         {
-            *x ^= k;
-
-            ulong r = *x;
-            r = sp0[(r >> 56) & 0xFF] ^
-                sp1[(r >> 48) & 0xFF] ^
-                sp2[(r >> 40) & 0xFF] ^
-                sp3[(r >> 32) & 0xFF] ^
-                sp4[(r >> 24) & 0xFF] ^
-                sp5[(r >> 16) & 0xFF] ^
-                sp6[(r >> 08) & 0xFF] ^
-                sp7[(r >> 00) & 0xFF];
-
-            *x = r;
         }
 
         

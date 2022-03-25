@@ -40,7 +40,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
                     string keyAsString = allLines[i][1];
                     byte[] key = BinConverter.FromString(keyAsString, " ");
 
-                    current = new TestVector($"{allLines[i][0]} ({key.Length * 8} bits)/ ", key);
+                    current = new TestVector($"CAMELLIA / {allLines[i][0]} ({key.Length * 8} bits)/ ", key);
                     vectors.Add(current);
 
                     continue;
@@ -71,6 +71,12 @@ namespace Arctium.Tests.Cryptography.Ciphers
                     bool success = MemOps.Memcmp(output, expectedCiphertext);
 
                     results.Add(new TestResult(vector.Name + $"ENCRYPT / {i}", success));
+
+                    c.Decrypt(expectedCiphertext, 0, output, 0, expectedCiphertext.Length);
+
+                    success = MemOps.Memcmp(output, plain);
+
+                    results.Add(new TestResult(vector.Name + $"DECRYPT / {i}", success));
                 }
             }
 
