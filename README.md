@@ -16,6 +16,7 @@ for more interesting parts of the documentation.
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
+|Camellia block cipher (128, 192, 256 key sizes)|    -        |
 |Streebog-256|    -        |
 |Streebog-512                  |    -        |
 |CRC-8                  |    -        |

@@ -11,6 +11,11 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
         ProcessBlockDelegate encryptBlock;
         ProcessBlockDelegate decryptBlock;
 
+        /// <summary>
+        /// Camellia block ciphers with 128/192/256 key sized.
+        /// Input block size 16 bytes
+        /// </summary>
+        /// <param name="key">16/24/32 bytes key</param>
         public Camellia(byte[] key) : base(key, 128)
         {
             if (key == null || (key.Length != 16 && key.Length != 24 && key.Length != 32)) throw new InvalidKeyLengthException("invalid key length");

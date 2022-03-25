@@ -1,4 +1,23 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿/* Camellia block cipher algorithm
+ *
+ * https://info.isl.ntt.co.jp/crypt/eng/camellia/contact.html
+ * Designers:
+ *	* Mitsubishi Electric, NTT
+ *
+ * Specification authors:
+ *	Kazumaro AOKI, Tetsuya ICHIKAWA, Masayuki Kanda,
+ *	Mitsuru Matsui, Shiho Moraiai, Junko Nakajima, Toshio Tokita
+ * Specification name:
+ *  Specification of Camellia - a 128-bit Block Cipher
+ *  Version 1.0 July 12, 2000
+ *  Version 2.0: September 26, 2001
+ *
+ *  - - - - - -
+ *
+ *  Implemented by NeuroXiq 2022, Arctium project
+ * */
+
+using Arctium.Shared.Helpers.Buffers;
 using System;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
@@ -284,72 +303,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             MemMap.ToBytes1ULongBE(l, output, 8);
         }
 
-        static ulong FL(ulong a, ulong k)
-        {
-            uint xl = (uint)(a >> 32);
-            uint xr = (uint)a;
-            uint kl = (uint)(k >> 32);
-            uint kr = (uint)k;
-
-            uint xlkl = ((xl & kl));
-            uint yr = ((xlkl << 1) | (xlkl >> 31)) ^ xr;
-            uint yl = (yr | kr) ^ xl;
-
-            return ((ulong)yl << 32) | ((ulong)yr);
-        }
-
-        static ulong FL1(ulong a, ulong k)
-        {
-            uint kr = (uint)k;
-            uint kl = (uint)(k >> 32);
-            uint yl = (uint)(a >> 32);
-            uint yr = (uint)(a);
-
-            uint xl = (yr | kr) ^ yl;
-            uint xlkl = (xl & kl);
-            uint xr = ((xlkl << 1) | (xlkl >> 31)) ^ yr;
-
-            return ((ulong)xl << 32) | (ulong)xr;
-        }
-
-        static ulong ROL_L(ulong l, ulong r, int k)
-        {
-            ulong cc = l;
-
-            if (k >= 64)
-            {
-                k -= 64;
-                l = r;
-                r = cc;
-            }
-
-            if (k == 0) return l;
-
-            ulong newl = (l << k) | (r >> (64 - k));
-            ulong newr = (r << k) | (l >> (64 - k));
-
-            return newl;
-        }
-
-        static ulong ROL_R(ulong l, ulong r, int k)
-        {
-            ulong cc = l;
-
-            if (k >= 64)
-            {
-                k -= 64;
-                l = r;
-                r = cc;
-            }
-
-            if (k == 0) return r;
-
-            ulong newl = (l << k) | (r >> (64 - k));
-            ulong newr = (r << k) | (l >> (64 - k));
-
-            return newr;
-        }
-
         public static void DecryptBlock(State state, byte* input, byte* output)
         {
             ulong l, r, lprim, rprim;
@@ -468,6 +421,15 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             MemMap.ToBytes1ULongBE(r, output, 0);
         }
 
+
+        //
+        // Instead of converting to bytes,
+        // then subsitute each byte 'S' function
+        // then perform 'P' function,
+        // It is precombuted and stored in 8 arrays of ulong
+        // so only 7 xors are needed (similar like in AES)
+        // S and P methods at the bottom of this file are merged here
+        // together
         static void Encrypt64(ulong *l, ulong *r, ulong k)
         {
             ulong lCopy = *l;
@@ -484,19 +446,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
             *l = w ^ *r;
             *r = lCopy;
-        }
-
-        private static void F(ulong* x, ulong k)
-        {
-        }
-
-        
-
-        
-
-        static ulong toulong(params byte[] b)
-        {
-            return MemMap.ToULong8BytesBE(b, 0);
         }
 
         static readonly ulong[] sigma = {
@@ -1140,8 +1089,77 @@ private static readonly byte[] s4 = new byte[]
 
 
         /*
+         * END OF ALGORITHM
          * -------------------------------------------------
+         *  RANDOM CODE USED WHEN IMPLEMENTION CAMELLIA,
+         *  leaving maybe it will be useful for future optimizations
          */
+
+        static ulong FL(ulong a, ulong k)
+        {
+            uint xl = (uint)(a >> 32);
+            uint xr = (uint)a;
+            uint kl = (uint)(k >> 32);
+            uint kr = (uint)k;
+
+            uint xlkl = ((xl & kl));
+            uint yr = ((xlkl << 1) | (xlkl >> 31)) ^ xr;
+            uint yl = (yr | kr) ^ xl;
+
+            return ((ulong)yl << 32) | ((ulong)yr);
+        }
+
+        static ulong FL1(ulong a, ulong k)
+        {
+            uint kr = (uint)k;
+            uint kl = (uint)(k >> 32);
+            uint yl = (uint)(a >> 32);
+            uint yr = (uint)(a);
+
+            uint xl = (yr | kr) ^ yl;
+            uint xlkl = (xl & kl);
+            uint xr = ((xlkl << 1) | (xlkl >> 31)) ^ yr;
+
+            return ((ulong)xl << 32) | (ulong)xr;
+        }
+
+        static ulong ROL_L(ulong l, ulong r, int k)
+        {
+            ulong cc = l;
+
+            if (k >= 64)
+            {
+                k -= 64;
+                l = r;
+                r = cc;
+            }
+
+            if (k == 0) return l;
+
+            ulong newl = (l << k) | (r >> (64 - k));
+            ulong newr = (r << k) | (l >> (64 - k));
+
+            return newl;
+        }
+
+        static ulong ROL_R(ulong l, ulong r, int k)
+        {
+            ulong cc = l;
+
+            if (k >= 64)
+            {
+                k -= 64;
+                l = r;
+                r = cc;
+            }
+
+            if (k == 0) return r;
+
+            ulong newl = (l << k) | (r >> (64 - k));
+            ulong newr = (r << k) | (l >> (64 - k));
+
+            return newr;
+        }
 
         static void S(ulong* input)
         {
