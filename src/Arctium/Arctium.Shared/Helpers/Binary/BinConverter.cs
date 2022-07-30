@@ -24,9 +24,6 @@ namespace Arctium.Shared.Helpers.Binary
         #region Managed 
 
 
-        
-
-
         // managed
         //
 
@@ -356,6 +353,25 @@ namespace Arctium.Shared.Helpers.Binary
         // Other uncommon
         //
 
+        public static string ToStringHex(int value)
+        {
+            return String.Format("0x{0:X8}", value);
+        }
+
+        public static string ToStringHex(uint value)
+        {
+            return String.Format("0x{0:X8}", value);
+        }
+
+        public static string ToStringHex(byte value)
+        {
+            return String.Format("0x{0:X2}", value);
+        }
+
+        public static string ToStringHex(ushort value)
+        {
+            return String.Format("0x{0:X4}", value);
+        }
 
 
         /// <summary>

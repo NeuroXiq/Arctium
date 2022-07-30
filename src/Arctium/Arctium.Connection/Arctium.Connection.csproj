@@ -6,9 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="OCSP\" />
     <Folder Include="Ocsp\" />
-    <Folder Include="Tls\Tls13\Model\" />
-    <Folder Include="Tls\Tls13\Machine\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arctium.Shared\Arctium.Shared.csproj" />
   </ItemGroup>
 
 </Project>

@@ -704,6 +704,14 @@ namespace Arctium.Shared.Helpers.Buffers
 
 
         #region managed
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToUShort2BytesBE(byte[] buffer, long offset)
+        {
+            return (ushort)((ushort)buffer[0 + offset] << 8 | (ushort)buffer[1 + offset] << 0);
+        }   
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToByteArrayLE(ulong[] src)
         {

@@ -1199,39 +1199,40 @@ private static readonly byte[] s4 = new byte[]
             MemMap.ToULong8BytesBE(r, 0, input, 0);
         }
 
-        static void GenerateSP()
-        {
-            for (int i = 0; i < 8; i++)
-            {
-                Console.WriteLine("static readonly ulong[] sp{0} = new ulong[]", i);
-                Console.WriteLine("{");
+        // toulong not found
+        //static void GenerateSP()
+        //{
+        //    for (int i = 0; i < 8; i++)
+        //    {
+        //        Console.WriteLine("static readonly ulong[] sp{0} = new ulong[]", i);
+        //        Console.WriteLine("{");
 
-                for (int j = 0; j < 256; j++)
-                {
-                    ulong r = 0;
-                    switch (i)
-                    {
-                        case 0:
-                            r = toulong(s1[j], s1[j], s1[j], 0, s1[j], 0, 0, s1[j]);
-                            break;
-                        case 1:
-                            r = toulong(0, s2[j], s2[j], s2[j], s2[j], s2[j], 0, 0);
-                            break;
-                        case 2: r = toulong(s3[j], 0, s3[j], s3[j], 0, s3[j], s3[j], 0); break;
-                        case 3: r = toulong(s4[j], s4[j], 0, s4[j], 0, 0, s4[j], s4[j]); break;
-                        case 4: r = toulong(0, s2[j], s2[j], s2[j], 0, s2[j], s2[j], s2[j]); break;
-                        case 5: r = toulong(s3[j], 0, s3[j], s3[j], s3[j], 0, s3[j], s3[j]); break;
-                        case 6: r = toulong(s4[j], s4[j], 0, s4[j], s4[j], s4[j], 0, s4[j]); break;
-                        case 7: r = toulong(s1[j], s1[j], s1[j], 0, s1[j], s1[j], s1[j], 0); break;
-                    }
+        //        for (int j = 0; j < 256; j++)
+        //        {
+        //            ulong r = 0;
+        //            switch (i)
+        //            {
+        //                case 0:
+        //                    r = toulong(s1[j], s1[j], s1[j], 0, s1[j], 0, 0, s1[j]);
+        //                    break;
+        //                case 1:
+        //                    r = toulong(0, s2[j], s2[j], s2[j], s2[j], s2[j], 0, 0);
+        //                    break;
+        //                case 2: r = toulong(s3[j], 0, s3[j], s3[j], 0, s3[j], s3[j], 0); break;
+        //                case 3: r = toulong(s4[j], s4[j], 0, s4[j], 0, 0, s4[j], s4[j]); break;
+        //                case 4: r = toulong(0, s2[j], s2[j], s2[j], 0, s2[j], s2[j], s2[j]); break;
+        //                case 5: r = toulong(s3[j], 0, s3[j], s3[j], s3[j], 0, s3[j], s3[j]); break;
+        //                case 6: r = toulong(s4[j], s4[j], 0, s4[j], s4[j], s4[j], 0, s4[j]); break;
+        //                case 7: r = toulong(s1[j], s1[j], s1[j], 0, s1[j], s1[j], s1[j], 0); break;
+        //            }
 
-                    if (j % 4 == 0 && j != 0) Console.WriteLine();
-                    Console.Write("0x{0:X16}, ", r);
-                }
+        //            if (j % 4 == 0 && j != 0) Console.WriteLine();
+        //            Console.Write("0x{0:X16}, ", r);
+        //        }
 
-                Console.WriteLine("};");
-            }
-        }
+        //        Console.WriteLine("};");
+        //    }
+        //}
 
         public static void GenerateSBOX()
         {
