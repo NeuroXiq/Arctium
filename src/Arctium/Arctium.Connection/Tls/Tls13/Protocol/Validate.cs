@@ -124,6 +124,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }
 
+            public void ThrowGeneral(bool condition, string msg)
+            {
+                if (condition) ThrowGeneral(msg);
+            }
+
             public void ThrowGeneral(string msg)
             {
                 Throw(msg);
@@ -140,6 +145,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             private void Throw(string msg, params object[] args)
             {
                 Throw(msg, null, args);
+            }
+
+            internal void SignatureAlgorithms_SupportedSignatureAlgoritmsLength(ushort supportedSignatureAlgorithmsLength)
+            {
+                if (supportedSignatureAlgorithmsLength < 2)
+                    Throw("Signature algorithms: minimum length 2 ");
+                if (supportedSignatureAlgorithmsLength % 2 != 0)
+                    Throw("Signature algorithms: length not a multiple of 2");
+
+            }
+
+            internal void KeyShare_KeyShareEntry_KeyExchangeLength(ushort keyExchangeLength)
+            {
+                if (keyExchangeLength < 1)
+                    Throw("key share: key exchange entry length less that 1 (minimum is 1)");
             }
         }
 
@@ -196,6 +216,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 if (protocolNameLength < 1 || protocolNameLength > 255)
                     Throw("alpn: protocol name invalid, minimum 1 max 255");
+            }
+
+            internal void SupportedVersions_Client_VersionsLength(ushort versionsLength)
+            {
+                if (versionsLength < 2)
+                    Throw("supported versions: minimum length of versions is 2 (in bytes)");
+                if (versionsLength % 2 != 0)
+                    Throw("supported versions: Invalid length of versions, not a multiple of 2");
             }
         }
     }

@@ -5,6 +5,7 @@ namespace Arctium.Shared.Helpers
     public struct RangeCursor
     {
         private int currentPosition;
+        public bool OnMaxPosition { get { return currentPosition == MaxPosition; } }
         public int CurrentPosition
         {
             get { return currentPosition; }

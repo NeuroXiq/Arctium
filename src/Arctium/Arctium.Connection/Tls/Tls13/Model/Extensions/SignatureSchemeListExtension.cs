@@ -4,6 +4,8 @@
     {
         public override ExtensionType ExtensionType => ExtensionType.SignatureAlgorithms;
 
+        public SignatureScheme[] Schemes { get; private set; }
+
         public enum SignatureScheme : ushort
         {
             /* RSASSA-PKCS1-v1_5 algorithms */
@@ -30,6 +32,11 @@
             EcdsaSha1 = 0x0203,
             /* Reserved Code Points */
             PrivateUse = 0xFE00 /* 0xFE00..0xFFFF*/,
+        }
+
+        public SignatureSchemeListExtension(SignatureScheme[] schemes)
+        {
+            this.Schemes = schemes;
         }
     }
 }

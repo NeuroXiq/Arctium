@@ -11,16 +11,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
     class ModelSerialization
     {
         private Validate validate;
-        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserialise;
+        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserialize;
+        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserializeClient;
 
         public ModelSerialization(Validate validate)
         {
             this.validate = validate;
 
-            extensionsDeserialise = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
+            extensionsDeserialize = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
             {
                 [ExtensionType.ApplicationLayerProtocolNegotiation] = DeserializeExtension_ALPN,
-                [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions,
                 [ExtensionType.Cookie] = DeserializeExtension_Cookie,
                 [ExtensionType.SignatureAlgorithms] = DeserializeExtension_SignatureAlgorithms,
                 [ExtensionType.SignatureAlgorithmsCert] = DeserializeExtension_SignatureAlgorithmsCert,
@@ -28,11 +28,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [ExtensionType.KeyShare] = DeserializeExtension_KeyShare,
                 [ExtensionType.ServerName] = DeserializeExtension_ServerName,
             };
+
+            extensionsDeserializeClient = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
+            {
+                [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions_Client,
+            };
         }
 
         #region Extensions
 
-        public ExtensionDeserializeResult DeserializeExtension(byte[] buffer, int offset, int maxLength)
+        public ExtensionDeserializeResult DeserializeExtension(byte[] buffer, int offset, int maxLength, bool isClient)
         {
             if (maxLength < 4)
                 validate.Extensions.ThrowGeneralException(string.Format("Invalid extension length, minimum is 4 but current: {0}", maxLength));
@@ -44,24 +49,30 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             if (totalExtensionLength > maxLength)
                 validate.Extensions.ThrowGeneralException(String.Format("Invalid extension lenght. Extension length exceed maximum length that is expected for that extension"));
 
-            if (!extensionsDeserialise.ContainsKey(extensionType))
+            ExtensionDeserializeResult result;
+            Extension extension;
+
+            if (isClient && extensionsDeserializeClient.ContainsKey(extensionType))
             {
-                return new ExtensionDeserializeResult
-                {
-                    IsRecognized = false,
-                    Length = totalExtensionLength,
-                    Extension = null
-                };
+                extension = extensionsDeserializeClient[extensionType](buffer, offset);
+            }
+            else if (!extensionsDeserialize.ContainsKey(extensionType))
+            {
+                extension = new UnknowExtension(extensionType);
+            }
+            else
+            {
+                extension = extensionsDeserialize[extensionType](buffer, offset);
             }
 
-            Extension extension = extensionsDeserialise[extensionType](buffer, offset);
-
-            return new ExtensionDeserializeResult
+            result = new ExtensionDeserializeResult
             {
                 IsRecognized = true,
                 Length = totalExtensionLength,
                 Extension = extension
             };
+
+            return result;
         }
 
         private Extension DeserializeExtension_ServerName(byte[] buffer, int offset)
@@ -106,9 +117,51 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return new ServerNameListExtension(serverNameList.ToArray());
         }
 
-        private Extension DeserializeExtension_KeyShare(byte[] arg1, int arg2)
+        private Extension DeserializeExtension_KeyShare(byte[] buffer, int offset)
         {
-            throw new NotImplementedException();
+            int length;
+            RangeCursor cursor;
+
+            ExtensionDeserializeSetup(buffer, offset, out cursor, out length);
+
+            if (length < 2)
+                validate.Handshake.ThrowGeneral("key share: content length less than 2");
+
+            ushort clientSharedLength = MemMap.ToUShort2BytesBE(buffer, cursor);
+            List<KeyShareClientHelloExtension.KeyShareEntry> keyShareEntires = new List<KeyShareClientHelloExtension.KeyShareEntry>();
+
+            if (clientSharedLength > 0)
+            {
+                cursor++;
+
+                validate.Handshake.ThrowGeneral(clientSharedLength < 3, "KeyShare: Invalid length of clientShares field (minimum is 3 or 0 if empty)");
+
+                while (!cursor.OnMaxPosition)
+                {
+                    cursor++;
+
+                    SupportedGroupExtension.NamedGroup group = (SupportedGroupExtension.NamedGroup)MemMap.ToUShort2BytesBE(buffer, cursor);
+                    cursor += 2;
+                    ushort keyExchangeLength = MemMap.ToUShort2BytesBE(buffer, cursor);
+                    cursor += 2;
+
+                    validate.Handshake.KeyShare_KeyShareEntry_KeyExchangeLength(keyExchangeLength);
+
+                    cursor.ThrowIfShiftOutside(keyExchangeLength - 1);
+                    byte[] keyExchange = new byte[keyExchangeLength];
+                    MemCpy.Copy(buffer, cursor, keyExchange, 0, keyExchangeLength);
+
+                    keyShareEntires.Add(new KeyShareClientHelloExtension.KeyShareEntry(group, keyExchange));
+
+                    cursor += keyExchangeLength - 1;
+                }
+            }
+
+            if (!cursor.OnMaxPosition)
+                validate.Handshake.ThrowGeneral("keyshare: after deserializing cursor is not on last position. " +
+                    "individual length of all key shares not match extension length");
+
+            return new KeyShareClientHelloExtension(keyShareEntires.ToArray());
         }
 
         private Extension DeserializeExtension_SupportedGroups(byte[] buffer, int offset)
@@ -150,9 +203,30 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             throw new NotImplementedException();
         }
 
-        private Extension DeserializeExtension_SignatureAlgorithms(byte[] arg1, int arg2)
+        private Extension DeserializeExtension_SignatureAlgorithms(byte[] buffer, int offset)
         {
-            throw new NotImplementedException();
+            ushort length = MemMap.ToUShort2BytesBE(buffer, offset + 2);
+            ushort supportedSignatureAlgorithmsLength;
+            RangeCursor cursor = new RangeCursor(offset, 4 + length + offset - 1);
+            List<SignatureSchemeListExtension.SignatureScheme> schemes = new List<SignatureSchemeListExtension.SignatureScheme>();
+
+            if (length < 2) 
+                validate.Extensions.ThrowGeneralException("Signature algorithms: invalid content length minimum 2");
+
+            cursor += 4;
+            supportedSignatureAlgorithmsLength = MemMap.ToUShort2BytesBE(buffer, cursor);
+
+            validate.Handshake.SignatureAlgorithms_SupportedSignatureAlgoritmsLength(supportedSignatureAlgorithmsLength);
+
+            for (int i = 0; i < supportedSignatureAlgorithmsLength; i += 2)
+            {
+                cursor += 2;
+                SignatureSchemeListExtension.SignatureScheme scheme = (SignatureSchemeListExtension.SignatureScheme)MemMap.ToUShort2BytesBE(buffer, cursor);
+
+                schemes.Add(scheme);
+            }
+
+            return new SignatureSchemeListExtension(schemes.ToArray());
         }
 
         private Extension DeserializeExtension_Cookie(byte[] arg1, int arg2)
@@ -160,9 +234,31 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             throw new NotImplementedException();
         }
 
-        private Extension DeserializeExtension_SupportedVersions(byte[] arg1, int arg2)
+        private Extension DeserializeExtension_SupportedVersions_Client(byte[] buffer, int offset)
         {
-            throw new NotImplementedException();
+            int length;
+            RangeCursor cursor;
+            ExtensionDeserializeSetup(buffer, offset, out cursor, out length);
+
+            List<ushort> versions = new List<ushort>();
+            ushort versionsLength = buffer[cursor];
+
+            validate.Extensions.SupportedVersions_Client_VersionsLength(versionsLength);
+            cursor.ThrowIfShiftOutside(versionsLength - 1);
+
+            for (int i = 0; i < versionsLength; i += 2)
+            {
+                cursor++;
+
+                versions.Add(MemMap.ToUShort2BytesBE(buffer, cursor));
+
+                cursor++;
+            }
+
+            if (!cursor.OnMaxPosition)
+                validate.Extensions.ThrowGeneralException("supported versions (client): cursor not at the end");
+
+            return new SupportedVersionsExtension(versions.ToArray());
         }
 
 
@@ -205,6 +301,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return new ProtocolNameListExtension(protocolNames.ToArray());
         }
 
+        private void ExtensionDeserializeSetup(byte[] buffer, int offset, out RangeCursor cursor, out int length)
+        {
+            length = MemMap.ToUShort2BytesBE(buffer, offset + 2);
+
+            if (length > 0)
+            {
+                cursor = new RangeCursor(offset + 4, offset + 4 + length - 1);
+            }
+            else
+            {
+                cursor = new RangeCursor(0, 0);
+            }
+        }
+
+
         public struct ExtensionDeserializeResult
         {
             public bool IsRecognized;
@@ -212,6 +323,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             public Extension Extension;
         }
 
+        
+        
         #endregion
 
         private void ThrowCursorOutside(int nextCursorPosition, int maxCursorPosition)

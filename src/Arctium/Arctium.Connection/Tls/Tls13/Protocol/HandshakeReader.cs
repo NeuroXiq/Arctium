@@ -117,7 +117,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             while (cursor < end)
             {
-                ModelSerialization.ExtensionDeserializeResult result = modelSerialization.DeserializeExtension(buffer, cursor, extLen);
+                ModelSerialization.ExtensionDeserializeResult result = modelSerialization.DeserializeExtension(buffer, cursor, extLen, true);
 
                 maxLength -= result.Length;
                 cursor += result.Length;
@@ -128,7 +128,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }
 
-            if (cursor != extLen)
+            if (cursor != end)
                 validate.Extensions.ThrowGeneralException("Invalid length of some of extensions." +
                     "Total leght of all extensions computed separated (for each exension in the list ) " +
                     "doesnt match length of the list (in bytes, of clienthello field)");
