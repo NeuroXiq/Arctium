@@ -20,20 +20,32 @@ Abstract
 
 using Arctium.Connection.Tls.Tls13.API;
 using Arctium.Connection.Tls.Tls13.Model;
+using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Helpers.Binary;
 using System;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
-    static class Validate
+    class Validate
     {
-        public static class RecordLayer
+        public RecordLayerValidate RecordLayer { get; private set; }
+        public HandshakeValidate Handshake { get; private set; }
+        public ExtensionsValidate Extensions { get; private set; }
+
+        public Validate()
+        {
+            this.RecordLayer = new RecordLayerValidate();
+            this.Handshake = new HandshakeValidate();
+            this.Extensions = new ExtensionsValidate();
+        }
+
+        public class RecordLayerValidate
         {
             const ushort LegacyRecordVersion = 0x0303;
             const ushort LegacyRecordVersion0301 = 0x0301;
             const ushort MaxRecordLength = 2 << 14;
 
-            public static void ValidateContentType(byte contentType)
+            public void ValidateContentType(byte contentType)
             {
                 if (contentType != (byte)ContentType.Alert &&
                     contentType != (byte)ContentType.ApplicationData &&
@@ -44,7 +56,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }
 
-            public static void ProtocolVersion(ushort protocolVersion, bool isInitialClientHello)
+            public void ProtocolVersion(ushort protocolVersion, bool isInitialClientHello)
             {
                 if (protocolVersion == LegacyRecordVersion ||
                     (isInitialClientHello && LegacyRecordVersion0301 == protocolVersion))
@@ -58,21 +70,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             }
 
-            public static void Length(ushort length)
+            public void Length(ushort length)
             {
                 if (length > MaxRecordLength)
                     Throw("Received record with length exceeded maximum length. Max length: {0}, received length: {1}", MaxRecordLength, length);
             }
 
-            private static void Throw(string msg, params object[] args)
+            private void Throw(string msg, params object[] args)
             {
                 throw new Tls13Exception(string.Format("Record Layer: {0}", string.Format(msg, args)));
             }
         }
 
-        public static class Handshake
+        public class HandshakeValidate
         {
-            public static void ValidHandshakeType(HandshakeType handshakeType)
+            public void ValidHandshakeType(HandshakeType handshakeType)
             {
                 if (!Enum.IsDefined<HandshakeType>(handshakeType))
                 {
@@ -81,7 +93,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }
 
-            public static void ExpectedOrderOfHandshakeType(HandshakeType receivedType, HandshakeType expectedType)
+            public void ExpectedOrderOfHandshakeType(HandshakeType receivedType, HandshakeType expectedType)
             {
                 if (receivedType != expectedType)
                 {
@@ -92,7 +104,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }   
 
-            public static void RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(ContentType recordType)
+            public void RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(ContentType recordType)
             {
                 if (recordType != ContentType.Handshake)
                 {
@@ -104,7 +116,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
 
             /* 5.1. Record Layer */
-            public static void NotZeroLengthFragmentsOfHandshake(int recordLength)
+            public void NotZeroLengthFragmentsOfHandshake(int recordLength)
             {
                 if (recordLength == 0)
                 {
@@ -112,7 +124,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }
 
-            private static void Throw(string msg, AlertDescription? alert, params object[] args)
+            public void ThrowGeneral(string msg)
+            {
+                Throw(msg);
+            }
+
+            private void Throw(string msg, AlertDescription? alert, params object[] args)
             {
                 msg = string.Format(msg, args);
                 msg = string.Format("Handshake: {0}", msg);
@@ -120,9 +137,65 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 throw new Tls13Exception(msg, alert);
             }
 
-            private static void Throw(string msg, params object[] args)
+            private void Throw(string msg, params object[] args)
             {
                 Throw(msg, null, args);
+            }
+        }
+
+        public class ExtensionsValidate
+        {
+            public void ThrowGeneralException(string msg)
+            {
+                Throw(msg);
+            }
+
+            static void Throw(string msg)
+            {
+                msg = String.Format("Extensions: {0}", msg);
+                throw new Tls13Exception(msg);
+            }
+
+            internal void ServerNameList_ServerNameListLength(ushort serverNameListLength)
+            {
+                if (serverNameListLength < 1)
+                {
+                    Throw("Minimum server name list length is 1");
+                }
+            }
+
+            internal void ServerNameList_NameTypeEnum(ServerNameListExtension.NameTypeEnum nameType)
+            {
+                if (!Enum.IsDefined<ServerNameListExtension.NameTypeEnum>(nameType))
+                {
+                    Throw("server name list name type not defined");
+                }
+            }
+
+            internal void ServerNameList_HostNameLength(ushort hostNameLength)
+            {
+                if (hostNameLength < 1)
+                    Throw("server name list - minimum host length 1 but current 0");
+            }
+
+            internal void SupportedGroups_NamedCurveListLength(ushort namedCurveListLength)
+            {
+                if (namedCurveListLength < 2)
+                    Throw("Named curve list: list doesnt contain any named curve (count of bytes less than 2). Expected to have at least 1 curve in the list");
+                if (namedCurveListLength % 2 != 0)
+                    Throw("named curve list: invalid length of list. Should be multiple of 2");
+            }
+
+            internal void ALPN_ProtocolNameListLength(ushort protocolNameListLength)
+            {
+                if (protocolNameListLength < 2)
+                    Throw("ALPN: length less than 2 (minimum 2)");
+            }
+
+            internal void ALPN_ProtocolNameLength(ushort protocolNameLength)
+            {
+                if (protocolNameLength < 1 || protocolNameLength > 255)
+                    Throw("alpn: protocol name invalid, minimum 1 max 255");
             }
         }
     }

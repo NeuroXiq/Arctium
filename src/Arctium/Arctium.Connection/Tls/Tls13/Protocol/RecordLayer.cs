@@ -9,12 +9,15 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         const int MaxRecordLength = 2 << 14;
 
         private BufferForStream bufferForStream;
+        private Validate validate;
+
         private byte[] buffer { get { return bufferForStream.Buffer; } }
         public byte[] RecordFragmentBytes { get; private set; }
 
-        public RecordLayer(BufferForStream buffer)
+        public RecordLayer(BufferForStream buffer, Validate validate)
         {
             this.bufferForStream = buffer;
+            this.validate = validate;
             this.RecordFragmentBytes = new byte[MaxRecordLength];
         }
 
@@ -31,9 +34,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             version = (ushort)((buffer[1] << 8) | (buffer[2] << 0));
             length = (ushort)((buffer[3] << 8) | (buffer[4] << 0));
 
-            Validate.RecordLayer.ValidateContentType(contentTypeByte);
-            Validate.RecordLayer.ProtocolVersion(version, isInitialClientHello);
-            Validate.RecordLayer.Length(length);
+            validate.RecordLayer.ValidateContentType(contentTypeByte);
+            validate.RecordLayer.ProtocolVersion(version, isInitialClientHello);
+            validate.RecordLayer.Length(length);
 
             contentType = (ContentType)contentTypeByte;
 

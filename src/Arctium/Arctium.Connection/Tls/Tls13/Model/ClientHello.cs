@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arctium.Connection.Tls.Tls13.Model.Extensions;
 
 namespace Arctium.Connection.Tls.Tls13.Model
 {
@@ -13,6 +9,6 @@ namespace Arctium.Connection.Tls.Tls13.Model
         public byte[] LegacySessionId;
         public byte[] CipherSuites;
         public byte[] LegacyCompressionMethods;
-        public byte[] Extensions;
+        public Extension[] Extensions { get; set; }
     }
 }
