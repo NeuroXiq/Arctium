@@ -1,4 +1,7 @@
-﻿namespace Arctium.Connection.Tls.Tls13.Model.Extensions
+﻿using System;
+using System.Diagnostics;
+
+namespace Arctium.Connection.Tls.Tls13.Model.Extensions
 {
     class UnknowExtension : Extension
     {
@@ -8,7 +11,6 @@
         public UnknowExtension(ExtensionType type)
         {
             this.type = type;
-        }   
-
+        }
     }
 }

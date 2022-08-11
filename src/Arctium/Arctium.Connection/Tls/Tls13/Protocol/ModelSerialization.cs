@@ -128,7 +128,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 validate.Handshake.ThrowGeneral("key share: content length less than 2");
 
             ushort clientSharedLength = MemMap.ToUShort2BytesBE(buffer, cursor);
-            List<KeyShareClientHelloExtension.KeyShareEntry> keyShareEntires = new List<KeyShareClientHelloExtension.KeyShareEntry>();
+            List<KeyShareEntry> keyShareEntires = new List<KeyShareEntry>();
 
             if (clientSharedLength > 0)
             {
@@ -151,7 +151,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     byte[] keyExchange = new byte[keyExchangeLength];
                     MemCpy.Copy(buffer, cursor, keyExchange, 0, keyExchangeLength);
 
-                    keyShareEntires.Add(new KeyShareClientHelloExtension.KeyShareEntry(group, keyExchange));
+                    KeyShareEntry entry  = new KeyShareEntry(group, keyExchange);
+
+                    keyShareEntires.Add(entry);
 
                     cursor += keyExchangeLength - 1;
                 }

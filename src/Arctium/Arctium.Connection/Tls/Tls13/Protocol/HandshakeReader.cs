@@ -40,7 +40,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             byte[] random = new byte[32];
             byte[] legacySessId = null;
-            byte[] cipherSuites = null;
             byte[] legComprMeth = null;
 
             int minMsgLen = 2 + 32 + 1 + 2 + 1 + 2;
@@ -67,10 +66,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             //LoadToLength(ciphSuitOffs + 1 + 2);
             ThrowIfExceedLength(cursor + 1);
             ciphSuiteLen = MemMap.ToUShort2BytesBE(buffer, cursor);
-            cipherSuites = new byte[ciphSuiteLen];
+            validate.Handshake.ClientHello_CipherSuiteLength(ciphSuiteLen);
+            // cipherSuites = new byte[ciphSuiteLen];
+            
             cursor += 2;
             ThrowIfExceedLength(cursor + ciphSuiteLen - 1);
-            MemCpy.Copy(buffer, cursor, cipherSuites, 0, ciphSuiteLen);
+            
+            //MemCpy.Copy(buffer, cursor, cipherSuites, 0, ciphSuiteLen);
+
+            CipherSuite[] cipherSuites = new CipherSuite[ciphSuiteLen / 2];
+            for (int i = 0; i < ciphSuiteLen; i += 2) cipherSuites[i / 2] = (CipherSuite)MemMap.ToUShort2BytesBE(buffer, cursor + i);
+
             cursor += ciphSuiteLen;
 
             //LoadToLength((legCompMethOffs + 1) + 1);
@@ -98,6 +104,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             msg.CipherSuites = cipherSuites;
             msg.LegacyCompressionMethods = legComprMeth;
             msg.Extensions = extensions;
+
+            validate.Handshake.ClientHello_ClientHello(msg);
 
             return msg;
         }

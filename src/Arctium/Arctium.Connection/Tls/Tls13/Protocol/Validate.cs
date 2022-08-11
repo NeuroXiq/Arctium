@@ -23,6 +23,7 @@ using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Helpers.Binary;
 using System;
+using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
@@ -102,7 +103,47 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                         BinConverter.ToStringHex((byte)receivedType),
                         BinConverter.ToStringHex((byte)expectedType));
                 }
-            }   
+            }
+
+            internal void ClientHello_ClientHello(ClientHello clientHello)
+            {
+                HashSet<ExtensionType> extensions = new HashSet<ExtensionType>();
+
+                foreach (var ext in clientHello.Extensions)
+                {
+                    if (extensions.Contains(ext.ExtensionType))
+                    {
+                        Throw("Extensions: more that one extension of given type exists. Cannot be duplicate extensions");
+                    }
+
+                    extensions.Add(ext.ExtensionType);
+                }
+
+                if (extensions.Contains(ExtensionType.PreSharedKey) &&
+                    clientHello.Extensions[clientHello.Extensions.Length - 1].ExtensionType != ExtensionType.PreSharedKey)
+                {
+                    Throw("Extensions: containst extension 'presharedkey' but this extension is not last in the list (must be last)");
+                }
+
+                if (!extensions.Contains(ExtensionType.SupportedVersions))
+                {
+                    Throw("Missing extension: SupportedVersions");
+                }
+
+                ushort[] supportedVersions = clientHello.GetExtension<SupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
+                bool tls13NotFound = true;
+
+
+                for (int i = 0; tls13NotFound && i < supportedVersions.Length; i++)
+                {
+                    tls13NotFound = supportedVersions[i] != 0x0304;
+                }
+
+                if (tls13NotFound)
+                {
+                    Throw("Supported versions: missing 0x0304 in client versions");
+                }
+            }
 
             public void RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(ContentType recordType)
             {
@@ -160,6 +201,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 if (keyExchangeLength < 1)
                     Throw("key share: key exchange entry length less that 1 (minimum is 1)");
+            }
+
+            internal void ClientHello_CipherSuiteLength(int ciphSuiteLen)
+            {
+                if (ciphSuiteLen < 2)
+                    Throw("Cipher suite length less than 2 minimum is 2");
+                if (ciphSuiteLen % 2 != 0)
+                    Throw("Cipher suite length not a multiple of 2");
             }
         }
 
