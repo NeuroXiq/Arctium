@@ -14,14 +14,14 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
     [TestsClass]
     internal class HMAC_Tests
     {
-        //[TestMethod]
+        [TestMethod]
         public List<TestResult> HMAC_SHA2_Tests()
         {
-            HMAC sha224 = new HMAC(new SHA2_224());
-            HMAC sha256 = new HMAC(new SHA2_256());
-            HMAC sha384 = new HMAC(new SHA2_384());
-            HMAC sha512 = new HMAC(new SHA2_512());
-            HMAC sha1 = new HMAC(new SHA1());
+            HMAC sha224 = new HMAC(new SHA2_224(), new byte[1], 0, 1);
+            HMAC sha256 = new HMAC(new SHA2_256(), new byte[1], 0, 1);
+            HMAC sha384 = new HMAC(new SHA2_384(), new byte[1], 0, 1);
+            HMAC sha512 = new HMAC(new SHA2_512(), new byte[1], 0, 1);
+            HMAC sha1 = new HMAC(new SHA1(), new byte[1], 0, 1);
 
             byte[] result224 = new byte[28];
             byte[] result256 = new byte[32];
@@ -36,13 +36,22 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
             {
                 i++;
 
-                sha224.ComputeHMAC(test.Key, test.Data, result224);
-                sha256.ComputeHMAC(test.Key, test.Data, result256);
-                sha384.ComputeHMAC(test.Key, test.Data, result384);
-                sha512.ComputeHMAC(test.Key, test.Data, result512);
-                sha1.ComputeHMAC(test.Key, test.Data, result1);
+                sha224.ChangeKey(test.Key);
+                sha256.ChangeKey(test.Key);
+                sha384.ChangeKey(test.Key);
+                sha512.ChangeKey(test.Key);
+                sha1.  ChangeKey(test.Key);
 
-                results.Add(new TestResult("hmac-sha224 / " + i, MemOps.Memcmp(result224, test.Sha256)));
+                sha224.ComputeHMAC(test.Data, result224);
+                sha256.ComputeHMAC(test.Data, result256);
+                sha384.ComputeHMAC(test.Data, result384);
+                sha512.ComputeHMAC(test.Data, result512);
+                sha1.ComputeHMAC(test.Data, result1);
+
+                results.Add(new TestResult("hmac-sha224 (custom from hmac rfc) / " + i, MemOps.Memcmp(result224, test.Sha224)));
+                results.Add(new TestResult("hmac-sha256 (custom from hmac rfc) / " + i, MemOps.Memcmp(result256, test.Sha256)));
+                results.Add(new TestResult("hmac-sha384 (custom from hmac rfc) / " + i, MemOps.Memcmp(result384, test.Sha384)));
+                results.Add(new TestResult("hmac-sha512 (custom from hmac rfc) / " + i, MemOps.Memcmp(result512, test.Sha512)));
             }
 
             return results;
@@ -51,11 +60,11 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
         [TestMethod]
         public List<TestResult> HMAC_SHA_NIST_TestVectors()
         {
-            HMAC sha224 = new HMAC(new SHA2_224());
-            HMAC sha256 = new HMAC(new SHA2_256());
-            HMAC sha384 = new HMAC(new SHA2_384());
-            HMAC sha512 = new HMAC(new SHA2_512());
-            HMAC sha1 = new HMAC(new SHA1());
+            HMAC sha224 = new HMAC(new SHA2_224(), new byte[1], 0, 1);
+            HMAC sha256 = new HMAC(new SHA2_256(), new byte[1], 0, 1);
+            HMAC sha384 = new HMAC(new SHA2_384(), new byte[1], 0, 1);
+            HMAC sha512 = new HMAC(new SHA2_512(), new byte[1], 0, 1);
+            HMAC sha1 = new HMAC(new SHA1(), new byte[1], 0, 1);
 
             List<TestResult> results = new List<TestResult>();
             byte[] output = new byte[128];
@@ -64,11 +73,11 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
             {
                 switch (test.HashFuncName)
                 {
-                    case "sha1": sha1.ComputeHMAC(test.Key, test.Data, output); break;
-                    case "sha1-224": sha224.ComputeHMAC(test.Key, test.Data, output); break;
-                    case "sha1-256": sha256.ComputeHMAC(test.Key, test.Data, output); break;
-                    case "sha1-384": sha384.ComputeHMAC(test.Key, test.Data, output); break;
-                    case "sha1-512": sha512.ComputeHMAC(test.Key, test.Data, output); break;
+                    case "sha1":       sha1.ChangeKey(test.Key);         sha1.ComputeHMAC(test.Data, output); break;
+                    case "sha1-224": sha224.ChangeKey(test.Key); sha224.ComputeHMAC(test.Data, output); break;
+                    case "sha1-256": sha256.ChangeKey(test.Key); sha256.ComputeHMAC(test.Data, output); break;
+                    case "sha1-384": sha384.ChangeKey(test.Key); sha384.ComputeHMAC(test.Data, output); break;
+                    case "sha1-512": sha512.ChangeKey(test.Key); sha512.ComputeHMAC(test.Data, output); break;
                 }
 
                 bool success = true;

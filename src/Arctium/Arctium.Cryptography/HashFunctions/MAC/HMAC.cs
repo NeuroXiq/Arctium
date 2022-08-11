@@ -17,31 +17,22 @@ namespace Arctium.Cryptography.HashFunctions.MAC
         private byte[] buf1;
         private byte[] buf2;
 
-        public HMAC(HashFunction hashFunction)
+        public HMAC(HashFunction hashFunction, byte[] key, int keyOffset, int keyLength)
         {
             this.hashFunction = hashFunction;
             buf1 = new byte[hashFunction.InputBlockSizeBytes];
             buf2 = new byte[hashFunction.InputBlockSizeBytes];
         }
 
-        public void ComputeHMAC(byte[] key, byte[] text, byte[] output) => ComputeHMAC(key, 0, key.Length, text, 0, text.Length, output, 0);
+        public void ChangeKey(byte[] key) => ChangeKey(key, 0, key.Length);
 
-        public void ComputeHMAC(byte[] key,
-            int keyOffset,
-            int keyLength,
-            byte[] text,
-            int textOffset,
-            int textLength,
-            byte[] output,
-            int outputOffset)
+        public void ChangeKey(byte[] key, int offset, int length)
         {
-            int b = hashFunction.InputBlockSizeBytes;
-            byte[] hash1, hash2;
-
-            MemOps.MemsetZero(buf1, 0, buf1.Length);
             hashFunction.Reset();
+            int b = hashFunction.InputBlockSizeBytes;
+            MemOps.MemsetZero(buf1, 0, buf1.Length);
 
-            if (keyLength > b)
+            if (length > b)
             {
                 hashFunction.HashBytes(key, 0, key.Length);
                 byte[] keyHashTemp = hashFunction.HashFinal();
@@ -51,20 +42,33 @@ namespace Arctium.Cryptography.HashFunctions.MAC
             }
             else
             {
-                MemCpy.Copy(key, keyOffset, buf1, 0, keyLength);
+                MemCpy.Copy(key, offset, buf1, 0, length);
             }
 
             MemCpy.Copy(buf1, buf2);
 
             for (int i = 0; i < b; i++) buf1[i] ^= IPadByte;
+            for (int i = 0; i < b; i++) buf2[i] ^= OPadByte;
+        }
+
+        public void ComputeHMAC(byte[] text, byte[] output) => ComputeHMAC(text, 0, text.Length, output, 0);
+
+        public void ComputeHMAC(
+            byte[] text,
+            int textOffset,
+            int textLength,
+            byte[] output,
+            int outputOffset)
+        {
+            byte[] hash1, hash2;
+
+            hashFunction.Reset();
 
             hashFunction.HashBytes(buf1);
             hashFunction.HashBytes(text, textOffset, textLength);
             hash1 = hashFunction.HashFinal();
 
             hashFunction.Reset();
-
-            for (int i = 0; i < b; i++) buf2[i] ^= OPadByte;
 
             hashFunction.HashBytes(buf2);
             hashFunction.HashBytes(hash1);
