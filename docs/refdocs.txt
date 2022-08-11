@@ -1,3 +1,11 @@
+
+# HMAC #
+test vectors:
+https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/message-authentication
+https://www.rfc-editor.org/rfc/pdfrfc/rfc2104.txt.pdf
+HMAC: Keyed-Hashing for Message Authentication
+# - #
+
 # SHA 3 #
 Test Vectors Source:
 https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/Secure-Hashing

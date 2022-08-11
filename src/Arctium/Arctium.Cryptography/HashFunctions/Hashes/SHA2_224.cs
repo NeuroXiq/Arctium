@@ -78,12 +78,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         public override byte[] HashFinal()
         {
             byte[] result = new byte[28];
-            bool isPaddingNeeded = LoadedBytes % ((long)InputBlockSizeBytes) != 0 || LoadedBytes == 0;
-
-            if (isPaddingNeeded)
-            {
-                blockBuffer.Load(SHA2_224_256_Shared.GetPadding(LoadedBytes));
-            }
+            blockBuffer.Load(SHA2_224_256_Shared.GetPadding(LoadedBytes));
 
             if (blockBuffer.HasData) blockBuffer.FlushBuffer();
 

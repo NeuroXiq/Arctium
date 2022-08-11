@@ -25,7 +25,6 @@
     <Folder Include="Ciphers\Aead\" />
     <Folder Include="Ciphers\StreamCiphers\Exceptions\" />
     <Folder Include="HashFunctions\Checksums\" />
-    <Folder Include="HashFunctions\KDF\" />
   </ItemGroup>
 
   <ItemGroup>

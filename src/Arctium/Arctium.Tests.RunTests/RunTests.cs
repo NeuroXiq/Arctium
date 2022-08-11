@@ -123,9 +123,12 @@ namespace Arctium.Tests.RunTests
 
         static ConsoleOutput consoleOutput = new ConsoleOutput(ConfigurationManager.AppSettings.Get("console-tests-display-format"));
         static List<Task> tasks = new List<Task>();
+        private static string filterClassRegex;
 
-        public static void Run()
+        public static void Run(string[] args)
         {
+            if (args.Length > 0) filterClassRegex = args[0];
+
             var tests = FindTestClasses();
             var filteredTests = FilterTests(tests);
 
@@ -140,7 +143,7 @@ namespace Arctium.Tests.RunTests
 
         static List<Type> FilterTests(List<Type> tests)
         {
-            string filter = ConfigurationManager.AppSettings.Get("filter-tests-by-regex-class-name");
+            string filter = filterClassRegex;
 
             if (!string.IsNullOrEmpty(filter))
             {

@@ -16,7 +16,7 @@ namespace Arctium.Connection.Tls.Tls13.API
         {
             this.stream = stream;
             this.config = config;
-            this.protocol = new Tls13Protocol(stream);
+            this.protocol = new Tls13Protocol(stream, new Tls13ServerConfig());
         }
 
         public Tls13Stream Open()

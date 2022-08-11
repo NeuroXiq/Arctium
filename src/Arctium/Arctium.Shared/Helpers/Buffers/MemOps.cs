@@ -31,6 +31,8 @@ namespace Arctium.Shared.Helpers
             return false;
         }
 
+        public static void MemsetZero(byte[] buffer, long offset, long length) => Memset(buffer, offset, length, 0);
+
         public static void Memset(ulong[] array, long offset, long count, ulong value)
         {
             for(long i = offset; i < offset + count; i++) 

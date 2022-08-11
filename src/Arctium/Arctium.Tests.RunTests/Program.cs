@@ -32,7 +32,7 @@ namespace Arctium.Tests.RunTests
             Files.SetArctiumFilesPath(dir);
             
 
-            RunTests.Run();
+            RunTests.Run(args);
             Console.WriteLine("FINISHED TESTS");
             Console.WriteLine("enter to to exit");
             Console.Read();
