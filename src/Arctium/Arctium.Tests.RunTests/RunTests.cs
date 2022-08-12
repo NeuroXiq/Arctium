@@ -16,7 +16,7 @@ namespace Arctium.Tests.RunTests
 {
     public class RunTests
     {
-        class FinishedTestsInfo
+        public class FinishedTestsInfo
         {
             public string ClassName;
             public string MethodName;
@@ -30,12 +30,12 @@ namespace Arctium.Tests.RunTests
             }
         }
 
-        class ConsoleOutput
+        public class ConsoleOutput
         {
             object _lock = new object();
             int appendFinishedTestCursorTop = 4;
-            int totalSuccess = 0;
-            int totalFail = 0;
+            public int totalSuccess = 0;
+            public int totalFail = 0;
             private string displayFormat;
             List<TestResult> allTests;
 
@@ -121,7 +121,7 @@ namespace Arctium.Tests.RunTests
             }
         }
 
-        static ConsoleOutput consoleOutput = new ConsoleOutput(ConfigurationManager.AppSettings.Get("console-tests-display-format"));
+        public static ConsoleOutput consoleOutput = new ConsoleOutput(ConfigurationManager.AppSettings.Get("console-tests-display-format"));
         static List<Task> tasks = new List<Task>();
         private static string filterClassRegex;
 

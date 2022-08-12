@@ -34,6 +34,8 @@ namespace Arctium.Tests.RunTests
 
             RunTests.Run(args);
             Console.WriteLine("FINISHED TESTS");
+            Console.WriteLine("SUCCESS: " + RunTests.consoleOutput.totalSuccess);
+            Console.WriteLine("FAIL: " + RunTests.consoleOutput.totalFail);
             Console.WriteLine("enter to to exit");
             Console.Read();
         }

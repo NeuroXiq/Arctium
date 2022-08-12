@@ -2,7 +2,7 @@
   "profiles": {
     "Arctium.Tests.RunTests": {
       "commandName": "Project",
-      "commandLineArgs": "HMAC"
+      "commandLineArgs": "HKDF"
     }
   }
 }

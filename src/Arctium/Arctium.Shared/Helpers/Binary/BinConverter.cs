@@ -353,6 +353,19 @@ namespace Arctium.Shared.Helpers.Binary
         // Other uncommon
         //
 
+        public static string ToHexString(byte[] input) => ToHexString(input, 0, input.Length);
+
+        public static string ToHexString(byte[] input, int offset, int length)
+        {
+            string r = "";
+            for (int i = 0; i < length; i++)
+            {
+                r += String.Format("{0:X2}", input[i + offset]);
+            }
+
+            return r;
+        }
+
         public static string ToStringHex(int value)
         {
             return String.Format("0x{0:X8}", value);

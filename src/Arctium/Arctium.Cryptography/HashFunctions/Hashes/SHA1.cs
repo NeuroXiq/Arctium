@@ -42,6 +42,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
         public override void Reset()
         {
             SHA1Algorithm.ResetContext(context);
+            membuf.Reset();
         }
 
         //

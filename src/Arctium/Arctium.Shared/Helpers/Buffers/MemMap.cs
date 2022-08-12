@@ -1094,7 +1094,6 @@ namespace Arctium.Shared.Helpers.Buffers
             }
         }
 
-
         public static void ToBytes1UIntBE(uint input, byte[] output, long outputOffset)
         {
             output[outputOffset + 0] = (byte)(input >> 24);
@@ -1393,6 +1392,12 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 1] = ToULong8BytesBE(input, inputOffset + 8);
             output[outputOffset + 2] = ToULong8BytesBE(input, inputOffset + 16);
             output[outputOffset + 3] = ToULong8BytesBE(input, inputOffset + 24);
+        }
+
+        public static void ToBytes1UShortBE(ushort v, byte[] output, long outputOffset)
+        {
+            output[outputOffset] = (byte)(v >> 8);
+            output[outputOffset + 1] = (byte)(v >> 0);
         }
         #endregion
     }

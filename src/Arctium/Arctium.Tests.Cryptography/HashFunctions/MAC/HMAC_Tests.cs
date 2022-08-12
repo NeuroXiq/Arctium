@@ -42,11 +42,11 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
                 sha512.ChangeKey(test.Key);
                 sha1.  ChangeKey(test.Key);
 
-                sha224.ComputeHMAC(test.Data, result224);
-                sha256.ComputeHMAC(test.Data, result256);
-                sha384.ComputeHMAC(test.Data, result384);
-                sha512.ComputeHMAC(test.Data, result512);
-                sha1.ComputeHMAC(test.Data, result1);
+                sha224.ProcessBytes(test.Data); sha224.Final(result224, 0);
+                sha256.ProcessBytes(test.Data); sha256.Final(result256, 0);
+                sha384.ProcessBytes(test.Data); sha384.Final(result384, 0);
+                sha512.ProcessBytes(test.Data); sha512.Final(result512, 0);
+                sha1.ProcessBytes(test.Data); sha1.Final(result1, 0);
 
                 results.Add(new TestResult("hmac-sha224 (custom from hmac rfc) / " + i, MemOps.Memcmp(result224, test.Sha224)));
                 results.Add(new TestResult("hmac-sha256 (custom from hmac rfc) / " + i, MemOps.Memcmp(result256, test.Sha256)));
@@ -73,11 +73,11 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
             {
                 switch (test.HashFuncName)
                 {
-                    case "sha1":       sha1.ChangeKey(test.Key);         sha1.ComputeHMAC(test.Data, output); break;
-                    case "sha1-224": sha224.ChangeKey(test.Key); sha224.ComputeHMAC(test.Data, output); break;
-                    case "sha1-256": sha256.ChangeKey(test.Key); sha256.ComputeHMAC(test.Data, output); break;
-                    case "sha1-384": sha384.ChangeKey(test.Key); sha384.ComputeHMAC(test.Data, output); break;
-                    case "sha1-512": sha512.ChangeKey(test.Key); sha512.ComputeHMAC(test.Data, output); break;
+                    case "sha1":       sha1.ChangeKey(test.Key);    sha1.ProcessBytes(test.Data); sha1.Final(output, 0); break;
+                    case "sha1-224": sha224.ChangeKey(test.Key); sha224.ProcessBytes(test.Data); sha224.Final(output, 0); break;
+                    case "sha1-256": sha256.ChangeKey(test.Key); sha256.ProcessBytes(test.Data); sha256.Final(output, 0); break;
+                    case "sha1-384": sha384.ChangeKey(test.Key); sha384.ProcessBytes(test.Data); sha384.Final(output, 0); break;
+                    case "sha1-512": sha512.ChangeKey(test.Key); sha512.ProcessBytes(test.Data); sha512.Final(output, 0); break;
                 }
 
                 bool success = true;
@@ -147,16 +147,6 @@ namespace Arctium.Tests.Cryptography.HashFunctions.MAC
         }
 
         static List<HmacTest> NistTests;
-
-        static List<HmacTest> MD5Tests = new List<HmacTest>()
-        {
-            // new HmacTest(BinConverter.FromString("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"), "Hi There", "9294727a3638bb1c13f48ef8158bfc9d"),
-            //new HmacTest("Jefe", "what do ya want for nothing?", "750c783e6ab0b503eaa86e310a5db738"),
-            //new HmacTest(
-            //    BinConverter.FromString("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
-            //    Enumerable.Range(1, 50).Select(x => (byte)0xDD).ToArray(), // 50 times '0xDD'
-            //    BinConverter.FromString("750c783e6ab0b503eaa86e310a5db738"))
-        };
 
         static List<HmacSha2Test> SHA2Tests = new List<HmacSha2Test>()
         {

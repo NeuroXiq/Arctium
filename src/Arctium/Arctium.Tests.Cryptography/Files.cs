@@ -49,6 +49,7 @@
             public static readonly string Streebog512TestVectors = HFTV + "streebog/v512.txt";
             public static readonly string Streebog256TestVectors = HFTV + "streebog/v256.txt";
             public static readonly string HMAC_NIST = HFTV + "HMAC_NIST.rsp";
+            public static readonly string HKDF_Sha256_Vectors = HFTV + "hkdf-sha256-vectors.txt";
         }
 
         public static class Ciphers
