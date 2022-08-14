@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Configuration;
 using System.Text.RegularExpressions;
+using Arctium.Standards;
 
 namespace Arctium.Tests.RunTests
 {
@@ -231,6 +232,7 @@ namespace Arctium.Tests.RunTests
         {
             // getreferenceassemblies doesn't work without reference in code
             PKCSv2_2API_Tests t;
+            RFC7748_Tests asdf = new RFC7748_Tests();
         }
     }
 }

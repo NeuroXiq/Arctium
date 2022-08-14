@@ -1,5 +1,6 @@
 ﻿using Arctium.Tests.Core;
 using Arctium.Tests.Cryptography;
+using Arctium.Tests.Standards;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -30,7 +31,8 @@ namespace Arctium.Tests.RunTests
             }
 
             Files.SetArctiumFilesPath(dir);
-            
+
+            args = new string[] { "7748" };
 
             RunTests.Run(args);
             Console.WriteLine("FINISHED TESTS");
