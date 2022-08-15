@@ -30,6 +30,12 @@ namespace Arctium.Standards
 
         public static byte[] X448_UCoord_5(byte[] k) => X448(k, X448_UCoord5);
 
+        /// <summary>
+        /// Returns encrypted secret key k as multiplication of u
+        /// </summary>
+        /// <param name="k">Secret key to encrypt</param>
+        /// <param name="u">U Coordinate of elliptic curve (or secret received from other party)</param>
+        /// <returns></returns>
         public static byte[] X25519(byte[] k, byte[] u)
         {
             BigInteger uAsInt = DecodeUCoordinate(u, BITS_X25519);

@@ -1,5 +1,10 @@
 ﻿namespace Arctium.Standards.PKCS1.v2_2
 {
+    /// <summary>
+    /// PKCS v 2.2 RSA private key (as RFC defines)
+    /// Stored for example in '-- BEGIN RSA PRIVATE KEY ---' PEM files
+    /// Can be decoded by PKCS1_v2_2_API static method
+    /// </summary>
     public class RSAPrivateKey
     {
         public int Version;

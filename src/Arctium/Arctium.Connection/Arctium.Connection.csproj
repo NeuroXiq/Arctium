@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arctium.Shared\Arctium.Shared.csproj" />
+    <ProjectReference Include="..\Arctium.Standards\Arctium.Standards.csproj" />
   </ItemGroup>
 
 </Project>

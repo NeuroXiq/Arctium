@@ -18,6 +18,11 @@ namespace Arctium.Shared.Helpers.Buffers
             DataLength = 0;
         }
 
+        public void Write(byte[] buffer, int offset, int length)
+        {
+            stream.Write(buffer, offset, length);
+        }
+
         public void LoadToLength(int minimumDataLengthInBuffer)
         {
             if (minimumDataLengthInBuffer <= DataLength) return;

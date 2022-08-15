@@ -6,8 +6,10 @@ using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Security;
 using Arctium.Standards;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
@@ -42,12 +44,22 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             byte[] sharedSecret = RFC7748.X25519(privKey, clientKeyShare.KeyExchangeRawBytes);
 
-
+            
 
             var keyShare = new KeyShareServerHelloExtension(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyToSend));
-            var encryptedExtensions = new EncryptedExtensions(null);
+
+            var encryptedExtensions = new EncryptedExtensions(new Extension[]
+            {
+                new ProtocolNameListExtension(new byte[][] {  Encoding.ASCII.GetBytes("http/1.1") })
+            });
+
             // cert request
-            var certificate = new Certificate(null, null);
+            var certificate = new Certificate(new byte[0],
+                new CertificateEntry[]
+                {
+                    new CertificateEntry(CertificateType.X509, serverConfig.DerEncodedCertificateBytes, new Extension[0])
+                });
+
             var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256, null);
             var finished = new Finished(null);
 
@@ -62,6 +74,22 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             };
 
             ServerHello serverHello = new ServerHello(new byte[32], hello.LegacySessionId, CipherSuite.TLS_AES_128_GCM_SHA256, extensions);
+
+            ModelSerialization serializer = new ModelSerialization();
+
+            serializer.ToBytes(serverHello);
+            recordLayer.Write(ContentType.Handshake, serializer.Buffer.Buffer, 0, serializer.Buffer.DataLength);
+            serializer.Reset();
+
+
+
+            serializer.ToBytes(encryptedExtensions);
+            serializer.ToBytes(certificate);
+            serializer.ToBytes(certVerify);
+            serializer.ToBytes(finished);
+
+            recordLayer.Write(ContentType.Handshake, serializer.Buffer.Buffer, 0, serializer.Buffer.DataLength);
+            // send app data
         }
 
         internal void Write(byte[] buffer, int offset, int count)

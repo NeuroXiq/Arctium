@@ -10,7 +10,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private RecordLayer recordLayer;
         private ByteBuffer byteBuffer;
         private Validate validate;
-        private ModelSerialization modelSerialization;
+        private ModelDeserialization modelSerialization;
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
@@ -20,7 +20,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.recordLayer = recordLayer;
             this.byteBuffer = new ByteBuffer();
             this.validate = validate;
-            this.modelSerialization = new ModelSerialization(validate);
+            this.modelSerialization = new ModelDeserialization(validate);
         }
 
         public ClientHello ReadClientHello()
@@ -125,7 +125,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             while (cursor < end)
             {
-                ModelSerialization.ExtensionDeserializeResult result = modelSerialization.DeserializeExtension(buffer, cursor, extLen, true);
+                ModelDeserialization.ExtensionDeserializeResult result = modelSerialization.DeserializeExtension(buffer, cursor, extLen, true);
 
                 maxLength -= result.Length;
                 cursor += result.Length;

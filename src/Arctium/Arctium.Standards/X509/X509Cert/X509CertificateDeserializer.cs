@@ -3,6 +3,7 @@ using Arctium.Standards.ASN1.Standards.X509.Mapping;
 using System;
 using Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
+using Arctium.Standards.FileFormat.PEM;
 
 namespace Arctium.Standards.X509.X509Cert
 {
@@ -19,10 +20,9 @@ namespace Arctium.Standards.X509.X509Cert
 
         public X509Certificate FromPem(string filename)
         {
-            //PemFile pemfile = PemFile.FromFile(filename);   
+            PemFile pemfile = PemFile.FromFile(filename);   
 
-            //FromBytes(pemfile.DecodedData);
-            return null;
+            return FromBytes(pemfile.DecodedData);
         }
 
         public X509Certificate FromBytes(byte[] data)
