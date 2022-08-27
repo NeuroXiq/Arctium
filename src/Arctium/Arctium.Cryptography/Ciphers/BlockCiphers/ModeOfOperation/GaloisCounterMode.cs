@@ -11,14 +11,17 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
     public class GaloisCounterMode : AEAD
     {
         GaloisCounterModeAlgorithm.Context context;
+        private int authTagLen;
         private BlockCipher cipher;
         private static readonly byte[] Zero16Bytes = new byte[16];
 
-        public GaloisCounterMode(BlockCipher cipher) : base(cipher)
+        public GaloisCounterMode(BlockCipher cipher, int authTagLen) : base(cipher)
         {
             if (cipher.InputBlockLengthBits != 128) throw new NotSupportedException("only 128 input block ");
 
             this.cipher = cipher;
+            context = GaloisCounterModeAlgorithm.Initialize(cipher);
+            this.authTagLen = authTagLen;
         }
 
         /// <summary>
@@ -49,34 +52,42 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
             byte[] ciphertextOutput,
             long ciphertextOutputOffset,
             byte[] authenticationTagOutput,
-            byte[] authenticationTagOutputOffset)
+            long authenticationTagOutputOffset)
         {
-            byte[] h = new byte[16];
-            byte[] j0;
-
-            if (ivLength * 8 == 96)
-            {
-                j0 = new byte[16];
-            }
-            else
-            {
-                long s = (128 * SMath.DivideAndCeilUp(ivLength * 8, 128)) - (ivLength * 8);
-                // convert to bytes
-                long len = (ivLength * 8) + (s + 64) + (64);
-                len = len / 8;
-
-                len = (ivLength + 15) / 16;
-
-                j0 = new byte[len];
-                MemCpy.Copy(iv, ivOffset, j0, 0, ivLength);
-                MemMap.ToBytes1ULongBE((ulong)ivLength * 8, j0, j0.Length - 8);
-            }
-
-            cipher.Encrypt(Zero16Bytes, 0, h, 0, 16);
+            GaloisCounterModeAlgorithm.AE(context,
+                iv, ivOffset, ivLength,
+                p, pOffset, pLength,
+                a, aOffset, aLength,
+                ciphertextOutput, ciphertextOutputOffset,
+                authenticationTagOutput, authenticationTagOutputOffset,
+                authTagLen);
         }
 
         public override void AuthenticatedDecryption()
         {
         }
+
+        //byte[] h = new byte[16];
+        //byte[] j0;
+
+        //if (ivLength * 8 == 96)
+        //{
+        //    j0 = new byte[16];
+        //}
+        //else
+        //{
+        //    long s = (128 * SMath.DivideAndCeilUp(ivLength * 8, 128)) - (ivLength * 8);
+        //    // convert to bytes
+        //    long len = (ivLength * 8) + (s + 64) + (64);
+        //    len = len / 8;
+
+        //    len = (ivLength + 15) / 16;
+
+        //    j0 = new byte[len];
+        //    MemCpy.Copy(iv, ivOffset, j0, 0, ivLength);
+        //    MemMap.ToBytes1ULongBE((ulong)ivLength * 8, j0, j0.Length - 8);
+        //}
+
+        //cipher.Encrypt(Zero16Bytes, 0, h, 0, 16);
     }
 }

@@ -32,8 +32,6 @@ namespace Arctium.Tests.RunTests
 
             Files.SetArctiumFilesPath(dir);
 
-            args = new string[] { "7748" };
-
             RunTests.Run(args);
             Console.WriteLine("FINISHED TESTS");
             Console.WriteLine("SUCCESS: " + RunTests.consoleOutput.totalSuccess);

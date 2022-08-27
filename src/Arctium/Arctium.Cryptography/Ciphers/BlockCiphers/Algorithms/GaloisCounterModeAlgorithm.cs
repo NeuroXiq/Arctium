@@ -50,7 +50,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         {
         }
 
-
         public static void AE(Context context,
         byte[] iv, long ivOffs, long ivLen,
         byte[] p, long pOffs, long pLen,
@@ -70,12 +69,14 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             else
             {
                 int rem = (int)(16 - (ivLen % 16));
-                byte[] temp = new byte[rem + ivLen];
+                rem = rem == 16 ? 0 : rem;
+                byte[] temp = new byte[ivLen + rem + 16];
+
                 MemCpy.Copy(iv, ivOffs, temp, 0, ivLen);
-                MemMap.ToBytes1ULongBE((ulong)(ivLen * 8), temp, rem + ivLen - 8);
+                MemMap.ToBytes1ULongBE((ulong)(ivLen * 8), temp, temp.Length - 8);
                 
                 MemOps.MemsetZero(context.GHASH_Y);
-                GHASH(context, temp, 0, rem + ivLen);
+                GHASH(context, temp, 0, temp.Length);
                 MemCpy.Copy(context.GHASH_Y, 0, j0, 0, 16);
             }
 

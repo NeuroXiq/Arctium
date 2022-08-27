@@ -47,7 +47,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
             byte[] ciphertextOutput,
             long ciphertextOutputOffset,
             byte[] authenticationTagOutput,
-            byte[] authenticationTagOutputOffset);
+            long authenticationTagOutputOffset);
 
         public abstract void AuthenticatedDecryption();
     }

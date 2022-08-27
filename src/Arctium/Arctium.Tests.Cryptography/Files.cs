@@ -57,6 +57,14 @@
             public static readonly string Camellia128 = CIPH + "camellia/camellia-128.txt";
             public static readonly string Camellia192 = CIPH + "camellia/camellia-192.txt";
             public static readonly string Camellia256 = CIPH + "camellia/camellia-256.txt";
+
+            public static readonly string AES_GCM_Decrypt128 = CIPH + "aes-gcm/gcmDecrypt128.rsp";
+            public static readonly string AES_GCM_Decrypt192 = CIPH + "aes-gcm/gcmDecrypt192.rsp";
+            public static readonly string AES_GCM_Decrypt256 = CIPH + "aes-gcm/gcmDecrypt256.rsp";
+
+            public static readonly string AES_GCM_Encrypt128 = CIPH + "aes-gcm/gcmEncryptExtIV128.rsp";
+            public static readonly string AES_GCM_Encrypt192 = CIPH + "aes-gcm/gcmEncryptExtIV192.rsp";
+            public static readonly string AES_GCM_Encrypt256 = CIPH + "aes-gcm/gcmEncryptExtIV256.rsp";
         }
 
         public static void SetArctiumFilesPath(string fullPath)
