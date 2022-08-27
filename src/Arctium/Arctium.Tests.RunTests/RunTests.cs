@@ -125,10 +125,35 @@ namespace Arctium.Tests.RunTests
         public static ConsoleOutput consoleOutput = new ConsoleOutput(ConfigurationManager.AppSettings.Get("console-tests-display-format"));
         static List<Task> tasks = new List<Task>();
         private static string filterClassRegex;
+        private static string methodRegex;
+
+        static void SetArgs(string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                var arg = args[i + 1];
+                switch (args[i])
+                {
+                    case "-classRegex":
+                        filterClassRegex = arg;
+                        break;
+                    case "-methodRegex":
+                        methodRegex = arg;
+                        break;
+                    default:
+                        break;
+                }
+
+                i++;
+            }
+        }
 
         public static void Run(string[] args)
         {
-            if (args.Length > 0) filterClassRegex = args[0];
+            SetArgs(args);
+
+
+
 
             var tests = FindTestClasses();
             var filteredTests = FilterTests(tests);
@@ -175,7 +200,9 @@ namespace Arctium.Tests.RunTests
         private static void RunTestsFromClass(Type testClass)
         {
             var members = testClass.GetMethods().Where(method => method.GetCustomAttributes(typeof(TestMethodAttribute)).Any()).ToList();
+            members = FilterByMethodName(members);
             members = members.OrderBy(method => method.GetCustomAttribute<TestMethodAttribute>().ExpectedDurationInSeconds).ToList();
+
             var instance = Activator.CreateInstance(testClass);
             // List<TestResult> testResults = new List<TestResult>();
             List<List<MethodInfo>> groups = SplitToEqualSizeGroups(members, 4);
@@ -199,6 +226,13 @@ namespace Arctium.Tests.RunTests
 
                 tasks.Add(task);
             }
+        }
+
+        private static List<MethodInfo> FilterByMethodName(List<MethodInfo> members)
+        {
+            if (string.IsNullOrEmpty(methodRegex)) return members;
+
+            return members.Where(t => Regex.Match(t.Name, methodRegex).Success).ToList();
         }
 
         private static List<List<MethodInfo>> SplitToEqualSizeGroups(List<MethodInfo> methods, int groupsCount)

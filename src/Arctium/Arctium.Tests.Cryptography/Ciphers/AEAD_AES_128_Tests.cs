@@ -22,17 +22,54 @@ namespace Arctium.Tests.Cryptography.Ciphers
         }
 
         [TestMethod]
+        public List<TestResult> AES_GCM_Decrypt192()
+        {
+            var r = new List<TestResult>();
+            var vectors192 = MapDecrypt(Files.Ciphers.AES_GCM_Decrypt192);
+            foreach (var t in vectors192) { r.Add(Decrypt(t, "aes gcm 192 decrypt / ")); }
+
+            return r;
+        }
+
+        [TestMethod]
+        public List<TestResult> AES_GCM_Decrypt256()
+        {
+            List<TestResult> r = new List<TestResult>();
+
+            var vectors256 = MapDecrypt(Files.Ciphers.AES_GCM_Decrypt256);
+            foreach (var t in vectors256) { r.Add(Decrypt(t, "aes gcm 256 decrypt / ")); }
+
+            return r;
+        }
+
+        [TestMethod]
+        public List<TestResult> AES_GCM_Encrypt192()
+        {
+            List<TestResult> results = new List<TestResult>();
+            var vectors192 = MapEncrypt(Files.Ciphers.AES_GCM_Encrypt192);
+
+            foreach (var test in vectors192) { results.Add(Encrypt(test, "aes gcm 192 encrypt")); }
+
+            return results;
+        }
+
+        [TestMethod]
+        public List<TestResult> AES_GCM_Encrypt256()
+        {
+            List<TestResult> results = new List<TestResult>();
+            var vectors256 = MapEncrypt(Files.Ciphers.AES_GCM_Encrypt256);
+            foreach (var test in vectors256) { results.Add(Encrypt(test, "aes gcm 256 encrypt")); }
+
+            return results;
+        }
+
+        [TestMethod]
         public List<TestResult> AES_GCM_Decrypt128()
         {
             List<TestResult> r = new List<TestResult>();
 
             var vectors128 = MapDecrypt(Files.Ciphers.AES_GCM_Decrypt128);
-            var vectors192 = MapDecrypt(Files.Ciphers.AES_GCM_Decrypt192);
-            var vectors256 = MapDecrypt(Files.Ciphers.AES_GCM_Decrypt256);
-
             foreach (var t in vectors128) { r.Add(Decrypt(t, "aes gcm 128 decrypt / ")); }
-            foreach (var t in vectors192) { r.Add(Decrypt(t, "aes gcm 192 decrypt / ")); }
-            foreach (var t in vectors256) { r.Add(Decrypt(t, "aes gcm 256 decrypt / ")); }
 
             return r;
         }
@@ -41,14 +78,9 @@ namespace Arctium.Tests.Cryptography.Ciphers
         public List<TestResult> AES_GCM_Encrypt128_NIST()
         {
             List<TestResult> results = new List<TestResult>();
-
             var vectors128 = MapEncrypt(Files.Ciphers.AES_GCM_Encrypt128);
-            var vectors192 = MapEncrypt(Files.Ciphers.AES_GCM_Encrypt192);
-            var vectors256 = MapEncrypt(Files.Ciphers.AES_GCM_Encrypt256);
-
+            
             foreach (var test in vectors128) { results.Add(Encrypt(test, "aes gcm 128 encrypt")); }
-            foreach (var test in vectors192) { results.Add(Encrypt(test, "aes gcm 192 encrypt")); }
-            foreach (var test in vectors256) { results.Add(Encrypt(test, "aes gcm 256 encrypt")); }
 
             return results;
         }

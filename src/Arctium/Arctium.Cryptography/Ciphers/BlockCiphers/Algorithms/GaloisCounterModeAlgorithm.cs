@@ -1,5 +1,6 @@
 ﻿using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
+using System.Diagnostics;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {
@@ -16,16 +17,15 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         {
             // public byte[] HashSubkey;
             public BlockCipher Cipher;
-            public byte[] Temp1;
-            public byte[] Temp2;
-            public byte[] Temp3;
             public byte[] GHASH_Y;
             public byte[] H;
             public byte[] IV;
-            public byte[] TempJ0;
             public byte[] ICB;
             public byte[] J0;
             public byte[] T;
+            public byte[][] GF_MUL_LOOKUP;
+            public byte[] Temp1;
+            public byte[] Temp2;
         }
 
         public static Context Initialize(BlockCipher cipher)
@@ -36,14 +36,16 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 Cipher = cipher,
                 H = new byte[16],
                 IV = new byte[16],
-                Temp1 = new byte[16],
-                Temp2 = new byte[16],
-                Temp3 = new byte[16],
                 GHASH_Y = new byte[16],
                 ICB = new byte[16],
                 T = new byte[16],
-                J0 = new byte[16]
+                J0 = new byte[16],
+                GF_MUL_LOOKUP = new byte[16][],
+                Temp1 = new byte[16],
+                Temp2 = new byte[16]
             };
+
+            for (int i = 0; i < 16; i++) ctx.GF_MUL_LOOKUP[i] = new byte[256 * 16];
 
             Reset(ctx);
 
@@ -52,6 +54,24 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
         public static void Reset(Context context)
         {
+            context.Cipher.Encrypt(Zero16Bytes, 0, context.H, 0, 16);
+            CreateLookupTables(context);
+        }
+
+        static void CreateLookupTables(Context context)
+        {
+            byte[] t = context.Temp1;
+
+            for (int i = 0; i < 16; i++)
+            {
+                MemOps.MemsetZero(t);
+                for (int j = 0; j < 256; j++)
+                {
+                    t[i] = (byte)j;
+
+                    GFMUL_NotOptimized(t, context.H, context.GF_MUL_LOOKUP[i], j * 16);
+                }
+            }
         }
 
         public static void AD(Context context,
@@ -81,7 +101,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         static void ComputeJ0(Context context,
             byte[] iv, long ivOffs, long ivLen)
         {
-            context.Cipher.Encrypt(Zero16Bytes, 0, context.H, 0, 16);
+            
             byte[] j0 = context.J0;
 
             if (ivLen == 12)
@@ -210,15 +230,14 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             if (inputLength % 16 != 0) throw new System.Exception("INTERNAL: must be 16 length");
 
             byte[] y = context.GHASH_Y;
-            byte[] tempMulOutput = context.Temp3;
-
-            // MemOps.MemsetZero(y, 0, y.Length);
+            byte[] tempMulOutput = context.Temp2;
 
             for (long i = inputOffset; i < inputLength + inputOffset; i += BlockSize)
             {
                 for (long j = 0; j < BlockSize; j++) y[j] ^= input[i + j];
 
-                GFMUL(context, y, context.H, tempMulOutput);
+                // GFMUL_NotOptimized(y, context.H, tempMulOutput);
+                GFMUL_Optimized(context, y, tempMulOutput);
                 MemCpy.Copy(tempMulOutput, 0, y, 0, BlockSize);
             }
 
@@ -233,8 +252,16 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         }
 
 
+        static void GFMUL_Optimized(Context context, byte[] x, byte[] outputResult)
+        {
+            MemOps.MemsetZero(outputResult);
+            for (int i = 0; i < 16; i++)
+                for (int j = 0; j < 16; j++)
+                    outputResult[j] ^= (byte)context.GF_MUL_LOOKUP[i][(x[i] *  16) + j];
+        }
+
         //generate lookups for this
-        static void GFMUL(Context context, byte[] x, byte[] num2, byte[] outputResult)
+        public static void GFMUL_NotOptimized(byte[] x, byte[] num2, byte[] outputResult, int outOffset)
         {
             byte[] v = new byte[16];
             byte[] r = new byte[16];
@@ -271,7 +298,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 }
             }
 
-            MemCpy.Copy(r, 0, outputResult, 0, 16);
+            MemCpy.Copy(r, 0, outputResult, outOffset, 16);
         }
     }
 }
