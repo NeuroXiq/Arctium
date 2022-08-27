@@ -24,6 +24,8 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             public byte[] IV;
             public byte[] TempJ0;
             public byte[] ICB;
+            public byte[] J0;
+            public byte[] T;
         }
 
         public static Context Initialize(BlockCipher cipher)
@@ -38,7 +40,9 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 Temp2 = new byte[16],
                 Temp3 = new byte[16],
                 GHASH_Y = new byte[16],
-                ICB = new byte[16]
+                ICB = new byte[16],
+                T = new byte[16],
+                J0 = new byte[16]
             };
 
             Reset(ctx);
@@ -50,16 +54,35 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         {
         }
 
-        public static void AE(Context context,
-        byte[] iv, long ivOffs, long ivLen,
-        byte[] p, long pOffs, long pLen,
-        byte[] a, long aOffs, long aLen,
-        byte[] ciphOutput, long ciphOutOffset,
-        byte[] authTagOut, long authTagOutOffs,
-        int tagLengthInBytes)
+        public static void AD(Context context,
+            byte[] iv, long ivOffs, long ivLen,
+            byte[] ciph, long ciphOffs, long ciphLen,
+            byte[] a, long aOffs, long aLen,
+            byte[] decryptOut, long decryptOutOffset,
+            byte[] authTag, long authTagOffs, long authTagLen,
+            out bool authTagValidationResult)
+        {
+            if (authTagLen > 16) throw new System.Exception("internal: auth tag lenght > 16");
+
+            ComputeJ0(context, iv, ivOffs, ivLen);
+
+            MemCpy.Copy(context.J0, context.ICB);
+            inc32(context.ICB);
+
+            GCTR(context, ciph, ciphOffs, ciphLen, decryptOut, decryptOutOffset);
+
+            ComputeTTag(context, ciph, ciphOffs, ciphLen, a, aOffs, aLen);
+
+            authTagValidationResult = true;
+
+            for (int i = 0; i < authTagLen; i++) authTagValidationResult &= authTag[authTagOffs + i] == context.T[i];
+        }
+
+        static void ComputeJ0(Context context,
+            byte[] iv, long ivOffs, long ivLen)
         {
             context.Cipher.Encrypt(Zero16Bytes, 0, context.H, 0, 16);
-            byte[] j0 = new byte[16];
+            byte[] j0 = context.J0;
 
             if (ivLen == 12)
             {
@@ -74,31 +97,32 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 
                 MemCpy.Copy(iv, ivOffs, temp, 0, ivLen);
                 MemMap.ToBytes1ULongBE((ulong)(ivLen * 8), temp, temp.Length - 8);
-                
+
                 MemOps.MemsetZero(context.GHASH_Y);
                 GHASH(context, temp, 0, temp.Length);
                 MemCpy.Copy(context.GHASH_Y, 0, j0, 0, 16);
             }
+        }
 
-            MemCpy.Copy(j0, context.ICB);
-            inc32(context.ICB);
-
-            GCTR(context, p, pOffs, pLen, ciphOutput, ciphOutOffset);
-            long u = 16 - (pLen % 16);
+        static void ComputeTTag(Context context, 
+            byte[] ciph, long ciphOffs, long ciphLen,
+            byte[] a, long aOffs, long aLen)
+        {
+            long u = 16 - (ciphLen % 16);
             long v = 16 - (aLen % 16);
             u = u == 16 ? 0 : u;
             v = v == 16 ? 0 : v;
 
             byte[] temp_lens = new byte[16];
             MemMap.ToBytes1ULongBE((ulong)aLen * 8, temp_lens, 0);
-            MemMap.ToBytes1ULongBE((ulong)pLen * 8, temp_lens, 8);
-            
+            MemMap.ToBytes1ULongBE((ulong)ciphLen * 8, temp_lens, 8);
+
             MemOps.MemsetZero(context.GHASH_Y);
 
             long aLenFullBlocks = (aLen / 16) * 16;
             long aLenRem = aLen % 16;
-            long cLenFullBlocks = (pLen / 16) * 16;
-            long cLenRem = pLen % 16;
+            long cLenFullBlocks = (ciphLen / 16) * 16;
+            long cLenRem = ciphLen % 16;
 
             GHASH(context, a, aOffs, aLenFullBlocks);
 
@@ -109,24 +133,40 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 GHASH(context, temp1, 0, 16);
             }
 
-            GHASH(context, ciphOutput, ciphOutOffset, cLenFullBlocks);
+            GHASH(context, ciph, ciphOffs, cLenFullBlocks);
 
             if (cLenRem > 0)
             {
                 byte[] temp2 = new byte[16];
-                MemCpy.Copy(ciphOutput, ciphOutOffset + cLenFullBlocks, temp2, 0, cLenRem);
+                MemCpy.Copy(ciph, ciphOffs + cLenFullBlocks, temp2, 0, cLenRem);
                 GHASH(context, temp2, 0, 16);
             }
 
             GHASH(context, temp_lens, 0, 16);
 
-            byte[] tempt = new byte[16];
+            MemCpy.Copy(context.J0, context.ICB);
+
+            GCTR(context, context.GHASH_Y, 0, 16, context.T, 0);
+        }
+
+        public static void AE(Context context,
+        byte[] iv, long ivOffs, long ivLen,
+        byte[] p, long pOffs, long pLen,
+        byte[] a, long aOffs, long aLen,
+        byte[] ciphOutput, long ciphOutOffset,
+        byte[] authTagOut, long authTagOutOffs,
+        int tagLengthInBytes)
+        {
+            ComputeJ0(context, iv, ivOffs, ivLen);
+            byte[] j0 = context.J0;
 
             MemCpy.Copy(j0, context.ICB);
+            inc32(context.ICB);
 
-            GCTR(context, context.GHASH_Y, 0, 16, tempt, 0);
+            GCTR(context, p, pOffs, pLen, ciphOutput, ciphOutOffset);
+            ComputeTTag(context, ciphOutput, ciphOutOffset, pLen, a, aOffs, aLen);
 
-            MemCpy.Copy(tempt, 0, authTagOut, 0, tagLengthInBytes);
+            MemCpy.Copy(context.T, 0, authTagOut, authTagOutOffs, tagLengthInBytes);
         }
 
         static void GCTR(Context context,

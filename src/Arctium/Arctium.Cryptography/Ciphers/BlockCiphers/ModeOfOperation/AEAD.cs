@@ -49,6 +49,19 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
             byte[] authenticationTagOutput,
             long authenticationTagOutputOffset);
 
-        public abstract void AuthenticatedDecryption();
+        public abstract void AuthenticatedDecryption(byte[] iv,
+            long ivOffset,
+            long ivLength,
+            byte[] ciphertext,
+            long ciphertextOffset,
+            long ciphertextLength,
+            byte[] a,
+            long aOffset,
+            long aLength,
+            byte[] decryptedOutput,
+            long decryptedOutputOffset,
+            byte[] authenticationTag,
+            long authenticationTagOffset,
+            out bool authenticationTagValidationResult);
     }
 }
