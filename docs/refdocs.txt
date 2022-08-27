@@ -1,4 +1,28 @@
 
+--
+The Galois/Counter Mode of Operation (GCM)
+ 
+David A. McGrew John Viega 
+Cisco Systems, Inc. Secure Software 
+170 West Tasman Drive 4100 Lafayette Center Drive, Suite 100 
+San Jose, CA 95032 Chantilly, VA 20151 
+mcgrew@cisco.com viega@securesoftware.co
+
+https://csrc.nist.rip/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-spec.pdf
+-
+----
+https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+
+KEY WORDS: authenticated encryption; authentication; block cipher; confidentiality, 
+cryptography; encryption; information security; mode of operation.
+
+Recommendation for Block 
+Cipher Modes of Operation: 
+Galois/Counter Mode (GCM) 
+and GMAC
+----
+
+
 # HMAC #
 test vectors:
 https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/message-authentication

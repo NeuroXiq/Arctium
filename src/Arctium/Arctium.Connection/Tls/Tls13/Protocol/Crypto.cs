@@ -108,8 +108,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             ServerApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "s ap traffic", clienthello_serverfinished);
             ExporterMasterSecret = DeriveSecret(MasterSecret, "exp master", clienthello_serverfinished);
             ResumptionMasterSecret = DeriveSecret(MasterSecret, "res master", clienthello_clientfinished);
-
-
         }
 
         byte[] Merge(byte[][] arrays)

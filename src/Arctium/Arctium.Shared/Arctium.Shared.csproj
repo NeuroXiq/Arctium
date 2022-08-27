@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="DLLImport\" />
+    <Folder Include="Math\" />
   </ItemGroup>
 
 </Project>

@@ -1399,6 +1399,15 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset] = (byte)(v >> 8);
             output[outputOffset + 1] = (byte)(v >> 0);
         }
+
+        public static uint ToUInt4BytesBE(byte[] buf, long offset)
+        {
+            return (uint)((buf[offset + 0] << 24) |
+                   (buf[offset + 1] << 16) |
+                   (buf[offset + 2] << 08) |
+                  (buf[offset + 3] << 00));
+        }
+
         #endregion
     }
 }
