@@ -39,8 +39,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
 
             byte[] privKey = new byte[32];
-            byte[] keyToSend = RFC7748.X25519_UCoord_9(privKey);
             GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 32);
+            byte[] keyToSend = RFC7748.X25519_UCoord_9(privKey);
 
             byte[] sharedSecret = RFC7748.X25519(privKey, clientKeyShare.KeyExchangeRawBytes);
 
@@ -78,7 +78,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             ModelSerialization serializer = new ModelSerialization();
 
             serializer.ToBytes(serverHello);
-            recordLayer.Write(ContentType.Handshake, serializer.Buffer.Buffer, 0, serializer.Buffer.DataLength);
+            recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
             serializer.Reset();
 
 
@@ -88,7 +88,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             serializer.ToBytes(certVerify);
             serializer.ToBytes(finished);
 
-            recordLayer.Write(ContentType.Handshake, serializer.Buffer.Buffer, 0, serializer.Buffer.DataLength);
+            recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
             // send app data
         }
 

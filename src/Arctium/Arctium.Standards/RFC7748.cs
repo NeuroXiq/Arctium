@@ -140,20 +140,6 @@ namespace Arctium.Standards
 
                 swap = k_t;
 
-                //A = (x_2 + z_2) % p;
-                //AA = BigInteger.ModPow(A, 2, p);
-                //B = (x_2 - z_2) % p;
-                //BB = BigInteger.ModPow(B, 2, p);
-                //E = (AA - BB) % p;
-                //C = (x_3 + z_3) % p;
-                //D = (x_3 - z_3) % p;
-                //DA = (D * A) % p;
-                //CB = (C * B) % p;
-                //x_3 = BigInteger.ModPow((DA + CB), 2, p);
-                //z_3 = (x_1 * BigInteger.ModPow(DA - CB, 2, p)) % p;
-                //x_2 = (AA * BB) % p;
-                //z_2 = (E * (AA + a24 * E)) % p;
-
                 A = (x_2 + z_2); A = MOD(A, p);
                 AA = BigInteger.ModPow(A, 2, p);
                 B = (x_2 - z_2); B = MOD(B, p);
@@ -184,11 +170,6 @@ namespace Arctium.Standards
             if (value.Sign < 0)
             {
                 value += mod;
-            }
-
-            if (value.Sign < 0)
-            {
-                var w = 5;
             }
 
             return value;

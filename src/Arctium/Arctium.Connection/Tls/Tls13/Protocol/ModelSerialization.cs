@@ -13,7 +13,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         byte[] temp;
         Dictionary<Type, Action<object>> serializers = new Dictionary<Type, Action<object>>();
 
-        public ByteBuffer Buffer { get { return buffer; } }
+        public byte[] SerializedData { get { return buffer.Buffer; } }
+        public long SerializedDataLength { get { return buffer.DataLength; } }
 
         public ModelSerialization()
         {
