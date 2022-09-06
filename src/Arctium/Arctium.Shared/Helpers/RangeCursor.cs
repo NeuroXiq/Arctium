@@ -24,7 +24,11 @@ namespace Arctium.Shared.Helpers
         public void Move(int shift)
         {
             ThrowIfShiftOutside(shift);
-            CurrentPosition += shift;
+            
+            checked
+            {
+                CurrentPosition += shift;
+            }
         }
 
         public void ThrowIfOutside(int newPosition)

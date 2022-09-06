@@ -218,5 +218,13 @@ namespace Arctium.Shared.Helpers.Buffers
         {
             for(long i = 0; i < length; i++) dst[dstOffset + i] = src[srcOffset + i];
         }
+
+        public static byte[] CopyToNewArray(byte[] src, int srcOffs, long length)
+        {
+            byte[] newArr = new byte[length];
+            MemCpy.Copy(src, srcOffs, newArr, 0, length);
+
+            return newArr;
+        }
     }
 }

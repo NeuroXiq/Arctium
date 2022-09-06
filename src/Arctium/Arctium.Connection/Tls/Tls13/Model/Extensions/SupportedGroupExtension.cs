@@ -4,7 +4,7 @@
     {
         public override ExtensionType ExtensionType => ExtensionType.SupportedGroups;
 
-        public enum NamedGroup
+        public enum NamedGroup : ushort
         {
             /* Elliptic Curve Groups (ECDHE) */
             Secp256r1 = 0x0017,

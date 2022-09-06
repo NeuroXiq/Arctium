@@ -4,7 +4,7 @@ namespace Arctium.Connection.Tls.Tls13.Model
 {
     class ServerHello
     {
-        public const ushort LegacyVersion = 0x3030;
+        public const ushort LegacyVersion = 0x0303;
         public const byte LegacyCompressionMethod = 0;
         public byte[] Random { get; private set; }
         public byte[] LegacySessionIdEcho { get; private set; }

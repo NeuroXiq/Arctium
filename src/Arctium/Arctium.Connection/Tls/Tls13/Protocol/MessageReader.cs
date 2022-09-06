@@ -1,26 +1,32 @@
 ﻿using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
+using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
+using System;
 using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
-    internal class HandshakeReader
+    internal class MessageReader
     {
         private RecordLayer recordLayer;
         private ByteBuffer byteBuffer;
         private Validate validate;
-        private ModelDeserialization modelSerialization;
+        private ModelDeserialization serverModelDeserialization;
+        private ModelDeserialization clientModelDeserialization;
+        private List<byte[]> handshakeContext;
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
 
-        public HandshakeReader(RecordLayer recordLayer, Validate validate)
+        public MessageReader(RecordLayer recordLayer, Validate validate, List<byte[]> handshakeContext)
         {
             this.recordLayer = recordLayer;
             this.byteBuffer = new ByteBuffer();
             this.validate = validate;
-            this.modelSerialization = new ModelDeserialization(validate);
+            this.serverModelDeserialization = new ModelDeserialization(validate);
+            this.clientModelDeserialization = new ModelDeserialization(validate);
+            this.handshakeContext = handshakeContext;
         }
 
         public ClientHello ReadClientHello()
@@ -44,7 +50,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             int minMsgLen = 2 + 32 + 1 + 2 + 1 + 2;
 
-            LoadHandshake(HandshakeType.ClientHello, true);
+            LoadHandshake(true);
             ThrowIfExceedLength(minMsgLen - 1);
 
             //AppendMinimum(minMsgLen, true);
@@ -110,6 +116,39 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return msg;
         }
 
+        public void LoadHandshakeMessage(bool isInitialClientHello = false)
+        {
+            byteBuffer.Reset();
+            int loaded = 0;
+
+            LoadHandshake(isInitialClientHello);
+
+            
+            int constHandshakeFieldsCount = 4;
+
+            HandshakeType type = (HandshakeType)buffer[0];
+
+            switch (type)
+            {
+                case HandshakeType.ServerHello:
+                    clientModelDeserialization.Deserialize<ServerHello>(buffer, 0);
+                    break;
+                case HandshakeType.EncryptedExtensions:
+                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    break;
+                case HandshakeType.Certificate:
+                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    break;
+                case HandshakeType.CertificateVerify:
+                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    break;
+                case HandshakeType.Finished:
+                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    break;
+                default: throw new System.Exception("unknow handshake type");  break;
+            }
+        }
+
         private Extension[] DeserializeExtensions(byte[] buffer, int offset)
         {
             int cursor = offset;
@@ -125,7 +164,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             while (cursor < end)
             {
-                ModelDeserialization.ExtensionDeserializeResult result = modelSerialization.DeserializeExtension(buffer, cursor, extLen, true);
+                ModelDeserialization.ExtensionDeserializeResult result = serverModelDeserialization.DeserializeExtension(Endpoint.Server, buffer, cursor, extLen);
 
                 maxLength -= result.Length;
                 cursor += result.Length;
@@ -183,7 +222,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         }
 
-        private void LoadHandshake(HandshakeType expectedType ,bool isInitialClientHello = false)
+        private void LoadHandshake(bool isInitialClientHello = false)
         {
             while (byteBuffer.DataLength < 4)
             {
@@ -194,11 +233,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             int msgLength = (buffer[1] << 16) | (buffer[2] << 08) | (buffer[3] << 00);
 
             validate.Handshake.ValidHandshakeType(handshakeType);
-            validate.Handshake.ExpectedOrderOfHandshakeType(expectedType, handshakeType);
+            // validate.Handshake.ExpectedOrderOfHandshakeType(expectedType, handshakeType);
 
             while (byteBuffer.DataLength < 4 + msgLength)
             {
-                recordLayer.Read();
+                LoadRecord(isInitialClientHello);
             }
 
             currentMessageLength = msgLength;
@@ -211,6 +250,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             validate.Handshake.RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(recordInfo.ContentType);
 
             byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
+
+            handshakeContext.Add(MemCpy.CopyToNewArray(recordLayer.RecordFragmentBytes, 0, recordInfo.Length));
         }   
     }
 }

@@ -17,7 +17,7 @@ namespace Arctium.Connection.Tls.Tls13.Model
             foreach (var extension in Extensions)
             {
                 if (extension.ExtensionType == type)
-                    return extension as T;
+                    return (T)extension;
             }
 
             throw new InvalidOperationException("Extension missing in list");

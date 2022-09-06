@@ -30,7 +30,7 @@ namespace Arctium.Shared.Helpers.Buffers
             AppendMinimum(minimumDataLengthInBuffer - DataLength);
         }
 
-        public void AlignDataToStart(int bytesCountToRemoveFromStart)
+        public void TrimStart(int bytesCountToRemoveFromStart)
         {
             if (bytesCountToRemoveFromStart > DataLength) throw new InvalidOperationException("Length of data in buffer is less that bytes to shift");
 

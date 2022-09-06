@@ -1,28 +1,33 @@
 ﻿namespace Arctium.Connection.Tls.Tls13.Model.Extensions
 {
-    class SupportedVersionsExtension : Extension
+    class ServerSupportedVersionsExtension : Extension
     {
         public override ExtensionType ExtensionType => ExtensionType.SupportedVersions;
 
-        public const ushort TLS13Version = 0x0304;
-
         public ushort SelectedVersion { get; private set; }
 
-        public ushort[] Versions { get; private set; }
+        public const ushort TLS13Version = 0x0304;
 
-        public SupportedVersionsExtension(ushort[] versions)
-        {
-            this.Versions = versions;
-        }
-
-        public SupportedVersionsExtension(ushort selectedVersion)
+        public ServerSupportedVersionsExtension(ushort selectedVersion)
         {
             SelectedVersion = selectedVersion;
         }
 
-        public static SupportedVersionsExtension ServerHelloTls13()
+        public static ServerSupportedVersionsExtension ServerHelloTls13()
         {
-            return new SupportedVersionsExtension(TLS13Version);
+            return new ServerSupportedVersionsExtension(TLS13Version);
+        }
+    }
+
+    class ClientSupportedVersionsExtension : Extension
+    {
+        public override ExtensionType ExtensionType => ExtensionType.SupportedVersions;
+
+        public ushort[] Versions { get; private set; }
+
+        public ClientSupportedVersionsExtension(ushort[] versions)
+        {
+            this.Versions = versions;
         }
     }
 }

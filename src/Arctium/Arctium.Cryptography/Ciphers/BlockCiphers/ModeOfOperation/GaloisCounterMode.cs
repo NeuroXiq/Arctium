@@ -11,17 +11,15 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
     public class GaloisCounterMode : AEAD
     {
         GaloisCounterModeAlgorithm.Context context;
-        private int authTagLen;
         private BlockCipher cipher;
         private static readonly byte[] Zero16Bytes = new byte[16];
 
-        public GaloisCounterMode(BlockCipher cipher, int authTagLen) : base(cipher)
+        public GaloisCounterMode(BlockCipher cipher, int authTagLen) : base(cipher, authTagLen)
         {
             if (cipher.InputBlockLengthBits != 128) throw new NotSupportedException("only 128 input block ");
 
             this.cipher = cipher;
             context = GaloisCounterModeAlgorithm.Initialize(cipher);
-            this.authTagLen = authTagLen;
         }
 
         /// <summary>
@@ -60,7 +58,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
                 a, aOffset, aLength,
                 ciphertextOutput, ciphertextOutputOffset,
                 authenticationTagOutput, authenticationTagOutputOffset,
-                authTagLen);
+                AuthenticationTagLengthBytes);
         }
 
         public override void AuthenticatedDecryption(
@@ -76,7 +74,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
                 ciphertext, ciphertextOffset, ciphertextLength,
                 a, aOffset, aLength,
                 decryptedOutput, decryptedOutputOffset,
-                authenticationTag, authenticationTagOffset, authTagLen, out authenticationTagValidationResult);
+                authenticationTag, authenticationTagOffset, AuthenticationTagLengthBytes, out authenticationTagValidationResult);
         }
     }
 }

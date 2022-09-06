@@ -14,11 +14,21 @@ namespace Arctium.Shared.Helpers.Buffers
             Buffer = new byte[1024];
         }
 
-        public void Append(byte[] buffer) => Append(buffer, 0, buffer.Length);
+        public int OutsideAppend(int length)
+        {
+            int offset = DataLength;
+            ExtendIfNeededBuffer(length);
+            DataLength += length;
+
+            return offset;
+        }
+
+
+        public void Append(params byte[] buffer) => Append(buffer, 0, buffer.Length);
 
         public void Append(byte[] buffer, int offset, int length)
         {
-            if (Buffer.Length - DataLength < length) ExtendBuffer(DataLength + length);
+            ExtendIfNeededBuffer(length);
 
             MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
 
@@ -30,8 +40,12 @@ namespace Arctium.Shared.Helpers.Buffers
             DataLength = 0;
         }
 
-        private void ExtendBuffer(int newLength)
+        private void ExtendIfNeededBuffer(int dataToAppend)
         {
+            int newLength = dataToAppend + DataLength;
+
+            if (newLength <= Buffer.Length) return;
+
             int extendedLen = Buffer.Length;
 
             while (extendedLen < newLength)

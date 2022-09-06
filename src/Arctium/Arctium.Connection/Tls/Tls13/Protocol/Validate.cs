@@ -130,7 +130,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     Throw("Missing extension: SupportedVersions");
                 }
 
-                ushort[] supportedVersions = clientHello.GetExtension<SupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
+                ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
                 bool tls13NotFound = true;
 
 
@@ -214,6 +214,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public class ExtensionsValidate
         {
+            public void ThrowGeneral(bool condition, string msg)
+            {
+                if (condition) ThrowGeneralException(msg);
+            }
+
             public void ThrowGeneralException(string msg)
             {
                 Throw(msg);

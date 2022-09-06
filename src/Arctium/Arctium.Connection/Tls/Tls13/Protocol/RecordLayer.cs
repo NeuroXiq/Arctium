@@ -1,13 +1,15 @@
 ﻿using Arctium.Connection.Tls.Tls13.API;
 using Arctium.Connection.Tls.Tls13.Model;
+using Arctium.Cryptography.Ciphers.BlockCiphers;
+using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
     class RecordLayer
     {
-        const int MaxRecordLength = 2 << 14;
-        const int WriteBufferLength = MaxRecordLength + 1 + 2 + 2;
+        const int MaxTlsPlaintextLength = 2 << 14;
+        const int WriteBufferLength = MaxTlsPlaintextLength + 1 + 2 + 2;
         const byte LegacyVersion = 0x03;
 
         private BufferForStream bufferForStream;
@@ -15,14 +17,28 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private byte[] buffer { get { return bufferForStream.Buffer; } }
         public byte[] RecordFragmentBytes { get; private set; }
-        private byte[] writeBuffer;
+        public byte[] EncryptedRecordFragmentBytes { get; private set; }
+        private byte[] plaintextWriteBuffer;
+        private byte[] encryptedWriteBuffer;
+
+        private ulong readSequenceNumber;
+        private ulong writeSequenceNumber;
+        private AEAD aeadWrite;
+        private AEAD aeadRead;
+        private byte[] writeIv;
+        private byte[] readIv;
+        private byte[] perRecordWriteNonce;
+        private byte[] perRecordReadNonce;
 
         public RecordLayer(BufferForStream buffer, Validate validate)
         {
             this.bufferForStream = buffer;
             this.validate = validate;
-            this.RecordFragmentBytes = new byte[MaxRecordLength];
-            this.writeBuffer = new byte[WriteBufferLength];
+            this.RecordFragmentBytes = new byte[MaxTlsPlaintextLength];
+            this.plaintextWriteBuffer = new byte[WriteBufferLength];
+            readSequenceNumber = 0;
+            writeSequenceNumber = 0;
+            encryptedWriteBuffer = new byte[MaxTlsPlaintextLength];
         }
 
         public RecordInfo Read(bool isInitialClientHello = false)
@@ -48,12 +64,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             MemCpy.Copy(buffer, firstThreeFields, RecordFragmentBytes, 0, length);
 
+            int recordLen = 5 + length;
+            bufferForStream.TrimStart(recordLen);
+
+            readSequenceNumber++;
+
             return new RecordInfo(contentType, version, length);
         }
 
         public void Write(ContentType contentType, byte[] buffer, long offset, long length)
         {
-            int chunkLen = MaxRecordLength;
+            int chunkLen = MaxTlsPlaintextLength - 128;
             int chunks = (int)(length + chunkLen - 1) / chunkLen;
 
             for (int i = 0; i < chunks; i++)
@@ -61,19 +82,68 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 long start = (i * chunkLen) + offset;
                 ushort len = (ushort)(length - (i * chunkLen) + 1);
 
-                WriteRecord(contentType, buffer, start, len);
+                WriteSingleRecord(contentType, buffer, start, len);
             }
         }
 
-        void WriteRecord(ContentType type, byte[] buffer, long offset, ushort length)
+        void WriteSingleRecord(ContentType type, byte[] buffer, long offset, ushort length)
         {
-            writeBuffer[0] = (byte)type;
-            writeBuffer[1] = writeBuffer[2] = LegacyVersion;
-            MemMap.ToBytes1UShortBE(length, writeBuffer, 3);
+            plaintextWriteBuffer[0] = (byte)type;
+            plaintextWriteBuffer[1] = plaintextWriteBuffer[2] = LegacyVersion;
+            MemMap.ToBytes1UShortBE(length, plaintextWriteBuffer, 3);
+            MemCpy.Copy(buffer, offset, plaintextWriteBuffer, 5, length);
 
             int bytesLen = 5 + length;
 
-            bufferForStream.Write(writeBuffer, 0, bytesLen);
+            if (aeadWrite != null)
+            {
+                int encryptedLength = this.aeadWrite.AuthenticationTagLengthBytes + length + 5;
+                int toSendLength = encryptedLength + 5;
+
+                encryptedWriteBuffer[0] = (byte)(ContentType.ApplicationData);
+                encryptedWriteBuffer[1] = encryptedWriteBuffer[2] = LegacyVersion;
+                MemMap.ToBytes1UShortBE((ushort)encryptedLength, encryptedWriteBuffer, 3);
+
+                ComputeWriteNonce();
+
+                aeadWrite.AuthenticatedEncryption(
+                    perRecordWriteNonce, 0, perRecordWriteNonce.Length,
+                    plaintextWriteBuffer, 0, length + 5,
+                    encryptedWriteBuffer, 0, 5,
+                    encryptedWriteBuffer, 5, encryptedWriteBuffer, length + 5);
+
+                bufferForStream.Write(encryptedWriteBuffer, 0, toSendLength);
+            }
+            else
+            {
+                bufferForStream.Write(plaintextWriteBuffer, 0, bytesLen);
+            }
+
+            writeSequenceNumber++;
+        }
+
+        public void ChangeCipher(AEAD aeadWrite, AEAD aeadRead, byte[] writeIv, byte[] readIv)
+        {
+            writeSequenceNumber = readSequenceNumber = 0;
+            this.aeadWrite = aeadWrite;
+            this.aeadRead = aeadRead;
+            this.writeIv = writeIv;
+            this.readIv = readIv;
+            this.perRecordReadNonce = new byte[writeIv.Length];
+            this.perRecordWriteNonce = new byte[writeIv.Length];
+        }
+
+        void ComputeWriteNonce()
+        {
+            MemOps.MemsetZero(perRecordWriteNonce);
+            MemMap.ToBytes1ULongBE(writeSequenceNumber, perRecordWriteNonce, perRecordWriteNonce.Length - 8);
+
+            for (int i = 0; i < writeIv.Length; i++) perRecordWriteNonce[i] = (byte)(perRecordWriteNonce[i] ^ writeIv[i]);
+        }
+
+        void ComputeReadNonce()
+        {
+            
         }
 
         public struct RecordInfo
