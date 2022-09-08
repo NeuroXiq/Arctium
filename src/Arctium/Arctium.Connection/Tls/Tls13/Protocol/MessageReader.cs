@@ -80,39 +80,39 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         }
 
 
-        private Extension[] DeserializeExtensions(byte[] buffer, int offset)
-        {
-            int cursor = offset;
-            int extLen = MemMap.ToUShort2BytesBE(buffer, cursor);
-            int end = offset + extLen + 2;
-            int maxLength = extLen;
-            cursor += 2;
+        //private Extension[] DeserializeExtensions(byte[] buffer, int offset)
+        //{
+        //    int cursor = offset;
+        //    int extLen = MemMap.ToUShort2BytesBE(buffer, cursor);
+        //    int end = offset + extLen + 2;
+        //    int maxLength = extLen;
+        //    cursor += 2;
 
-            if (extLen != 0 && extLen < 8)
-                validate.Handshake.ThrowGeneral("length of extensions is less that 4 and larger than 0. Min length of extensions is 8");
+        //    if (extLen != 0 && extLen < 8)
+        //        validate.Handshake.ThrowGeneral("length of extensions is less that 4 and larger than 0. Min length of extensions is 8");
 
-            List<Extension> extensions = new List<Extension>();
+        //    List<Extension> extensions = new List<Extension>();
 
-            while (cursor < end)
-            {
-                ModelDeserialization.ExtensionDeserializeResult result = serverModelDeserialization.DeserializeExtension(Endpoint.Server, buffer, new RangeCursor(cursor, cursor + end - 1));
+        //    while (cursor < end)
+        //    {
+        //        ModelDeserialization.ExtensionDeserializeResult result = serverModelDeserialization.DeserializeExtension(Endpoint.Server, buffer, new RangeCursor(cursor, cursor + end - 1));
 
-                maxLength -= result.Length;
-                cursor += result.Length;
+        //        maxLength -= result.Length;
+        //        cursor += result.Length;
 
-                if (result.IsRecognized)
-                {
-                    extensions.Add(result.Extension);
-                }
-            }
+        //        if (result.IsRecognized)
+        //        {
+        //            extensions.Add(result.Extension);
+        //        }
+        //    }
 
-            if (cursor != end)
-                validate.Extensions.ThrowGeneralException("Invalid length of some of extensions." +
-                    "Total leght of all extensions computed separated (for each exension in the list ) " +
-                    "doesnt match length of the list (in bytes, of clienthello field)");
+        //    if (cursor != end)
+        //        validate.Extensions.ThrowGeneralException("Invalid length of some of extensions." +
+        //            "Total leght of all extensions computed separated (for each exension in the list ) " +
+        //            "doesnt match length of the list (in bytes, of clienthello field)");
 
-            return extensions.ToArray();
-        }
+        //    return extensions.ToArray();
+        //}
 
 
         //private void AppendMinimum(int length, bool isInitialClientHello = false)

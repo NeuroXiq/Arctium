@@ -84,16 +84,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             serializer.Reset();
 
-            var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256, CertificateVerifySignature());
-
             serializer.ToBytes(encryptedExtensions);
             serializer.ToBytes(certificate);
-            serializer.ToBytes(certVerify);
 
-           
+            var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256, CertificateVerifySignature());
+            handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
+
+            serializer.ToBytes(certVerify);            
 
             crypto.InitEarlySecret(handshakeContext[0]);
-            crypto.InitHandshakeSecret(handshakeContext);
+            crypto.InitHandshakeSecret(handshakeContext.Take(2).ToList());
 
             crypto.ChangeRecordLayerCrypto_Handshake(recordLayer, Endpoint.Server);
 
@@ -102,9 +102,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
 
 
-            byte[] tosend = new byte[serializer.SerializedDataLength];
-            MemCpy.Copy(serializer.SerializedData, 0, tosend, 0, serializer.SerializedDataLength);
-            handshakeContext.Add(tosend);
+            // byte[] tosend = new byte[serializer.SerializedDataLength];
+            // MemCpy.Copy(serializer.SerializedData, 0, tosend, 0, serializer.SerializedDataLength);
+            // handshakeContext.Add(tosend);
 
             byte[] finishedVerData = crypto.ServerFinished(handshakeContext);
             var finished = new Finished(finishedVerData);
@@ -127,7 +127,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             List<byte[]> tohash = new List<byte[]>();
 
             tohash.AddRange(this.handshakeContext);
-            tohash.Add(this.serverConfig.DerEncodedCertificateBytes);
+            // tohash.Add(this.serverConfig.DerEncodedCertificateBytes);
 
             byte[] hash = crypto.TranscriptHash(tohash.ToArray());
 
