@@ -32,12 +32,72 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public RecordLayerValidate RecordLayer { get; private set; }
         public HandshakeValidate Handshake { get; private set; }
         public ExtensionsValidate Extensions { get; private set; }
+        public CertificateValidate Certificate { get; private set; }
 
         public Validate()
         {
+            var errorHandler = new ValidationErrorHandler();
             this.RecordLayer = new RecordLayerValidate();
             this.Handshake = new HandshakeValidate();
             this.Extensions = new ExtensionsValidate();
+            Certificate = new CertificateValidate(errorHandler);
+        }
+
+        public class ValidationErrorHandler
+        {
+            public void Throw(string messageName, string fieldName, string error)
+            {
+                Throw(FormatMessage(messageName, fieldName, error));
+            }
+
+            public void Throw(AlertDescription alert, string error)
+            {
+                throw new Tls13Exception(error, alert);
+            }
+
+            public void Throw(string error)
+            {
+                throw new Tls13Exception(error);
+            }
+
+            string FormatMessage(string messageName, string fieldName, string error)
+            {
+                fieldName = fieldName == null ? "null" : fieldName;
+
+                return $"MESSAGE: {messageName}, FIELD: {fieldName}. Error: {error}";
+            }
+        }
+
+        public class ValidateBase
+        {
+            private ValidationErrorHandler handler;
+            string messageName;
+
+            public ValidateBase(ValidationErrorHandler handler, string messageName)
+            {
+                this.messageName = messageName;
+                this.handler = handler;
+            }
+
+            public void Throw(bool condition, string error) => Throw(condition, null, error);
+
+            public void Throw(bool condition, string field, string error)
+            {
+                if (condition) handler.Throw(messageName, null, error);
+            }   
+        }
+
+
+        public class CertificateValidate : ValidateBase
+        {
+            public CertificateValidate(ValidationErrorHandler handler) : base(handler, "Certificate")
+            {
+            }
+
+            internal void CertificateEntry_CertificateTypeMinLen(int certDataLen)
+            {
+                Throw(certDataLen < 0, "rawpublickey OR x509", "minimum vector length is 1");
+            }
         }
 
         public class RecordLayerValidate
@@ -85,6 +145,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public class HandshakeValidate
         {
+
             public void ValidHandshakeType(HandshakeType handshakeType)
             {
                 if (!Enum.IsDefined<HandshakeType>(handshakeType))

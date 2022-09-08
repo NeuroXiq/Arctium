@@ -38,7 +38,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void OpenServer()
         {
-            ClientHello hello = handshakeReader.ReadClientHello();
+            ClientHello hello = handshakeReader.LoadHandshakeMessage<ClientHello>(true);
             this.clientHello = hello;
             var clientKeyShare = hello.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
                 .ClientShares
@@ -77,49 +77,20 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             ModelSerialization serializer = new ModelSerialization();
            
             serializer.ToBytes(serverHello);
-
-            // test 
-            var ms = new MemoryStream();
-            BufferForStream bf = new BufferForStream(ms);
-
-            RecordLayer r = new RecordLayer(bf, new Validate());
-
-            r.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
-
-            ms.Seek(0, SeekOrigin.Begin);
-
-            var mr = new MessageReader(r, new Validate(), new List<byte[]>());
-
-            mr.LoadHandshakeMessage(false);
-
-
-            // end test
-
-
             handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
             recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
-            var x = recordLayer.Read(true);
-
+            
+            // var x = recordLayer.Read(true);
 
             serializer.Reset();
 
-            var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256, CertificateVerifySignature());
+            var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256, CertificateVerifySignature());
 
             serializer.ToBytes(encryptedExtensions);
             serializer.ToBytes(certificate);
             serializer.ToBytes(certVerify);
 
-            ms.Seek(0, SeekOrigin.Begin);
-            ms.Write(serializer.SerializedData, 0, (int)serializer.SerializedDataLength);
-
-            ms.Seek(0, SeekOrigin.Begin);
-            mr.LoadHandshakeMessage();
-            mr.LoadHandshakeMessage();
-            mr.LoadHandshakeMessage();
-
-            // test
-
-            // end test
+           
 
             crypto.InitEarlySecret(handshakeContext[0]);
             crypto.InitHandshakeSecret(handshakeContext);

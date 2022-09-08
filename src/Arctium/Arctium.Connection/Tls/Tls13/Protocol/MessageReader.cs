@@ -29,125 +29,56 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.handshakeContext = handshakeContext;
         }
 
-        public ClientHello ReadClientHello()
+        public T LoadHandshakeMessage<T>(bool isInitialClientHello = false)
         {
-            int startOffset = 4;
-            int cursor = startOffset;
-            int versionOffs = 4;
-            int randomOffs = versionOffs + 2;
-            int legSessIdOffs = randomOffs + 32;
-            int ciphSuitOffs = -1;
-            int legCompMethOffs = -1;
-            int extOffs = -1;
-            int legacySessIdLen = -1;
-            int ciphSuiteLen = -1;
-            int legComprLen = -1;
-            int extLen = -1;
-
-            byte[] random = new byte[32];
-            byte[] legacySessId = null;
-            byte[] legComprMeth = null;
-
-            int minMsgLen = 2 + 32 + 1 + 2 + 1 + 2;
-
-            LoadHandshake(true);
-            ThrowIfExceedLength(minMsgLen - 1);
-
-            //AppendMinimum(minMsgLen, true);
-
-            ClientHello msg = new ClientHello();
-
-            ushort protocolVerson = MemMap.ToUShort2BytesBE(buffer, cursor);
-            cursor += 2;
-            MemCpy.Copy(buffer, cursor, random, 0, 32);
-            cursor += 32;
-            legacySessIdLen = (int)buffer[cursor];
-            legacySessId = new byte[legacySessIdLen];
-            cursor += 1;
-
-            ThrowIfExceedLength(cursor + legacySessIdLen - 1);
-            MemCpy.Copy(buffer, cursor, legacySessId, 0, legacySessIdLen);
-            cursor += legacySessIdLen;
-
-            //LoadToLength(ciphSuitOffs + 1 + 2);
-            ThrowIfExceedLength(cursor + 1);
-            ciphSuiteLen = MemMap.ToUShort2BytesBE(buffer, cursor);
-            validate.Handshake.ClientHello_CipherSuiteLength(ciphSuiteLen);
-            // cipherSuites = new byte[ciphSuiteLen];
-            
-            cursor += 2;
-            ThrowIfExceedLength(cursor + ciphSuiteLen - 1);
-            
-            //MemCpy.Copy(buffer, cursor, cipherSuites, 0, ciphSuiteLen);
-
-            CipherSuite[] cipherSuites = new CipherSuite[ciphSuiteLen / 2];
-            for (int i = 0; i < ciphSuiteLen; i += 2) cipherSuites[i / 2] = (CipherSuite)MemMap.ToUShort2BytesBE(buffer, cursor + i);
-
-            cursor += ciphSuiteLen;
-
-            //LoadToLength((legCompMethOffs + 1) + 1);
-            ThrowIfExceedLength(cursor + 1);
-            legComprLen = buffer[cursor];
-            cursor += 1;
-            legComprMeth = new byte[legComprLen];
-            ThrowIfExceedLength(cursor + legComprLen - 1);
-            MemCpy.Copy(buffer, cursor, legComprMeth, 0, legComprLen);
-            cursor += legComprLen;
-
-            // Extensions
-            //LoadToLength((legCompMethOffs + legComprLen + 1) + 2);
-            extLen = MemMap.ToUShort2BytesBE(buffer, cursor);
-            cursor += 2;
-            ThrowIfExceedLength(cursor + extLen - 1);
-            Extension[] extensions = DeserializeExtensions(buffer, cursor - 2);
-
-            //LoadToLength(extOffs + 1 + 2 + extLen);
-            cursor += extLen;
-
-            msg.ProtocolVersion = protocolVerson;
-            msg.Random = random;
-            msg.LegacySessionId = legacySessId;
-            msg.CipherSuites = cipherSuites;
-            msg.LegacyCompressionMethods = legComprMeth;
-            msg.Extensions = extensions;
-
-            validate.Handshake.ClientHello_ClientHello(msg);
-
-            return msg;
-        }
-
-        public void LoadHandshakeMessage(bool isInitialClientHello = false)
-        {
-            byteBuffer.Reset();
             int loaded = 0;
 
             LoadHandshake(isInitialClientHello);
 
-            
             int constHandshakeFieldsCount = 4;
 
             HandshakeType type = (HandshakeType)buffer[0];
 
+            object result;
+
             switch (type)
             {
+                case HandshakeType.ClientHello:
+                    result = clientModelDeserialization.Deserialize<ClientHello>(buffer, 0);
+                    break;
                 case HandshakeType.ServerHello:
-                    clientModelDeserialization.Deserialize<ServerHello>(buffer, 0);
+                    result = clientModelDeserialization.Deserialize<ServerHello>(buffer, 0);
                     break;
                 case HandshakeType.EncryptedExtensions:
-                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
-                    break;
-                case HandshakeType.Certificate:
-                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    result = clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
                     break;
                 case HandshakeType.CertificateVerify:
-                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    result = clientModelDeserialization.Deserialize<CertificateVerify>(buffer, 0);
                     break;
                 case HandshakeType.Finished:
-                    clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+                    result = clientModelDeserialization.Deserialize<Finished>(buffer, 0);
                     break;
-                default: throw new System.Exception("unknow handshake type");  break;
+                default: throw new System.Exception($"unknow handshake type {type.ToString()}");  break;
             }
+
+            int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
+
+            byteBuffer.TrimStart(len + 4);
+            MemOps.MemsetZero(byteBuffer.Buffer, byteBuffer.DataLength, byteBuffer.Buffer.Length - byteBuffer.DataLength);
+
+            return (T)result;
         }
+
+        public void LoadCertificateMessage(CertificateType type)
+        {
+            LoadHandshake(true);
+            clientModelDeserialization.DeserializeCertificate(buffer, 0, type);
+
+            int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
+
+            byteBuffer.TrimStart(len + 4);
+        }
+
 
         private Extension[] DeserializeExtensions(byte[] buffer, int offset)
         {
@@ -164,7 +95,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             while (cursor < end)
             {
-                ModelDeserialization.ExtensionDeserializeResult result = serverModelDeserialization.DeserializeExtension(Endpoint.Server, buffer, cursor, extLen);
+                ModelDeserialization.ExtensionDeserializeResult result = serverModelDeserialization.DeserializeExtension(Endpoint.Server, buffer, new RangeCursor(cursor, cursor + end - 1));
 
                 maxLength -= result.Length;
                 cursor += result.Length;

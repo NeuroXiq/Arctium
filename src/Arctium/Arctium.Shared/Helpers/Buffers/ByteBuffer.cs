@@ -23,6 +23,20 @@ namespace Arctium.Shared.Helpers.Buffers
             return offset;
         }
 
+        public void TrimStart(int count)
+        {
+            if (count > DataLength) throw new Exception("internal: trying to trim more than datalength");
+
+            int j = count;
+            int i = 0;
+
+            for (; i < count && j < DataLength; j++, i++)
+            {
+                Buffer[i] = Buffer[j];
+            }
+
+            DataLength -= count;
+        }
 
         public void Append(params byte[] buffer) => Append(buffer, 0, buffer.Length);
 

@@ -43,5 +43,11 @@ namespace Arctium.Shared.Helpers
         public static implicit operator int(RangeCursor cursor) => cursor.CurrentPosition;
         public static RangeCursor operator +(RangeCursor cursor, int value) { cursor.Move(value); return cursor; }
         public static RangeCursor operator ++(RangeCursor cursor) { cursor.Move(1); return cursor; }
+
+        public void ChangeMaxPosition(int newMaxPosition)
+        {
+            MaxPosition = newMaxPosition;
+            ThrowIfOutside(currentPosition);
+        }
     }
 }

@@ -8,6 +8,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 {
     class RecordLayer
     {
+        const int MaxRecordContextLength = 5;
         const int MaxTlsPlaintextLength = 2 << 14;
         const int WriteBufferLength = MaxTlsPlaintextLength + 1 + 2 + 2;
         const byte LegacyVersion = 0x03;
@@ -74,15 +75,22 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void Write(ContentType contentType, byte[] buffer, long offset, long length)
         {
-            int chunkLen = MaxTlsPlaintextLength - 128;
-            int chunks = (int)(length + chunkLen - 1) / chunkLen;
+            int chunkLen = MaxRecordContextLength;
+            // int chunks = (int)(length + chunkLen) / chunkLen;
+            long remToWrite = length;
+            long start = offset;
 
-            for (int i = 0; i < chunks; i++)
+            while (remToWrite > 0)
             {
-                long start = (i * chunkLen) + offset;
-                ushort len = (ushort)(length - (i * chunkLen) + 1);
+                // ushort len = (ushort)(length - (i * chunkLen) + 1);
+                // long len = ((i + 1) * chunkLen <= length) ? chunkLen : (length - (i * chunkLen));
 
-                WriteSingleRecord(contentType, buffer, start, len);
+                long len = remToWrite - chunkLen >= 0 ? chunkLen : remToWrite;
+
+                WriteSingleRecord(contentType, buffer, start, (ushort)len);
+
+                remToWrite -= len;
+                start += len;
             }
         }
 

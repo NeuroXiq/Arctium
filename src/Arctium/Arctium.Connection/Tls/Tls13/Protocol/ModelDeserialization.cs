@@ -48,8 +48,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             messageDeserialize = new Dictionary<Type, Func<byte[], int, object>>()
             {
                 [typeof(ServerHello)] = DeserializeServerHello,
+                [typeof(ClientHello)] = DeserializeClientHello,
                 [typeof(EncryptedExtensions)] = DeserializeEncryptedExtensions,
-                [typeof(Certificate)] = DeserializeCertificate,
                 [typeof(CertificateVerify)] = DeserializeCertificateVerify,
                 [typeof(Finished)] = DeserializeFinished,
             };
@@ -89,6 +89,117 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return ext;
         }
 
+
+        private object DeserializeClientHello(byte[] buffer, int offs)
+        {
+            RangeCursor cursor = new RangeCursor(offs, 4);
+            validate.Handshake.ThrowGeneral(buffer[cursor] != (byte)HandshakeType.ClientHello, "not client hello");
+            int msgLen = ToInt3BytesBE(buffer, cursor + 1);
+            cursor.ChangeMaxPosition(msgLen + offs + 4 - 1);
+            cursor += 4;
+
+
+            int startOffset = offs + 4;
+
+            int versionOffs = 4;
+            int randomOffs = versionOffs + 2;
+            int legSessIdOffs = randomOffs + 32;
+            int ciphSuitOffs = -1;
+            int legCompMethOffs = -1;
+            int extOffs = -1;
+            int legacySessIdLen = -1;
+            int ciphSuiteLen = -1;
+            int legComprLen = -1;
+            int extLen = -1;
+
+            byte[] random = new byte[32];
+            byte[] legacySessId = null;
+            byte[] legComprMeth = null;
+
+            int minMsgLen = 2 + 32 + 1 + 2 + 1 + 2;
+            
+
+            
+
+            //AppendMinimum(minMsgLen, true);
+
+            ClientHello msg = new ClientHello();
+
+            ushort protocolVerson = MemMap.ToUShort2BytesBE(buffer, cursor);
+            cursor += 2;
+            MemCpy.Copy(buffer, cursor, random, 0, 32);
+            cursor += 32;
+            legacySessIdLen = (int)buffer[cursor];
+            legacySessId = new byte[legacySessIdLen];
+            cursor += 1;
+
+            cursor.ThrowIfOutside(legacySessIdLen - 1);
+            MemCpy.Copy(buffer, cursor, legacySessId, 0, legacySessIdLen);
+            cursor += legacySessIdLen;
+
+            //LoadToLength(ciphSuitOffs + 1 + 2);
+            cursor.ThrowIfOutside( 1);
+            ciphSuiteLen = MemMap.ToUShort2BytesBE(buffer, cursor);
+            validate.Handshake.ClientHello_CipherSuiteLength(ciphSuiteLen);
+            // cipherSuites = new byte[ciphSuiteLen];
+
+            cursor += 2;
+            cursor.ThrowIfOutside(ciphSuiteLen - 1);
+
+            //MemCpy.Copy(buffer, cursor, cipherSuites, 0, ciphSuiteLen);
+
+            CipherSuite[] cipherSuites = new CipherSuite[ciphSuiteLen / 2];
+            for (int i = 0; i < ciphSuiteLen; i += 2) cipherSuites[i / 2] = (CipherSuite)MemMap.ToUShort2BytesBE(buffer, cursor + i);
+
+            cursor += ciphSuiteLen;
+
+            //LoadToLength((legCompMethOffs + 1) + 1);
+            cursor.ThrowIfOutside(1);
+            legComprLen = buffer[cursor];
+            cursor += 1;
+            legComprMeth = new byte[legComprLen];
+            cursor.ThrowIfOutside(legComprLen - 1);
+            MemCpy.Copy(buffer, cursor, legComprMeth, 0, legComprLen);
+            cursor += legComprLen;
+
+            // Extensions
+            //LoadToLength((legCompMethOffs + legComprLen + 1) + 2);
+            extLen = MemMap.ToUShort2BytesBE(buffer, cursor);
+            cursor++;
+
+            // Extension[] extensions = DeserializeExtensions(buffer, cursor - 2);
+
+            List<Extension> extensions = new List<Extension>();
+
+            validate.Handshake.ThrowGeneral(extLen > 0 && cursor.CurrentPosition + extLen != cursor.MaxPosition, "invalid extensios length, cursor not on last position");
+
+            while (!cursor.OnMaxPosition)
+            {
+                cursor++;
+
+                var result = DeserializeExtension(Endpoint.Server, buffer, cursor);
+
+                extensions.Add(result.Extension);
+
+                cursor += result.Length - 1;
+            }
+
+            //LoadToLength(extOffs + 1 + 2 + extLen);
+
+            msg.ProtocolVersion = protocolVerson;
+            msg.Random = random;
+            msg.LegacySessionId = legacySessId;
+            msg.CipherSuites = cipherSuites;
+            msg.LegacyCompressionMethods = legComprMeth;
+            msg.Extensions = extensions.ToArray();
+
+            validate.Handshake.ClientHello_ClientHello(msg);
+
+            validate.Handshake.ThrowGeneral(!cursor.OnMaxPosition, "not on max position");
+
+            return msg;
+        }
+
         private Extension DeserializeExtension_SupportedVersions_Client(byte[] buf, int offs)
         {
             int length;
@@ -107,22 +218,117 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             throw new NotImplementedException();
         }
 
-        private object DeserializeCertificateVerify(byte[] arg1, int arg2)
+        private object DeserializeCertificateVerify(byte[] buf, int offs)
         {
-            throw new NotImplementedException();
+            RangeCursor cursor = new RangeCursor(offs, 4);
+            validate.Handshake.ThrowGeneral(buf[cursor] != (byte)(HandshakeType.CertificateVerify), "invalid type expected certificateverify");
+            int msgLen = ToInt3BytesBE(buf, cursor + 1);
+            
+            SignatureSchemeListExtension.SignatureScheme scheme;
+            int signatureLen;
+            byte[] signature = new byte[0];
+
+            cursor.ChangeMaxPosition(offs + msgLen + 4 - 1);
+            cursor += 4;
+
+            cursor.ThrowIfShiftOutside(1);
+            scheme = (SignatureSchemeListExtension.SignatureScheme)MemMap.ToUShort2BytesBE(buf, cursor);
+            cursor += 2;
+
+            cursor.ThrowIfShiftOutside(1);
+            signatureLen = MemMap.ToUShort2BytesBE(buf, cursor);
+            cursor++;
+
+            if (signatureLen > 0)
+            {
+                cursor.ThrowIfShiftOutside(signatureLen);
+                cursor++;
+                signature = MemCpy.CopyToNewArray(buf, cursor, signatureLen);
+
+                cursor += signatureLen - 1;
+            }
+
+            validate.Handshake.ThrowGeneral(!cursor.OnMaxPosition, "cursor not on max position");
+
+            return new CertificateVerify(scheme, signature);
         }
 
-        private object DeserializeCertificate(byte[] arg1, int arg2)
+        public Certificate DeserializeCertificate(byte[] buf, int offs, CertificateType expectedType)
         {
-            throw new NotImplementedException();
+            validate.Handshake.ThrowGeneral(buf[offs + 0] != (byte)HandshakeType.Certificate, "cannot deserialize not a certificate type");
+            
+            int msgLen = ToInt3BytesBE(buf, offs + 1);
+            RangeCursor cursor = new RangeCursor(offs, offs + msgLen + 4 - 1);
+            cursor += 4;
+
+            int certListLen;
+            List<CertificateEntry> certificateList = new List<CertificateEntry>();
+            int requestContextLen;
+            byte[] certificateRequestContext;
+
+            requestContextLen = buf[cursor];
+            
+            if (requestContextLen > 0) cursor.ThrowIfShiftOutside(requestContextLen - 1);
+            
+            cursor++;
+
+            certificateRequestContext = MemCpy.CopyToNewArray(buf, cursor, requestContextLen);
+            cursor += requestContextLen;
+
+            cursor.ThrowIfShiftOutside(2);
+            certListLen = ToInt3BytesBE(buf, cursor);
+            cursor += 2;
+
+            // validate.Handshake.ThrowGeneral(cursor + certListLen != cursor.MaxPosition, "certificate: certListLen invalid");
+
+            while (!cursor.OnMaxPosition)
+            {
+                byte[] certData;
+                int certDataLen, extensionsLength;
+                List<Extension> extensions = new List<Extension>();
+
+                cursor++;
+                cursor.ThrowIfShiftOutside(2);
+                certDataLen = ToInt3BytesBE(buf, cursor);
+                cursor += 3;
+
+                validate.Certificate.CertificateEntry_CertificateTypeMinLen(certDataLen);
+
+                cursor.ThrowIfShiftOutside(certDataLen - 1);
+                certData = MemCpy.CopyToNewArray(buf, cursor, certDataLen);
+                cursor += certDataLen;
+                cursor.ThrowIfShiftOutside(1);
+
+                extensionsLength = (buf[cursor] << 8) | buf[cursor + 1];
+                cursor++;
+                int endExtensions = extensionsLength == 0 ? cursor : cursor + extensionsLength;
+
+                while(cursor != endExtensions)
+                {
+                    cursor++;
+
+                    var result = DeserializeExtension(Endpoint.Client, buf, cursor);
+
+                    extensions.Add(result.Extension);
+
+                    // points to last extension byte
+                    cursor += result.Length - 1;
+                }
+
+                certificateList.Add(new CertificateEntry(expectedType, certData, extensions.ToArray()));
+            }
+
+            validate.Certificate.Throw(!cursor.OnMaxPosition, "not on max position");
+
+            return new Certificate(certificateRequestContext, certificateList.ToArray());
         }
 
         private object DeserializeEncryptedExtensions(byte[] buf, int offset)
         {
-            validate.Handshake.ThrowGeneral(buf[0] != (byte)(HandshakeType.EncryptedExtensions), "encrypted extensions: other handshaketype than expected");
+            validate.Handshake.ThrowGeneral(buf[0 + offset] != (byte)(HandshakeType.EncryptedExtensions), "encrypted extensions: other handshaketype than expected");
             int length = ToInt3BytesBE(buf, offset + 1);
 
-            RangeCursor cursor = new RangeCursor(offset, 4 + length);
+            RangeCursor cursor = new RangeCursor(offset, 4 + length - 1);
             
             // skip handshaketype, length
             cursor += 4;
@@ -140,7 +346,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 cursor++;
 
-                var result = DeserializeExtension(Endpoint.Client, buf, cursor, extLen);
+                var result = DeserializeExtension(Endpoint.Client, buf, cursor);
 
                 extensions.Add(result.Extension);
 
@@ -213,7 +419,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 {
                     cursor++;
 
-                    var result = DeserializeExtension(Endpoint.Client, buffer, cursor, extLen);
+                    var result = DeserializeExtension(Endpoint.Client, buffer, cursor);
 
                     extensions.Add(result.Extension);
 
@@ -235,13 +441,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return (T)messageDeserialize[typeof(T)](buffer, offset);
         }
 
-        public ExtensionDeserializeResult DeserializeExtension(Endpoint currentEndpoint, byte[] buffer, int offset, int maxLength)
+        public ExtensionDeserializeResult DeserializeExtension(Endpoint currentEndpoint, byte[] buffer, RangeCursor cursor)
         {
+            int maxLength = cursor.MaxPosition - cursor.CurrentPosition + 1;
             if (maxLength < 4)
                 validate.Extensions.ThrowGeneralException(string.Format("Invalid extension length, minimum is 4 but current: {0}", maxLength));
 
-            ExtensionType extensionType = (ExtensionType)MemMap.ToUShort2BytesBE(buffer, offset);
-            ushort extensionLength = MemMap.ToUShort2BytesBE(buffer, offset + 2);
+            ExtensionType extensionType = (ExtensionType)MemMap.ToUShort2BytesBE(buffer, cursor);
+            ushort extensionLength = MemMap.ToUShort2BytesBE(buffer, cursor + 2);
             int totalExtensionLength = extensionLength + 4;
 
             if (totalExtensionLength > maxLength)
@@ -252,11 +459,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             if (currentEndpoint == Endpoint.Client && extensionsDeserializeClient.ContainsKey(extensionType))
             {
-                extension = extensionsDeserializeClient[extensionType](buffer, offset);
+                extension = extensionsDeserializeClient[extensionType](buffer, cursor);
             }
             else if (currentEndpoint == Endpoint.Server && extensionsDeserializeServer.ContainsKey(extensionType))
             {
-                extension = extensionsDeserializeServer[extensionType](buffer, offset);
+                extension = extensionsDeserializeServer[extensionType](buffer, cursor);
             }
             else if (!extensionsDeserialize.ContainsKey(extensionType))
             {
@@ -264,7 +471,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
             else
             {
-                extension = extensionsDeserialize[extensionType](buffer, offset);
+                extension = extensionsDeserialize[extensionType](buffer, cursor);
             }
 
             result = new ExtensionDeserializeResult
@@ -503,6 +710,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 cursor += protocolNameLength - 1;
             }
 
+            validate.Extensions.ThrowGeneral(!cursor.OnMaxPosition, "cursor not max");
+
             return new ProtocolNameListExtension(protocolNames.ToArray());
         }
 
@@ -534,7 +743,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private int ToInt3BytesBE(byte[] buf, int offs)
         {
-            return (buf[0] << 16) | (buf[1] << 8) | (buf[2]);
+            return (buf[0 + offs] << 16) | (buf[1 + offs] << 8) | (buf[2 + offs]);
         }
 
         private void ThrowCursorOutside(int nextCursorPosition, int maxCursorPosition)
