@@ -13,6 +13,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 {
     internal class Crypto
     {
+        public enum RecordLayerKeyType
+        {
+            Zero_RTT_Application,
+            Handshake,
+            ApplicationData
+        }
+
         public struct Message
         {
             public byte[] Bytes;
@@ -41,14 +48,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         byte[] psk;
         byte[] ecdhe_or_dhe;
         private CipherSuite suite;
+        private Endpoint currentEndpoint;
 
         public Crypto(CipherSuite suite,
             byte[] psk,
-            byte[] ecdhe_or_dhe)
+            byte[] ecdhe_or_dhe,
+            Endpoint currentEndpoint)
         {
             this.psk = psk;
             this.ecdhe_or_dhe = ecdhe_or_dhe;
             this.suite = suite;
+            this.currentEndpoint = currentEndpoint;
             SetupCryptoAlgorithms(suite);
         }
 
@@ -126,18 +136,40 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return hashFunction.HashFinal();
         }
 
-        public void ChangeRecordLayerCrypto_Handshake(RecordLayer recordLayer, Endpoint currentEndpoint)
+        internal void ChangeRecordLayerCrypto_ApplicationData(RecordLayer recordLayer)
         {
+
+        }
+
+        public void ChangeRecordLayerCrypto(RecordLayer recordLayer, RecordLayerKeyType keyType)
+        {
+            byte[] clientSecret;
+            byte[] serverSecret;
+
+            switch (keyType)
+            {
+                case RecordLayerKeyType.Zero_RTT_Application: throw new NotImplementedException();
+                case RecordLayerKeyType.Handshake:
+                    clientSecret = ClientHandshakeTrafficSecret;
+                    serverSecret = ServerHandshakeTrafficSecret;
+                    break;
+                case RecordLayerKeyType.ApplicationData:
+                    clientSecret = ClientApplicationTrafficSecret0;
+                    serverSecret = ServerApplicationTrafficSecret0;
+                    break;
+                default: throw new ArgumentException(nameof(keyType));
+            }
+
             byte[] clientWriteIv, serverWriteIv;
             AEAD serverWriteAead, clientWriteAead;
 
             switch (this.suite)
             {
                 case CipherSuite.TLS_AES_128_GCM_SHA256:
-                    byte[] ckey = HkdfExpandLabel(ClientHandshakeTrafficSecret, "key", new byte[0], 16);
-                    byte[] skey = HkdfExpandLabel(ServerHandshakeTrafficSecret, "key", new byte[0], 16);
-                    clientWriteIv = HkdfExpandLabel(ClientHandshakeTrafficSecret, "iv", new byte[0], 12);
-                    serverWriteIv = HkdfExpandLabel(ServerHandshakeTrafficSecret, "iv", new byte[0], 12);
+                    byte[] ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);
+                    byte[] skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 16);
+                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
+                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
 
                     serverWriteAead = new GaloisCounterMode(new AES(skey), 16);
                     clientWriteAead = new GaloisCounterMode(new AES(ckey), 16);
@@ -153,7 +185,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 recordLayer.ChangeCipher(serverWriteAead, clientWriteAead, serverWriteIv, clientWriteIv);
             }
-        }
+        }   
+
 
         byte[] Merge(byte[][] arrays)
         {

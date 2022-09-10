@@ -70,7 +70,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 keyShare
             };
 
-            this.crypto = new Crypto(CipherSuite.TLS_AES_128_GCM_SHA256, null, sharedSecret);
+            this.crypto = new Crypto(CipherSuite.TLS_AES_128_GCM_SHA256, null, sharedSecret, Endpoint.Server);
 
             ServerHello serverHello = new ServerHello(new byte[32], hello.LegacySessionId, CipherSuite.TLS_AES_128_GCM_SHA256, extensions);
             for (int i = 0; i < 32; i++) serverHello.Random[i] = (byte)i;
@@ -88,7 +88,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             crypto.InitEarlySecret(handshakeContext[0]);
             crypto.InitHandshakeSecret(handshakeContext.Take(2).ToList());
 
-            crypto.ChangeRecordLayerCrypto_Handshake(recordLayer, Endpoint.Server);
+            crypto.ChangeRecordLayerCrypto(recordLayer, Crypto.RecordLayerKeyType.Handshake);
 
             serializer.Reset();
             serializer.ToBytes(encryptedExtensions);
@@ -115,8 +115,39 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             serializer.Reset();
             serializer.ToBytes(finished);
             recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+            handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
+           
+
+            var c = recordLayer.Read();
+
+            var clientFinished = handshakeReader.LoadHandshakeMessage<Finished>();
+
+            var clienthello_clientfinised = new byte[handshakeContext.Select(x => x.Length).Sum()];
+            var clienthello_serverfinised = new byte[clienthello_clientfinised.Length - handshakeContext.Last().Length];
+
+            ByteBuffer b1 = new ByteBuffer();
+            ByteBuffer b2 = new ByteBuffer();
+
+            for (int i = 0; i < handshakeContext.Count; i++)
+            {
+                b2.Append(handshakeContext[i]);
+                
+                if (i != handshakeContext.Count - 1)
+                {
+                    b1.Append(handshakeContext[i]);
+                }
+            }
+
+            MemCpy.Copy(b1.Buffer, 0, clienthello_serverfinised, 0, b1.DataLength);
+            MemCpy.Copy(b2.Buffer, 0, clienthello_clientfinised, 0, b2.DataLength);
+
+            crypto.InitMasterSecret(clienthello_serverfinised, clienthello_clientfinised);
+            crypto.ChangeRecordLayerCrypto(recordLayer, Crypto.RecordLayerKeyType.ApplicationData);
 
             var a = recordLayer.Read();
+
+            Console.WriteLine(Encoding.ASCII.GetString(recordLayer.RecordFragmentBytes));
+
             var b = recordLayer.Read();
 
             if (b.ContentType == ContentType.Alert)
@@ -127,12 +158,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     recordLayer.RecordFragmentBytes[1]);
             }
             else throw new Exception();
-
-            var clientFinished = handshakeReader.LoadHandshakeMessage<Finished>();
-
-            var c = recordLayer.Read();
-            var c2 = recordLayer.Read();
-            var c3 = recordLayer.Read();
 
             //// test 
             //var ms = new MemoryStream();

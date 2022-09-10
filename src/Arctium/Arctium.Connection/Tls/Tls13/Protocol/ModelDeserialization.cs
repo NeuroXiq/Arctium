@@ -213,9 +213,20 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return new ServerSupportedVersionsExtension(selectedVersion);
         }
 
-        private object DeserializeFinished(byte[] arg1, int arg2)
+        private object DeserializeFinished(byte[] buf, int offs)
         {
-            throw new NotImplementedException();
+            RangeCursor cursor = new RangeCursor(offs, 4);
+            validate.Handshake.ThrowGeneral(buf[cursor] != (byte)(HandshakeType.Finished), "invalid type: expected finished");
+
+            int len = ToInt3BytesBE(buf, cursor + 1);
+
+            cursor.ChangeMaxPosition(offs + len - 1);
+            cursor += 4;
+
+            byte[] verifyData = new byte[len];
+            MemCpy.Copy(buf, cursor, verifyData, 0, len);
+
+            return new Finished(verifyData);
         }
 
         private object DeserializeCertificateVerify(byte[] buf, int offs)
