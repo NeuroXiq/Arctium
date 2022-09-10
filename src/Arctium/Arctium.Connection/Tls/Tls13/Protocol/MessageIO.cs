@@ -4,29 +4,45 @@ using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
-    internal class MessageReader
+    internal class MessageIO
     {
+        private MessageIOState State;
         private RecordLayer recordLayer;
         private ByteBuffer byteBuffer;
         private Validate validate;
         private ModelDeserialization serverModelDeserialization;
         private ModelDeserialization clientModelDeserialization;
-        private List<byte[]> handshakeContext;
+        private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
 
-        public MessageReader(RecordLayer recordLayer, Validate validate, List<byte[]> handshakeContext)
+        public MessageIO(Stream networkStream, Validate validate, List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
         {
-            this.recordLayer = recordLayer;
+            this.recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
+
+            // this.recordLayer = recordLayer;
+            
             this.byteBuffer = new ByteBuffer();
             this.validate = validate;
             this.serverModelDeserialization = new ModelDeserialization(validate);
             this.clientModelDeserialization = new ModelDeserialization(validate);
             this.handshakeContext = handshakeContext;
+            this.State = MessageIOState.FirstClientHello;
+        }
+
+        public void SetState(MessageIOState state)
+        {
+            State = state;
+        }
+
+        public void WriteHandshake(object handshakeMsg)
+        {
+
         }
 
         public T LoadHandshakeMessage<T>(bool isInitialClientHello = false)
@@ -39,31 +55,33 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             HandshakeType type = (HandshakeType)buffer[0];
 
-            object result;
+            object result = clientModelDeserialization.Deserialize<T>(buffer, 0);
 
-            switch (type)
-            {
-                case HandshakeType.ClientHello:
-                    result = clientModelDeserialization.Deserialize<ClientHello>(buffer, 0);
-                    break;
-                case HandshakeType.ServerHello:
-                    result = clientModelDeserialization.Deserialize<ServerHello>(buffer, 0);
-                    break;
-                case HandshakeType.EncryptedExtensions:
-                    result = clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
-                    break;
-                case HandshakeType.CertificateVerify:
-                    result = clientModelDeserialization.Deserialize<CertificateVerify>(buffer, 0);
-                    break;
-                case HandshakeType.Finished:
-                    result = clientModelDeserialization.Deserialize<Finished>(buffer, 0);
-                    break;
-                default: throw new System.Exception($"unknow handshake type {type.ToString()}");  break;
-            }
+            //switch (type)
+            //{
+            //    case HandshakeType.ClientHello:
+            //        result = clientModelDeserialization.Deserialize<ClientHello>(buffer, 0);
+            //        break;
+            //    case HandshakeType.ServerHello:
+            //        result = clientModelDeserialization.Deserialize<ServerHello>(buffer, 0);
+            //        break;
+            //    case HandshakeType.EncryptedExtensions:
+            //        result = clientModelDeserialization.Deserialize<EncryptedExtensions>(buffer, 0);
+            //        break;
+            //    case HandshakeType.CertificateVerify:
+            //        result = clientModelDeserialization.Deserialize<CertificateVerify>(buffer, 0);
+            //        break;
+            //    case HandshakeType.Finished:
+            //        result = clientModelDeserialization.Deserialize<Finished>(buffer, 0);
+            //        break;
+            //    default: throw new System.Exception($"unknow handshake type {type.ToString()}");  break;
+            //}
 
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
-            handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+            // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+            HandshakeContextAdd(type, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+
             byteBuffer.TrimStart(len + 4);
             MemOps.MemsetZero(byteBuffer.Buffer, byteBuffer.DataLength, byteBuffer.Buffer.Length - byteBuffer.DataLength);
 
@@ -77,11 +95,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
-            handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+            // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+
+            HandshakeContextAdd(HandshakeType.Certificate, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
 
             byteBuffer.TrimStart(len + 4);
         }
 
+        void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
 
         //private Extension[] DeserializeExtensions(byte[] buffer, int offset)
         //{

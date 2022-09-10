@@ -15,6 +15,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private BufferForStream bufferForStream;
         private Validate validate;
+        private RecordLayerState State;
 
         private byte[] buffer { get { return bufferForStream.Buffer; } }
         public byte[] RecordFragmentBytes { get; private set; }
@@ -22,7 +23,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private byte[] plaintextWriteBuffer;
         private byte[] encryptedWriteBuffer;
 
-        private ulong readSequenceNumber;
+        public ulong readSequenceNumber;
         private ulong writeSequenceNumber;
         private AEAD aeadWrite;
         private AEAD aeadRead;
@@ -41,6 +42,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             readSequenceNumber = 0;
             writeSequenceNumber = 0;
             encryptedWriteBuffer = new byte[MaxTlsPlaintextLength];
+        }
+
+        public void SetBackwardCompatibilityMode(bool compatibilityIsInitialClientHello, bool compatibilityIgnoreChangeCipherSpec)
+        {
+
+        }   
+
+
+        public void SetState(RecordLayerState state)
+        {
+            this.State = state;
         }
 
         public RecordInfo Read(bool isInitialClientHello = false)
@@ -62,18 +74,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             validate.RecordLayer.Length(length);
 
             contentType = (ContentType)contentTypeByte;
-
             bufferForStream.LoadToLength(firstThreeFields + length);
-            
+
             if (aeadWrite != null && contentType == ContentType.ApplicationData)
             {
-                readSequenceNumber = 0;
+                // readSequenceNumber = 0;
                 ComputeReadNonce();
                 int authTagLen = aeadRead.AuthenticationTagLengthBytes;
                 int encryptedDataLen = length - authTagLen;
                 int authTagOffset = encryptedDataLen + 5;
 
-                bool ok;
+                bool isAeadTagValid;
 
                 aeadRead.AuthenticatedDecryption(
                     perRecordReadNonce, 0, perRecordReadNonce.Length,
@@ -81,11 +92,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     bufferForStream.Buffer, 0, 5,
                     RecordFragmentBytes, 0,
                     bufferForStream.Buffer, authTagOffset,
-                    out ok);
+                    out isAeadTagValid);
 
-                if (!ok) throw new System.Exception("aead tag invalid");
+                validate.RecordLayer.AEADAuthTagInvalid(isAeadTagValid);
 
-                recordInfo = new RecordInfo((ContentType)RecordFragmentBytes[encryptedDataLen - 1], 0, encryptedDataLen - 1);
+                recordInfo = new RecordInfo((ContentType)RecordFragmentBytes[encryptedDataLen - 1], version, encryptedDataLen - 1);
             }
             else
             {

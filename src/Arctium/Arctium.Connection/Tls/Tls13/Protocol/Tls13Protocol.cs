@@ -17,11 +17,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 {
     class Tls13Protocol
     {
-        private MessageReader handshakeReader;
+        private MessageIO handshakeReader;
         private Tls13ServerConfig serverConfig;
         private BufferForStream streamBuffer;
         private RecordLayer recordLayer;
         private Validate validate;
+        private List<KeyValuePair<HandshakeType, byte[]>> handshakeContexta = new List<KeyValuePair<HandshakeType, byte[]>>();
         private List<byte[]> handshakeContext = new List<byte[]>();
         private Crypto crypto;
 
@@ -32,7 +33,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.validate = new Validate();
             this.streamBuffer = new BufferForStream(stream);
             this.recordLayer = new RecordLayer(streamBuffer, validate);
-            this.handshakeReader = new MessageReader(recordLayer, validate, handshakeContext);
+            this.handshakeReader = new MessageIO(stream, validate, handshakeContexta);
             this.serverConfig = serverConfig;
         }
 
@@ -70,7 +71,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 keyShare
             };
 
-            this.crypto = new Crypto(CipherSuite.TLS_AES_128_GCM_SHA256, null, sharedSecret, Endpoint.Server);
+            this.crypto = new Crypto(Endpoint.Server);
+            crypto.SetupCryptoAlgorithms(CipherSuite.TLS_AES_128_GCM_SHA256, null, sharedSecret);
 
             ServerHello serverHello = new ServerHello(new byte[32], hello.LegacySessionId, CipherSuite.TLS_AES_128_GCM_SHA256, extensions);
             for (int i = 0; i < 32; i++) serverHello.Random[i] = (byte)i;
@@ -87,7 +89,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             crypto.InitEarlySecret(handshakeContext[0]);
             crypto.InitHandshakeSecret(handshakeContext.Take(2).ToList());
-
+            
             crypto.ChangeRecordLayerCrypto(recordLayer, Crypto.RecordLayerKeyType.Handshake);
 
             serializer.Reset();
@@ -148,16 +150,34 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             Console.WriteLine(Encoding.ASCII.GetString(recordLayer.RecordFragmentBytes));
 
-            var b = recordLayer.Read();
+            // var b = recordLayer.Read();
 
-            if (b.ContentType == ContentType.Alert)
-            {
-                Console.WriteLine("alert: {0} / {1}, ({2})",
-                    recordLayer.RecordFragmentBytes[0],
-                    ((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString(),
-                    recordLayer.RecordFragmentBytes[1]);
-            }
-            else throw new Exception();
+            string qwe =
+@"HTTP/1.1 200 OK
+Date: Mon, 27 Jul 2009 12:28:53 GMT
+Server: Apache/2.2.14 (Win32)
+Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT
+Content-Length: 88
+Content-Type: text/html
+Connection: Closed
+
+<html>
+<body>
+<h1>Hello, World!</h1>
+</body>
+</html>";
+
+            byte[] qwebytes = Encoding.ASCII.GetBytes(qwe);
+            recordLayer.Write(ContentType.ApplicationData, qwebytes, 0, qwebytes.Length);
+
+            // if (b.ContentType == ContentType.Alert)
+            // {
+            //     Console.WriteLine("alert: {0} / {1}, ({2})",
+            //         recordLayer.RecordFragmentBytes[0],
+            //         ((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString(),
+            //         recordLayer.RecordFragmentBytes[1]);
+            // }
+            // else throw new Exception();
 
             //// test 
             //var ms = new MemoryStream();

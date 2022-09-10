@@ -26,6 +26,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             public HandshakeType Type;
         }
 
+        public readonly IReadOnlyList<CipherSuite> SupportedCipherSuites = new List<CipherSuite>
+        {
+            CipherSuite.TLS_AES_128_GCM_SHA256
+        };
+
         public byte[] BinderKey;
         public byte[] ClientEarlyTrafficSecret;
         public byte[] EarlyExporterMasterSecret;
@@ -50,20 +55,18 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private CipherSuite suite;
         private Endpoint currentEndpoint;
 
-        public Crypto(CipherSuite suite,
-            byte[] psk,
-            byte[] ecdhe_or_dhe,
-            Endpoint currentEndpoint)
+        public Crypto(Endpoint currentEndpoint)
+        {
+            this.currentEndpoint = currentEndpoint;
+            SetupCryptoAlgorithms(suite, psk, ecdhe_or_dhe);
+        }
+
+        public void SetupCryptoAlgorithms(CipherSuite suite, byte[] psk, byte[] ecdhe_or_dhe)
         {
             this.psk = psk;
             this.ecdhe_or_dhe = ecdhe_or_dhe;
             this.suite = suite;
-            this.currentEndpoint = currentEndpoint;
-            SetupCryptoAlgorithms(suite);
-        }
 
-        private void SetupCryptoAlgorithms(CipherSuite suite)
-        {
             HashFunction hkdfHashFunc = null;
 
             switch (suite)
@@ -136,10 +139,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return hashFunction.HashFinal();
         }
 
-        internal void ChangeRecordLayerCrypto_ApplicationData(RecordLayer recordLayer)
-        {
-
-        }
 
         public void ChangeRecordLayerCrypto(RecordLayer recordLayer, RecordLayerKeyType keyType)
         {
