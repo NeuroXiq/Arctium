@@ -27,12 +27,12 @@ namespace Arctium.Shared.Helpers.Buffers
         {
             if (count > DataLength) throw new Exception("internal: trying to trim more than datalength");
 
-            int j = count;
-            int i = 0;
+            // int j = count;
+            // int i = 0;
 
-            for (; i < count && j < DataLength; j++, i++)
+            for (int i = 0; i < DataLength - count; i++)
             {
-                Buffer[i] = Buffer[j];
+                Buffer[i] = Buffer[i + count];
             }
 
             DataLength -= count;

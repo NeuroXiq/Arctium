@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Connection.Tls.Tls13.Model
 {
-    public enum AlertDescription {
+    public enum AlertDescription : byte {
         CloseNotify = 0,
         UnexpectedMessage = 10,
         BadRecordMac = 20,

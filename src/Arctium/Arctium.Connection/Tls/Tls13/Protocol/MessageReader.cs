@@ -63,6 +63,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
+            handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
             byteBuffer.TrimStart(len + 4);
             MemOps.MemsetZero(byteBuffer.Buffer, byteBuffer.DataLength, byteBuffer.Buffer.Length - byteBuffer.DataLength);
 
@@ -75,6 +76,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             clientModelDeserialization.DeserializeCertificate(buffer, 0, type);
 
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
+
+            handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
 
             byteBuffer.TrimStart(len + 4);
         }
@@ -180,9 +183,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             validate.Handshake.NotZeroLengthFragmentsOfHandshake(recordInfo.Length);
             validate.Handshake.RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(recordInfo.ContentType);
 
-            byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
+            if (recordInfo.ContentType == ContentType.Alert) throw new Exception("alert: " + ((AlertDescription)recordLayer.RecordFragmentBytes[0]).ToString());
+            if (recordInfo.ContentType == ContentType.ChangeCipherSpec)
+                return;
 
-            handshakeContext.Add(MemCpy.CopyToNewArray(recordLayer.RecordFragmentBytes, 0, recordInfo.Length));
+            byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
         }   
     }
 }

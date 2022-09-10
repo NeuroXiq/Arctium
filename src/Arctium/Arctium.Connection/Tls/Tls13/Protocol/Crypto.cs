@@ -250,6 +250,31 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             MemCpy.Copy(context, 0, hkdfLabel, contextStart + 1, context.Length);
 
 
+            hkdf.Expand(secret, hkdfLabel, result, length);
+
+            return result;
+        }
+
+        byte[] HkdfExpandLabel_org(byte[] secret, string labelText, byte[] context, int length)
+        {
+            byte[] label = Encoding.ASCII.GetBytes(labelText);
+            byte[] result = new byte[length];
+            byte labelLen = (byte)(label.Length + Tls13Label.Length);
+
+            byte[] hkdfLabel = new byte[2 + 1 + 1 + context.Length + Tls13Label.Length + label.Length];
+            MemMap.ToBytes1UShortBE((ushort)length, hkdfLabel, 0);
+            hkdfLabel[2] = labelLen;
+
+            MemCpy.Copy(Tls13Label, 0, hkdfLabel, 3, Tls13Label.Length);
+            MemCpy.Copy(label, 0, hkdfLabel, 3 + Tls13Label.Length, label.Length);
+
+            int contextStart = 2 + 1 + Tls13Label.Length + label.Length;
+
+            hkdfLabel[contextStart] = (byte)context.Length;
+
+            MemCpy.Copy(context, 0, hkdfLabel, contextStart + 1, context.Length);
+
+
             hkdf.Expand(secret, label, result, length);
 
             return result;

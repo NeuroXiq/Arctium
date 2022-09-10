@@ -112,8 +112,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 if (certEntry.Extensions.Length > 0) throw new NotImplementedException("extesnsions serialization not implemented");
                 MemMap.ToBytes1UShortBE(0, SerializedData, extLenOffs);
 
-                certListLen += 3 + certLen;
+                // certListLen += 3 + certLen;
             }
+
+            certListLen = (int)(SerializedDataLength - certListLenOffs - 3);
 
             if (certListLen > 0x00FFFFFF) throw new Exception("internal: cert list > 2^24");
 
@@ -155,7 +157,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             if (totalLen > (1 << 16) - 1) throw new Exception("internal: totalLen exceed 2^16 - 1");
 
-            MemMap.ToBytes1UShortBE((ushort)listLenOffs, tempSerializedExtension.Buffer, totalLen);
+            MemMap.ToBytes1UShortBE((ushort)totalLen, tempSerializedExtension.Buffer, listLenOffs);
         }
 
         private void SerializeEncryptedExtensions(object obj)

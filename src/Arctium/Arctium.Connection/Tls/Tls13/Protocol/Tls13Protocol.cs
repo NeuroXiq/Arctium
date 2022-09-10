@@ -62,6 +62,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 {
                     new CertificateEntry(CertificateType.X509, serverConfig.DerEncodedCertificateBytes, new Extension[0])
                 });
+            // var certificate = new Certificate(new byte[0], new CertificateEntry[0]);
 
             Extension[] extensions = new Extension[]
             {
@@ -80,36 +81,108 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
             recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
             
-            // var x = recordLayer.Read(true);
+            //var hx = recordLayer.Read(true);
 
-            serializer.Reset();
-
-            serializer.ToBytes(encryptedExtensions);
-            serializer.ToBytes(certificate);
-
-            var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256, CertificateVerifySignature());
-            handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
-
-            serializer.ToBytes(certVerify);            
+            //serializer.ToBytes(certVerify);
 
             crypto.InitEarlySecret(handshakeContext[0]);
             crypto.InitHandshakeSecret(handshakeContext.Take(2).ToList());
 
             crypto.ChangeRecordLayerCrypto_Handshake(recordLayer, Endpoint.Server);
 
+            serializer.Reset();
+            serializer.ToBytes(encryptedExtensions);
             recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+            handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
+
+            //serializer.Reset();
+            serializer.Reset();
+            serializer.ToBytes(certificate);
+            recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+
+            handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
+
+            var certVerify = new CertificateVerify(SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256, CertificateVerifySignature());
             
-
-
-
-            // byte[] tosend = new byte[serializer.SerializedDataLength];
-            // MemCpy.Copy(serializer.SerializedData, 0, tosend, 0, serializer.SerializedDataLength);
-            // handshakeContext.Add(tosend);
+            
+            serializer.Reset();
+            serializer.ToBytes(certVerify);
+            recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+            handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
 
             byte[] finishedVerData = crypto.ServerFinished(handshakeContext);
             var finished = new Finished(finishedVerData);
-
+            serializer.Reset();
             serializer.ToBytes(finished);
+            recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+
+            var a = recordLayer.Read();
+            var b = recordLayer.Read();
+
+            if (b.ContentType == ContentType.Alert)
+            {
+                Console.WriteLine("alert: {0} / {1}, ({2})",
+                    recordLayer.RecordFragmentBytes[0],
+                    ((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString(),
+                    recordLayer.RecordFragmentBytes[1]);
+            }
+            else throw new Exception();
+
+            var clientFinished = handshakeReader.LoadHandshakeMessage<Finished>();
+
+            var c = recordLayer.Read();
+            var c2 = recordLayer.Read();
+            var c3 = recordLayer.Read();
+
+            //// test 
+            //var ms = new MemoryStream();
+            //BufferForStream sbf = new BufferForStream(ms);
+            //BufferForStream cbf = new BufferForStream(ms);
+            //RecordLayer cr = new RecordLayer(sbf, new Validate());
+            //RecordLayer sr = new RecordLayer(cbf, new Validate());
+
+            ////var mr = new MessageReader(r, new Validate(), new List<byte[]>());
+
+            //crypto.ChangeRecordLayerCrypto_Handshake(cr, Endpoint.Client);
+            //crypto.ChangeRecordLayerCrypto_Handshake(sr, Endpoint.Server);
+
+            //ms.Seek(0, SeekOrigin.Begin);
+            //sr.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+            //ms.Seek(0, SeekOrigin.Begin);
+
+            //var mr = new MessageReader(cr, new Validate(), new List<byte[]>());
+
+            //var x1 = mr.LoadHandshakeMessage<EncryptedExtensions>(false);
+
+            //// end test
+
+            //// test
+            //// ms = new MemoryStream();
+            ////ms.Seek(0, SeekOrigin.Begin);
+            //// ms.Write(serializer.SerializedData, 0, (int)serializer.SerializedDataLength);
+            ////r.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+            ////ms.Seek(0, SeekOrigin.Begin);
+            //// mr.LoadHandshakeMessage<EncryptedExtensions>();
+            //mr.LoadCertificateMessage(CertificateType.X509);
+            //// mr.LoadHandshakeMessage();
+
+            //// test
+
+            //// end test
+
+
+            try
+            {
+                // recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
+            }
+            catch (Exception)
+            {
+                var x = "";
+            }
+            
+            // byte[] tosend = new byte[serializer.SerializedDataLength];
+            // MemCpy.Copy(serializer.SerializedData, 0, tosend, 0, serializer.SerializedDataLength);
+            // handshakeContext.Add(tosend);
 
             
             // send app data
@@ -145,7 +218,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             MemCpy.Copy(hash, 0, tosign, c, hash.Length);
 
             var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(serverConfig.CertificatePrivateKey));
-            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hash.Length);
+            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hash.Length, new Cryptography.HashFunctions.Hashes.SHA2_256());
 
             return signature;
         }

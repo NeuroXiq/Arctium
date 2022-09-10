@@ -260,7 +260,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             int msgLen = ToInt3BytesBE(buf, offs + 1);
             RangeCursor cursor = new RangeCursor(offs, offs + msgLen + 4 - 1);
             cursor += 4;
-
             int certListLen;
             List<CertificateEntry> certificateList = new List<CertificateEntry>();
             int requestContextLen;
@@ -279,7 +278,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             certListLen = ToInt3BytesBE(buf, cursor);
             cursor += 2;
 
-            // validate.Handshake.ThrowGeneral(cursor + certListLen != cursor.MaxPosition, "certificate: certListLen invalid");
+            validate.Handshake.ThrowGeneral(cursor + certListLen != cursor.MaxPosition, "certificate: certListLen invalid");
 
             while (!cursor.OnMaxPosition)
             {

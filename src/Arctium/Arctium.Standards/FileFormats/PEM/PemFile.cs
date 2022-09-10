@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.FileFormats.Exceptions;
+using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.IO;
 
@@ -44,6 +45,8 @@ namespace Arctium.Standards.FileFormat.PEM
 
         public static PemFile FromString(string content)
         {
+            ByteBuffer buffer = new ByteBuffer();
+
             string[] lines = content.Split("\r\n");
             if (lines.Length < 3) Throw("Invalid file format. Minimum lines count is 3");
 
@@ -54,22 +57,20 @@ namespace Arctium.Standards.FileFormat.PEM
 
             if (b64len % 4 != 0) Throw("Invalid base64-encoded data length");
 
-            int decodedLen = ((b64len * 3) / 4);
-            byte[] decodedData = new byte[decodedLen];
-
             for (int i = 1; i < lines.Length - 1; i++)
             {
                 try
                 {
                     byte[] decodedLine = Convert.FromBase64String(lines[i]);
-                    Buffer.BlockCopy(decodedLine, 0, decodedData, (i - 1) * 48, decodedLine.Length);
+                    buffer.Append(decodedLine);
                 }
                 catch (ArgumentException e)
                 {
                     Throw("Invalid Base64-encoded line: " + i);
                 }
-
             }
+
+            byte[] decodedData = MemCpy.CopyToNewArray(buffer.Buffer, 0, buffer.DataLength);
 
             return new PemFile(beginLabel, endLabel, decodedData);
         }
