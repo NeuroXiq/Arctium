@@ -17,6 +17,8 @@
         ServerFinished,
         ClientCertificate,
         ClientCertificateVerify,
-        ClientFinished
+        ClientFinished,
+        LoadApplicationData,
+        LoadApplicationDataNotReceivedApplicationDataContent
     }
 }

@@ -92,7 +92,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             validate.RecordLayer.ValidateContentType(contentTypeByte);
             validate.RecordLayer.ProtocolVersion(version, compatibilityAllowRecordLayerVersionLower0x0303);
             validate.RecordLayer.Length(length);
-
             
             bufferForStream.LoadToLength(firstThreeFields + length);
 

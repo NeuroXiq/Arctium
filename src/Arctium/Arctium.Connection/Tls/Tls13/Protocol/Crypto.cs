@@ -331,25 +331,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 recordLayer.ChangeCipher(serverWriteAead, clientWriteAead, serverWriteIv, clientWriteIv);
             }
-        }   
-
-
-        byte[] Merge(byte[][] arrays)
-        {
-            int len = arrays.Select(x => x.Length).Sum();
-            byte[] r = new byte[len];
-
-            int q = 0;
-
-            for (int i = 0; i < arrays.Length; i++)
-            {
-                var t = arrays[i];
-
-                MemCpy.Copy(t, 0, r, q, t.Length);
-                q += t.Length;
-            }
-
-            return r;
         }
         
         public void InitEarlySecret(byte[] clientHello)

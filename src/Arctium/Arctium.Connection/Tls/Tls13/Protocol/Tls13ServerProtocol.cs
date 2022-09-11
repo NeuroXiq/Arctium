@@ -12,6 +12,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 {
     class Tls13ServerProtocol
     {
+        /// <summary>
+        /// Loaded application data requested bt <see cref="LoadApplicationData"/> method
+        /// </summary>
+        public byte[] ApplicationDataBuffer { get { return applicationDataBuffer; } }
+        
+        /// <summary>
+        /// Application data length in <see cref="ApplicationDataBuffer"/>
+        /// </summary>
+        public int ApplicationDataLength { get { return applicationDataLength; } }
+
         class Context
         {
             public ClientHello ClientHello;
@@ -27,6 +37,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             public CipherSuite SelectedCipherSuite;
             public byte[] EcdhOrDheSharedSecret;
         }
+
+        private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
+        private int applicationDataLength;
 
         private ServerProcolCommand Command;
         private ServerProtocolState State;
@@ -45,6 +58,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             messageIO = new MessageIO(networkStream, validate, handshakeContext);
             crypto = new Crypto(Endpoint.Server, config);
             context = new Context();
+            applicationDataLength = 0;
         }
 
         public void Listen()
@@ -57,6 +71,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void Close()
         {
+        }
+
+        /// <summary>
+        /// Removes all data from <see cref="ApplicationDataBuffer"/> and loads next part of application data received.
+        /// Result length of data is in <see cref="ApplicationDataLength"/>.
+        /// </summary>
+        public void LoadNextApplicationData()
+        {
+            Command = ServerProcolCommand.LoadApplicationData;
+
+            ProcessCommandLoop();
         }
 
         void ProcessCommandLoop()
@@ -81,10 +106,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             Command = ServerProcolCommand.FirstClientHello;
         }
 
-        public void ConnectedState()
+        private void ConnectedState()
         {
             switch (Command)
             {
+                case ServerProcolCommand.LoadApplicationData: LoadApplicationData(); break;
+                case ServerProcolCommand.LoadApplicationDataNotReceivedApplicationDataContent: LoadApplicationDataNotReceivedApplicationDataContent(); break;
                 default: throw new NotImplementedException("connected");
             }
         }
@@ -106,6 +133,23 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 case ServerProcolCommand.ClientCertificate:
                 case ServerProcolCommand.ClientCertificateVerify:
                 default: throw new Tls13Exception("command not valid for this state");
+            }
+        }
+
+        private void LoadApplicationDataNotReceivedApplicationDataContent()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void LoadApplicationData()
+        {
+            if (messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength))
+            {
+                Command = ServerProcolCommand.BreakLoopWaitForOtherCommand;
+            }
+            else
+            {
+                Command = ServerProcolCommand.LoadApplicationDataNotReceivedApplicationDataContent;
             }
         }
 

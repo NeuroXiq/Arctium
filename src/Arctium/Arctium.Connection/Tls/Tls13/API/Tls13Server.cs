@@ -11,28 +11,17 @@ namespace Arctium.Connection.Tls.Tls13.API
         Tls13ServerProtocol protocol;
         // Tls13Protocol protocol;
 
-        public Tls13Server(Stream stream) : this(stream, Tls13ServerConfig.Default)
+        public Tls13Server(Tls13ServerConfig config)
         {
-            // protocol = new Tls13ServerProtocol(stream);
-            // protocol = new Tls13Protocol(stream, config);
-            throw new System.Exception();
+            this.config = config;   
         }
 
-        public Tls13Server(Stream stream, Tls13ServerConfig config)
+        public Tls13Stream Accept(Stream networkStream)
         {
-            this.stream = stream;
-            this.config = config;
-            // this.protocol = new Tls13Protocol(stream, config);
-            protocol = new Tls13ServerProtocol(stream, config);
-        }
+            var protocol = new Tls13ServerProtocol(networkStream, config);
+            protocol.Listen();
 
-        public Tls13Stream Open()
-        {
-            this.protocol.Listen();
-
-            throw new System.Exception();
-
-            // return new Tls13StreamInternal(this.protocol);
+            return new Tls13ServerStreamInternal(protocol);
         }
 
         public void Close()
