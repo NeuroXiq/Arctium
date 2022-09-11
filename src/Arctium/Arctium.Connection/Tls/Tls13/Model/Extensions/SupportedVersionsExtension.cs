@@ -13,10 +13,8 @@
             SelectedVersion = selectedVersion;
         }
 
-        public static ServerSupportedVersionsExtension ServerHelloTls13()
-        {
-            return new ServerSupportedVersionsExtension(TLS13Version);
-        }
+        private static ServerSupportedVersionsExtension serverHelloTls13Static = new ServerSupportedVersionsExtension(TLS13Version);
+        public static ServerSupportedVersionsExtension ServerHelloTls13 { get { return serverHelloTls13Static; } }
     }
 
     class ClientSupportedVersionsExtension : Extension

@@ -34,6 +34,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public ExtensionsValidate Extensions { get; private set; }
         public CertificateValidate Certificate { get; private set; }
         public ClientHelloValidate ClientHello { get; private set; }
+        public FinishedValidate Finished { get; private set; }
 
         public Validate()
         {
@@ -42,6 +43,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.Handshake = new HandshakeValidate(errorHandler);
             this.Extensions = new ExtensionsValidate();
             this.ClientHello = new ClientHelloValidate(errorHandler);
+            Finished = new FinishedValidate(errorHandler);
 
             Certificate = new CertificateValidate(errorHandler);
         }
@@ -56,6 +58,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             public void ThrowAlertFatal(AlertDescription alert, string messageName, string errorText)
             {
                 throw new Tls13AlertException(AlertLevel.Fatal, alert, messageName, null, errorText);
+            }
+
+            public void ThrowAlertFatal(AlertDescription alert, string messageName, string field, string error)
+            {
+                throw new Tls13AlertException(AlertLevel.Fatal, alert, messageName, field, error);
             }
 
             public void Throw(string error)
@@ -87,6 +94,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
 
             public void Throw(bool condition, string error) => Throw(condition, null, error);
+            
+            public void AlertFatalDecodeError(bool condition, string field, string error)
+            {
+                if (condition)
+                {
+                    handler.ThrowAlertFatal(AlertDescription.DecodeError, messageName, field, error);
+                }
+            }
 
             public void AlertFatal(bool shouldThrow, AlertDescription alertDescription, string errorText)
             {
@@ -97,6 +112,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 if (condition) handler.Throw(messageName, null, error);
             }   
+        }
+
+        public class FinishedValidate : ValidateBase
+        {
+            public FinishedValidate(ValidationErrorHandler handler) : base(handler, "Finished")
+            {
+            }
+
+            public void FinishedSigValid(bool isSignatureValid)
+                => AlertFatal(!isSignatureValid, AlertDescription.DecryptError, "invalid finished signature");
         }
 
         public class CertificateRequestValidate : ValidateBase
@@ -159,7 +184,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 {
                     if (extensions.Contains(ext.ExtensionType))
                     {
-                        Throw(true, "Extensions: more that one extension of given type exists. Cannot be duplicate extensions");
+                        AlertFatal(true, AlertDescription.Illegal_parameter, "Extensions: more that one extension of given type exists. Cannot be duplicate extensions");
                     }
 
                     extensions.Add(ext.ExtensionType);
@@ -170,13 +195,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 if (extensions.Contains(ExtensionType.PreSharedKey) &&
                     clientHello.Extensions[clientHello.Extensions.Length - 1].ExtensionType != ExtensionType.PreSharedKey)
                 {
-                    Throw(true, "Extensions: containst extension 'presharedkey' but this extension is not last in the list (must be last)");
+                    AlertFatal(true, AlertDescription.Illegal_parameter, "Extensions: containst extension 'presharedkey' but this extension is not last in the list (must be last)");
                 }
 
-                if (!extensions.Contains(ExtensionType.SupportedVersions))
-                {
-                    Throw(true, "Missing extension: SupportedVersions");
-                }
+                AlertFatal(!extensions.Contains(ExtensionType.SupportedVersions), AlertDescription.MissingExtension, "Missing extension: SupportedVersions");
 
                 ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
                 bool tls13NotFound = true;
@@ -187,11 +209,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     tls13NotFound = supportedVersions[i] != 0x0304;
                 }
 
-                if (tls13NotFound)
-                {
-                    Throw(true, "Supported versions: missing 0x0304 in client versions");
-                }
+                AlertFatal(tls13NotFound, AlertDescription.ProtocolVersion, "TLS 1.3 version was not found int version extension and implementation supports only 1.3");
             }
+
+            internal void SignatureSchemesNotSupported(bool sthrow) =>
+                AlertFatal(sthrow, AlertDescription.HandshakeFailure, "signature scheme list extension not from client hello not supported in current implementation"); 
+
+            internal void MissingSignatureAlgorithmsExtension(bool throwEx) => AlertFatal(throwEx, AlertDescription.MissingExtension, "missing signature scheme list extension");
         }
 
 
@@ -238,13 +262,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
             }
 
-            public void ProtocolVersion(ushort protocolVersion, bool isInitialClientHello)
+            public void ProtocolVersion(ushort protocolVersion, bool compatibilityAllowRecordLayerVersionLower0x0303)
             {
-                if (protocolVersion == LegacyRecordVersion ||
-                    (isInitialClientHello && LegacyRecordVersion0301 == protocolVersion))
-                {
-                    return;
-                }
+                bool isValid = protocolVersion == LegacyRecordVersion ||
+                    (compatibilityAllowRecordLayerVersionLower0x0303 && protocolVersion < LegacyRecordVersion);
+
+                if (isValid) return;
 
                 Throw("Received record with invalid LegacyRecordVersion. Expected: {0} but current: {1}",
                     BinConverter.ToStringHex(LegacyRecordVersion),
@@ -357,13 +380,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     Throw("Cipher suite length not a multiple of 2");
             }
 
-            internal void CipherSuitesNotOverlapWithSupported(bool isthrow) => 
-                AlertFatal(isthrow, AlertDescription.HandshakeFailure, "Received cipher suites doesn't overlap with supported in this instance/implementation");
-
-            internal void ClientSupportedGroupsNotOverlapWithImplemented(bool isThrow) =>
-                AlertFatal(isThrow, AlertDescription.HandshakeFailure, "client supported groups not overlap with implemented");
-
-
+            internal void SelectedSuiteAndEcEcdheGroupAndSignAlgo(bool groupOk, bool cipherSuiteOk, bool signAlgoOk)
+            {
+                AlertFatal(!groupOk, AlertDescription.HandshakeFailure, "client supported groups not overlap with implemented");
+                AlertFatal(!cipherSuiteOk, AlertDescription.HandshakeFailure, "Received cipher suites doesn't overlap with supported in this instance/implementation");
+                AlertFatal(!signAlgoOk, AlertDescription.HandshakeFailure, "signature algorithm doesn't overlap with supported in current implementation");
+            }
         }
 
         public class ExtensionsValidate

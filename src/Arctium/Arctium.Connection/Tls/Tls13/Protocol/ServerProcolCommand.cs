@@ -8,7 +8,8 @@
 
         FirstClientHello,
         ClientHello,
-        ServerHello,
+        ServerHelloNotPsk,
+        ServerHelloPsk,
         EncryptedExtensions,
         CertificateRequest,
         ServerCertificate,
@@ -16,6 +17,6 @@
         ServerFinished,
         ClientCertificate,
         ClientCertificateVerify,
-
+        ClientFinished
     }
 }

@@ -16,17 +16,20 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private Validate validate;
         private ModelDeserialization serverModelDeserialization;
         private ModelDeserialization clientModelDeserialization;
+        private ModelSerialization modelSerialization;
         private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
 
-        public MessageIO(Stream networkStream, Validate validate, List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
+        public MessageIO(Stream networkStream,
+            Validate validate,
+            List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
         {
             this.recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
 
             // this.recordLayer = recordLayer;
-            
+            modelSerialization = new ModelSerialization();
             this.byteBuffer = new ByteBuffer();
             this.validate = validate;
             this.serverModelDeserialization = new ModelDeserialization(validate);
@@ -35,13 +38,33 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.State = MessageIOState.FirstClientHello;
         }
 
-        public void SetState(MessageIOState state)
+        public void SetBackwardCompatibilityMode(
+            bool compatibilityAllowRecordLayerVersionLower0x0303 = false,
+            bool compatibilitySilentlyDropUnencryptedChangeCipherSpec = false)
         {
-            State = state;
+            recordLayer.SetBackwardCompatibilityMode(
+                compatibilityAllowRecordLayerVersionLower0x0303: compatibilityAllowRecordLayerVersionLower0x0303,
+                compatibilitySilentlyDropUnencryptedChangeCipherSpec: compatibilitySilentlyDropUnencryptedChangeCipherSpec);
         }
+
+        //public void SetState(MessageIOState state)
+        //{
+        //    State = state;
+        //}
 
         public void WriteHandshake(object handshakeMsg)
         {
+            modelSerialization.Reset();
+
+            modelSerialization.ToBytes(handshakeMsg);
+
+            var type = (HandshakeType)(modelSerialization.SerializedData[0]);
+            
+            handshakeContext.Add(
+                new KeyValuePair<HandshakeType, byte[]>(type,
+                MemCpy.CopyToNewArray(modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength)));
+
+            recordLayer.Write(ContentType.Handshake, modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength);
 
         }
 
@@ -103,6 +126,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         }
 
         void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
+
+        internal void ChangeRecordLayerCrypto(Crypto crypto, Crypto.RecordLayerKeyType keyType) => crypto.ChangeRecordLayerCrypto(recordLayer, keyType);
 
         //private Extension[] DeserializeExtensions(byte[] buffer, int offset)
         //{
@@ -202,6 +227,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         {
             RecordLayer.RecordInfo recordInfo = recordLayer.Read(isInitialClientHello);
             validate.Handshake.NotZeroLengthFragmentsOfHandshake(recordInfo.Length);
+
+            // if (recordInfo.ContentType == ContentType.Alert) Console.WriteLine(((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString());
+
             validate.Handshake.RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(recordInfo.ContentType);
 
             if (recordInfo.ContentType == ContentType.Alert) throw new Exception("alert: " + ((AlertDescription)recordLayer.RecordFragmentBytes[0]).ToString());

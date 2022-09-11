@@ -67,11 +67,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             Extension[] extensions = new Extension[]
             {
-                ServerSupportedVersionsExtension.ServerHelloTls13(),
+                ServerSupportedVersionsExtension.ServerHelloTls13,
                 keyShare
             };
 
-            this.crypto = new Crypto(Endpoint.Server);
+            this.crypto = new Crypto(Endpoint.Server, null);
             crypto.SetupCryptoAlgorithms(CipherSuite.TLS_AES_128_GCM_SHA256, null, sharedSecret);
 
             ServerHello serverHello = new ServerHello(new byte[32], hello.LegacySessionId, CipherSuite.TLS_AES_128_GCM_SHA256, extensions);

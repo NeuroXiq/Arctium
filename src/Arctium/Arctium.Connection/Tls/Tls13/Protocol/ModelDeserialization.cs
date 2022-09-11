@@ -193,9 +193,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             msg.LegacyCompressionMethods = legComprMeth;
             msg.Extensions = extensions.ToArray();
 
-            validate.Handshake.ClientHello_ClientHello(msg);
+            // validate.Handshake.ClientHello_ClientHello(msg);
 
-            validate.Handshake.ThrowGeneral(!cursor.OnMaxPosition, "not on max position");
+            validate.ClientHello.AlertFatalDecodeError(!cursor.OnMaxPosition, "length" ,"after decoding length doesn't match");
 
             return msg;
         }
@@ -591,7 +591,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         {
             ushort contentLength = MemMap.ToUShort2BytesBE(buffer, offset + 2);
             ushort namedCurveListLength;
-            List<NamedCurveListExtension.NamedCurve> curves = new List<NamedCurveListExtension.NamedCurve>();
+            List<SupportedGroupExtension.NamedGroup> curves = new List<SupportedGroupExtension.NamedGroup>();
 
             int maxCursor = 4 + offset + contentLength - 1;
 
@@ -610,7 +610,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 // shift to point to first byte of curve
                 cursor++;
 
-                NamedCurveListExtension.NamedCurve namedCurve = (NamedCurveListExtension.NamedCurve)MemMap.ToUShort2BytesBE(buffer, cursor);
+                SupportedGroupExtension.NamedGroup namedCurve = (SupportedGroupExtension.NamedGroup)MemMap.ToUShort2BytesBE(buffer, cursor);
 
                 curves.Add(namedCurve);
 
@@ -618,7 +618,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 cursor++;
             }
 
-            return new NamedCurveListExtension(curves.ToArray());
+            return new SupportedGroupExtension(curves.ToArray());
         }
 
         private Extension DeserializeExtension_SignatureAlgorithmsCert(byte[] arg1, int arg2)

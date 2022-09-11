@@ -12,6 +12,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         const int MaxTlsPlaintextLength = 2 << 14;
         const int WriteBufferLength = MaxTlsPlaintextLength + 1 + 2 + 2;
         const byte LegacyVersion = 0x03;
+        const ushort RecordLegacyVersion = 0x0303;
 
         private BufferForStream bufferForStream;
         private Validate validate;
@@ -32,6 +33,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private byte[] perRecordWriteNonce;
         private byte[] perRecordReadNonce;
 
+        private bool compatibilityAllowRecordLayerVersionLower0x0303;
+        private bool compatibilitySilentlyDropUnencryptedChangeCipherSpec;
+
         public RecordLayer(BufferForStream buffer, Validate validate)
         {
             this.bufferForStream = buffer;
@@ -42,12 +46,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             readSequenceNumber = 0;
             writeSequenceNumber = 0;
             encryptedWriteBuffer = new byte[MaxTlsPlaintextLength];
+
+            SetBackwardCompatibilityMode(false, false);
         }
 
-        public void SetBackwardCompatibilityMode(bool compatibilityIsInitialClientHello, bool compatibilityIgnoreChangeCipherSpec)
+        public void SetBackwardCompatibilityMode(
+            bool compatibilityAllowRecordLayerVersionLower0x0303 = false,
+            bool compatibilitySilentlyDropUnencryptedChangeCipherSpec = false)
         {
-
-        }   
+            this.compatibilityAllowRecordLayerVersionLower0x0303 = compatibilityAllowRecordLayerVersionLower0x0303;
+            this.compatibilitySilentlyDropUnencryptedChangeCipherSpec = compatibilitySilentlyDropUnencryptedChangeCipherSpec;
+        }
 
 
         public void SetState(RecordLayerState state)
@@ -66,14 +75,25 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             bufferForStream.LoadToLength(firstThreeFields);
 
             byte contentTypeByte = (byte)buffer[0];
+            contentType = (ContentType)contentTypeByte;
             version = (ushort)((buffer[1] << 8) | (buffer[2] << 0));
             length = (ushort)((buffer[3] << 8) | (buffer[4] << 0));
 
+            if (contentType == ContentType.ChangeCipherSpec && compatibilitySilentlyDropUnencryptedChangeCipherSpec)
+            {
+                // load this record and do totally drop it as not exists
+                // this method was invoked, so anyway other record is expected, return next one
+                bufferForStream.LoadToLength(firstThreeFields + length);
+                bufferForStream.TrimStart(5 + length);
+
+                return Read();
+            }
+
             validate.RecordLayer.ValidateContentType(contentTypeByte);
-            validate.RecordLayer.ProtocolVersion(version, isInitialClientHello);
+            validate.RecordLayer.ProtocolVersion(version, compatibilityAllowRecordLayerVersionLower0x0303);
             validate.RecordLayer.Length(length);
 
-            contentType = (ContentType)contentTypeByte;
+            
             bufferForStream.LoadToLength(firstThreeFields + length);
 
             if (aeadWrite != null && contentType == ContentType.ApplicationData)
@@ -183,6 +203,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.readIv = readIv;
             this.perRecordReadNonce = new byte[writeIv.Length];
             this.perRecordWriteNonce = new byte[writeIv.Length];
+            this.State = RecordLayerState.EncryptionOn;
         }
 
         void ComputeWriteNonce() => ComputeNonce(perRecordWriteNonce, writeSequenceNumber, writeIv);

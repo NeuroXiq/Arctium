@@ -1,9 +1,16 @@
-﻿using Arctium.Connection.Tls.Tls13.Model;
+﻿using Arctium.Connection.Tls.Tls13.API;
+using Arctium.Connection.Tls.Tls13.Model;
+using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Cryptography.HashFunctions.KDF;
 using Arctium.Cryptography.HashFunctions.MAC;
+using Arctium.Shared;
+using Arctium.Shared.Exceptions;
+using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Standards;
+using Arctium.Standards.PKCS1.v2_2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,12 +25,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             Zero_RTT_Application,
             Handshake,
             ApplicationData
-        }
-
-        public struct Message
-        {
-            public byte[] Bytes;
-            public HandshakeType Type;
         }
 
         public readonly IReadOnlyList<CipherSuite> SupportedCipherSuites = new List<CipherSuite>
@@ -44,6 +45,22 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         byte[] HandshakeSecret;
         byte[] MasterSecret;
 
+        public SupportedGroupExtension.NamedGroup SelectedNamedGroup
+        {
+            get { return selectedNamedGroup.HasValue ? selectedNamedGroup.Value : throw new ArctiumExceptionInternal(); }
+            private set { selectedNamedGroup = value; }
+        }
+        public CipherSuite SelectedCipherSuite
+        {
+            get { return selectedCipherSuite.HasValue ? selectedCipherSuite.Value : throw new ArctiumExceptionInternal(); }
+            private set { selectedCipherSuite = value; }
+        }
+        public SignatureSchemeListExtension.SignatureScheme SelectedSignatureScheme
+        {
+            get { return selectedSignatureScheme.HasValue ? selectedSignatureScheme.Value : throw new ArctiumExceptionInternal(); }
+            private set { selectedSignatureScheme = value; }
+        }
+
         private static readonly byte[] Tls13Label = Encoding.ASCII.GetBytes("tls13 ");
 
         HashFunction hashFunction;
@@ -55,10 +72,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private CipherSuite suite;
         private Endpoint currentEndpoint;
 
-        public Crypto(Endpoint currentEndpoint)
+        private SupportedGroupExtension.NamedGroup? selectedNamedGroup = null;
+        private CipherSuite? selectedCipherSuite = null;
+        private SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme = null;
+        private Tls13ServerConfig config;
+
+        public Crypto(Endpoint currentEndpoint, Tls13ServerConfig config)
         {
+            this.config = config;
             this.currentEndpoint = currentEndpoint;
-            SetupCryptoAlgorithms(suite, psk, ecdhe_or_dhe);
+            // SetupCryptoAlgorithms(suite, psk, ecdhe_or_dhe);
         }
 
         public void SetupCryptoAlgorithms(CipherSuite suite, byte[] psk, byte[] ecdhe_or_dhe)
@@ -92,6 +115,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             hkdf = new HKDF(new Cryptography.HashFunctions.MAC.HMAC(hkdfHashFunc, new byte[0], 0, 0));
         }
 
+        internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
+        {
+            return true;
+        }
+
         private Crypto(
             CipherSuite suite,
             byte[] binderKey,
@@ -115,6 +143,63 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             ResumptionMasterSecret = resumptionMasterSecret;
         }
 
+        internal byte[] GenerateServerCertificateVerifySignature(List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
+        {
+            if (SelectedSignatureScheme != SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256) throw new Exception();
+
+            // var ext = this.clientHello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms);
+            // ext.Schemes.Single(s => s == SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256);
+
+
+            string contextStr = "TLS 1.3, server CertificateVerify";
+            byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
+
+            List<byte[]> tohash = new List<byte[]>();
+
+            tohash.AddRange(handshakeContext.Select(x => x.Value));
+            // tohash.Add(this.serverConfig.DerEncodedCertificateBytes);
+
+            byte[] hash = TranscriptHash(tohash.ToArray());
+
+            byte[] tosign = new byte[64 + stringBytes.Length + 1 + hash.Length];
+
+            int c = 0;
+
+            MemOps.Memset(tosign, 0, 64, 0x20);
+            c += 64;
+            MemCpy.Copy(stringBytes, 0, tosign, c, stringBytes.Length);
+            c += stringBytes.Length;
+            tosign[c] = 0;
+            c += 1;
+
+            MemCpy.Copy(hash, 0, tosign, c, hash.Length);
+
+            var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(config.CertificatePrivateKey));
+            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hash.Length, new Cryptography.HashFunctions.Hashes.SHA2_256());
+
+            return signature;
+        }
+
+        public void InitMasterSecret2(List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
+        {
+            ByteBuffer ch_sf = new ByteBuffer();
+            ByteBuffer ch_cf = new ByteBuffer();
+
+            for (int i = 0; i < handshakeContext.Count; i++)
+            {
+                ch_cf.Append(handshakeContext[i].Value);
+
+                if (i < handshakeContext.Count - 1)
+                {
+                    ch_sf.Append(handshakeContext[i].Value);
+                }
+            }
+
+            byte[] ch_sf_bytes = MemCpy.CopyToNewArray(ch_sf.Buffer, 0, ch_sf.DataLength);
+            byte[] ch_cf_bytes = MemCpy.CopyToNewArray(ch_cf.Buffer, 0, ch_cf.DataLength);
+
+            InitMasterSecret(ch_sf_bytes, ch_cf_bytes);
+        }
 
         public void InitMasterSecret(byte[] clienthello_serverfinished, byte[] clienthello_clientfinished)
         {
@@ -128,6 +213,68 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             ServerApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "s ap traffic", clienthello_serverfinished);
             ExporterMasterSecret = DeriveSecret(MasterSecret, "exp master", clienthello_serverfinished);
             ResumptionMasterSecret = DeriveSecret(MasterSecret, "res master", clienthello_clientfinished);
+        }
+
+        public byte[] GenerateSharedSecretAndGetKeyShareToSend(KeyShareEntry clientKeyShareEntry)
+        {
+            if (clientKeyShareEntry.NamedGroup != SelectedNamedGroup) throw new Tls13Exception("internal: trying to compute other than selected");
+
+            byte[] privKey = new byte[32];
+            GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 32);
+
+            byte[] keyToSend = RFC7748.X25519_UCoord_9(privKey);
+
+            byte[] sharedSecret = RFC7748.X25519(privKey, clientKeyShareEntry.KeyExchangeRawBytes);
+            var keyShare = new KeyShareServerHelloExtension(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyToSend));
+
+            this.ecdhe_or_dhe = sharedSecret;
+
+            return keyToSend;
+        }
+
+        public void asdf(ClientHello clientHello)
+        { }
+
+        public void SelectSuiteAndEcEcdheGroupAndSigAlgo(ClientHello hello, out bool groupOk, out bool cipherSuiteOk, out bool signAlgoOk)
+        {
+            var supportedGroups = new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
+            var supportedCipherSuites = new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
+            var supportedSignAlgo = new SignatureSchemeListExtension.SignatureScheme[] { SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256 };
+
+            var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList;
+            var clientCiphers = hello.CipherSuites;
+            var clientSignAlgos = hello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms).Schemes;
+
+            int selectedGroupIdx = -1, selectedCipherSuiteIdx = -1, selectedSignAlgoIdx = -1;
+
+            for (int i = 0; i < supportedGroups.Length && selectedGroupIdx == -1; i++)
+                for (int j = 0; j < clientGroups.Length && selectedGroupIdx == -1; j++)
+                {
+                    if(supportedGroups[i] == clientGroups[j]) selectedGroupIdx = i;
+                }
+
+            for (int i = 0; i < supportedCipherSuites.Length && selectedCipherSuiteIdx == -1; i++)
+                for (int j = 0; j < clientCiphers.Length && selectedCipherSuiteIdx == -1; j++)
+                {
+                    if (supportedCipherSuites[i] == clientCiphers[j]) selectedCipherSuiteIdx = i;
+                }
+
+            for (int i = 0; i < supportedSignAlgo.Length && selectedSignAlgoIdx == -1; i++)
+                for (int j = 0; j < clientSignAlgos.Length && selectedSignAlgoIdx == -1; j++)
+                {
+                    if (supportedSignAlgo[i] == clientSignAlgos[j]) selectedSignAlgoIdx = i;
+                }
+
+            groupOk = clientGroups.Length > 0 && selectedGroupIdx < supportedGroups.Length;
+            cipherSuiteOk = clientCiphers.Length > 0 && selectedCipherSuiteIdx < supportedCipherSuites.Length;
+            signAlgoOk = clientSignAlgos.Length > 0 && selectedSignAlgoIdx < supportedSignAlgo.Length;
+
+
+            if (groupOk) this.SelectedNamedGroup = supportedGroups[selectedGroupIdx];
+            if (cipherSuiteOk) this.SelectedCipherSuite = supportedCipherSuites[selectedCipherSuiteIdx];
+            if (signAlgoOk) this.SelectedSignatureScheme = supportedSignAlgo[selectedSignAlgoIdx];
+
+            SetupCryptoAlgorithms(SelectedCipherSuite, null, null);
         }
 
         public byte[] TranscriptHash(params byte[][] m)
@@ -162,7 +309,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             byte[] clientWriteIv, serverWriteIv;
             AEAD serverWriteAead, clientWriteAead;
 
-            switch (this.suite)
+            switch (SelectedCipherSuite)
             {
                 case CipherSuite.TLS_AES_128_GCM_SHA256:
                     byte[] ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);

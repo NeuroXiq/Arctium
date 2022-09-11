@@ -12,15 +12,31 @@ namespace Arctium.Connection.Tls.Tls13.Model
         public byte[] LegacyCompressionMethods;
         public Extension[] Extensions { get; set; }
 
-        public T GetExtension<T>(ExtensionType type) where T : Extension
+        public bool TryGetExtension<T>(ExtensionType type, out T outExtension) where T : Extension
         {
             foreach (var extension in Extensions)
             {
                 if (extension.ExtensionType == type)
-                    return (T)extension;
+                {
+                    outExtension = (T)extension;
+                    return true;
+                }
             }
 
-            throw new InvalidOperationException("Extension missing in list");
+            outExtension = null;
+            return false;
+        }
+
+        public T GetExtension<T>(ExtensionType type) where T : Extension
+        {
+            T extension;
+            
+            if (!TryGetExtension<T>(type, out extension))
+            {
+                throw new InvalidOperationException("Extension missing in list");
+            }
+
+            return extension;
         }
     }
 }
