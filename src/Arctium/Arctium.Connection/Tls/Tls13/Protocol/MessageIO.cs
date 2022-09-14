@@ -15,7 +15,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private Validate validate;
         private ModelDeserialization clientModelDeserialization;
         private ModelSerialization modelSerialization;
-        private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
+        // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
+        private HandshakeContext handshakeContext;
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
@@ -24,7 +25,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public MessageIO(Stream networkStream,
             Validate validate,
-            List<KeyValuePair<HandshakeType, byte[]>> handshakeContext)
+            HandshakeContext handshakeContext)
         {
             this.recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
 
@@ -74,14 +75,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return false;
         }
 
-        public void DropCurrentMessage()
-        {
-
-        }
-
         public void WriteApplicationData(byte[] buffer, long offset, long length)
         {
-
+            recordLayer.Write(ContentType.ApplicationData, buffer, offset, length);
         }
 
         public void WriteHandshake(object handshakeMsg)
@@ -91,20 +87,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             modelSerialization.ToBytes(handshakeMsg);
 
             var type = (HandshakeType)(modelSerialization.SerializedData[0]);
-            
-            handshakeContext.Add(
-                new KeyValuePair<HandshakeType, byte[]>(type,
-                MemCpy.CopyToNewArray(modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength)));
+
+
+            HandshakeContextAdd(type, modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength);
+            // handshakeContext.Add(
+            //     new KeyValuePair<HandshakeType, byte[]>(type,
+            //     MemCpy.CopyToNewArray(modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength)));
 
             recordLayer.Write(ContentType.Handshake, modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength);
-
         }
 
         public T LoadHandshakeMessage<T>(bool isInitialClientHello = false)
         {
             int loaded = 0;
 
-            LoadHandshake(isInitialClientHello);
+            LoadHandshake();
 
             int constHandshakeFieldsCount = 4;
 
@@ -115,7 +112,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
             // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
-            HandshakeContextAdd(type, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+            HandshakeContextAdd(type, buffer, 0, len + 4);
 
             byteBuffer.TrimStart(len + 4);
             MemOps.MemsetZero(byteBuffer.Buffer, byteBuffer.DataLength, byteBuffer.Buffer.Length - byteBuffer.DataLength);
@@ -126,27 +123,39 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public void LoadCertificateMessage(CertificateType type)
         {
             throw new Exception("need to add to context");
-            LoadHandshake(true);
+            LoadHandshake();
             clientModelDeserialization.DeserializeCertificate(buffer, 0, type);
 
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
             // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
 
-            HandshakeContextAdd(HandshakeType.Certificate, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+            // HandshakeContextAdd(HandshakeType.Certificate, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+            HandshakeContextAdd(HandshakeType.Certificate, byteBuffer.Buffer, 0, len);
 
             byteBuffer.TrimStart(len + 4);
         }
 
-        void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
+        void HandshakeContextAdd(HandshakeType type, byte[] buffer, long offset, long length)
+        {
+            handshakeContext.Add(type, buffer, (int)offset, (int)length);
+
+            if (type == HandshakeType.ClientHello)
+            {
+                int pskInClientHelloOffset = clientModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(modelSerialization.SerializedData, 0);
+                handshakeContext.SetClientHelloPskExtensionOffset(pskInClientHelloOffset);
+            }
+        }
+
+        // void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
 
         internal void ChangeRecordLayerCrypto(Crypto crypto, Crypto.RecordLayerKeyType keyType) => crypto.ChangeRecordLayerCrypto(recordLayer, keyType);
 
-        private void LoadHandshake(bool isInitialClientHello = false)
+        private void LoadHandshake()
         {
             while (byteBuffer.DataLength < 4)
             {
-                var recordInfo = LoadRecord(isInitialClientHello);
+                var recordInfo = LoadRecord();
                 validate.Handshake.RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(recordInfo.ContentType);
             }
 
@@ -157,20 +166,20 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             while (byteBuffer.DataLength < 4 + msgLength)
             {
-                LoadRecord(isInitialClientHello);
+                LoadRecord();
             }
 
             currentMessageLength = msgLength;
         }
 
-        private RecordLayer.RecordInfo LoadRecord(bool isInitialClientHello = false)
+        private RecordLayer.RecordInfo LoadRecord()
         {
-            RecordLayer.RecordInfo recordInfo = recordLayer.Read(isInitialClientHello);
+            RecordLayer.RecordInfo recordInfo = recordLayer.Read();
             validate.Handshake.NotZeroLengthFragmentsOfHandshake(recordInfo.Length);
 
             // if (recordInfo.ContentType == ContentType.Alert) Console.WriteLine(((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString());
 
-            if (recordInfo.ContentType == ContentType.Alert) throw new Exception("alert: " + ((AlertDescription)recordLayer.RecordFragmentBytes[0]).ToString());
+            if (recordInfo.ContentType == ContentType.Alert) throw new Exception("alert: " + ((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString());
 
             byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
             return recordInfo;

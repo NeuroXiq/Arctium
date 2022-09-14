@@ -41,7 +41,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             var errorHandler = new ValidationErrorHandler();
             this.RecordLayer = new RecordLayerValidate(errorHandler);
             this.Handshake = new HandshakeValidate(errorHandler);
-            this.Extensions = new ExtensionsValidate();
+            this.Extensions = new ExtensionsValidate(errorHandler);
             this.ClientHello = new ClientHelloValidate(errorHandler);
             Finished = new FinishedValidate(errorHandler);
 
@@ -388,8 +388,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
         }
 
-        public class ExtensionsValidate
+        public class ExtensionsValidate : ValidateBase
         {
+            public ExtensionsValidate(ValidationErrorHandler handler) : base(handler, "Extensions")
+            {
+            }
+
             public void ThrowGeneral(bool condition, string msg)
             {
                 if (condition) ThrowGeneralException(msg);

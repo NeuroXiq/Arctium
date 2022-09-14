@@ -14,8 +14,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private Validate validate;
         private Endpoint currentEndpoint;
         private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserialize;
-        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserializeClient;
-        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserializeServer;
+        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserializeOnClientSide;
+        private Dictionary<ExtensionType, Func<byte[], int, Extension>> extensionsDeserializeOnServerSide;
         private Dictionary<Type, Func<byte[], int, object>> messageDeserialize;
 
         public ModelDeserialization(Validate validate)
@@ -33,16 +33,18 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [ExtensionType.ServerName] = DeserializeExtension_ServerName,
             };
 
-            extensionsDeserializeClient = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
+            extensionsDeserializeOnClientSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
             {
                 [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions_Client,
                 [ExtensionType.KeyShare] = DeserializeExtension_KeyShare_Client,
             };
 
-            extensionsDeserializeServer = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
+            extensionsDeserializeOnServerSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
             {
                 [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions_Server,
                 [ExtensionType.KeyShare] = DeserializeExtension_KeyShare_Server,
+                [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Server,
+                [ExtensionType.PskKeyExchangeModes] = DeserializeExtension_PskKeyExchangeModes_Server
             };
 
             messageDeserialize = new Dictionary<Type, Func<byte[], int, object>>()
@@ -53,6 +55,53 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(CertificateVerify)] = DeserializeCertificateVerify,
                 [typeof(Finished)] = DeserializeFinished,
             };
+        }
+
+        public int HelperGetOffsetOfPskExtensionInClientHello(byte[] buffer, int clientHelloOffset)
+        {
+            int msgLen = ToInt3BytesBE(buffer, clientHelloOffset + 1);
+            int endOffs = clientHelloOffset + msgLen + 4;
+
+            int o = clientHelloOffset;
+            // random + protocol ver
+            o += 32 + 2;
+
+            // leg sess id
+            o += buffer[o] + 1;
+
+            int suitesLen = MemMap.ToUShort2BytesBE(buffer, o);
+            o += suitesLen + 2;
+
+            // comp meths
+            o += 1 + buffer[o];
+
+            // points to extensions len vector
+            // move to first extension
+            o += 2;
+
+            while (o < endOffs)
+            {
+                ExtensionType type = (ExtensionType)MemMap.ToUShort2BytesBE(buffer, o);
+                int extLen = MemMap.ToUShort2BytesBE(buffer, o + 2);
+
+                if (type == ExtensionType.PreSharedKey)
+                {
+                    return o;
+                }
+
+                o += 4 + extLen;
+            }
+
+            return -1;
+        }
+
+        private Extension DeserializeExtension_PskKeyExchangeModes_Server(byte[] buf, int offs)
+        {
+            int length;
+            RangeCursor cursor;
+            ExtensionDeserializeSetup(buf, offs, out cursor, out length);
+
+
         }
 
         private Extension DeserializeExtension_KeyShare_Client(byte[] buf, int offs)
@@ -198,6 +247,74 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             validate.ClientHello.AlertFatalDecodeError(!cursor.OnMaxPosition, "length" ,"after decoding length doesn't match");
 
             return msg;
+        }
+
+        private Extension DeserializeExtension_PreSharedKey_Server(byte[] buffer, int offset)
+        {
+            int length;
+            RangeCursor cursor, identityCursor, binderEntryCursor;
+            ExtensionDeserializeSetup(buffer, offset, out cursor, out length);
+
+            int identitiesLen;
+            int bindersLen;
+            List<PreSharedKeyClientHelloExtension.PskIdentity> identities = new List<PreSharedKeyClientHelloExtension.PskIdentity>();
+            List<byte[]> binders = new List<byte[]>();
+
+            cursor.ThrowIfShiftOutside(1);
+            identitiesLen = MemMap.ToUShort2BytesBE(buffer, cursor);
+            identityCursor = new RangeCursor(cursor + 1, cursor + 1 + identitiesLen);
+            cursor += (identitiesLen + 2);
+
+            cursor.ThrowIfShiftOutside(1);
+            bindersLen = MemMap.ToUShort2BytesBE(buffer, cursor);
+            binderEntryCursor = new RangeCursor(cursor + 1, cursor + 1 + bindersLen); 
+            cursor += (bindersLen + 2) - 1;
+
+            validate.Extensions.AlertFatalDecodeError(!cursor.OnMaxPosition, "extension_length", "invalid extension length");
+            validate.Extensions.AlertFatalDecodeError(identitiesLen < Tls13Const.PreSharedKeyExtension_IdentitiesMinLength, "identities vector length", "less than min");
+            validate.Extensions.AlertFatalDecodeError(bindersLen < Tls13Const.PreSharedKeyExtension_BindersMinLength, "binders vector length", "less than min");
+
+            while (!identityCursor.OnMaxPosition)
+            {
+                identityCursor++;
+                identityCursor.ThrowIfShiftOutside(1);
+
+                int identityLen = MemMap.ToUShort2BytesBE(buffer, identityCursor);
+                identityCursor += 2;
+
+                byte[] identity = new byte[identityLen];
+                uint obfuscatedTicketAge;
+
+                validate.Extensions.AlertFatalDecodeError(identityLen < Tls13Const.PreSharedKeyExtension_IdentityMinLength, "identity_length", "minimum length 1");
+
+                identityCursor.ThrowIfShiftOutside(identityLen - 1);
+                MemCpy.Copy(buffer, identityCursor, identity, 0, identityLen);
+
+                identityCursor += identityLen;
+                identityCursor.ThrowIfShiftOutside(3);
+                obfuscatedTicketAge = MemMap.ToUInt4BytesBE(buffer, identityCursor);
+
+                identityCursor += 3;
+
+                identities.Add(new PreSharedKeyClientHelloExtension.PskIdentity(identity, obfuscatedTicketAge));
+            }
+
+            while (!binderEntryCursor.OnMaxPosition)
+            {
+                binderEntryCursor++;
+                int binderLen = buffer[binderEntryCursor];
+                byte[] binderEntry = new byte[binderLen];
+
+                validate.Extensions.AlertFatalDecodeError(binderLen < Tls13Const.PreSharedKeyExtension_PskBinderEntryMinLength, "binder entry vector len", "less than min");
+                binderEntryCursor++;
+
+                MemCpy.Copy(buffer, binderEntryCursor, binderEntry, 0, binderLen);
+                binders.Add(binderEntry);
+
+                binderEntryCursor += binderLen - 1;
+            }
+
+            return new PreSharedKeyClientHelloExtension(identities.ToArray(), binders.ToArray());
         }
 
         private Extension DeserializeExtension_SupportedVersions_Client(byte[] buf, int offs)
@@ -467,13 +584,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             ExtensionDeserializeResult result;
             Extension extension;
 
-            if (currentEndpoint == Endpoint.Client && extensionsDeserializeClient.ContainsKey(extensionType))
+            if (currentEndpoint == Endpoint.Client && extensionsDeserializeOnClientSide.ContainsKey(extensionType))
             {
-                extension = extensionsDeserializeClient[extensionType](buffer, cursor);
+                extension = extensionsDeserializeOnClientSide[extensionType](buffer, cursor);
             }
-            else if (currentEndpoint == Endpoint.Server && extensionsDeserializeServer.ContainsKey(extensionType))
+            else if (currentEndpoint == Endpoint.Server && extensionsDeserializeOnServerSide.ContainsKey(extensionType))
             {
-                extension = extensionsDeserializeServer[extensionType](buffer, cursor);
+                extension = extensionsDeserializeOnServerSide[extensionType](buffer, cursor);
             }
             else if (!extensionsDeserialize.ContainsKey(extensionType))
             {
@@ -739,15 +856,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
         }
 
-
         public struct ExtensionDeserializeResult
         {
             public bool IsRecognized;
             public int Length;
             public Extension Extension;
         }
-
-
 
         #endregion
 

@@ -36,6 +36,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(CertificateVerify)] = SerializeCertificateVerify,
                 [typeof(Finished)] = SerializeFinished,
                 [typeof(EncryptedExtensions)] = SerializeEncryptedExtensions,
+                [typeof(NewSessionTicket)] = SerializeNewSessionTicket,
             };
 
             singleExtensionSerializers = new Dictionary<Type, Action<object>>
@@ -43,7 +44,50 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(ServerSupportedVersionsExtension)] = SerializeServerSupportedVersionExtension,
                 [typeof(KeyShareServerHelloExtension)] = SerializeKeyShareServerHelloExtension,
                 [typeof(ProtocolNameListExtension)] = SerializeProtocolNameListExtension,
+                [typeof(PreSharedKeyServerHelloExtension)] = Serialize_Extension_PreSharedKeyServerHelloExtension,
             };
+        }
+
+        private void Serialize_Extension_PreSharedKeyServerHelloExtension(object obj)
+        {
+            PreSharedKeyServerHelloExtension ext = (PreSharedKeyServerHelloExtension)obj;
+
+            int offset = tempSerializedExtension.OutsideAppend(2);
+
+            MemMap.ToBytes1UShortBE(ext.SelectedIdentity, tempSerializedExtension.Buffer, offset);
+        }
+
+        private void SerializeNewSessionTicket(object obj)
+        {
+            NewSessionTicket ticket = (NewSessionTicket)obj;
+
+            buffer.Append((byte)(HandshakeType.NewSessionTicket));
+            int msgLenOffs = buffer.OutsideAppend(3);
+            int msgLen = -1;
+
+            int ticketLifetimeOffs = buffer.OutsideAppend(4);
+            int ticketAgeAddOffs = buffer.OutsideAppend(4);
+            int ticketNonceLenOffs = buffer.OutsideAppend(1);
+            int ticketNonceOffs = buffer.OutsideAppend(ticket.TicketNonce.Length);
+            int ticketLenOffs = buffer.OutsideAppend(2);
+            int ticketOffs = buffer.OutsideAppend(ticket.Ticket.Length);
+            int extensionsLenOffs = buffer.OutsideAppend(2);
+            int extensionsLen = -1;
+
+            foreach (var extension in ticket.Extensions) ExtensionToBytes(extension);
+
+            extensionsLen = (int)(SerializedDataLength - extensionsLenOffs - 2);
+
+            MemMap.ToBytes1UIntBE(ticket.TicketLifetime, SerializedData, ticketLifetimeOffs);
+            MemMap.ToBytes1UIntBE(ticket.TicketAgeAdd, SerializedData, ticketAgeAddOffs);
+            SerializedData[ticketNonceLenOffs] = (byte)ticket.TicketNonce.Length;
+            MemCpy.Copy(ticket.TicketNonce, 0, SerializedData, ticketNonceOffs, ticket.TicketNonce.Length);
+            MemMap.ToBytes1UShortBE((ushort)ticket.Ticket.Length, SerializedData, ticketLenOffs);
+            MemCpy.Copy(ticket.Ticket, 0, SerializedData, ticketOffs, ticket.Ticket.Length);
+            MemMap.ToBytes1UShortBE((ushort)extensionsLen, SerializedData, extensionsLenOffs);
+
+            msgLen = (int)(SerializedDataLength - msgLenOffs - 3);
+            Set3Bytes(msgLen, msgLenOffs);
         }
 
         private void SerializeFinished(object obj)

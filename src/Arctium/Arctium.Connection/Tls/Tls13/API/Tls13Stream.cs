@@ -39,13 +39,16 @@ namespace Arctium.Connection.Tls.Tls13.API
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (protocol.ApplicationDataLength == 0 || applicationDataCursor == protocol.ApplicationDataLength)
+            {
+                applicationDataCursor = 0;
                 protocol.LoadNextApplicationData();
+            }
 
             int maxRead = protocol.ApplicationDataLength - applicationDataCursor;
             
             maxRead = maxRead < count ? maxRead : count;
 
-            MemCpy.Copy(protocol.ApplicationDataBuffer, applicationDataCursor, buffer, 0, maxRead);
+            MemCpy.Copy(protocol.ApplicationDataBuffer, applicationDataCursor, buffer, offset, maxRead);
 
             applicationDataCursor += maxRead;
 
@@ -64,7 +67,7 @@ namespace Arctium.Connection.Tls.Tls13.API
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            // protocol.Write(buffer, offset, count);
+            protocol.WriteApplicationData(buffer, offset, count);
         }
     }
 }

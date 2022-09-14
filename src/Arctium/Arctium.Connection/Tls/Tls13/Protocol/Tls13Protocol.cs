@@ -22,7 +22,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private BufferForStream streamBuffer;
         private RecordLayer recordLayer;
         private Validate validate;
-        private List<KeyValuePair<HandshakeType, byte[]>> handshakeContexta = new List<KeyValuePair<HandshakeType, byte[]>>();
+        HandshakeContext handshakeContexta = new HandshakeContext();
+        // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContexta = new List<KeyValuePair<HandshakeType, byte[]>>();
         private List<byte[]> handshakeContext = new List<byte[]>();
         private Crypto crypto;
 
@@ -87,8 +88,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             //serializer.ToBytes(certVerify);
 
-            crypto.InitEarlySecret(handshakeContext[0]);
-            crypto.InitHandshakeSecret(handshakeContext.Take(2).ToList());
+            // crypto.InitEarlySecret(handshakeContext[0]);
+            // crypto.InitHandshakeSecret(handshakeContext.Take(2).ToList());
             
             crypto.ChangeRecordLayerCrypto(recordLayer, Crypto.RecordLayerKeyType.Handshake);
 
@@ -112,7 +113,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             recordLayer.Write(ContentType.Handshake, serializer.SerializedData, 0, serializer.SerializedDataLength);
             handshakeContext.Add(MemCpy.CopyToNewArray(serializer.SerializedData, 0, serializer.SerializedDataLength));
 
-            byte[] finishedVerData = crypto.ServerFinished(handshakeContext);
+            byte[] finishedVerData = null; // crypto.ServerFinished(handshakeContext);
             var finished = new Finished(finishedVerData);
             serializer.Reset();
             serializer.ToBytes(finished);

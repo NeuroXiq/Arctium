@@ -3,15 +3,19 @@ using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
+using System.Net.Sockets;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
 {
     class RecordLayer
     {
-        const int MaxRecordContextLength = 5;
-        const int MaxTlsPlaintextLength = 2 << 14;
+        const int RecordHeaderBytesCount = 5;
+        const int MaxTlsPlaintextLength = 1 << 14;
         const int WriteBufferLength = MaxTlsPlaintextLength + 1 + 2 + 2;
         const byte LegacyVersion = 0x03;
+
+        const int EncryptedRecordMaxContentLength = (1 << 14) + 256;
+        
         const ushort RecordLegacyVersion = 0x0303;
 
         private BufferForStream bufferForStream;
@@ -45,7 +49,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.plaintextReadBuffer = new byte[MaxTlsPlaintextLength];
             readSequenceNumber = 0;
             writeSequenceNumber = 0;
-            encryptedWriteBuffer = new byte[MaxTlsPlaintextLength];
+
+            encryptedWriteBuffer = new byte[EncryptedRecordMaxContentLength + RecordHeaderBytesCount];
 
             SetBackwardCompatibilityMode(false, false);
         }
@@ -64,7 +69,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.State = state;
         }
 
-        public RecordInfo Read(bool isInitialClientHello = false)
+        public RecordInfo Read()
         {
             int firstThreeFields = 5;
             ContentType contentType;
@@ -133,7 +138,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void Write(ContentType contentType, byte[] buffer, long offset, long length)
         {
-            int chunkLen = MaxTlsPlaintextLength; // MaxRecordContextLength;
+            int chunkLen = 0x1000; //MaxTlsPlaintextLength; // MaxRecordContextLength;
             // int chunks = (int)(length + chunkLen) / chunkLen;
             long remToWrite = length;
             long start = offset;

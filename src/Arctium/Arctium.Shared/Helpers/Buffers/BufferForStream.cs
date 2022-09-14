@@ -84,5 +84,15 @@ namespace Arctium.Shared.Helpers.Buffers
 
             Buffer = newBuffer;
         }
+
+        public bool DataAvailable()
+        {
+            if (DataLength == 0)
+            {
+                int count = stream.Read(Buffer, 0, 1);
+            }
+
+            return true;
+        }
     }
 }
