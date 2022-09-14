@@ -101,7 +101,22 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             RangeCursor cursor;
             ExtensionDeserializeSetup(buf, offs, out cursor, out length);
 
+            validate.Extensions.AlertFatalDecodeError(length < 2, "PskKeyExchangeModes", "extension length < 2");
 
+            int keModesLen = buf[cursor];
+            List<PreSharedKeyExchangeModeExtension.PskKeyExchangeMode> modes = new List<PreSharedKeyExchangeModeExtension.PskKeyExchangeMode>();
+
+            validate.Extensions.AlertFatalDecodeError(keModesLen < Tls13Const.PskKeyExchangeModes_KeModesMinVectorLength, "PskKeyExchangeModes.ke_modes vector len", "minimum is 1");
+
+            for (int i = 0; i < keModesLen; i++)
+            {
+                cursor++;
+                modes.Add((PreSharedKeyExchangeModeExtension.PskKeyExchangeMode)buf[cursor]);
+            }
+
+            validate.Extensions.AlertFatalDecodeError(!cursor.OnMaxPosition, "PskKeyExchangeModes.extension_length vector length", "cursor not on max position");
+
+            return new PreSharedKeyExchangeModeExtension(modes.ToArray());
         }
 
         private Extension DeserializeExtension_KeyShare_Client(byte[] buf, int offs)

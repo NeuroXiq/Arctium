@@ -22,6 +22,7 @@
         public const int PreSharedKeyExtension_PskBinderEntryMinLength = 32;
         public const int PreSharedKeyExtension_IdentityMinLength = 1;
 
-
+        /* Pre Shared Key Exchange Modes */
+        public const int PskKeyExchangeModes_KeModesMinVectorLength = 1;
     }
 }

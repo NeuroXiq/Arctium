@@ -179,7 +179,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             uint lifetime = 3 * 60;
             uint ageAdd = (uint)System.Environment.TickCount;
             byte[] nonce = Guid.NewGuid().ToByteArray();
-            byte[] ticket = new byte[2];
+            byte[] ticket = Guid.NewGuid().ToByteArray();
             ticket[0] = ((byte)serverContext.PskTickets.Count); ticket[1] = (byte)(serverContext.PskTickets.Count >> 8);
 
             NewSessionTicket newSessTicket = new NewSessionTicket(lifetime, ageAdd, nonce, ticket, new Extension[0]);
@@ -193,13 +193,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private void Handshake_HandshakeCompletedSuccessfully()
         {
-            if (context.IsPskSessionResumption)
-            {
-                var x = 0;
-            }
-
             if (config.UseNewSessionTicketPsk)
             {
+                for (int i = 0; i < 20; i++) PostHandshake_NewSessionTicket();
                 CommandQueue.Enqueue(ServerProcolCommand.PostHandshake_NewSessionTicket);
                 State = ServerProtocolState.PostHandshake;
             }
@@ -207,6 +203,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             {
                 //CommandQueue.Enqueue(ServerProcolCommand.BreakLoopWaitForOtherCommand);
                 State = ServerProtocolState.Connected;
+            }
+
+            if (context.IsPskSessionResumption)
+            {
+                var x = 0;
             }
         }
 
@@ -307,11 +308,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private void ServerHelloPsk()
         {
+            context.IsPskSessionResumption = true;
             var x = context.ClientHello.GetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey); //.Extensions.Select(r => r.ExtensionType == ).First();
 
 
-            UnknowExtension extMode;
-            context.ClientHello.TryGetExtension<UnknowExtension>(ExtensionType.PskKeyExchangeModes, out extMode);
+            PreSharedKeyExchangeModeExtension extMode;
+            context.ClientHello.TryGetExtension<PreSharedKeyExchangeModeExtension>(ExtensionType.PskKeyExchangeModes, out extMode);
 
 
 
@@ -328,7 +330,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 {
                     if (MemOps.Memcmp(this.serverContext.PskTickets[j].Ticket.Ticket, x.Identities[i].Identity))
                     {
-                        clientSelected = (short)j;
+                        clientSelected = (short)i;
                         serverSelected = this.serverContext.PskTickets[j];
                     }
                 }
@@ -368,7 +370,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             messageIO.SetBackwardCompatibilityMode(true, true);
 
-            context.IsPskSessionResumption = true;
 
             // messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength);
 
