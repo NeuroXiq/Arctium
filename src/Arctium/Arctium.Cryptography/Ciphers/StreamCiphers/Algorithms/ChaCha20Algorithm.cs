@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
+namespace Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms
 {
     public static class ChaCha20Algorithm
     {
