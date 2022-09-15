@@ -73,7 +73,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             };
 
             this.crypto = new Crypto(Endpoint.Server, null);
-            crypto.SetupCryptoAlgorithms(CipherSuite.TLS_AES_128_GCM_SHA256, null, sharedSecret);
+            crypto.SetupCryptoAlgorithms(CipherSuite.TLS_AES_128_GCM_SHA256);
+            crypto.Ecdhe_or_dhe_SharedSecret = sharedSecret;
 
             ServerHello serverHello = new ServerHello(new byte[32], hello.LegacySessionId, CipherSuite.TLS_AES_128_GCM_SHA256, extensions);
             for (int i = 0; i < 32; i++) serverHello.Random[i] = (byte)i;

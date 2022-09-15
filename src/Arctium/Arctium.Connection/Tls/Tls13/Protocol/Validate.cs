@@ -199,6 +199,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 }
 
                 AlertFatal(!extensions.Contains(ExtensionType.SupportedVersions), AlertDescription.MissingExtension, "Missing extension: SupportedVersions");
+                AlertFatal(extensions.Contains(ExtensionType.PreSharedKey) && !extensions.Contains(ExtensionType.PskKeyExchangeModes),
+                    AlertDescription.MissingExtension,
+                    "PskKeyExchangeModes extension is required if PreSharedKey extension is present on the list");
 
                 ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
                 bool tls13NotFound = true;

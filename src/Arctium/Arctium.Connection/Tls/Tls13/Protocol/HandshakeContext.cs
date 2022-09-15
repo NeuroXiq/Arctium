@@ -44,22 +44,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             MessagesInfo.Add(new MessageInfo(type, o, length, byteBuffer.DataLength));
         }
 
-        //public byte[] GetBytesToMessage(HandshakeType type)
-        //{
-        //    int end = -1;
-
-        //    for (int i = 0; i < MessagesInfo.Count && end == -1; i++)
-        //        if (MessagesInfo[i].HandshakeType == type) end = i;
-            
-        //    if (end == -1) throw new ArctiumExceptionInternal();
-
-        //    MessageInfo info = MessagesInfo[end];
-
-        //    int length = info.Offset + info.Length;
-
-        //    return MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, length);
-        //}
-
         public void SetClientHelloPskExtensionOffset(int clientHelloPskExtensionOffset)
         {
             ClientHelloPskOffset = clientHelloPskExtensionOffset;

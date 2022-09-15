@@ -5,6 +5,12 @@
         UnexpectedMessage = 10,
         BadRecordMac = 20,
         RecordOverflow = 22,
+        
+        /// <summary>
+        ///  Receipt of a "handshake_failure" alert message
+        /// indicates that the sender was unable to negotiate an acceptable
+        /// set of security parameters given the options available.
+        /// </summary>
         HandshakeFailure = 40,
         BadCertificate = 42,
         UnsupportedCertificate = 43,

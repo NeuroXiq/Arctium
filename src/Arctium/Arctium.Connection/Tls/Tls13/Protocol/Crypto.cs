@@ -60,6 +60,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             get { return selectedSignatureScheme.HasValue ? selectedSignatureScheme.Value : throw new ArctiumExceptionInternal(); }
             private set { selectedSignatureScheme = value; }
         }
+        public string SelectedCipherSuiteHashFunctionName
+        {
+            get { return selectedCipherSuiteHashFunctionName != null ? hashFunction.GetType().Name : throw new ArctiumExceptionInternal(); }
+        }
 
         private static readonly byte[] Tls13Label = Encoding.ASCII.GetBytes("tls13 ");
 
@@ -75,6 +79,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private SupportedGroupExtension.NamedGroup? selectedNamedGroup = null;
         private CipherSuite? selectedCipherSuite = null;
         private SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme = null;
+        private string selectedCipherSuiteHashFunctionName = null;
+
         private Tls13ServerConfig config;
 
         public Crypto(Endpoint currentEndpoint, Tls13ServerConfig config)
@@ -84,10 +90,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             // SetupCryptoAlgorithms(suite, psk, ecdhe_or_dhe);
         }
 
-        public void SetupCryptoAlgorithms(CipherSuite suite, byte[] psk, byte[] ecdhe_or_dhe)
+        public void SetupCryptoAlgorithms(CipherSuite suite)
         {
             this.psk = psk;
-            this.Ecdhe_or_dhe_SharedSecret = ecdhe_or_dhe;
+            //this.Ecdhe_or_dhe_SharedSecret = ecdhe_or_dhe;
             this.suite = suite;
             this.selectedCipherSuite = suite;
 
@@ -114,6 +120,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
 
             hkdf = new HKDF(new Cryptography.HashFunctions.MAC.HMAC(hkdfHashFunc, new byte[0], 0, 0));
+            selectedCipherSuiteHashFunctionName = hashFunction.GetType().Name;
+            selectedCipherSuite = suite;
         }
 
         internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, HandshakeContext handshakeContext)
@@ -227,14 +235,18 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public byte[] GenerateSharedSecretAndGetKeyShareToSend(KeyShareEntry clientKeyShareEntry)
         {
-            if (clientKeyShareEntry.NamedGroup != SelectedNamedGroup) throw new Tls13Exception("internal: trying to compute other than selected");
+            if (clientKeyShareEntry.NamedGroup != SelectedNamedGroup) throw new ArctiumExceptionInternal();
+
+            var clientShare = clientKeyShareEntry;
+
+            if (clientShare == null) throw new ArctiumExceptionInternal("internal: trying to compute other than selected");
 
             byte[] privKey = new byte[32];
             GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 32);
 
             byte[] keyToSend = RFC7748.X25519_UCoord_9(privKey);
 
-            byte[] sharedSecret = RFC7748.X25519(privKey, clientKeyShareEntry.KeyExchangeRawBytes);
+            byte[] sharedSecret = RFC7748.X25519(privKey, clientShare.KeyExchangeRawBytes);
             var keyShare = new KeyShareServerHelloExtension(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyToSend));
 
             this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
@@ -254,23 +266,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             this.psk = HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, 32);
         }
 
-        public void SelectSuiteAndEcEcdheGroupAndSigAlgo(ClientHello hello, out bool groupOk, out bool cipherSuiteOk, out bool signAlgoOk)
+        public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
         {
-            var supportedGroups = new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
             var supportedCipherSuites = new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
-            var supportedSignAlgo = new SignatureSchemeListExtension.SignatureScheme[] { SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256 };
-
-            var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList;
             var clientCiphers = hello.CipherSuites;
-            var clientSignAlgos = hello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms).Schemes;
-
-            int selectedGroupIdx = -1, selectedCipherSuiteIdx = -1, selectedSignAlgoIdx = -1;
-
-            for (int i = 0; i < supportedGroups.Length && selectedGroupIdx == -1; i++)
-                for (int j = 0; j < clientGroups.Length && selectedGroupIdx == -1; j++)
-                {
-                    if(supportedGroups[i] == clientGroups[j]) selectedGroupIdx = i;
-                }
+            int selectedCipherSuiteIdx = -1;
 
             for (int i = 0; i < supportedCipherSuites.Length && selectedCipherSuiteIdx == -1; i++)
                 for (int j = 0; j < clientCiphers.Length && selectedCipherSuiteIdx == -1; j++)
@@ -278,22 +278,53 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     if (supportedCipherSuites[i] == clientCiphers[j]) selectedCipherSuiteIdx = i;
                 }
 
+            cipherSuiteOk = clientCiphers.Length > 0 && selectedCipherSuiteIdx < supportedCipherSuites.Length;
+            if (cipherSuiteOk) this.SetupCryptoAlgorithms(supportedCipherSuites[selectedCipherSuiteIdx]);
+        }
+
+        public void SelectEcEcdheGroup(ClientHello hello, out bool groupOk)
+        {
+            var supportedGroups = new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
+            var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList;
+            int selectedGroupIdx = -1;
+
+            for (int i = 0; i < supportedGroups.Length && selectedGroupIdx == -1; i++)
+                for (int j = 0; j < clientGroups.Length && selectedGroupIdx == -1; j++)
+                {
+                    if (supportedGroups[i] == clientGroups[j]) selectedGroupIdx = i;
+                }
+
+            groupOk = clientGroups.Length > 0 && selectedGroupIdx < supportedGroups.Length;
+            if (groupOk) this.SelectedNamedGroup = supportedGroups[selectedGroupIdx];
+        }
+
+        public void SelectSigAlgo(ClientHello hello, out bool signAlgoOk)
+        {
+            var supportedSignAlgo = new SignatureSchemeListExtension.SignatureScheme[] { SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256 };
+            var clientSignAlgos = hello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms).Schemes;
+
+            int selectedSignAlgoIdx = -1;
+
             for (int i = 0; i < supportedSignAlgo.Length && selectedSignAlgoIdx == -1; i++)
                 for (int j = 0; j < clientSignAlgos.Length && selectedSignAlgoIdx == -1; j++)
                 {
                     if (supportedSignAlgo[i] == clientSignAlgos[j]) selectedSignAlgoIdx = i;
                 }
 
-            groupOk = clientGroups.Length > 0 && selectedGroupIdx < supportedGroups.Length;
-            cipherSuiteOk = clientCiphers.Length > 0 && selectedCipherSuiteIdx < supportedCipherSuites.Length;
             signAlgoOk = clientSignAlgos.Length > 0 && selectedSignAlgoIdx < supportedSignAlgo.Length;
 
-
-            if (groupOk) this.SelectedNamedGroup = supportedGroups[selectedGroupIdx];
-            if (cipherSuiteOk) this.SelectedCipherSuite = supportedCipherSuites[selectedCipherSuiteIdx];
             if (signAlgoOk) this.SelectedSignatureScheme = supportedSignAlgo[selectedSignAlgoIdx];
+        }
 
-            SetupCryptoAlgorithms(SelectedCipherSuite, null, null);
+
+
+        public void SelectSuiteAndEcEcdheGroupAndSigAlgo(ClientHello hello, out bool groupOk, out bool cipherSuiteOk, out bool signAlgoOk)
+        {
+            SelectCipherSuite(hello, out cipherSuiteOk);
+            SelectSigAlgo(hello, out signAlgoOk);
+            SelectEcEcdheGroup(hello, out groupOk);
+
+            SetupCryptoAlgorithms(SelectedCipherSuite);
         }
 
         public byte[] TranscriptHash(params byte[][] m)

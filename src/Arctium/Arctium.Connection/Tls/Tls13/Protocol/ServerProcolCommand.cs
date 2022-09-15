@@ -6,7 +6,9 @@
         Start,
 
         Handshake_FirstClientHello,
-        Handshake_ClientHello,
+        Handshake_ClientHello1,
+        Handshake_HelloRetryRequest,
+        Handshake_ClientHello2,
         Handshake_ServerHelloNotPsk,
         Handshake_ServerHelloPsk,
         Handshake_EncryptedExtensions,
