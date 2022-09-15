@@ -223,6 +223,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private void LoadApplicationDataNotReceivedApplicationDataContent()
         {
+            // TODO for example KeyUpdate handshake message
             throw new NotImplementedException();
         }
 

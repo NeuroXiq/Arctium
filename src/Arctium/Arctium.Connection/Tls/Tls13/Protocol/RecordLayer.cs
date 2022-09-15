@@ -51,6 +51,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             writeSequenceNumber = 0;
 
             encryptedWriteBuffer = new byte[EncryptedRecordMaxContentLength + RecordHeaderBytesCount];
+            State = RecordLayerState.EncryptionOff;
 
             SetBackwardCompatibilityMode(false, false);
         }
@@ -102,7 +103,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             if (aeadWrite != null && contentType == ContentType.ApplicationData)
             {
-                // readSequenceNumber = 0;
                 ComputeReadNonce();
                 int authTagLen = aeadRead.AuthenticationTagLengthBytes;
                 int encryptedDataLen = length - authTagLen;
@@ -138,7 +138,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void Write(ContentType contentType, byte[] buffer, long offset, long length)
         {
-            int chunkLen = 0x1000; //MaxTlsPlaintextLength; // MaxRecordContextLength;
+            int chunkLen = Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength; //MaxTlsPlaintextLength; // MaxRecordContextLength;
             // int chunks = (int)(length + chunkLen) / chunkLen;
             long remToWrite = length;
             long start = offset;
