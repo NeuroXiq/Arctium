@@ -320,11 +320,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private void ServerHelloPsk()
         {
             ClientHello clientHello = context.ClientHello1;
+            bool isClientHello1 = context.ClientHello2 == null;
+            bool helloRetryNeeded = false;
 
             context.IsPskSessionResumption = true;
 
             var preSharedKeyExtension = context.ClientHello1.GetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey); //.Extensions.Select(r => r.ExtensionType == ).First();
-            var keyExchangeModes = clientHello.GetExtension<PreSharedKeyExchangeModeExtension>(ExtensionType.PskKeyExchangeModes).KeModes;
+            KeyShareEntry clientKeyShare = null;
+
 
             //PreSharedKeyExchangeModeExtension extMode;
             //context.ClientHello1.TryGetExtension<PreSharedKeyExchangeModeExtension>(ExtensionType.PskKeyExchangeModes, out extMode);
@@ -332,27 +335,52 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
 
             // todo must validate binder values
-
-            bool groupOk = false, cipherOk = false;
-
-            if (keyExchangeModes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe))
+            if (isClientHello1)
             {
-                crypto.SelectCipherSuite(clientHello, out cipherOk);
-                crypto.SelectEcEcdheGroup(clientHello, out groupOk);
+                bool groupOk = false, cipherOk = false;
+                var keyExchangeModes = clientHello.GetExtension<PreSharedKeyExchangeModeExtension>(ExtensionType.PskKeyExchangeModes).KeModes;
+
+                if (keyExchangeModes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe))
+                {
+                    crypto.SelectCipherSuite(clientHello, out cipherOk);
+                    crypto.SelectEcEcdheGroup(clientHello, out groupOk);
+
+                    clientKeyShare = clientHello.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
+                        .ClientShares.FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
+
+                    helloRetryNeeded = clientKeyShare == null;
+                }
+                else if (keyExchangeModes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskKe))
+                {
+                    crypto.SelectCipherSuite(clientHello, out cipherOk);
+                    groupOk = true;
+                }
+                else validate.Handshake.AlertFatal(true, AlertDescription.Illegal_parameter, "keyExchangeModes not supported or illegal param");
+
+                validate.Handshake.AlertFatal(!(cipherOk && groupOk), AlertDescription.HandshakeFailure, "client and server ececdhe or cipher suites does not match mutually");
             }
-            else if (keyExchangeModes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskKe))
+            else
             {
-                crypto.SelectCipherSuite(clientHello, out cipherOk);
-                groupOk = true;
+                helloRetryNeeded = false;
             }
-            else validate.Handshake.AlertFatal(true, AlertDescription.Illegal_parameter, "keyExchangeModes not supported or illegal param");
 
-            validate.Handshake.AlertFatal(!(cipherOk && groupOk), AlertDescription.HandshakeFailure, "client and server ececdhe or cipher suites does not match mutually");
+            if (helloRetryNeeded)
+            {
+                throw new NotImplementedException();
+                // send retry and go back to this method again
+                // helloretry = new serverhello(...)
+                // messageio.write(helloretry);
+                // CommandQueue.Enqueue(ServerProcolCommand.Handshake_SendHelloRetryRequestAndLoadClientHello2);
+                // CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
+            }
 
-            var clientKeyShare = clientHello.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
-                .ClientShares.FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
+            if (!isClientHello1)
+            {
+                throw new NotImplementedException();
+                // build serverhello based on retry if needed or some params must be same
+            }
 
-            bool helloRetryNeeded = clientKeyShare == null;
+            
 
             var random = new byte[Tls13Const.HelloRandomFieldLength];
 
@@ -367,8 +395,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloNotPsk);
                 return;
             }
-
-            crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
 
             var extensions = new List<Extension>
             {
@@ -388,38 +414,38 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 extensions.Add(new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend)));
             }
 
+            crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
+            crypto.InitEarlySecret(handshakeContext);
+
+            byte[] binderValue = crypto.ComputePskBinderValue(handshakeContext);
+
+            validate.Handshake.AlertFatal(!MemOps.Memcmp(binderValue, preSharedKeyExtension.Binders[selectedClientIdentity]),
+                AlertDescription.DecryptError, "binder value invalid");
+
+
             ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions.ToArray());
 
             messageIO.WriteHandshake(serverHello);
 
-            if (helloRetryNeeded)
-            {
-                context.SelectedPskTicket = pskTicket;
-                context.HelloRetryRequest = serverHello;
-                throw new ArctiumExceptionInternal();
-
-                // CommandQueue.Enqueue(ServerProcolCommand.Handshake_SendHelloRetryRequestAndLoadClientHello2);
-                // CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk_ClientHello2);
-            }
-            else
-            {
-                crypto.InitEarlySecret(handshakeContext);
-                crypto.InitHandshakeSecret(handshakeContext);
-                messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
-            }
+            crypto.InitHandshakeSecret(handshakeContext);
+            messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
+            //decrypt_error
 
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientFinished);
-
-            // messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength);
-
-            // CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
         }
 
         private void ServerHelloNotPsk()
         {
             // full crypto (not PSK), select: ciphersuite, (ec)dhe group, signature algorithm
+
+            bool isClientHello1 = context.ClientHello2 == null;
+
+            if (!isClientHello1)
+            {
+                throw new NotImplementedException("");
+            }
 
             bool groupOk, cipherSuiteOk, signAlgoOk;
             crypto.SelectSuiteAndEcEcdheGroupAndSigAlgo(context.ClientHello1, out groupOk, out cipherSuiteOk, out signAlgoOk);

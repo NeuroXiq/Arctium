@@ -57,7 +57,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             };
         }
 
-        public int HelperGetOffsetOfPskExtensionInClientHello(byte[] buffer, int clientHelloOffset)
+        public static int HelperGetOffsetOfPskExtensionInClientHello(byte[] buffer, int clientHelloOffset)
         {
             int msgLen = ToInt3BytesBE(buffer, clientHelloOffset + 1);
             int endOffs = clientHelloOffset + msgLen + 4;
@@ -880,7 +880,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         #endregion
 
-        private int ToInt3BytesBE(byte[] buf, int offs)
+        private static int ToInt3BytesBE(byte[] buf, int offs)
         {
             return (buf[0 + offs] << 16) | (buf[1 + offs] << 8) | (buf[2 + offs]);
         }

@@ -5,10 +5,12 @@ using System.Text;
 
 namespace Arctium.Cryptography.Ciphers.StreamCiphers
 {
+    /// DEPRECATED OLD FILE
     /// <summary>
     /// ChaCha20 Stream cipher
     /// </summary>
-    public class ChaCha20
+    [Obsolete]
+    public class ChaCha20_DEPRECATED
     {
         //default chacha20 constant value. This value is always set in ctor.
         readonly byte[] DefaultChaCha20Constant = new byte[]  { 0x61,0x70,0x78,0x65, 0x33,0x20,0x64,0x6e, 0x79,0x62,0x2d,0x32, 0x6b,0x20,0x65,0x74 };
@@ -72,13 +74,13 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
         }
 
         /// <summary>
-        /// Creates new instance of <see cref="ChaCha20"/>
+        /// Creates new instance of <see cref="ChaCha20_DEPRECATED"/>
         /// All byte array values are passed directly to ChaCha20 'state' ( in big-endian format).
         /// </summary>
         /// <param name="key">Key used to encrypt data. Bytes order in big-endian (most significant byte first)</param>
         /// <param name="counter">Counter parameter indicating encryption block in stream. Bytes treated as big-endian value (most significant byte first)</param>
         /// <param name="nonce">ChaCha20 nonce</param>
-        public ChaCha20(byte[] key, byte[] counter, byte[] nonce)
+        public ChaCha20_DEPRECATED(byte[] key, byte[] counter, byte[] nonce)
         {
             //parameter validation. Setters throw exception when parameters are invalid
             Key = key;

@@ -179,10 +179,19 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             // if (recordInfo.ContentType == ContentType.Alert) Console.WriteLine(((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString());
 
-            if (recordInfo.ContentType == ContentType.Alert) throw new Exception("alert: " + ((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString());
+            if (recordInfo.ContentType == ContentType.Alert)
+            {
+                AlertDescription description = (AlertDescription)recordLayer.RecordFragmentBytes[1];
+                AlertLevel level = (AlertLevel)recordLayer.RecordFragmentBytes[0];
+
+                string alertFormat = string.Format("Alert Level: {0}, Alert Description: {1} (raw values: level: {2}, description: {3})",
+                    level.ToString(), description.ToString(), (int)level, (int)description);
+
+                validate.RecordLayer.Throw(true, alertFormat);
+            } 
 
             byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
             return recordInfo;
-        }   
+        }
     }
 }

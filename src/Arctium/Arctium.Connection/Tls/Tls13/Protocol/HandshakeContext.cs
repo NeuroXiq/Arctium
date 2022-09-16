@@ -1,6 +1,7 @@
 ﻿using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers.Buffers;
+using System;
 using System.Collections.Generic;
 
 namespace Arctium.Connection.Tls.Tls13.Protocol
@@ -25,8 +26,30 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public byte[] HandshakeMessages { get { return byteBuffer.Buffer; } }
         public int TotalLength { get { return byteBuffer.DataLength; } }
-        public int ClientHelloPskOffset { get; private set; }
+        // public int ClientHelloPskOffset { get; private set; }
         public List<MessageInfo> MessagesInfo { get; private set; }
+
+        public int LengthToPskBinders { get { return FindLengthToPskBinders(); } }
+
+        private int FindLengthToPskBinders()
+        {
+            int length = -1;
+            int clientHello1or2Offset = -1;
+
+            for (int i = MessagesInfo.Count - 1 ; i >= 0 && clientHello1or2Offset == -1; i--)
+            {
+                if (MessagesInfo[i].HandshakeType == HandshakeType.ClientHello)
+                    clientHello1or2Offset = MessagesInfo[i].Offset;
+            }
+
+            if (clientHello1or2Offset == -1) throw new ArctiumExceptionInternal();
+
+            int offset = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(HandshakeMessages, clientHello1or2Offset);
+
+            if (offset == -1) throw new ArctiumExceptionInternal();
+
+            return offset + clientHello1or2Offset;
+        }
 
         private ByteBuffer byteBuffer;
 
@@ -34,7 +57,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         {
             byteBuffer = new ByteBuffer();
             MessagesInfo = new List<MessageInfo>();
-            ClientHelloPskOffset = -1;
         }
 
         public void Add(HandshakeType type, byte[] buffer, int offset, int length)
@@ -42,11 +64,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             int o = byteBuffer.DataLength;
             byteBuffer.Append(buffer, offset, length);
             MessagesInfo.Add(new MessageInfo(type, o, length, byteBuffer.DataLength));
-        }
 
-        public void SetClientHelloPskExtensionOffset(int clientHelloPskExtensionOffset)
-        {
-            ClientHelloPskOffset = clientHelloPskExtensionOffset;
+            // ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello
         }
     }
 }

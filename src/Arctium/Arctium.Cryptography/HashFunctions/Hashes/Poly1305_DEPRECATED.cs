@@ -7,7 +7,8 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
     /// <summary>
     /// Poly1305 Hash function created by D. J. Bernstein. ([RFC 8439])
     /// </summary>
-    public class Poly1305
+    [Obsolete]
+    public class Poly1305_DEPRECATED
     {
         /// <summary>
         /// R part of private key defined in Poly1305.
@@ -58,7 +59,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
         private byte[] p;
 
         /// <summary>
-        /// One time key used to derivate <see cref="Poly1305.S"/> and <see cref="Poly1305.P"/>
+        /// One time key used to derivate <see cref="Poly1305_DEPRECATED.S"/> and <see cref="Poly1305_DEPRECATED.P"/>
         /// </summary>
         public byte[] OneTimeKey
         {
@@ -92,7 +93,7 @@ namespace  Arctium.Cryptography.HashFunctions.Hashes
 
         private int currentChunkLength;
 
-        public Poly1305(byte[] oneTimeKey)
+        public Poly1305_DEPRECATED(byte[] oneTimeKey)
         {
             ResetState(oneTimeKey);
         }

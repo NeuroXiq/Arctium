@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using Arctium.Shared.Interfaces;
+using System.IO;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {
@@ -29,9 +30,9 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         protected long LoadedBytes;
 
-        public HashFunction(int inputBlockSize, int hashSize)
+        public HashFunction(int inputBlockSize, int hashSizeBits)
         {
-            HashSizeBits = hashSize;
+            HashSizeBits = hashSizeBits;
             InputBlockSizeBits = inputBlockSize;
             LoadedBytes = 0;
         }

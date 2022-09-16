@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
+namespace Arctium.Cryptography.HashFunctions.MAC
 {
     public static class Poly1305Algorithm
     {

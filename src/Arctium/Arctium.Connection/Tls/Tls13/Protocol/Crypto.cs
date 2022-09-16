@@ -433,6 +433,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return result;
         }
 
+        public byte[] ComputePskBinderValue(HandshakeContext handshakeContext)
+        {
+            if (psk == null) throw new ArctiumExceptionInternal("psk must be set");
+        }
+
         public void ClientFinished()
         {
             throw new NotImplementedException();
