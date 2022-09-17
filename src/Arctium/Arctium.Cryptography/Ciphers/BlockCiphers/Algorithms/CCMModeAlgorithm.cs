@@ -3,7 +3,7 @@ using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Collections.Generic;
 
-namespace Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation
+namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {
     /// <summary>
     /// The CCM Mode for

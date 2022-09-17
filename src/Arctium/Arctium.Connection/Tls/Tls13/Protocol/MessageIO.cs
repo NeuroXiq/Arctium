@@ -140,11 +140,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         {
             handshakeContext.Add(type, buffer, (int)offset, (int)length);
 
-            if (type == HandshakeType.ClientHello)
-            {
-                int pskInClientHelloOffset = clientModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(modelSerialization.SerializedData, 0);
-                handshakeContext.SetClientHelloPskExtensionOffset(pskInClientHelloOffset);
-            }
+            // if (type == HandshakeType.ClientHello)
+            // {
+            //     int pskInClientHelloOffset = clientModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(modelSerialization.SerializedData, 0);
+            //     handshakeContext.SetClientHelloPskExtensionOffset(pskInClientHelloOffset);
+            // }
         }
 
         // void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));

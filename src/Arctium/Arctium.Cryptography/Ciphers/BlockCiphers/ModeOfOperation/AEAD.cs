@@ -11,15 +11,16 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
     {
         public int AuthenticationTagLengthBytes { get; private set; }
 
-        private BlockCipher cipher;
-        private static readonly byte[] Zero128Bytes = new byte[128];
 
 
-        public AEAD(BlockCipher cipher, int authenticationTagLength)
+        // private static readonly byte[] Zero128Bytes = new byte[128];
+
+
+        public AEAD(int authenticationTagLength)
         {
-            if (cipher.InputBlockLengthBits != 128) throw new NotSupportedException("only 128 input block ");
+            // if (cipher.InputBlockLengthBits != 128) throw new NotSupportedException("only 128 input block ");
 
-            this.cipher = cipher;
+            // this.cipher = cipher;
             AuthenticationTagLengthBytes = authenticationTagLength;
         }
 

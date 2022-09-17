@@ -96,7 +96,7 @@ namespace Arctium.Cryptography.HashFunctions.MAC
             byte[] hash = c.Accumulator.ToByteArray(isUnsigned: true, isBigEndian: false);
 
             for (int i = 0; i < 16; i++) output[i + outOffs] = 0;
-            for (int i = 0; i < hash.Length; i++) output[i + outOffs] = hash[i];
+            for (int i = 0; i < 16; i++) output[i + outOffs] = hash[i];
         }
 
         public static void ProcessFullBlocks(Context c, byte[] input, long inOffset, long length)

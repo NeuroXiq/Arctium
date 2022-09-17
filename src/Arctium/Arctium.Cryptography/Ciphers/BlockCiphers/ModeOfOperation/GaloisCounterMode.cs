@@ -14,7 +14,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
         private BlockCipher cipher;
         private static readonly byte[] Zero16Bytes = new byte[16];
 
-        public GaloisCounterMode(BlockCipher cipher, int authTagLen) : base(cipher, authTagLen)
+        public GaloisCounterMode(BlockCipher cipher, int authTagLen) : base(authTagLen)
         {
             if (cipher.InputBlockLengthBits != 128) throw new NotSupportedException("only 128 input block ");
 

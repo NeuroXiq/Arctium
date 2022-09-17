@@ -57,7 +57,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             Initialize();
         }
 
-        public override long Decrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
+        public override long Decrypt(byte[] inputBuffer, long inputOffset, byte[] outputBuffer, long outputOffset, long length)
         {
             TransformInput(inputBuffer, inputOffset, length, outputBuffer, outputOffset);
             return length;
@@ -67,7 +67,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
         /// Try to encryptl large chunks of data instead of calling this method sevelar times. <br/>
         /// Expected 64 bytes input buffer (length is multiply of 64)
         /// </summary>
-        public override long Encrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
+        public override long Encrypt(byte[] inputBuffer, long inputOffset, byte[] outputBuffer, long outputOffset, long length)
         {
             TransformInput(inputBuffer, inputOffset, length, outputBuffer, outputOffset);
             return length;

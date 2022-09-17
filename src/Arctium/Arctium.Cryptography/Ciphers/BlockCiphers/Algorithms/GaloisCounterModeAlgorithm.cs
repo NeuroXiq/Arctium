@@ -260,7 +260,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                     outputResult[j] ^= (byte)context.GF_MUL_LOOKUP[i][(x[i] *  16) + j];
         }
 
-        //generate lookups for this
+        //todo: maybe use ULONG to operate (will be faster?)
         public static void GFMUL_NotOptimized(byte[] x, byte[] num2, byte[] outputResult, int outOffset)
         {
             byte[] v = new byte[16];

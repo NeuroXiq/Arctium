@@ -13,9 +13,9 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             this.key = key;
         }
 
-        public abstract long Encrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset);
+        public abstract long Encrypt(byte[] inputBuffer, long inputOffset, byte[] outputBuffer, long outputOffset, long length);
 
-        public abstract long Decrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset);
+        public abstract long Decrypt(byte[] inputBuffer, long inputOffset, byte[] outputBuffer, long outputOffset, long length);
 
         
 

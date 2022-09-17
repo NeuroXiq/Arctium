@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Arctium.Shared.Exceptions;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms
 {
@@ -15,6 +17,8 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms
 
         public static Context Initialize(byte[] key, byte[] nonce)
         {
+            if (key == null || key.Length != 32 || nonce == null || nonce.Length != 12) throw new ArctiumExceptionInternal();
+
             Context c = new Context()
             {
                 State = new uint[16],
@@ -51,7 +55,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms
             long outOffset,
             uint counter)
         {
-            if (length % 64 != 0) throw new Exception("internal: works only with 64 byte blocks");
+            if (length % 64 != 0) throw new ArctiumExceptionInternal("internal: works only with 64 byte blocks");
 
             for (int i = 0; i < length; i += 64, counter++)
             {
@@ -131,6 +135,12 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms
             }
         }
 
+        public static void Poly1305KeyGeneration()
+        {
+
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void QRound(uint[] workingState, int a, int b, int c, int d)
         {
             uint[] w = workingState;
@@ -140,6 +150,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms
             w[c] += w[d]; w[b] ^= w[c];  w[b] = ROL(w[b], 7);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static uint ROL(uint v, int n) { return (v << n) | (v >> (32 - n)); }
     }
 }

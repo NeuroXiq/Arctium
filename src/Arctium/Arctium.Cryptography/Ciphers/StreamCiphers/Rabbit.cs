@@ -84,12 +84,12 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             CopyStateToSafe(x, c, carryBitPtr);
         }
 
-        public override long Decrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
+        public override long Decrypt(byte[] inputBuffer, long inputOffset, byte[] outputBuffer, long outputOffset, long length)
         {
             return ExecuteTransformOnInput(inputBuffer, inputOffset, length, outputBuffer, outputOffset);
         }
 
-        public override long Encrypt(byte[] inputBuffer, long inputOffset, long length, byte[] outputBuffer, long outputOffset)
+        public override long Encrypt(byte[] inputBuffer, long inputOffset, byte[] outputBuffer, long outputOffset, long length)
         {
             return ExecuteTransformOnInput(inputBuffer, inputOffset, length, outputBuffer, outputOffset);
         }
