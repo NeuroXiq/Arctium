@@ -81,15 +81,19 @@ namespace Arctium.Cryptography.HashFunctions.MAC
             BigInteger b;
 
             // append 1 bit before bytes (+= Num2_128 but not full block)
-            if (length < 16) c.Input[length] = 0x01;
 
-            b = new BigInteger(c.Input, isUnsigned: true, isBigEndian: false);
+            if (length > 0)
+            {
+                if (length < 16) c.Input[length] = 0x01;
 
-            if (length == 16) b += Num2_128;
+                b = new BigInteger(c.Input, isUnsigned: true, isBigEndian: false);
 
-            c.Accumulator += b;
-            c.Accumulator *= c.R;
-            c.Accumulator %= P;
+                if (length == 16) b += Num2_128;
+
+                c.Accumulator += b;
+                c.Accumulator *= c.R;
+                c.Accumulator %= P;
+            }
 
             c.Accumulator += c.S;
 

@@ -10,7 +10,7 @@ namespace Arctium.Shared.Other
         public static void Length(byte[] key, int expectedLength, string argName)
         {
             if (key == null) throw new ArgumentNullException($"{argName} is null");
-            if (key.Length != expectedLength) ThrowArctium($"{argName} length is invalid. Expected key length: {expectedLength}");
+            if (key.Length != expectedLength) ThrowArctium($"{argName} length is invalid. Expected length: {expectedLength}");
         }
 
         public static void Length(long currentLength, long expectedLength, string argName)

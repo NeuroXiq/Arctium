@@ -109,9 +109,9 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             poly1305.Process(macDataTemp, 0, padLen);
 
             // additionaldata len + ciphertext len
-            MemMap.ToBytes1UIntLE((uint)aLen, macDataTemp, 0);
-            MemMap.ToBytes1UIntLE((uint)ciphertextLen, macDataTemp, 4);
-            poly1305.Process(macDataTemp, 0, 8);
+            MemMap.ToBytes1ULongLE((ulong)aLen, macDataTemp, 0);
+            MemMap.ToBytes1ULongLE((ulong)ciphertextLen, macDataTemp, 8);
+            poly1305.Process(macDataTemp, 0, 16);
 
             byte[] tag = poly1305.Final();
             MemCpy.Copy(tag, 0, tagOutput, tagOutputOffset, tag.Length);
