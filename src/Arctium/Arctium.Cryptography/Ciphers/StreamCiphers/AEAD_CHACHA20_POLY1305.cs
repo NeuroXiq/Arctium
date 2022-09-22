@@ -14,6 +14,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
     {
         const int AuthTagLen = 16;
         Poly1305 poly1305;
+        private byte[] chacha20key;
         ChaCha20 chacha20;
         byte[] poly1305Key;
         byte[] zero32bytes;
@@ -22,6 +23,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
         public AEAD_CHACHA20_POLY1305(byte[] chacha20Key) : base(AuthTagLen)
         {
+            this.chacha20key = chacha20Key;
             chacha20 = new ChaCha20(chacha20Key, new byte[12]);
             poly1305 = new Poly1305(new byte[32]);
             poly1305Key = new byte[32];
@@ -49,18 +51,37 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             Validation.LengthMax(ciphertextLength, uint.MaxValue, nameof(ciphertextLength));
             Validation.LengthMax(aLength, uint.MaxValue, nameof(aLength));
 
-            authenticationTagValidationResult = false;
+            Prepare(iv, ivOffset, ivLength);
+            byte[] authTag = new byte[16];
+
+            ComputeMAC(a, aOffset, aLength,
+                ciphertext, ciphertextOffset, ciphertextLength,
+                authTag, 0);
+
+            authenticationTagValidationResult = true;
+            for (int i = 0; i < AuthTagLen; i++) authenticationTagValidationResult &= authTag[i] == authenticationTag[i + authenticationTagOffset];
+
+            if (!authenticationTagValidationResult) return;
+
+            chacha20.Decrypt(ciphertext, ciphertextOffset, decryptedOutput, decryptedOutputOffset, ciphertextLength);
         }
 
         private void Prepare(byte[] iv, long ivOffset, long ivLength)
         {
             MemCpy.Copy(iv, ivOffset, nonce, 0, ivLength);
-            chacha20.Reset(nonce, 0);
+            // chacha20 = new ChaCha20(chacha20key, nonce);
+            ChaCha20 genkey = new ChaCha20(this.chacha20key, nonce);
+            genkey.Reset(nonce, 0);
+            chacha20.Reset(nonce, 1);
+            // chacha20.Reset(nonce, 0);
 
-            chacha20.Encrypt(zero32bytes, 0, poly1305Key, 0, 32);
-            
-            poly1305.Reset(poly1305Key);
-            chacha20.Reset();
+            genkey.Encrypt(zero32bytes, 0, poly1305Key, 0, 32);
+
+            // poly1305.Reset(poly1305Key);
+            // chacha20.Reset();
+
+            chacha20 = new ChaCha20(chacha20key, nonce);
+            poly1305 = new Poly1305(poly1305Key);
         }
 
         public override void AuthenticatedEncryption(byte[] iv,
@@ -87,6 +108,21 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             ComputeMAC(a, aOffset, aLength,
                 ciphertextOutput, ciphertextOutputOffset, pLength,
                 authenticationTagOutput, authenticationTagOutputOffset);
+
+            byte[] dect = new byte[pLength];
+            bool tagtt;
+
+            this.AuthenticatedDecryption(iv, ivOffset, ivLength,
+                ciphertextOutput, ciphertextOutputOffset, pLength,
+                a, aOffset, aLength,
+                dect, 0, authenticationTagOutput, authenticationTagOutputOffset,
+                out tagtt);
+
+            bool ok = true;
+
+            for (int i = 0; i < dect.Length; i++) ok &= dect[i] == p[i + pOffset];
+
+            var x = 5;
         }
 
         void ComputeMAC(byte[] a, long aOffset, long aLen,

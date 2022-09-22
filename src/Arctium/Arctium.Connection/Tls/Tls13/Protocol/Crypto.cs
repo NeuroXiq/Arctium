@@ -2,6 +2,7 @@
 using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
+using Arctium.Cryptography.Ciphers.StreamCiphers;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Cryptography.HashFunctions.KDF;
 using Arctium.Cryptography.HashFunctions.MAC;
@@ -114,7 +115,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     hmac = new HMAC(new SHA2_384(), new byte[0], 0, 0);
                     break;
                 case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
-                    throw new NotImplementedException(nameof(CipherSuite.TLS_CHACHA20_POLY1305_SHA256));
+                    hashFunction = new SHA2_256();
+                    hkdfHashFunc = new SHA2_256();
+                    hmac = new HMAC(new SHA2_256(), new byte[0], 0, 0);
                     break;
                 default: throw new InvalidOperationException();
             }
@@ -268,7 +271,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
         {
-            var supportedCipherSuites = new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
+            var supportedCipherSuites = config.CipherSuites; // new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
             var clientCiphers = hello.CipherSuites;
             int selectedCipherSuiteIdx = -1;
 
@@ -356,19 +359,28 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 default: throw new ArgumentException(nameof(keyType));
             }
 
-            byte[] clientWriteIv, serverWriteIv;
+            byte[] clientWriteIv, serverWriteIv, ckey, skey;
             AEAD serverWriteAead, clientWriteAead;
 
             switch (SelectedCipherSuite)
             {
                 case CipherSuite.TLS_AES_128_GCM_SHA256:
-                    byte[] ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);
-                    byte[] skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 16);
+                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);
+                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 16);
                     clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
                     serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
 
                     serverWriteAead = new GaloisCounterMode(new AES(skey), 16);
                     clientWriteAead = new GaloisCounterMode(new AES(ckey), 16);
+                    break;
+                case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 32);
+                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 32);
+                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
+                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
+
+                    serverWriteAead = new AEAD_CHACHA20_POLY1305(skey);
+                    clientWriteAead = new AEAD_CHACHA20_POLY1305(ckey);
                     break;
                 default: throw new NotImplementedException();
             }

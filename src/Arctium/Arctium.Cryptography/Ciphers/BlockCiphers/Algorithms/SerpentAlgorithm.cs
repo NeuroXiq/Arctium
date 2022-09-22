@@ -109,8 +109,6 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 x[2] = x[2] ^ x[3] ^ (x[1] << 7);
                 x[0] = ROL(x[0], 5);
                 x[2] = ROL(x[2], 22);
-
-                MemDump.HexDump(x, 4);
             }
         }
 

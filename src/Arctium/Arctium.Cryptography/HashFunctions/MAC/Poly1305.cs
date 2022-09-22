@@ -16,7 +16,7 @@ namespace Arctium.Cryptography.HashFunctions.MAC
         {
             if (keyMaterial == null || keyMaterial.Length != 32) throw new ArgumentException("key != 32");
             context = Poly1305Algorithm.Initialize(keyMaterial);
-            buffer = new BlockBufferWithCallback(0x200, 16, ProcessFullBlocks);
+            buffer = new BlockBufferWithCallback(0x111200, 16, ProcessFullBlocks); // buffer flush not work
             this.keyMaterial = keyMaterial;
         }
 

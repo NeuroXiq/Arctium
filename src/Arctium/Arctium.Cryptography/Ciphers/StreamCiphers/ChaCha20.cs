@@ -14,7 +14,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
         byte[] temp;
         byte[] zero64bytes;
         int tempLength;
-        uint counter;
+        public uint counter;
         byte[] nonce;
 
         public ChaCha20(byte[] key, byte[] nonce) : base(key)
@@ -64,11 +64,15 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
             long fullBlocks = (toEncrypt / BlockSize64) * BlockSize64;
 
-            for (int i = 0; i < fullBlocks; i += BlockSize64, io += BlockSize64, oo += BlockSize64)
-            {
-                ChaCha20Algorithm.Encrypt(context, inputBuffer, io, fullBlocks, outputBuffer, oo, counter);
-                counter++;
-            }
+            // for (int i = 0; i < fullBlocks; i += BlockSize64, io += BlockSize64, oo += BlockSize64)
+            // {
+            //     ChaCha20Algorithm.Encrypt(context, inputBuffer, io, fullBlocks, outputBuffer, oo, counter);
+            //     counter++;
+            // }
+
+            ChaCha20Algorithm.Encrypt(context, inputBuffer, io, fullBlocks, outputBuffer, oo, counter);
+            counter += (uint)fullBlocks / 64;
+            io += fullBlocks; oo += fullBlocks;
 
             toEncrypt -= fullBlocks;
 

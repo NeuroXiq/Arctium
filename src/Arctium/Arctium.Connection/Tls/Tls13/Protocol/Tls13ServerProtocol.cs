@@ -300,6 +300,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             messageIO.WriteHandshake(certificate);
 
+            //messageIO.recordLayer.Read();
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificateVerify);
         }
 
@@ -499,7 +500,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
 
-            if (clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
+            if (false && clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
             }

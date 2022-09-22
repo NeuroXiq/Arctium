@@ -88,7 +88,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             var type = (HandshakeType)(modelSerialization.SerializedData[0]);
 
-
             HandshakeContextAdd(type, modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength);
             // handshakeContext.Add(
             //     new KeyValuePair<HandshakeType, byte[]>(type,

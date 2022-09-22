@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.Shared.Helpers.Buffers;
+using System;
 using System.Numerics;
 
 namespace Arctium.Cryptography.HashFunctions.MAC
@@ -99,8 +100,10 @@ namespace Arctium.Cryptography.HashFunctions.MAC
 
             byte[] hash = c.Accumulator.ToByteArray(isUnsigned: true, isBigEndian: false);
 
+            int hashLen = hash.Length > 16 ? 16 : hash.Length; // only 16 bytes neede by spec
+
             for (int i = 0; i < 16; i++) output[i + outOffs] = 0;
-            for (int i = 0; i < 16; i++) output[i + outOffs] = hash[i];
+            MemCpy.Copy(hash, 0, output, outOffs, hashLen);
         }
 
         public static void ProcessFullBlocks(Context c, byte[] input, long inOffset, long length)
