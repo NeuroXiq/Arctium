@@ -20,6 +20,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
 
         public BlockBufferWithCallback(long bufferSize, long blockSize, Action<byte[], long, long> limitReachedCallback)
         {
+            if (bufferSize % blockSize != 0) throw new ArgumentException("(buffer size) mod (blocksize) != 0");
             Buffer = new byte[bufferSize];
             this.bufferSize = bufferSize;
             this.limitReachedCallback = limitReachedCallback;
@@ -59,7 +60,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes
             {
                 MemCpy.Copy(buffer, offset, Buffer, DataLength, (bufferSize - DataLength));
                 totalCopied += bufferSize - DataLength;
-                limitReachedCallback(Buffer, 0, DataLength);
+                limitReachedCallback(Buffer, 0, bufferSize);
             }
 
             //maybe working with some large data,

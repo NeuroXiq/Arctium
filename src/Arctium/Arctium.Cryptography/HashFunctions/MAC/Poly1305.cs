@@ -16,7 +16,7 @@ namespace Arctium.Cryptography.HashFunctions.MAC
         {
             if (keyMaterial == null || keyMaterial.Length != 32) throw new ArgumentException("key != 32");
             context = Poly1305Algorithm.Initialize(keyMaterial);
-            buffer = new BlockBufferWithCallback(0x111200, 16, ProcessFullBlocks); // buffer flush not work
+            buffer = new BlockBufferWithCallback(2048, 16, ProcessFullBlocks); // buffer flush not work
             this.keyMaterial = keyMaterial;
         }
 
@@ -29,7 +29,11 @@ namespace Arctium.Cryptography.HashFunctions.MAC
             (new SimpleBufferForStream()).MediateAllBytesInto(stream, this);
         }
 
-        private void ProcessFullBlocks(byte[] buffer, long offset, long length) => Poly1305Algorithm.ProcessFullBlocks(context, buffer, offset, length);
+        private void ProcessFullBlocks(byte[] buffer, long offset, long length)
+        {
+            //MemDump.HexDump(buffer, (int)offset, (int)length, 1, 64, "");
+            Poly1305Algorithm.ProcessFullBlocks(context, buffer, offset, length);
+        }
 
         public byte[] Final()
         {
@@ -55,6 +59,7 @@ namespace Arctium.Cryptography.HashFunctions.MAC
         public void Reset()
         {
             Poly1305Algorithm.Reset(context, this.keyMaterial);
+            buffer.Reset();
         }
     }
 }

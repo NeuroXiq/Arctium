@@ -49,8 +49,6 @@ namespace Arctium.Cryptography.HashFunctions.MAC
         public static void Reset(Context c, byte[] keyMaterial)
         {
             c.Accumulator = 0;
-            // c.S = new BigInteger(new ReadOnlySpan<byte>(keyMaterial, 8, 8), isUnsigned: true, isBigEndian: false);
-            // c.R = new BigInteger(new ReadOnlySpan<byte>(keyMaterial, 8, 8), isUnsigned: true, isBigEndian: false);
 
             for (int i = 0; i < 16; i++) c.RClamped[i] = keyMaterial[i];
 

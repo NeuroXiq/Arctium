@@ -129,6 +129,7 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             byte[] ciphertext, long ciphertextOffs, long ciphertextLen,
             byte[] tagOutput, long tagOutputOffset)
         {
+            //Console.Clear();
             MemOps.MemsetZero(macDataTemp);
 
             long padLen = 16 - (aLen % 16);
