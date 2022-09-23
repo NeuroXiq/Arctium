@@ -85,7 +85,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
             return results;
         }
 
-        TestResult Decrypt(TestEncrypt e, string tname)
+        TestResult Decrypt(AEADTest e, string tname)
         {
             AEAD aead = new GaloisCounterMode(new AES(e.Key), e.Tag.Length);
 
@@ -126,7 +126,7 @@ namespace Arctium.Tests.Cryptography.Ciphers
 
         }
 
-        TestResult Encrypt(TestEncrypt e, string tname)
+        TestResult Encrypt(AEADTest e, string tname)
         {
             AEAD aead = new GaloisCounterMode(new AES(e.Key), e.Tag.Length);
 
@@ -161,10 +161,10 @@ namespace Arctium.Tests.Cryptography.Ciphers
             else return new TestResult(tname, true);
         }
 
-        static List<TestEncrypt> MapDecrypt(string filename)
+        static List<AEADTest> MapDecrypt(string filename)
         {
             var allLines = File.ReadAllLines(filename);
-            List<TestEncrypt> tests = new List<TestEncrypt>();
+            List<AEADTest> tests = new List<AEADTest>();
 
             /*
              
@@ -181,7 +181,7 @@ FAIL             */
             {
                 if (!allLines[i].StartsWith("Count")) continue;
 
-                var t = new TestEncrypt();
+                var t = new AEADTest();
                 t.Count = int.Parse(allLines[i].Split("=")[1].Trim());
                 t.Key = BinConverter.FromString(allLines[i + 1].Split("=")[1].Trim());
                 t.IV = BinConverter.FromString(allLines[i + 2].Split("=")[1].Trim());
@@ -206,9 +206,9 @@ FAIL             */
             return tests;
         }
 
-        static List<TestEncrypt> MapEncrypt(string filename)
+        static List<AEADTest> MapEncrypt(string filename)
         {
-            TestVectorFileParser<TestEncrypt> p = new Core.Utils.TestVectorFileParser<TestEncrypt>();
+            TestVectorFileParser<AEADTest> p = new Core.Utils.TestVectorFileParser<AEADTest>();
             p.StartingPointInFileMapPropertyName("Count");
 
             p.Map<int>("Count", (test, v) => test.Count = v);
@@ -223,18 +223,6 @@ FAIL             */
             p.IgnoreStartWith("#");
 
             return p.Parse(filename);
-        }
-
-        public class TestEncrypt
-        {
-            public int Count;
-            public byte[] Key;
-            public byte[] IV;
-            public byte[] PT;
-            public byte[] AAD;
-            public byte[] CT;
-            public byte[] Tag;
-            public bool ExpectedDecryptionFail;
         }
     }
 }

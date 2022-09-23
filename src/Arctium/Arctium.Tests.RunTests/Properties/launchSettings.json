@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Arctium.Tests.RunTests": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-classRegex AEAD_AES_128"
     }
   }
 }

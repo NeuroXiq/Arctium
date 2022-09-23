@@ -1,5 +1,6 @@
 ﻿using Arctium.Shared.Helpers.Binary;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared.Other;
 using System;
 using System.Collections.Generic;
 
@@ -16,18 +17,25 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
         static readonly int[] ValidQ = new int[] { 2, 3, 4, 5, 6, 7, 8 };
         static readonly int[] ValidN = new int[] { 7, 8, 9, 10, 11, 12, 13 };
 
+        const int BlockSize16 = 16;
 
         public class Context
         {
             public BlockCipher Cipher;
-            public byte[] Key;
+            public byte[] CtrEnc;
+            public byte[] Ctr;
+            public byte[] Tag;
+            // public byte[] Key;
 
         }
 
-        public static Context Init(byte[] key)
+        public static Context Init(BlockCipher cipher)
         {
             var context = new Context();
-            context.Key = key;
+            context.Cipher = cipher;
+            context.CtrEnc = new byte[BlockSize16];
+            context.Ctr = new byte[BlockSize16];
+            context.Tag = new byte[16];
             // Reset(context, key);
 
             return context;
@@ -45,6 +53,62 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             if (!(tValid && nValid && qValid)) throw new Exception("internal tvalid, nvalid, qvalid");
         }
 
+        public static void DecryptionVerification(Context context,
+            byte[] nonce, long nonceOffset, long nonceLength,
+            byte[] ciphertext, long ciphertextOffset, long ciphertextLength,
+            byte[] a, long aOffset, long aLength,
+            byte[] plaintextOutput, long plaintextOutputOffset,
+            byte[] tag, long tagOffset,
+            int tagLength,
+            out bool tagValid)
+        {
+            long fullBlocks = ciphertextLength / BlockSize16;
+            long lastBlock = ciphertextLength - fullBlocks;
+            byte[] ctrEnc = context.CtrEnc, ctr = context.CtrEnc;
+            BlockCipher ciph = context.Cipher;
+            int ctri = 1, q = 15 - nonce.Length;
+
+            ctr[0] = (byte)(q - 1);
+            Array.Copy(nonce, 0, ctr, 1, nonce.Length);
+
+            long io = ciphertextOffset;
+            long oo = plaintextOutputOffset;
+
+            for (int i = 0; i < fullBlocks; i += BlockSize16)
+            {
+                ctri++;
+                ToBytesBE(ctri, q, ctr, 16 - q);
+                ciph.Encrypt(ctr, 0, ctrEnc, 0, 16);
+                Xor(ciphertext, io, ctrEnc, 0, plaintextOutput, oo);
+                io += 16; oo += 16;
+            }
+
+            if (lastBlock > 0)
+            {
+                ctri++;
+                ToBytesBE(ctri, q, ctr, 16 - q);
+                ciph.Encrypt(ctr, 0, ctrEnc, 0, 16);
+                Xor(ciphertext, io, ctrEnc, 0, plaintextOutput, oo);
+            }
+
+            ToBytesBE(0, q, ctr, 16 - q);
+            byte[] t = context.Tag;
+            byte[] computedT = new byte[16];
+
+            ciph.Encrypt(ctr, 0, ctrEnc, 0, 16);
+            Xor(tag, tagOffset, ctrEnc, 0, t, 0, tagLength);
+
+            ComputeT(context, nonce, nonceOffset, nonceLength,
+                plaintextOutput, plaintextOutputOffset, ciphertextLength,
+                a, aOffset, aLength,
+                tagLength, computedT);
+
+            bool isTagValid = true;
+            for (int i = 0; i < tagLength; i++) isTagValid &= t[i] == computedT[i];
+
+            tagValid = isTagValid;
+        }
+
         public static void GenerationEncryption(Context context,
             byte[] nonce,
             long nonceOffset,
@@ -56,7 +120,9 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             long associatedDataOffset,
             long associatedDataLengt,
             byte[] output,
-            int outputOffset,
+            long outputOffset,
+            byte[] tagOutput,
+            long tagOutputOffset,
             int t)
         {
             ByteBuf buf = new ByteBuf();
@@ -66,7 +132,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 payload, payloadOffset, payloadLength,
                 associatedData, associatedDataOffset, associatedDataLengt, t, T);
 
-            AES aes = new AES(context.Key);
+            AES aes = (AES)context.Cipher;
 
             byte[] ctr = new byte[16];
             byte[] ctrEnc = new byte[16];
@@ -115,7 +181,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
             for (int j = 0; j < t; j++, outOffs++)
             {
                 T[j] ^= ctrEnc[j];
-                output[outOffs] = T[j]; 
+                tagOutput[tagOutputOffset + j] = T[j]; 
             }
         }
 
@@ -172,6 +238,8 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 buf.Append(0xfe);
                 buf.AppendFromOutside(4);
 
+                // blad w nist jest 0x01 a tutaj 0x08 dodaje
+                // blok 1 (b1)
                 ToBytes1UIntBE((uint)a, buf.Buffer, buf.Length - 4);
             }
             else if ((a >= 0xFFFFFFFF))
@@ -192,7 +260,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
                 for (int i = 0; buf.Length < 16; i++) buf.Append(0);
             }
 
-            AES aes = new AES(context.Key);
+            AES aes = (AES)context.Cipher;
             byte[] yi_prev = new byte[16];
             byte[] yi_next = new byte[16];
 
@@ -334,97 +402,31 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
          * TESTS 
          */
 
-        public static void RUNTEST()
-        {
+        //public static void RUNTEST()
+        //{
             
-            for (int i = 1; i < NIST_TESTS.Count; i++)
-            {
-                var test = NIST_TESTS[i];
-                var c = CCMModeAlgorithm.Init(test.K);
-                byte[] output = new byte[test.ExpectedOutput.Length];
+        //    for (int i = 1; i < NIST_TESTS.Count; i++)
+        //    {
+        //        var test = NIST_TESTS[i];
+        //        var c = CCMModeAlgorithm.Init(new AES(test.K));
+        //        byte[] output = new byte[test.ExpectedOutput.Length];
 
 
-                GenerationEncryption(c,
-                    test.N, 0, test.N.Length,
-                    test.P, 0, test.P.Length,
-                    test.A, 0, test.A.Length,
-                    output, 0,
-                    test.TLEN);
+        //        GenerationEncryption(c,
+        //            test.N, 0, test.N.Length,
+        //            test.P, 0, test.P.Length,
+        //            test.A, 0, test.A.Length,
+        //            output, 0,
+        //            output, test.P.Length - test.TLEN,
+        //            test.TLEN);
 
-                for (int j = 0; j < output.Length; j++)
-                {
-                    if (output[j] != test.ExpectedOutput[j]) throw new Exception("output != expected");
-                }
-            }
-        }
+        //        for (int j = 0; j < output.Length; j++)
+        //        {
+        //            if (output[j] != test.ExpectedOutput[j]) throw new Exception("output != expected");
+        //        }
+        //    }
+        //}
 
-        static List<CCMTest> NIST_TESTS = new List<CCMTest>()
-        {
-            new CCMTest(
-                "404142434445464748494a4b4c4d4e4f",
-                "10111213141516",
-                "0001020304050607",
-                "20212223",
-                "7162015b4dac255d",
-                4),
-            new CCMTest(
-                "404142434445464748494a4b4c4d4e4f",
-                "1011121314151617",
-                "000102030405060708090a0b0c0d0e0f",
-                "202122232425262728292a2b2c2d2e2f",
-                "d2a1f0e051ea5f62081a7792073d593d1fc64fbfaccd",
-                6),
-            new CCMTest(
-                "404142434445464748494a4b4c4d4e4f",
-                "101112131415161718191a1b",
-                "000102030405060708090a0b0c0d0e0f10111213",
-                "202122232425262728292a2b2c2d2e2f3031323334353637",
-                "e3b201a9f5b71a7a9b1ceaeccd97e70b6176aad9a4428aa5484392fbc1b09951",
-                8),
-            Example4()
-            
-        };
-
-        static CCMTest Example4()
-        {
-            byte[] a = new byte[524288];
-
-            for (int i = 0; i < a.Length; i++)
-            {
-                a[i] = (byte)i;
-            }
-
-            var x = new CCMTest(
-                "404142434445464748494a4b4c4d4e4f",
-                "101112131415161718191a1b1c",
-                "01",
-                "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
-                "69915dad1e84c6376a68c2967e4dab615ae0fd1faec44cc484828529463ccf72b4ac6bec93e8598e7f0dadbcea5b",
-                 14);
-
-            x.A = a;
-
-            return x;
-        }
-
-        class CCMTest
-        {
-            public byte[] K;
-            public byte[] N;
-            public byte[] A;
-            public byte[] P;
-            public byte[] ExpectedOutput;
-            public int TLEN;
-
-            public CCMTest(string k, string n, string a, string p, string expOut, int tlen)
-            {
-                K = BinConverter.FromString(k);
-                N = BinConverter.FromString(n);
-                A = BinConverter.FromString(a);
-                P = BinConverter.FromString(p);
-                ExpectedOutput = BinConverter.FromString(expOut);
-                TLEN = tlen;
-            }
-        }
+        
     }
 }
