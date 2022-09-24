@@ -60,9 +60,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public static int HelperGetOffsetOfPskExtensionInClientHello(byte[] buffer, int clientHelloOffset)
         {
             int msgLen = ToInt3BytesBE(buffer, clientHelloOffset + 1);
-            int endOffs = clientHelloOffset + msgLen + 4;
+            int endOffs = clientHelloOffset + msgLen +4;
 
-            int o = clientHelloOffset;
+            int o = clientHelloOffset + 4;
             // random + protocol ver
             o += 32 + 2;
 
@@ -86,6 +86,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
                 if (type == ExtensionType.PreSharedKey)
                 {
+                    // points to offeredpsks.identities (to 2-byte length vector)
+                    o += 4;
+
+                    int identitiesLen = MemMap.ToUShort2BytesBE(buffer, o);
+
+                    o += identitiesLen + 2;
+
                     return o;
                 }
 

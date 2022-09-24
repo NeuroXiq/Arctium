@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Cryptography.Utils
 {
-    public enum HashFunctionType
+    public enum HashFunctionId
     {
         BLAKE2b_512,
         BLAKE3,

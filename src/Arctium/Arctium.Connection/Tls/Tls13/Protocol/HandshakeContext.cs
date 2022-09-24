@@ -34,6 +34,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         private int FindLengthToPskBinders()
         {
             int length = -1;
+            // if clienthello2 not found then poinst to clienthello1
             int clientHello1or2Offset = -1;
 
             for (int i = MessagesInfo.Count - 1 ; i >= 0 && clientHello1or2Offset == -1; i--)

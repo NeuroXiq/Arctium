@@ -529,7 +529,7 @@ namespace Arctium.Standards.PKCS1.v2_2
         /// With sLen = hashFunction.HashSizeInBytes (seed length equal to hash size in bytes),
         /// MGF = null (means default MGF from standard)
         /// </summary>
-        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, HashFunctionType hashFunction)
+        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, HashFunctionId hashFunction)
         {
             HashFunction hashFunc = CryptoAlgoFactory.CreateHashFunction(hashFunction);
 

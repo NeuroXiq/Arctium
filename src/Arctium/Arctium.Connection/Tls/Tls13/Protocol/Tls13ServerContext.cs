@@ -15,18 +15,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             public byte[] Ticket;
             public byte[] TicketNonce;
             public string HashFunctionName;
+            public byte[] BinderKey;
 
             public PskTicket(byte[] ec_or_Ecdhe,
                 byte[] ticket,
                 byte[] nonce,
                 byte[] resumptionMastserSecret,
-                string hashFunctionName)
+                string hashFunctionName,
+                byte[] binderKey)
             {
                 Ec_or_Ecdhe = ec_or_Ecdhe;
                 Ticket = ticket;
                 TicketNonce = nonce;
                 ResumptionMasterSecret = resumptionMastserSecret;
                 HashFunctionName = hashFunctionName;
+                BinderKey = binderKey;
             }
         }
 
@@ -74,9 +77,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             byte[] resumptionMasterSecret,
             byte[] ticket,
             byte[] nonce,
-            string hashFunctionName)
+            string hashFunctionName,
+            byte[] binderKey)
         {
-            this.PskTickets.Add(new PskTicket(ec_or_ecdhe, ticket, nonce, resumptionMasterSecret, hashFunctionName));
+            this.PskTickets.Add(new PskTicket(ec_or_ecdhe, ticket, nonce, resumptionMasterSecret, hashFunctionName, binderKey));
         }
     }
 }

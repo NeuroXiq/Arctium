@@ -158,7 +158,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         internal byte[] GenerateServerCertificateVerifySignature(HandshakeContext handshakeContext)
         {
             if (SelectedSignatureScheme != SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256) throw new Exception();
-            var hashFuncType = HashFunctionType.SHA2_256;
+            var hashFuncType = HashFunctionId.SHA2_256;
 
             // var ext = this.clientHello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms);
             // ext.Schemes.Single(s => s == SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256);
@@ -273,7 +273,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             // todo other hash funcs (32 constant for now)
             // need to select valid hash function 
             
-            this.psk = HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, 32);
+            this.psk = HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, 48);
         }
 
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
@@ -482,11 +482,25 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return result;
         }
 
-        public byte[] ComputePskBinderValue(HandshakeContext handshakeContext)
+        public bool IsPskBinderValueValid(HandshakeContext handshakeContext,
+            Tls13ServerContext.PskTicket ticket,
+            byte[] clientBinderValue)
         {
             if (psk == null) throw new ArctiumExceptionInternal("psk must be set");
 
-            throw new Exception();
+            var toPskBinders = handshakeContext.LengthToPskBinders;
+
+            var hash = TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, toPskBinders));
+            byte[] result = new byte[hash.Length];
+
+            byte[] binderKey = HkdfExpandLabel(BinderKey, "finished", new byte[0], hashFunction.HashSizeBytes);
+
+            hmac.Reset();
+            hmac.ChangeKey(binderKey);
+            hmac.ProcessBytes(hash);
+            hmac.Final(result, 0);
+
+            return MemOps.Memcmp(result, clientBinderValue);
         }
 
         public void ClientFinished()

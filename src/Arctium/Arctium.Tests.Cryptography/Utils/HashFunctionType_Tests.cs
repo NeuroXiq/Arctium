@@ -27,7 +27,7 @@ namespace Arctium.Tests.Cryptography.Utils
             //};
 
 
-            var definedNames = Enum.GetNames(typeof(HashFunctionType));
+            var definedNames = Enum.GetNames(typeof(HashFunctionId));
 
             var h1 = hashFuncsClassName.ToHashSet();
             var h2 = definedNames.ToHashSet();

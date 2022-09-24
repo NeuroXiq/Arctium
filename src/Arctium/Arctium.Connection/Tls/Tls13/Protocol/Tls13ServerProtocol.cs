@@ -193,7 +193,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 crypto.ResumptionMasterSecret,
                 newSessTicket.Ticket,
                 newSessTicket.TicketNonce,
-                crypto.SelectedCipherSuiteHashFunctionName);
+                crypto.SelectedCipherSuiteHashFunctionName,
+                crypto.BinderKey);
 
             messageIO.WriteHandshake(newSessTicket);
 
@@ -239,11 +240,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private void LoadApplicationData()
         {
-            if (messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength))
-            {
-                //Command = ServerProcolCommand.BreakLoopWaitForOtherCommand;
-            }
-            else
+            if (!messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength))
             {
                 CommandQueue.Enqueue(ServerProcolCommand.LoadApplicationDataNotReceivedApplicationDataContent);
             }
@@ -287,7 +284,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             var certificateVerify = new CertificateVerify(crypto.SelectedSignatureScheme, signature);
 
             messageIO.WriteHandshake(certificateVerify);
-            //messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength);
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
         }
 
@@ -418,11 +414,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
             crypto.InitEarlySecret(handshakeContext);
 
-            byte[] binderValue = crypto.ComputePskBinderValue(handshakeContext);
+            bool binderValid = crypto.IsPskBinderValueValid(handshakeContext, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]);
 
-            validate.Handshake.AlertFatal(!MemOps.Memcmp(binderValue, preSharedKeyExtension.Binders[selectedClientIdentity]),
-                AlertDescription.DecryptError, "binder value invalid");
-
+            validate.Handshake.AlertFatal(!binderValid, AlertDescription.DecryptError, "binder value invalid");
 
             ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions.ToArray());
 
@@ -500,7 +494,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
 
-            if (false && clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
+            if (clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
             }
