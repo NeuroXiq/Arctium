@@ -274,7 +274,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             var finished = new Finished(finishedVerifyData);
 
             messageIO.WriteHandshake(finished);
-
+            
             // todo: or get certificate from client if needed
 
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientFinished);
@@ -287,7 +287,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             var certificateVerify = new CertificateVerify(crypto.SelectedSignatureScheme, signature);
 
             messageIO.WriteHandshake(certificateVerify);
-
+            //messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength);
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
         }
 
@@ -299,7 +299,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             });
 
             messageIO.WriteHandshake(certificate);
-
             //messageIO.recordLayer.Read();
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificateVerify);
         }
@@ -314,6 +313,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             var encryptedExtensions = new EncryptedExtensions(extensions);
 
             messageIO.WriteHandshake(encryptedExtensions);
+
 
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificate);
         }

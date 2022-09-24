@@ -10,6 +10,7 @@ namespace Arctium.Connection.Tls.Tls13.API
 
         public byte[] DerEncodedCertificateBytes;
         public RSAPrivateKey CertificatePrivateKey;
+        public string RSAPrivateKeyString;
 
         public static Tls13ServerConfig DefaultUnsafe(byte[] certBytes, RSAPrivateKey privateKey)
         {
@@ -21,7 +22,7 @@ namespace Arctium.Connection.Tls.Tls13.API
             c.UseNewSessionTicketPsk = true;
             c.CipherSuites = new CipherSuite[]
                 {
-                    CipherSuite.TLS_CHACHA20_POLY1305_SHA256
+                    CipherSuite.TLS_AES_256_GCM_SHA384
                 };
 
             return c;

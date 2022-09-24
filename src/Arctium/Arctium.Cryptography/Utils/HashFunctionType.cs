@@ -1,0 +1,31 @@
+﻿namespace Arctium.Cryptography.Utils
+{
+    public enum HashFunctionType
+    {
+        BLAKE2b_512,
+        BLAKE3,
+        JH_224,
+        JH_256,
+        JH_384,
+        JH_512,
+        RadioGatun32,
+        RadioGatun64,
+        RIPEMD_160,
+        SHA1,
+        SHA2_224,
+        SHA2_256,
+        SHA2_384,
+        SHA2_512,
+        Skein_256,
+        Skein_512,
+        Skein_1024,
+        Whirlpool,
+        SHA3_224,
+        SHA3_256,
+        SHA3_384,
+        SHA3_512,
+        Skein_VAR,
+        Streebog_256,
+        Streebog_512,
+    }
+}

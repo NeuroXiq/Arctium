@@ -2,15 +2,18 @@
 using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
+using Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation;
 using Arctium.Cryptography.Ciphers.StreamCiphers;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Cryptography.HashFunctions.KDF;
 using Arctium.Cryptography.HashFunctions.MAC;
+using Arctium.Cryptography.Utils;
 using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards;
+using Arctium.Standards.Crypto;
 using Arctium.Standards.PKCS1.v2_2;
 using System;
 using System.Collections.Generic;
@@ -105,6 +108,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 case CipherSuite.TLS_AES_128_CCM_SHA256:
                 case CipherSuite.TLS_AES_128_GCM_SHA256:
                 case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+                case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
                     hashFunction = new SHA2_256();
                     hkdfHashFunc = new SHA2_256();
                     hmac = new HMAC(new SHA2_256(), new byte[0], 0, 0);
@@ -114,10 +118,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     hkdfHashFunc = new SHA2_384();
                     hmac = new HMAC(new SHA2_384(), new byte[0], 0, 0);
                     break;
-                case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
-                    hashFunction = new SHA2_256();
-                    hkdfHashFunc = new SHA2_256();
-                    hmac = new HMAC(new SHA2_256(), new byte[0], 0, 0);
                     break;
                 default: throw new InvalidOperationException();
             }
@@ -158,10 +158,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         internal byte[] GenerateServerCertificateVerifySignature(HandshakeContext handshakeContext)
         {
             if (SelectedSignatureScheme != SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256) throw new Exception();
+            var hashFuncType = HashFunctionType.SHA2_256;
 
             // var ext = this.clientHello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms);
             // ext.Schemes.Single(s => s == SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256);
-
 
             string contextStr = "TLS 1.3, server CertificateVerify";
             byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
@@ -187,8 +187,15 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             MemCpy.Copy(hash, 0, tosign, c, hash.Length);
 
+            var digest = new Cryptography.HashFunctions.Hashes.SHA2_256();
             var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(config.CertificatePrivateKey));
-            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hash.Length, new Cryptography.HashFunctions.Hashes.SHA2_256());
+            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hashFuncType);
+
+
+            // var r = System.Security.Cryptography.RSA.Create();
+            // r.ImportFromPem(config.RSAPrivateKeyString);
+
+            // return r.SignData(tosign, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pss);
 
             return signature;
         }
@@ -281,7 +288,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     if (supportedCipherSuites[i] == clientCiphers[j]) selectedCipherSuiteIdx = i;
                 }
 
-            cipherSuiteOk = clientCiphers.Length > 0 && selectedCipherSuiteIdx < supportedCipherSuites.Length;
+            cipherSuiteOk = clientCiphers.Length > 0 && selectedCipherSuiteIdx < supportedCipherSuites.Length && selectedCipherSuiteIdx >= 0;
             if (cipherSuiteOk) this.SetupCryptoAlgorithms(supportedCipherSuites[selectedCipherSuiteIdx]);
         }
 
@@ -319,24 +326,36 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             if (signAlgoOk) this.SelectedSignatureScheme = supportedSignAlgo[selectedSignAlgoIdx];
         }
 
-
-
         public void SelectSuiteAndEcEcdheGroupAndSigAlgo(ClientHello hello, out bool groupOk, out bool cipherSuiteOk, out bool signAlgoOk)
         {
             SelectCipherSuite(hello, out cipherSuiteOk);
             SelectSigAlgo(hello, out signAlgoOk);
             SelectEcEcdheGroup(hello, out groupOk);
 
-            SetupCryptoAlgorithms(SelectedCipherSuite);
+            if (cipherSuiteOk) SetupCryptoAlgorithms(SelectedCipherSuite);
         }
 
         public byte[] TranscriptHash(params byte[][] m)
         {
             hashFunction.Reset();
+            hashFunction = new SHA2_384();
+            System.Security.Cryptography.SHA384 sha384 = System.Security.Cryptography.SHA384.Create();
 
-            foreach (byte[] buf in m) hashFunction.HashBytes(buf);
 
-            return hashFunction.HashFinal();
+
+            foreach (byte[] buf in m)
+            {
+                hashFunction.HashBytes(buf);
+                sha384.TransformBlock(buf, 0, buf.Length, null, 0);
+            }
+
+            sha384.TransformFinalBlock(new byte[0], 0, 0);
+
+            var x = sha384.Hash;
+
+            var y = hashFunction.HashFinal();
+
+            return x;
         }
 
 
@@ -381,6 +400,24 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
                     serverWriteAead = new AEAD_CHACHA20_POLY1305(skey);
                     clientWriteAead = new AEAD_CHACHA20_POLY1305(ckey);
+                    break;
+                case CipherSuite.TLS_AES_128_CCM_SHA256:
+                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);
+                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 16);
+                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
+                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
+
+                    serverWriteAead = AEAD_Predefined.Create_AEAD_AES_128_CCM(skey);
+                    clientWriteAead = AEAD_Predefined.Create_AEAD_AES_128_CCM(ckey);
+                    break;
+                case CipherSuite.TLS_AES_256_GCM_SHA384:
+                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 32);
+                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 32);
+                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
+                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
+
+                    serverWriteAead = AEAD_Predefined.Create_AEAD_AES_256_GCM(skey);
+                    clientWriteAead = AEAD_Predefined.Create_AEAD_AES_256_GCM(ckey);
                     break;
                 default: throw new NotImplementedException();
             }

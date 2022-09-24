@@ -525,6 +525,18 @@ namespace Arctium.Standards.PKCS1.v2_2
 
 
         /// <summary>
+        /// Invokes <see cref="RSASSA_PSS_SIGN(PrivateKey, byte[], int, HashFunction, MGF)"/>
+        /// With sLen = hashFunction.HashSizeInBytes (seed length equal to hash size in bytes),
+        /// MGF = null (means default MGF from standard)
+        /// </summary>
+        public static byte[] RSASSA_PSS_SIGN(PrivateKey privateKey, byte[] M, HashFunctionType hashFunction)
+        {
+            HashFunction hashFunc = CryptoAlgoFactory.CreateHashFunction(hashFunction);
+
+            return RSASSA_PSS_SIGN(privateKey, M, hashFunc.HashSizeBytes, hashFunc, null);
+        }
+
+        /// <summary>
         /// PSS Signature. Method generated Probabilistic Signature Scheme and returns signature as byte array.
         /// sLen (seed length), hash function and MGF are optional. 
         /// If not specified, then sLen = 0, hashFunction = SHA1 and MGF = MGF1 (from standard)
