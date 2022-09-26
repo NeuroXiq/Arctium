@@ -183,7 +183,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 AlertDescription description = (AlertDescription)recordLayer.RecordFragmentBytes[1];
                 AlertLevel level = (AlertLevel)recordLayer.RecordFragmentBytes[0];
 
-                string alertFormat = string.Format("Alert Level: {0}, Alert Description: {1} (raw values: level: {2}, description: {3})",
+                string alertFormat = string.Format("Received: Alert Level: {0}, Alert Description: {1} (raw values: level: {2}, description: {3})",
                     level.ToString(), description.ToString(), (int)level, (int)description);
 
                 validate.RecordLayer.Throw(true, alertFormat);

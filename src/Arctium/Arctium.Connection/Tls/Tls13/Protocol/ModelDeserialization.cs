@@ -30,6 +30,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [ExtensionType.SignatureAlgorithms] = DeserializeExtension_SignatureAlgorithms,
                 [ExtensionType.SignatureAlgorithmsCert] = DeserializeExtension_SignatureAlgorithmsCert,
                 [ExtensionType.SupportedGroups] = DeserializeExtension_SupportedGroups,
+                [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Client,
                 [ExtensionType.ServerName] = DeserializeExtension_ServerName,
             };
 
@@ -55,6 +56,17 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(CertificateVerify)] = DeserializeCertificateVerify,
                 [typeof(Finished)] = DeserializeFinished,
             };
+        }
+
+        private Extension DeserializeExtension_PreSharedKey_Client(byte[] buf, int offs)
+        {
+            RangeCursor cursor;
+            int len;
+            ExtensionDeserializeSetup(buf, offs, out cursor, out len);
+
+            MemDump.HexDump(buf, cursor, 10);
+
+            throw new Exception();
         }
 
         public static int HelperGetOffsetOfPskExtensionInClientHello(byte[] buffer, int clientHelloOffset)
@@ -128,6 +140,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private Extension DeserializeExtension_KeyShare_Client(byte[] buf, int offs)
         {
+            return null;
             int length;
             RangeCursor cursor;
             ExtensionDeserializeSetup(buf, offs, out cursor, out length);
@@ -578,7 +591,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             validate.Handshake.ThrowGeneral(!cursor.OnMaxPosition, "serverhello: after deserialize cursor not on last position");
 
-            return new ServerHello(random, legacySessionIdEcho, cipherSuite, extensions.ToArray());
+            return new ServerHello(random, legacySessionIdEcho, cipherSuite, extensions);
         }
 
         #region Extensions
@@ -793,6 +806,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private Extension DeserializeExtension_Cookie(byte[] arg1, int arg2)
         {
+            return null;
             throw new NotImplementedException();
         }
 

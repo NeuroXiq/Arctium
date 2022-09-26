@@ -3,6 +3,8 @@ using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation;
+using Arctium.Cryptography.Ciphers.EllipticCurves;
+using Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms;
 using Arctium.Cryptography.Ciphers.StreamCiphers;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Cryptography.HashFunctions.KDF;
@@ -14,6 +16,8 @@ using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards;
 using Arctium.Standards.Crypto;
+using Arctium.Standards.EllipticCurves;
+using Arctium.Standards.EllipticCurves.SEC2;
 using Arctium.Standards.PKCS1.v2_2;
 using System;
 using System.Collections.Generic;
@@ -248,18 +252,39 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             if (clientKeyShareEntry.NamedGroup != SelectedNamedGroup) throw new ArctiumExceptionInternal();
 
             var clientShare = clientKeyShareEntry;
+            KeyShareServerHelloExtension keyShare = null;
+            byte[] keyToSend = null;
 
-            if (clientShare == null) throw new ArctiumExceptionInternal("internal: trying to compute other than selected");
+            if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.X25519)
+            {
+                byte[] privKey = new byte[32];
+                GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 32);
 
-            byte[] privKey = new byte[32];
-            GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 32);
+                keyToSend = RFC7748.X25519_UCoord_9(privKey);
 
-            byte[] keyToSend = RFC7748.X25519_UCoord_9(privKey);
+                byte[] sharedSecret = RFC7748.X25519(privKey, clientShare.KeyExchangeRawBytes);
+                // keyShare = new KeyShareServerHelloExtension(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyToSend));
 
-            byte[] sharedSecret = RFC7748.X25519(privKey, clientShare.KeyExchangeRawBytes);
-            var keyShare = new KeyShareServerHelloExtension(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyToSend));
+                this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
+            }
+            else if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Secp256r1)
+            {
+                var ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp256r1);
+                var clientPoint = SEC1_EllipticCurve.OctetStringToEllipticCurvePoint(clientKeyShareEntry.KeyExchangeRawBytes, ecparams.p);
+                
+                ECFpPoint pointToSend;
+                var secret = SEC1_ECFpAlgorithm.EllipticCurveKeyPairGenerationPrimitive(ecparams, out pointToSend);
 
-            this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
+                var sharedSecret = SEC1_ECFpAlgorithm.EllipticCurveDiffieHellmanPrimitive(ecparams, secret, clientPoint);
+
+                keyToSend = SEC1_EllipticCurve.EllipticCurvePointToOctetString(ecparams, pointToSend, SEC1_EllipticCurve.ECPointCompression.NotCompressed);
+
+                this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
+                
+            }
+            else throw new NotSupportedException();
+
+            
 
             return keyToSend;
         }
@@ -294,7 +319,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void SelectEcEcdheGroup(ClientHello hello, out bool groupOk)
         {
-            var supportedGroups = new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
+            var supportedGroups = config.NamedGroups; // new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
             var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList;
             int selectedGroupIdx = -1;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace Arctium.Cryptography.Ciphers.Asymmetric.Algorithms
+namespace Arctium.Cryptography.Ciphers.RSA.Algorithms
 {
     public static class RSAAlgorithm
     {

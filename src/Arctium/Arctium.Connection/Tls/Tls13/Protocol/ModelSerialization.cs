@@ -1,6 +1,7 @@
 ﻿using Arctium.Connection.Tls.Tls13.API;
 using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
+using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Collections.Generic;
@@ -45,7 +46,31 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(KeyShareServerHelloExtension)] = SerializeKeyShareServerHelloExtension,
                 [typeof(ProtocolNameListExtension)] = SerializeProtocolNameListExtension,
                 [typeof(PreSharedKeyServerHelloExtension)] = Serialize_Extension_PreSharedKeyServerHelloExtension,
+                [typeof(KeyShareHelloRetryRequestExtension)] = Serialize_Extension_KeyShareHelloRetryRequestExtension,
+                [typeof(CookieExtension)] = Serialize_Extension_Cookie
             };
+        }
+
+        private void Serialize_Extension_Cookie(object obj)
+        {
+            CookieExtension ext = (CookieExtension)obj;
+
+            int lenOffs = tempSerializedExtension.OutsideAppend(2);
+            int o = tempSerializedExtension.OutsideAppend(ext.Cookie.Length);
+
+            if (ext.Cookie.Length > ushort.MaxValue) throw new ArctiumExceptionInternal();
+
+            MemMap.ToBytes1UShortBE((ushort)ext.Cookie.Length, tempSerializedExtension.Buffer, lenOffs);
+            MemCpy.Copy(ext.Cookie, 0, tempSerializedExtension.Buffer, o, ext.Cookie.Length);
+        }
+
+        private void Serialize_Extension_KeyShareHelloRetryRequestExtension(object obj)
+        {
+            KeyShareHelloRetryRequestExtension ext = (KeyShareHelloRetryRequestExtension)obj;
+
+            int groupOffs = tempSerializedExtension.OutsideAppend(2);
+
+            MemMap.ToBytes1UShortBE((ushort)ext.SelectedGroup, tempSerializedExtension.Buffer, groupOffs);
         }
 
         private void Serialize_Extension_PreSharedKeyServerHelloExtension(object obj)

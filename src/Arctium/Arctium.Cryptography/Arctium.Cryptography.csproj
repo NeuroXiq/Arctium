@@ -22,7 +22,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Ciphers\Aead\" />
+    <Compile Remove="Ciphers\Aead\**" />
+    <EmbeddedResource Remove="Ciphers\Aead\**" />
+    <None Remove="Ciphers\Aead\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Ciphers\Asymmetric\" />
     <Folder Include="Ciphers\StreamCiphers\Exceptions\" />
     <Folder Include="HashFunctions\Checksums\" />
   </ItemGroup>

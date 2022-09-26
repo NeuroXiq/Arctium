@@ -66,7 +66,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 });
             // var certificate = new Certificate(new byte[0], new CertificateEntry[0]);
 
-            Extension[] extensions = new Extension[]
+            List<Extension> extensions = new List<Extension>
             {
                 ServerSupportedVersionsExtension.ServerHelloTls13,
                 keyShare

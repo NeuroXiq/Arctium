@@ -1,5 +1,6 @@
 ﻿using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Standards.PKCS1.v2_2;
+using static Arctium.Connection.Tls.Tls13.Model.Extensions.SupportedGroupExtension;
 
 namespace Arctium.Connection.Tls.Tls13.API
 {
@@ -7,6 +8,7 @@ namespace Arctium.Connection.Tls.Tls13.API
     {
         public bool UseNewSessionTicketPsk { get; internal set; }
         internal CipherSuite[] CipherSuites;
+        internal NamedGroup[] NamedGroups;
 
         public byte[] DerEncodedCertificateBytes;
         public RSAPrivateKey CertificatePrivateKey;
@@ -24,6 +26,8 @@ namespace Arctium.Connection.Tls.Tls13.API
                 {
                     CipherSuite.TLS_AES_256_GCM_SHA384
                 };
+
+            c.NamedGroups = new NamedGroup[] { NamedGroup.Secp256r1 };
 
             return c;
         }

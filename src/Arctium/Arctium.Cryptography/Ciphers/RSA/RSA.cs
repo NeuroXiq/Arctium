@@ -1,9 +1,9 @@
-﻿using Arctium.Cryptography.Ciphers.Asymmetric.Algorithms;
+﻿using Arctium.Cryptography.Ciphers.RSA.Algorithms;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Arctium.Cryptography.Ciphers.Asymmetric
+namespace Arctium.Cryptography.Ciphers.RSA
 {
     public class RSA
     {

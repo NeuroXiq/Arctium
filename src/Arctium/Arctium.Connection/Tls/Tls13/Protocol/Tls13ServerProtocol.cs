@@ -4,6 +4,7 @@ using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
+using Arctium.Shared.Helpers.Binary;
 using Arctium.Standards;
 using System;
 using System.Collections.Generic;
@@ -172,6 +173,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 case ServerProcolCommand.Handshake_ServerFinished: ServerFinished(); break;
                 case ServerProcolCommand.Handshake_ClientFinished: ClientFinished(); break;
                 case ServerProcolCommand.Handshake_HandshakeCompletedSuccessfully: Handshake_HandshakeCompletedSuccessfully(); break;
+                case ServerProcolCommand.Handshake_HelloRetryRequest: Handshake_HelloRetryRequest(); break;
                 case ServerProcolCommand.Handshake_CertificateRequest:
                 case ServerProcolCommand.Handshake_ClientCertificate:
                 case ServerProcolCommand.Handshake_ClientCertificateVerify:
@@ -193,8 +195,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 crypto.ResumptionMasterSecret,
                 newSessTicket.Ticket,
                 newSessTicket.TicketNonce,
-                crypto.SelectedCipherSuiteHashFunctionName,
-                crypto.BinderKey);
+                crypto.SelectedCipherSuiteHashFunctionName);
 
             messageIO.WriteHandshake(newSessTicket);
 
@@ -314,6 +315,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificate);
         }
 
+        private void Handshake_HelloRetryRequest()
+        {
+            messageIO.WriteHandshake(context.HelloRetryRequest);
+            context.ClientHello2 = messageIO.LoadHandshakeMessage<ClientHello>();
+        }
+
         private void ServerHelloPsk()
         {
             ClientHello clientHello = context.ClientHello1;
@@ -418,7 +425,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             validate.Handshake.AlertFatal(!binderValid, AlertDescription.DecryptError, "binder value invalid");
 
-            ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions.ToArray());
+            ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions);
 
             messageIO.WriteHandshake(serverHello);
 
@@ -436,30 +443,60 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             // full crypto (not PSK), select: ciphersuite, (ec)dhe group, signature algorithm
 
             bool isClientHello1 = context.ClientHello2 == null;
+            ClientHello clientHello = context.ClientHello2 ?? context.ClientHello1;
 
-            if (!isClientHello1)
+            if (isClientHello1)
             {
-                throw new NotImplementedException("");
+                bool groupOk, cipherSuiteOk, signAlgoOk;
+                crypto.SelectSuiteAndEcEcdheGroupAndSigAlgo(context.ClientHello1, out groupOk, out cipherSuiteOk, out signAlgoOk);
+                validate.Handshake.SelectedSuiteAndEcEcdheGroupAndSignAlgo(groupOk, cipherSuiteOk, signAlgoOk);
             }
 
-            bool groupOk, cipherSuiteOk, signAlgoOk;
-            crypto.SelectSuiteAndEcEcdheGroupAndSigAlgo(context.ClientHello1, out groupOk, out cipherSuiteOk, out signAlgoOk);
-            validate.Handshake.SelectedSuiteAndEcEcdheGroupAndSignAlgo(groupOk, cipherSuiteOk, signAlgoOk);
-
-            var keyShare = context.ClientHello1.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
+            // todo validate if set on ch2
+            var keyShare = clientHello.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
                 .ClientShares
-                .Single(share => share.NamedGroup == crypto.SelectedNamedGroup);
+                .FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
 
-            var random = new byte[Tls13Const.HelloRandomFieldLength];
-            var keyShareToSend = crypto.GenerateSharedSecretAndGetKeyShareToSend(keyShare);
-
-            var extensions = new Extension[]
+            List<Extension> extensions = new List<Extension>()
             {
-                ServerSupportedVersionsExtension.ServerHelloTls13,
-                new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend))
+                ServerSupportedVersionsExtension.ServerHelloTls13, //todo uncomment
             };
 
-            ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions);
+            ServerHello serverHello;
+            var random = new byte[Tls13Const.HelloRandomFieldLength];
+
+            if (isClientHello1)
+            {
+                // random randomgeneratr
+            }
+            else
+            {
+                MemOps.MemsetZero(random);
+            }
+
+            serverHello = new ServerHello(random,
+                    context.ClientHello1.LegacySessionId,
+                    crypto.SelectedCipherSuite,
+                    extensions);
+
+            if (keyShare == null)
+            {
+                // hello retry
+                serverHello.Random = ServerHello.RandomSpecialConstHelloRetryRequest;
+                serverHello.Extensions.Add(new KeyShareHelloRetryRequestExtension(crypto.SelectedNamedGroup));
+                //serverHello.Extensions.Add(new CookieExtension(new byte[48]));
+                context.HelloRetryRequest = serverHello;
+
+                CommandQueue.Enqueue(ServerProcolCommand.Handshake_HelloRetryRequest);
+                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloNotPsk);
+                return;
+            }
+            else
+            {
+                var keyShareToSend = crypto.GenerateSharedSecretAndGetKeyShareToSend(keyShare);
+                extensions.Add(new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend)));
+            }
+            
 
             messageIO.WriteHandshake(serverHello);
 
@@ -484,8 +521,26 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientHello1);
         }
 
+        static void test()
+        {
+            string s = @"02 00 00 ac 03 03 cf 21 ad 74 e5 9a 61
+         11 be 1d 8c 02 1e 65 b8 91 c2 a2 11 16 7a bb 8c 5e 07 9e 09 e2
+         c8 a8 33 9c 00 13 01 00 00 84 00 33 00 02 00 17 00 2c 00 74 00
+         72 71 dc d0 4b b8 8b c3 18 91 19 39 8a 00 00 00 00 ee fa fc 76
+         c1 46 b8 23 b0 96 f8 aa ca d3 65 dd 00 30 95 3f 4e df 62 56 36
+         e5 f2 1b b2 e2 3f cc 65 4b 1b 5b 40 31 8d 10 d1 37 ab cb b8 75
+         74 e3 6e 8a 1f 02 5f 7d fa 5d 6e 50 78 1b 5e da 4a a1 5b 0c 8b
+         e7 78 25 7d 16 aa 30 30 e9 e7 84 1d d9 e4 c0 34 22 67 e8 ca 0c
+         af 57 1f b2 b7 cf f0 f9 34 b0 00 2b 00 02 03 04".Replace(" ", "").Replace("\r\n", "");
+            var b = BinConverter.FromString(s);
+
+            (new ModelDeserialization(new Validate())).Deserialize<ServerHello>(b, 0);
+        }
+
         private void ClientHello1()
         {
+            // test();
+
             ClientHello clientHello = messageIO.LoadHandshakeMessage<ClientHello>();
             validate.ClientHello.GeneralValidateClientHello(clientHello);
 
