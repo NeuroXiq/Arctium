@@ -64,6 +64,7 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
 
             for (int i = 0; i < s.Length * 8; i++)
             {
+                
                 bool bit = (s[i / 8] & (1 << (i % 8))) != 0;
                 BigInteger rx, ry;
 

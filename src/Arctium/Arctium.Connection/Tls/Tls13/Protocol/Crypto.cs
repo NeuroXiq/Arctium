@@ -363,24 +363,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public byte[] TranscriptHash(params byte[][] m)
         {
             hashFunction.Reset();
-            hashFunction = new SHA2_384();
-            System.Security.Cryptography.SHA384 sha384 = System.Security.Cryptography.SHA384.Create();
-
-
 
             foreach (byte[] buf in m)
             {
                 hashFunction.HashBytes(buf);
-                sha384.TransformBlock(buf, 0, buf.Length, null, 0);
             }
 
-            sha384.TransformFinalBlock(new byte[0], 0, 0);
-
-            var x = sha384.Hash;
-
-            var y = hashFunction.HashFinal();
-
-            return x;
+            return hashFunction.HashFinal();
         }
 
 
@@ -498,7 +487,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             byte[] result = new byte[hmac.HashFunctionHashSizeBytes];
 
             hmac.Reset();
-
+            
             hmac.ChangeKey(finishedKey);
             hmac.ProcessBytes(TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength)));
 
@@ -536,6 +525,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public void PostHandshakeFinished()
         {
             throw new Exception();
+        }
+
+        private byte[] HandshakeTranscriptHash(HandshakeContext handshakeContext, int lastMsgToIncludeIndex)
+        {
+            return null;
         }
 
         byte[] HkdfExpandLabel(byte[] secret, string labelText, byte[] context, int length)
