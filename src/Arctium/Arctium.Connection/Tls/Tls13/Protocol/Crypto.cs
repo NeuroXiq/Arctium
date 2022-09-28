@@ -562,6 +562,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             for (int i = 0; i <= indexLastMsgToInclude; i++)
                 if (handshakeContext.MessagesInfo[i].HandshakeType == HandshakeType.ClientHello) chCount++;
 
+            if (forPskBinders) chCount = handshakeContext.MessagesInfo.Count(m => m.HandshakeType == HandshakeType.ClientHello);
+
             ch2 = chCount == 2;
             int clientHello1Len = -1;
             hashFunction.Reset();

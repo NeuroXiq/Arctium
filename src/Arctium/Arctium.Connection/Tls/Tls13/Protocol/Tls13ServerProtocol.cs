@@ -5,6 +5,7 @@ using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Binary;
+using Arctium.Shared.Other;
 using Arctium.Standards;
 using System;
 using System.Collections.Generic;
@@ -323,25 +324,23 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private void ServerHelloPsk()
         {
-            ClientHello clientHello = context.ClientHello1;
             bool isClientHello1 = context.ClientHello2 == null;
-            bool helloRetryNeeded = false;
+            var random = new byte[Tls13Const.HelloRandomFieldLength];
+            var legacySessionId = context.ClientHello1.LegacySessionId;
+            List<Extension> extensions = new List<Extension>
+            {
+                ServerSupportedVersionsExtension.ServerHelloTls13,
+            };
+
+            PreSharedKeyClientHelloExtension preSharedKeyExtension;
+            KeyShareEntry clientKeyShare = null;
 
             context.IsPskSessionResumption = true;
 
-            var preSharedKeyExtension = context.ClientHello1.GetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey); //.Extensions.Select(r => r.ExtensionType == ).First();
-            KeyShareEntry clientKeyShare = null;
-
-
-            //PreSharedKeyExchangeModeExtension extMode;
-            //context.ClientHello1.TryGetExtension<PreSharedKeyExchangeModeExtension>(ExtensionType.PskKeyExchangeModes, out extMode);
-            //var ticketIssued = this.serverContext.PskTickets.Single(t => MemOps.Memcmp(t.Ticket.Ticket, x.Identities[0].Identity));
-
-
-            // todo must validate binder values
             if (isClientHello1)
             {
-                bool groupOk = false, cipherOk = false;
+                ClientHello clientHello = context.ClientHello1;
+                bool groupOk = false, cipherOk = false, helloRetryNeeded = false;
                 var keyExchangeModes = clientHello.GetExtension<PreSharedKeyExchangeModeExtension>(ExtensionType.PskKeyExchangeModes).KeModes;
 
                 if (keyExchangeModes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe))
@@ -364,37 +363,30 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 else validate.Handshake.AlertFatal(true, AlertDescription.Illegal_parameter, "keyExchangeModes not supported or illegal param");
 
                 validate.Handshake.AlertFatal(!(cipherOk && groupOk), AlertDescription.HandshakeFailure, "client and server ececdhe or cipher suites does not match mutually");
-            }
 
-            var random = new byte[Tls13Const.HelloRandomFieldLength];
-            var legacySessionId = context.ClientHello1.LegacySessionId;
-            var extensions = new List<Extension>
-            {
-                ServerSupportedVersionsExtension.ServerHelloTls13,
-            };
+                if (helloRetryNeeded)
+                {
+                    random = ServerHello.RandomSpecialConstHelloRetryRequest;
+                    extensions.Add(new KeyShareHelloRetryRequestExtension(crypto.SelectedNamedGroup));
+                    context.HelloRetryRequest = new ServerHello(random, legacySessionId, crypto.SelectedCipherSuite, extensions);
 
-            if (context.HelloRetryRequest != null)
-            {
-                random = context.HelloRetryRequest.Random;
+                    // hello retry needed, send helloretry and go back again to this method
+                    CommandQueue.Enqueue(ServerProcolCommand.Handshake_HelloRetryRequest);
+                    CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
+                    return;
+                }
+
+                GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
+                preSharedKeyExtension = context.ClientHello1.GetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey);
             }
             else
             {
                 GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
-            }
+                preSharedKeyExtension = context.ClientHello2.GetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey);
+                clientKeyShare = context.ClientHello2.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
+                    .ClientShares.FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
 
-
-            if (helloRetryNeeded)
-            {
-                random = ServerHello.RandomSpecialConstHelloRetryRequest;
-                extensions.Add(new KeyShareHelloRetryRequestExtension(crypto.SelectedNamedGroup));
-                context.HelloRetryRequest = new ServerHello(random, legacySessionId, crypto.SelectedCipherSuite, extensions);
-
-                // send retry and go back to this method again
-                // helloretry = new serverhello(...)
-                // messageio.write(helloretry);
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_HelloRetryRequest);
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
-                return;
+                if (clientKeyShare == null) Validation.ThrowInternal("must never happer because is clienthello2");
             }
 
             int selectedClientIdentity;
@@ -433,7 +425,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             crypto.InitHandshakeSecret(handshakeContext);
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
-            //decrypt_error
 
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
@@ -522,30 +513,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientHello1);
         }
 
-        static void test()
-        {
-            string s = @"02 00 00 ac 03 03 cf 21 ad 74 e5 9a 61
-         11 be 1d 8c 02 1e 65 b8 91 c2 a2 11 16 7a bb 8c 5e 07 9e 09 e2
-         c8 a8 33 9c 00 13 01 00 00 84 00 33 00 02 00 17 00 2c 00 74 00
-         72 71 dc d0 4b b8 8b c3 18 91 19 39 8a 00 00 00 00 ee fa fc 76
-         c1 46 b8 23 b0 96 f8 aa ca d3 65 dd 00 30 95 3f 4e df 62 56 36
-         e5 f2 1b b2 e2 3f cc 65 4b 1b 5b 40 31 8d 10 d1 37 ab cb b8 75
-         74 e3 6e 8a 1f 02 5f 7d fa 5d 6e 50 78 1b 5e da 4a a1 5b 0c 8b
-         e7 78 25 7d 16 aa 30 30 e9 e7 84 1d d9 e4 c0 34 22 67 e8 ca 0c
-         af 57 1f b2 b7 cf f0 f9 34 b0 00 2b 00 02 03 04".Replace(" ", "").Replace("\r\n", "");
-            var b = BinConverter.FromString(s);
-
-            (new ModelDeserialization(new Validate())).Deserialize<ServerHello>(b, 0);
-        }
-
         private void ClientHello1()
         {
-            // test();
-
             ClientHello clientHello = messageIO.LoadHandshakeMessage<ClientHello>();
             validate.ClientHello.GeneralValidateClientHello(clientHello);
-
-            // todo: if clientkeyshare didn't send crypto arguments need to helloretryrequest
 
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
