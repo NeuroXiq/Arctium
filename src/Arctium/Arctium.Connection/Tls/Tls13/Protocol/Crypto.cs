@@ -14,6 +14,7 @@ using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared.Other;
 using Arctium.Standards;
 using Arctium.Standards.Crypto;
 using Arctium.Standards.EllipticCurves;
@@ -170,13 +171,14 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             string contextStr = "TLS 1.3, server CertificateVerify";
             byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
 
-            List<byte[]> tohash = new List<byte[]>();
-
-            tohash.Add(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength));
+           //List<byte[]> tohash = new List<byte[]>();
+            // 
+            //tohash.Add(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength));
             //tohash.AddRange(handshakeContext.Select(x => x.Value));
             // tohash.Add(this.serverConfig.DerEncodedCertificateBytes);
 
-            byte[] hash = TranscriptHash(tohash.ToArray());
+            //byte[] hash = TranscriptHash(tohash.ToArray());
+             byte[] hash = HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1);
 
             byte[] tosign = new byte[64 + stringBytes.Length + 1 + hash.Length];
 
@@ -230,10 +232,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             byte[] ch_sf_bytes = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[sfIdx].LengthTo);
             byte[] ch_cf_bytes = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[handshakeContext.MessagesInfo.Count - 1].LengthTo);
 
-            InitMasterSecret(ch_sf_bytes, ch_cf_bytes);
+            InitMasterSecret(handshakeContext);
         }
 
-        public void InitMasterSecret(byte[] clienthello_serverfinished, byte[] clienthello_clientfinished)
+        public void InitMasterSecret(HandshakeContext hcontext)
         {
             byte[] derived = DeriveSecret(HandshakeSecret, "derived", new byte[0]);
             byte[] zeroValueOfHashLen = new byte[hashFunction.HashSizeBytes];
@@ -241,10 +243,24 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             hkdf.Extract(derived, zeroValueOfHashLen, MasterSecret);
 
-            ClientApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "c ap traffic", clienthello_serverfinished);
-            ServerApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "s ap traffic", clienthello_serverfinished);
-            ExporterMasterSecret = DeriveSecret(MasterSecret, "exp master", clienthello_serverfinished);
-            ResumptionMasterSecret = DeriveSecret(MasterSecret, "res master", clienthello_clientfinished);
+            int sf = -1, cf = -1;
+
+            for (int i = 0; i < hcontext.MessagesInfo.Count && (sf == -1 || cf == -1); i++)
+            {
+                if (hcontext.MessagesInfo[i].HandshakeType == HandshakeType.Finished)
+                {
+                    if (sf == -1) sf = i;
+                    else if (cf == -1) { cf = i; }
+                    else Validation.ThrowInternal("");
+                }
+            }
+
+            if (sf == -1 || cf == -1) Validation.ThrowInternal("");
+
+            ClientApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "c ap traffic", hcontext, sf);
+            ServerApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "s ap traffic", hcontext, sf);
+            ExporterMasterSecret = DeriveSecret(MasterSecret, "exp master", hcontext, cf);
+            ResumptionMasterSecret = DeriveSecret(MasterSecret, "res master", hcontext, cf);
         }
 
         public byte[] GenerateSharedSecretAndGetKeyShareToSend(KeyShareEntry clientKeyShareEntry)
@@ -460,7 +476,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             BinderKey = DeriveSecret(EarlySecret, externalBinder ? "ext binder" : "res binder", new byte[0]);
 
-            ClientEarlyTrafficSecret = DeriveSecret(EarlySecret, "c e traffic", clientHello);
+            ClientEarlyTrafficSecret = DeriveSecret(EarlySecret, "c e traffic", handshakeContext, 0);
         }
 
         public void InitHandshakeSecret(HandshakeContext handshakeContext)
@@ -469,15 +485,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             // MemCpy.Copy(messages[0], 0, buf, 0, messages[0].Length);
             // MemCpy.Copy(messages[1], 0, buf, messages[0].Length, messages[1].Length);
 
-            byte[] buf = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[1].LengthTo);
+            // second server hello (skip helloretryrequest)
+            int sh2OrSh1 = handshakeContext.MessagesInfo.FindLastIndex(x => x.HandshakeType == HandshakeType.ServerHello);
+
+            // byte[] buf = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[1].LengthTo);
 
             byte[] derived = DeriveSecret(EarlySecret, "derived", new byte[0]);
 
             HandshakeSecret = new byte[hashFunction.HashSizeBytes];
             hkdf.Extract(derived, this.Ecdhe_or_dhe_SharedSecret, HandshakeSecret);
 
-            ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", buf);
-            ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", buf);
+            // ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", buf);
+            // ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", buf);
+
+            ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", handshakeContext, sh2OrSh1);
+            ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", handshakeContext, sh2OrSh1);
         }
 
         public byte[] ServerFinished(HandshakeContext handshakeContext)
@@ -489,7 +511,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             hmac.Reset();
             
             hmac.ChangeKey(finishedKey);
-            hmac.ProcessBytes(TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength)));
+            hmac.ProcessBytes(HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1));
+            // hmac.ProcessBytes(TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength)));
 
             hmac.Final(result, 0);
 
@@ -527,9 +550,45 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             throw new Exception();
         }
 
-        private byte[] HandshakeTranscriptHash(HandshakeContext handshakeContext, int lastMsgToIncludeIndex)
+        private byte[] HandshakeContextTranscriptHash(HandshakeContext handshakeContext, int indexLastMsgToInclude)
         {
-            return null;
+            bool ch2 = false;
+            int chCount = 0;
+
+            for (int i = 0; i <= indexLastMsgToInclude; i++)
+                if (handshakeContext.MessagesInfo[i].HandshakeType == HandshakeType.ClientHello) chCount++;
+
+            ch2 = chCount == 2;
+
+            hashFunction.Reset();
+
+            // special case when helloretryrequest (so two clienthello in context)
+            if (ch2)
+            {
+                byte[] tempCh1 = new byte[4];
+
+                tempCh1[0] = (byte)HandshakeType.MessageHash;
+                MemMap.ToBytes1UShortBE((ushort)hashFunction.HashSizeBytes, tempCh1, 2);
+
+                hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
+                byte[] clientHello1Hash = hashFunction.HashFinal();
+
+                hashFunction.Reset();
+                hashFunction.HashBytes(tempCh1);
+                hashFunction.HashBytes(clientHello1Hash);
+            }
+            else
+            {
+                // not special case just hash
+                hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
+            }
+
+            // hash everything but not first message (CH 1) because can be special case as above
+            int clientHello1Len = handshakeContext.MessagesInfo[0].Length;
+
+            hashFunction.HashBytes(handshakeContext.HandshakeMessages, clientHello1Len, handshakeContext.MessagesInfo[indexLastMsgToInclude].LengthTo - clientHello1Len);
+
+            return hashFunction.HashFinal();
         }
 
         byte[] HkdfExpandLabel(byte[] secret, string labelText, byte[] context, int length)
@@ -580,6 +639,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             hkdf.Expand(secret, label, result, length);
 
             return result;
+        }
+
+        byte[] DeriveSecret(byte[] secret, string label, HandshakeContext handshakeContext, int hContextLastMsgIndex)
+        {
+            return HkdfExpandLabel(secret, label, HandshakeContextTranscriptHash(handshakeContext, hContextLastMsgIndex), hashFunction.HashSizeBytes);
         }
 
         byte[] DeriveSecret(byte[] secret, string label, byte[] messages)

@@ -145,7 +145,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             MemCpy.Copy(b1.Buffer, 0, clienthello_serverfinised, 0, b1.DataLength);
             MemCpy.Copy(b2.Buffer, 0, clienthello_clientfinised, 0, b2.DataLength);
 
-            crypto.InitMasterSecret(clienthello_serverfinised, clienthello_clientfinised);
+            // crypto.InitMasterSecret(clienthello_serverfinised, clienthello_clientfinised);
             crypto.ChangeRecordLayerCrypto(recordLayer, Crypto.RecordLayerKeyType.ApplicationData);
 
             var a = recordLayer.Read();

@@ -1,4 +1,13 @@
-﻿using Arctium.Shared;
+﻿/*
+ * Algoritms for EC cryptography used in arctium project as standard algorithms.
+ * Algorithms prefixed with SEC1_[...] are compilant with SEC1 standard
+ * For all SEC1 algorithms see Arctium.Stardards project (SEC1)
+ * 
+ * Implemented by NeuroXiq 2022
+ * 
+ */
+
+using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
@@ -8,6 +17,10 @@ using System.Numerics;
 
 namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
 {
+    /// <summary>
+    /// Algorithms for elliptic curves used in Arctium project.
+    /// Algorithms base on SEC1 Standard.
+    /// </summary>
     public class SEC1_ECFpAlgorithm
     {
         public static byte[] EllipticCurveKeyPairGenerationPrimitive(ECFpDomainParameters ecparams, out ECFpPoint computedPointToSendToOtherParty)
@@ -21,11 +34,6 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
             do
             {
                 GlobalConfig.RandomGeneratorCryptSecure(rand, 0, bytelen);
-
-                //long rembits = bitslen % 8;
-                //int remove = (int)((1 << ((int)rembits)) - 1);
-
-                //rand[0] = (byte)(rand[0] & remove);
                 result = new BigInteger(rand, true, true);
             } while (result >= ecparams.n);
 
@@ -102,11 +110,6 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
 
             if (x1 == 0 && y1 == 0) { x3 = x2; y3 = y2; return;}
             if (x2 == 0 && y2 == 0) { x3 = x1; y3 = y1; return; }
-
-            //if (x1 == x2 && y1 != y2)
-            //{
-            //    x3 = y3 = 0;
-            //}
 
             if (x1 == x2)
             {

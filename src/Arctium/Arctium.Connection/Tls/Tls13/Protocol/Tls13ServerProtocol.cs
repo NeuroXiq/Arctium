@@ -254,7 +254,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             validate.Finished.FinishedSigValid(crypto.VerifyClientFinished(finished.VerifyData, handshakeContext));
 
             crypto.InitMasterSecret2(handshakeContext);
-
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
             
             messageIO.SetBackwardCompatibilityMode(
@@ -272,7 +271,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             var finished = new Finished(finishedVerifyData);
 
             messageIO.WriteHandshake(finished);
-            
+            // messageIO.recordLayer.Read();
             // todo: or get certificate from client if needed
 
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientFinished);
@@ -295,8 +294,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 new CertificateEntry(CertificateType.X509, config.DerEncodedCertificateBytes, new Extension[0])
             });
 
+            
             messageIO.WriteHandshake(certificate);
-            //messageIO.recordLayer.Read();
             //CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificateVerify);
         }
 
@@ -418,12 +417,12 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 extensions.Add(new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend)));
             }
 
-            crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
-            crypto.InitEarlySecret(handshakeContext);
-
             bool binderValid = crypto.IsPskBinderValueValid(handshakeContext, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]);
 
             validate.Handshake.AlertFatal(!binderValid, AlertDescription.DecryptError, "binder value invalid");
+
+            crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
+            crypto.InitEarlySecret(handshakeContext);
 
             ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions);
 
@@ -497,7 +496,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 extensions.Add(new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend)));
             }
             
-
             messageIO.WriteHandshake(serverHello);
 
             crypto.InitEarlySecret(handshakeContext);
@@ -549,7 +547,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
 
-            if (clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
+            if (false && clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
             }
