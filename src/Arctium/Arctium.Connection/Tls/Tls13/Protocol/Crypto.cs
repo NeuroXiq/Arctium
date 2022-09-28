@@ -527,7 +527,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             var toPskBinders = handshakeContext.LengthToPskBinders;
 
-            var hash = TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, toPskBinders));
+            //int clientHello1Or2Offset = handshakeContext.MessagesInfo.FindLastIndex(m => m.HandshakeType == HandshakeType.ClientHello);
+
+            //var hash = TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, toPskBinders));
+            var hash = HandshakeContextTranscriptHash(handshakeContext, -1, true);
             byte[] result = new byte[hash.Length];
 
             byte[] binderKey = HkdfExpandLabel(BinderKey, "finished", new byte[0], hashFunction.HashSizeBytes);
@@ -550,17 +553,43 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             throw new Exception();
         }
 
-        private byte[] HandshakeContextTranscriptHash(HandshakeContext handshakeContext, int indexLastMsgToInclude)
+        private byte[] HandshakeContextTranscriptHash(HandshakeContext handshakeContext, int indexLastMsgToInclude, bool forPskBinders = false)
         {
             bool ch2 = false;
             int chCount = 0;
+
 
             for (int i = 0; i <= indexLastMsgToInclude; i++)
                 if (handshakeContext.MessagesInfo[i].HandshakeType == HandshakeType.ClientHello) chCount++;
 
             ch2 = chCount == 2;
-
+            int clientHello1Len = -1;
             hashFunction.Reset();
+
+            if (forPskBinders)
+            {
+                if (!ch2)
+                {
+                    hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.LengthToPskBinders);
+                    return hashFunction.HashFinal();
+                }
+
+                clientHello1Len = handshakeContext.MessagesInfo[0].LengthTo;
+                byte[] tempCh1 = new byte[4];
+
+                tempCh1[0] = (byte)HandshakeType.MessageHash;
+                MemMap.ToBytes1UShortBE((ushort)hashFunction.HashSizeBytes, tempCh1, 2);
+
+                hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
+                byte[] clientHello1Hash = hashFunction.HashFinal();
+
+                hashFunction.Reset();
+                hashFunction.HashBytes(tempCh1);
+                hashFunction.HashBytes(clientHello1Hash);
+                hashFunction.HashBytes(handshakeContext.HandshakeMessages, clientHello1Len, handshakeContext.LengthToPskBinders - clientHello1Len);
+
+                return hashFunction.HashFinal();
+            }
 
             // special case when helloretryrequest (so two clienthello in context)
             if (ch2)
@@ -584,9 +613,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
 
             // hash everything but not first message (CH 1) because can be special case as above
-            int clientHello1Len = handshakeContext.MessagesInfo[0].Length;
+            clientHello1Len = handshakeContext.MessagesInfo[0].Length;
 
-            hashFunction.HashBytes(handshakeContext.HandshakeMessages, clientHello1Len, handshakeContext.MessagesInfo[indexLastMsgToInclude].LengthTo - clientHello1Len);
+            int length = handshakeContext.MessagesInfo[indexLastMsgToInclude].LengthTo - clientHello1Len;
+
+            hashFunction.HashBytes(handshakeContext.HandshakeMessages, clientHello1Len, length);
 
             return hashFunction.HashFinal();
         }

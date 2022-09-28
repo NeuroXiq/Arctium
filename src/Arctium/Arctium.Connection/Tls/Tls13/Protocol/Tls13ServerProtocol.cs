@@ -42,6 +42,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             public CipherSuite SelectedCipherSuite;
             public byte[] EcdhOrDheSharedSecret;
             public bool IsPskSessionResumption;
+            public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
 
             public Tls13ServerContext.PskTicket SelectedPskTicket { get; internal set; }
         }
@@ -352,40 +353,49 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                         .ClientShares.FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
 
                     helloRetryNeeded = clientKeyShare == null;
+                    context.KeyExchangeMode = PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe;
                 }
                 else if (keyExchangeModes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskKe))
                 {
                     crypto.SelectCipherSuite(clientHello, out cipherOk);
                     groupOk = true;
+                    context.KeyExchangeMode = PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskKe;
                 }
                 else validate.Handshake.AlertFatal(true, AlertDescription.Illegal_parameter, "keyExchangeModes not supported or illegal param");
 
                 validate.Handshake.AlertFatal(!(cipherOk && groupOk), AlertDescription.HandshakeFailure, "client and server ececdhe or cipher suites does not match mutually");
             }
+
+            var random = new byte[Tls13Const.HelloRandomFieldLength];
+            var legacySessionId = context.ClientHello1.LegacySessionId;
+            var extensions = new List<Extension>
+            {
+                ServerSupportedVersionsExtension.ServerHelloTls13,
+            };
+
+            if (context.HelloRetryRequest != null)
+            {
+                random = context.HelloRetryRequest.Random;
+            }
             else
             {
-                helloRetryNeeded = false;
+                GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
             }
+
 
             if (helloRetryNeeded)
             {
-                throw new NotImplementedException();
+                random = ServerHello.RandomSpecialConstHelloRetryRequest;
+                extensions.Add(new KeyShareHelloRetryRequestExtension(crypto.SelectedNamedGroup));
+                context.HelloRetryRequest = new ServerHello(random, legacySessionId, crypto.SelectedCipherSuite, extensions);
+
                 // send retry and go back to this method again
                 // helloretry = new serverhello(...)
                 // messageio.write(helloretry);
-                // CommandQueue.Enqueue(ServerProcolCommand.Handshake_SendHelloRetryRequestAndLoadClientHello2);
-                // CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
+                CommandQueue.Enqueue(ServerProcolCommand.Handshake_HelloRetryRequest);
+                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
+                return;
             }
-
-            if (!isClientHello1)
-            {
-                throw new NotImplementedException();
-                // build serverhello based on retry if needed or some params must be same
-            }
-
-            
-
-            var random = new byte[Tls13Const.HelloRandomFieldLength];
 
             int selectedClientIdentity;
             var pskTicket = serverContext.GetPskTicket(preSharedKeyExtension, crypto.SelectedCipherSuiteHashFunctionName, out selectedClientIdentity);
@@ -399,32 +409,25 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 return;
             }
 
-            var extensions = new List<Extension>
-            {
-                ServerSupportedVersionsExtension.ServerHelloTls13,
-                new PreSharedKeyServerHelloExtension((ushort)selectedClientIdentity),
-                // not send keyshare?
-            };
-
-            // TODO what to do with retry request? how this works
-            if (helloRetryNeeded)
-            {
-                extensions.Add(new KeyShareHelloRetryRequestExtension(crypto.SelectedNamedGroup));
-            }
-            else
-            {
-                var keyShareToSend = crypto.GenerateSharedSecretAndGetKeyShareToSend(clientKeyShare);
-                extensions.Add(new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend)));
-            }
-
-            bool binderValid = crypto.IsPskBinderValueValid(handshakeContext, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]);
-
-            validate.Handshake.AlertFatal(!binderValid, AlertDescription.DecryptError, "binder value invalid");
-
             crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
             crypto.InitEarlySecret(handshakeContext);
 
-            ServerHello serverHello = new ServerHello(random, context.ClientHello1.LegacySessionId, crypto.SelectedCipherSuite, extensions);
+            validate.Handshake.AlertFatal(
+                !crypto.IsPskBinderValueValid(handshakeContext, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]),
+                AlertDescription.DecryptError, "binder value invalid");
+
+            extensions.Add(new PreSharedKeyServerHelloExtension((ushort)selectedClientIdentity));
+
+            if (context.KeyExchangeMode == PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe)
+            {
+                clientKeyShare = (context.ClientHello2 ?? context.ClientHello1).GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
+                        .ClientShares.FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
+                var keyShareToSend = crypto.GenerateSharedSecretAndGetKeyShareToSend(clientKeyShare);
+                extensions.Add(new KeyShareServerHelloExtension(new KeyShareEntry(crypto.SelectedNamedGroup, keyShareToSend)));
+            }
+            else throw new NotSupportedException();
+
+            var serverHello = new ServerHello(random, legacySessionId, crypto.SelectedCipherSuite, extensions);
 
             messageIO.WriteHandshake(serverHello);
 
@@ -547,7 +550,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
 
-            if (false && clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
+            if (clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _))
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk);
             }

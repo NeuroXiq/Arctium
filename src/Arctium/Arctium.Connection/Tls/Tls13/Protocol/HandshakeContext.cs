@@ -37,7 +37,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             // if clienthello2 not found then poinst to clienthello1
             int clientHello1or2Offset = -1;
 
-            for (int i = MessagesInfo.Count - 1 ; i >= 0 && clientHello1or2Offset == -1; i--)
+            for (int i = MessagesInfo.Count - 1; i >= 0 && (clientHello1or2Offset == -1); i--)
             {
                 if (MessagesInfo[i].HandshakeType == HandshakeType.ClientHello)
                     clientHello1or2Offset = MessagesInfo[i].Offset;
@@ -49,7 +49,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             if (offset == -1) throw new ArctiumExceptionInternal();
 
-            return offset + clientHello1or2Offset;
+            return offset;
         }
 
         private ByteBuffer byteBuffer;
