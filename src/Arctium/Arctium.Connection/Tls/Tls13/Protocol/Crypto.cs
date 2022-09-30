@@ -271,7 +271,11 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             KeyShareServerHelloExtension keyShare = null;
             byte[] keyToSend = null;
 
-            if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.X25519)
+            if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Xx448)
+            {
+                throw new NotImplementedException();
+            }
+            else if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.X25519)
             {
                 byte[] privKey = new byte[32];
                 GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 32);
@@ -283,11 +287,24 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
                 this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
             }
-            else if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Secp256r1)
+            else if ((new[] { SupportedGroupExtension.NamedGroup.Secp256r1,
+                    SupportedGroupExtension.NamedGroup.Secp384r1,
+                    SupportedGroupExtension.NamedGroup.Secp521r1 })
+                        .Any(x => x == clientKeyShareEntry.NamedGroup))
             {
-                var ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp256r1);
+                SEC2_EllipticCurves.Parameters parms;
+
+                switch (clientKeyShareEntry.NamedGroup)
+                {
+                    case SupportedGroupExtension.NamedGroup.Secp256r1: parms = SEC2_EllipticCurves.Parameters.secp256r1; break;
+                    case SupportedGroupExtension.NamedGroup.Secp384r1: parms = SEC2_EllipticCurves.Parameters.secp384r1; break;
+                    case SupportedGroupExtension.NamedGroup.Secp521r1: parms = SEC2_EllipticCurves.Parameters.secp521r1; break;
+                    default: throw new NotSupportedException("never happen");
+                }
+
+                var ecparams = SEC2_EllipticCurves.CreateParameters(parms);
                 var clientPoint = SEC1_EllipticCurve.OctetStringToEllipticCurvePoint(clientKeyShareEntry.KeyExchangeRawBytes, ecparams.p);
-                
+
                 ECFpPoint pointToSend;
                 var secret = SEC1_ECFpAlgorithm.EllipticCurveKeyPairGenerationPrimitive(ecparams, out pointToSend);
 
@@ -296,13 +313,25 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 keyToSend = SEC1_EllipticCurve.EllipticCurvePointToOctetString(ecparams, pointToSend, SEC1_EllipticCurve.ECPointCompression.NotCompressed);
 
                 this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
-                
+
+            }
+            else if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe2048 ||
+                clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe3072 ||
+                clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe4096 ||
+                clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe6144 ||
+                clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe8192)
+            {
+
             }
             else throw new NotSupportedException();
 
-            
-
             return keyToSend;
+        }
+
+        internal bool VerifyClientCertificate(CertificateVerify certVer)
+        {
+            //todo implement this
+            return true;
         }
 
         public void asdf(ClientHello clientHello)
@@ -314,7 +343,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             // todo other hash funcs (32 constant for now)
             // need to select valid hash function 
             
-            this.psk = HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, 48);
+            this.psk = HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, hashFunction.HashSizeBytes);
         }
 
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
@@ -525,11 +554,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         {
             if (psk == null) throw new ArctiumExceptionInternal("psk must be set");
 
-            var toPskBinders = handshakeContext.LengthToPskBinders;
-
-            //int clientHello1Or2Offset = handshakeContext.MessagesInfo.FindLastIndex(m => m.HandshakeType == HandshakeType.ClientHello);
-
-            //var hash = TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, toPskBinders));
             var hash = HandshakeContextTranscriptHash(handshakeContext, -1, true);
             byte[] result = new byte[hash.Length];
 
@@ -555,6 +579,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         private byte[] HandshakeContextTranscriptHash(HandshakeContext handshakeContext, int indexLastMsgToInclude, bool forPskBinders = false)
         {
+            // todo clean up needed here
             bool ch2 = false;
             int chCount = 0;
 

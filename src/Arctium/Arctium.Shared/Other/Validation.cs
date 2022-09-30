@@ -5,6 +5,10 @@ namespace Arctium.Shared.Other
 {
     public static class Validation
     {
+        public static void ThrowInternal(bool shouldThrow, string msg) { if (shouldThrow) throw new ArctiumExceptionInternal(msg); }
+
+        public static void ThrowInternal(bool shouldThrow) { if (shouldThrow) throw new ArctiumExceptionInternal(); }
+
         public static void ThrowInternal(string message) => throw new ArctiumExceptionInternal(message);
 
         public static void Length(byte[] key, int expectedLength, string argName)

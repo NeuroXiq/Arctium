@@ -10,6 +10,7 @@ namespace Arctium.Connection.Tls.Tls13.API
         internal CipherSuite[] CipherSuites;
         internal NamedGroup[] NamedGroups;
 
+        public bool HandshakeRequestCertificateFromClient;
         public byte[] DerEncodedCertificateBytes;
         public RSAPrivateKey CertificatePrivateKey;
         public string RSAPrivateKeyString;
@@ -21,7 +22,8 @@ namespace Arctium.Connection.Tls.Tls13.API
             c.DerEncodedCertificateBytes = certBytes;
             c.CertificatePrivateKey = privateKey;
 
-            c.UseNewSessionTicketPsk = true;
+            c.UseNewSessionTicketPsk = false;
+            c.HandshakeRequestCertificateFromClient = true;
             c.CipherSuites = new CipherSuite[]
                 {
                     CipherSuite.TLS_AES_256_GCM_SHA384

@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arctium.Connection.Tls.Tls13.Model.Extensions;
 
 namespace Arctium.Connection.Tls.Tls13.Model
 {
     internal class CertificateRequest
     {
+        public byte[] CertificateRequestContext { get; private set; }
+        public Extension[] Extensions { get; private set; }
+
+        public CertificateRequest(byte[] certificateRequestContext, Extension[] extensions)
+        {
+            CertificateRequestContext = certificateRequestContext;
+            Extensions = extensions;
+        }
     }
 }

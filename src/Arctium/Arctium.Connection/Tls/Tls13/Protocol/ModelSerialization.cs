@@ -3,6 +3,7 @@ using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared.Other;
 using System;
 using System.Collections.Generic;
 
@@ -38,6 +39,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(Finished)] = SerializeFinished,
                 [typeof(EncryptedExtensions)] = SerializeEncryptedExtensions,
                 [typeof(NewSessionTicket)] = SerializeNewSessionTicket,
+                [typeof(CertificateRequest)] = SerializeCertificateRequest
             };
 
             singleExtensionSerializers = new Dictionary<Type, Action<object>>
@@ -47,8 +49,55 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(ProtocolNameListExtension)] = SerializeProtocolNameListExtension,
                 [typeof(PreSharedKeyServerHelloExtension)] = Serialize_Extension_PreSharedKeyServerHelloExtension,
                 [typeof(KeyShareHelloRetryRequestExtension)] = Serialize_Extension_KeyShareHelloRetryRequestExtension,
-                [typeof(CookieExtension)] = Serialize_Extension_Cookie
+                [typeof(CookieExtension)] = Serialize_Extension_Cookie,
+                [typeof(SignatureSchemeListExtension)] = Serialize_Extension_SignatureSchemeListExtension
             };
+        }
+
+        private void SerializeCertificateRequest(object obj)
+        {
+            CertificateRequest certReq = (CertificateRequest)obj;
+
+            buffer.Append((byte)HandshakeType.CertificateRequest);
+            int handshakeLenOffset = buffer.OutsideAppend(3);
+
+            int reqContextLen = certReq.CertificateRequestContext.Length;
+
+            Validation.ThrowInternal(reqContextLen > 255);
+            
+            buffer.Append((byte)reqContextLen);
+            int contextOffset = buffer.OutsideAppend(reqContextLen);
+
+            MemCpy.Copy(certReq.CertificateRequestContext, 0, buffer.Buffer, contextOffset, reqContextLen);
+
+            int extLenOffs = buffer.OutsideAppend(2);
+
+            foreach (var ext in certReq.Extensions) ExtensionToBytes(ext);
+
+            long extLen = SerializedDataLength - extLenOffs - 2;
+
+            Validation.ThrowInternal(extLen > ushort.MaxValue);
+
+            MemMap.ToBytes1UShortBE((ushort)extLen, SerializedData, extLenOffs);
+
+            Set3Bytes((int)(SerializedDataLength - handshakeLenOffset - 3), handshakeLenOffset);
+        }
+
+        private void Serialize_Extension_SignatureSchemeListExtension(object obj)
+        {
+            SignatureSchemeListExtension ext = (SignatureSchemeListExtension)obj;
+
+            Validation.ThrowInternal(ext.Schemes.Length == 0, "spec say min one scheme");
+
+            int lenOffs = tempSerializedExtension.OutsideAppend(2);
+
+            for (int i = 0; i < ext.Schemes.Length; i++)
+            {
+                int schemeOffs = tempSerializedExtension.OutsideAppend(2);
+                MemMap.ToBytes1UShortBE((ushort)ext.Schemes[i], tempSerializedExtension.Buffer, schemeOffs);
+            }
+
+            MemMap.ToBytes1UShortBE((ushort)(ext.Schemes.Length * 2), tempSerializedExtension.Buffer, lenOffs);
         }
 
         private void Serialize_Extension_Cookie(object obj)
@@ -165,10 +214,10 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             foreach (var certEntry in cert.CertificateList)
             {
-                if (certEntry.CertificateType != CertificateType.X509) throw new Exception("internal: not implemented other that x509");
+                if (certEntry.CertificateType != null) throw new Exception("internal: not implemented other that x509, not sure how to serialize/deserialize, now it must be null until something better found");
 
                 int certLenOffs = buffer.OutsideAppend(3);
-                int certLen = certEntry.CertData.Length;
+                int certLen = certEntry.CertificateEntryRawBytes.Length;
                 int certOffs = buffer.OutsideAppend(certLen);
                 int extLenOffs = buffer.OutsideAppend(2);
 
@@ -176,7 +225,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 SerializedData[certLenOffs + 1] = (byte)((certLen & 0x00FF00) >> 08);
                 SerializedData[certLenOffs + 2] = (byte)((certLen & 0x0000FF) >> 00);
 
-                MemCpy.Copy(certEntry.CertData, 0, SerializedData, certOffs, certLen);
+                MemCpy.Copy(certEntry.CertificateEntryRawBytes, 0, SerializedData, certOffs, certLen);
 
                 if (certEntry.Extensions.Length > 0) throw new NotImplementedException("extesnsions serialization not implemented");
                 MemMap.ToBytes1UShortBE(0, SerializedData, extLenOffs);

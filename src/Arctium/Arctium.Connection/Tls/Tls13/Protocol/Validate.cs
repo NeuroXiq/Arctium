@@ -385,9 +385,9 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             internal void SelectedSuiteAndEcEcdheGroupAndSignAlgo(bool groupOk, bool cipherSuiteOk, bool signAlgoOk)
             {
-                AlertFatal(!groupOk, AlertDescription.HandshakeFailure, "client supported groups not overlap with implemented");
+                AlertFatal(!groupOk, AlertDescription.HandshakeFailure, "client supported groups not overlap in this instance/implementation");
                 AlertFatal(!cipherSuiteOk, AlertDescription.HandshakeFailure, "Received cipher suites doesn't overlap with supported in this instance/implementation");
-                AlertFatal(!signAlgoOk, AlertDescription.HandshakeFailure, "signature algorithm doesn't overlap with supported in current implementation");
+                AlertFatal(!signAlgoOk, AlertDescription.HandshakeFailure, "signature algorithm doesn't overlap with supported in this instance/implementation");
             }
         }
 

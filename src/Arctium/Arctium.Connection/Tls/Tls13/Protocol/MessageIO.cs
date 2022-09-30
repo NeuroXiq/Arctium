@@ -119,21 +119,21 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return (T)result;
         }
 
-        public void LoadCertificateMessage(CertificateType type)
-        {
-            throw new Exception("need to add to context");
-            LoadHandshake();
-            clientModelDeserialization.DeserializeCertificate(buffer, 0, type);
+        //public void LoadCertificateMessage(CertificateType type)
+        //{
+        //    throw new Exception("need to add to context");
+        //    LoadHandshake();
+        //    clientModelDeserialization.DeserializeCertificate(buffer, 0, type);
 
-            int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
+        //    int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
-            // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+        //    // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
 
-            // HandshakeContextAdd(HandshakeType.Certificate, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
-            HandshakeContextAdd(HandshakeType.Certificate, byteBuffer.Buffer, 0, len);
+        //    // HandshakeContextAdd(HandshakeType.Certificate, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
+        //    HandshakeContextAdd(HandshakeType.Certificate, byteBuffer.Buffer, 0, len);
 
-            byteBuffer.TrimStart(len + 4);
-        }
+        //    byteBuffer.TrimStart(len + 4);
+        //}
 
         void HandshakeContextAdd(HandshakeType type, byte[] buffer, long offset, long length)
         {

@@ -55,6 +55,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 [typeof(EncryptedExtensions)] = DeserializeEncryptedExtensions,
                 [typeof(CertificateVerify)] = DeserializeCertificateVerify,
                 [typeof(Finished)] = DeserializeFinished,
+                [typeof(Certificate)] = DeserializeCertificate
             };
         }
 
@@ -416,7 +417,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return new CertificateVerify(scheme, signature);
         }
 
-        public Certificate DeserializeCertificate(byte[] buf, int offs, CertificateType expectedType)
+        public Certificate DeserializeCertificate(byte[] buf, int offs /*, CertificateType expectedType*/)
         {
             validate.Handshake.ThrowGeneral(buf[offs + 0] != (byte)HandshakeType.Certificate, "cannot deserialize not a certificate type");
             
@@ -477,7 +478,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     cursor += result.Length - 1;
                 }
 
-                certificateList.Add(new CertificateEntry(expectedType, certData, extensions.ToArray()));
+                certificateList.Add(new CertificateEntry(null, certData, extensions.ToArray()));
             }
 
             validate.Certificate.Throw(!cursor.OnMaxPosition, "not on max position");
