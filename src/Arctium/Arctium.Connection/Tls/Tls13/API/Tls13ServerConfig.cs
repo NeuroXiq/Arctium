@@ -29,7 +29,7 @@ namespace Arctium.Connection.Tls.Tls13.API
                     CipherSuite.TLS_AES_256_GCM_SHA384
                 };
 
-            c.NamedGroups = new NamedGroup[] { NamedGroup.Secp256r1 };
+            c.NamedGroups = new NamedGroup[] { NamedGroup.Xx448 };
 
             return c;
         }

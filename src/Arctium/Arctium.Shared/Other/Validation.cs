@@ -11,15 +11,29 @@ namespace Arctium.Shared.Other
 
         public static void ThrowInternal(string message) => throw new ArctiumExceptionInternal(message);
 
-        public static void Length(byte[] key, int expectedLength, string argName)
+        public static void Length(byte[] bytes, long expectedLength, string argName, string additionalInfo = null)
         {
-            if (key == null) throw new ArgumentNullException($"{argName} is null");
-            if (key.Length != expectedLength) ThrowArctium($"{argName} length is invalid. Expected length: {expectedLength}");
+            if (bytes == null) throw new ArgumentNullException($"{argName} is null");
+            if (bytes.Length != expectedLength)
+            {
+                string msg = $"{argName} length is invalid. Expected length: {expectedLength}";
+                
+                if (additionalInfo != null) msg += ". " + additionalInfo;
+                
+                ThrowArctium(msg);
+            }
         }
 
-        public static void Length(long currentLength, long expectedLength, string argName)
+        public static void Length(long currentLength, long expectedLength, string argName, string additionalInfo = null)
         {
-            if (currentLength != expectedLength) ThrowArctium($"Invalid value of {argName}. Expected: '{expectedLength}' but current: '{currentLength}'");
+            if (currentLength != expectedLength)
+            {
+                string msg = $"Invalid value of {argName}. Expected: '{expectedLength}' but current: '{currentLength}'";
+                
+                if (additionalInfo != null) msg += ". " + additionalInfo;
+
+                ThrowArctium(msg);
+            }
         }
 
         public static void LengthMax(long currentLength, long maxLength, string argName)

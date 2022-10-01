@@ -3,6 +3,7 @@ using Arctium.Connection.Tls.Tls13.Model;
 using Arctium.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation;
+using Arctium.Cryptography.Ciphers.DiffieHellman;
 using Arctium.Cryptography.Ciphers.EllipticCurves;
 using Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms;
 using Arctium.Cryptography.Ciphers.StreamCiphers;
@@ -17,6 +18,7 @@ using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
 using Arctium.Standards;
 using Arctium.Standards.Crypto;
+using Arctium.Standards.DiffieHellman;
 using Arctium.Standards.EllipticCurves;
 using Arctium.Standards.EllipticCurves.SEC2;
 using Arctium.Standards.PKCS1.v2_2;
@@ -273,7 +275,15 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
             if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Xx448)
             {
-                throw new NotImplementedException();
+                byte[] privKey = new byte[56];
+                GlobalConfig.RandomGeneratorCryptSecure(privKey, 0, 56);
+
+                keyToSend = RFC7748.X448_UCoord_5(privKey);
+
+                byte[] sharedSecret = RFC7748.X448(privKey, clientShare.KeyExchangeRawBytes);
+                // keyShare = new KeyShareServerHelloExtension(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyToSend));
+
+                this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
             }
             else if (clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.X25519)
             {
@@ -321,7 +331,16 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe6144 ||
                 clientKeyShareEntry.NamedGroup == SupportedGroupExtension.NamedGroup.Ffdhe8192)
             {
+                FFDHE_RFC7919.SupportedGroupRegistry group = (FFDHE_RFC7919.SupportedGroupRegistry)clientKeyShareEntry.NamedGroup;
 
+                var ffdheParams = FFDHE_RFC7919.GetFFDHEParams(group);
+                byte[] privateKey, publicKey;
+
+                FFDHE.GeneratePrivateAndPublicKey(ffdheParams, out privateKey, out publicKey);
+                var sharedSecret = FFDHE.ComputeSharedSecret(ffdheParams, privateKey, clientKeyShareEntry.KeyExchangeRawBytes);
+
+                keyToSend = publicKey;
+                this.Ecdhe_or_dhe_SharedSecret = sharedSecret;
             }
             else throw new NotSupportedException();
 
