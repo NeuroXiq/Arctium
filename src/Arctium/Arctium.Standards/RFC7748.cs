@@ -9,6 +9,9 @@ namespace Arctium.Standards
     /// </summary>
     public static class RFC7748
     {
+        public const int X25519_PrivateKeyLengthBytes = 32;
+        public const int X448_PrivateKeyLengthBytes = 56;
+
         // (2^255) - 19
         private static readonly BigInteger P_X22519 = (BigInteger.Pow(2, 255) - 19);
         private static readonly BigInteger A24_X25519 = 121665;
@@ -88,7 +91,7 @@ namespace Arctium.Standards
 
         public static BigInteger DecodeScalar448(byte[] k)
         {
-            Throw(k.Length != 56, "448 scalan length not equal to 56");
+            Throw(k.Length != 56, "448 scalar length not equal to 56");
 
             byte[] scalar = new byte[56];
             MemCpy.Copy(k, 0, scalar, 0, 56);
