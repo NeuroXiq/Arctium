@@ -139,29 +139,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             return true;
         }
 
-        private Crypto(
-            CipherSuite suite,
-            byte[] binderKey,
-            byte[] clientEarlyTrafficSecret,
-            byte[] earlyExporterMasterSecret,
-            byte[] clientHandshakeTrafficSecret,
-            byte[] serverHandshakeTrafficSecret,
-            byte[] clientApplicationTrafficSecret0,
-            byte[] serverApplicationTrafficSecret0,
-            byte[] exporterMasterSecret,
-            byte[] resumptionMasterSecret)
-        {
-            BinderKey = binderKey;
-            ClientEarlyTrafficSecret = clientEarlyTrafficSecret;
-            EarlyExporterMasterSecret = earlyExporterMasterSecret;
-            ClientHandshakeTrafficSecret = clientHandshakeTrafficSecret;
-            ServerHandshakeTrafficSecret = serverHandshakeTrafficSecret;
-            ClientApplicationTrafficSecret0 = clientApplicationTrafficSecret0;
-            ServerApplicationTrafficSecret0 = serverApplicationTrafficSecret0;
-            ExporterMasterSecret = exporterMasterSecret;
-            ResumptionMasterSecret = resumptionMasterSecret;
-        }
-
         internal byte[] GenerateServerCertificateVerifySignature(HandshakeContext handshakeContext)
         {
             if (SelectedSignatureScheme != SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256) throw new Exception();
@@ -210,21 +187,6 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
 
         public void InitMasterSecret2(HandshakeContext handshakeContext)
         {
-            //ByteBuffer ch_sf = new ByteBuffer();
-            //ByteBuffer ch_cf = new ByteBuffer();
-
-            //for (int i = 0; i < handshakeContext.Count; i++)
-            //{
-            //    ch_cf.Append(handshakeContext[i].Value);
-
-            //    if (i < handshakeContext.Count - 1)
-            //    {
-            //        ch_sf.Append(handshakeContext[i].Value);
-            //    }
-            //}
-
-            //byte[] ch_sf_bytes = MemCpy.CopyToNewArray(ch_sf.Buffer, 0, ch_sf.DataLength);
-            //byte[] ch_cf_bytes = MemCpy.CopyToNewArray(ch_cf.Buffer, 0, ch_cf.DataLength);
 
             int sfIdx = -1;
 
@@ -356,13 +318,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
         public void asdf(ClientHello clientHello)
         { }
 
-        public void SetupPsk(byte[] resumptionMasterSecretFromPreviousSession, byte[] ticketNonce)
+        public byte[] GeneratePsk(byte[] resumptionMasterSecretFromPreviousSession, byte[] ticketNonce)
         {
             // todo other ciphers than aes_gcm..
             // todo other hash funcs (32 constant for now)
             // need to select valid hash function 
             
-            this.psk = HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, hashFunction.HashSizeBytes);
+            return HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, hashFunction.HashSizeBytes);
         }
 
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
@@ -393,7 +355,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     if (supportedGroups[i] == clientGroups[j]) selectedGroupIdx = i;
                 }
 
-            groupOk = clientGroups.Length > 0 && selectedGroupIdx < supportedGroups.Length;
+            groupOk = clientGroups.Length > 0 && selectedGroupIdx < supportedGroups.Length && selectedGroupIdx >= 0;
             if (groupOk) this.SelectedNamedGroup = supportedGroups[selectedGroupIdx];
         }
 
@@ -410,7 +372,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                     if (supportedSignAlgo[i] == clientSignAlgos[j]) selectedSignAlgoIdx = i;
                 }
 
-            signAlgoOk = clientSignAlgos.Length > 0 && selectedSignAlgoIdx < supportedSignAlgo.Length;
+            signAlgoOk = clientSignAlgos.Length > 0 && selectedSignAlgoIdx < supportedSignAlgo.Length && selectedSignAlgoIdx >= 0;
 
             if (signAlgoOk) this.SelectedSignatureScheme = supportedSignAlgo[selectedSignAlgoIdx];
         }
@@ -510,13 +472,13 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             }
         }
         
-        public void InitEarlySecret(HandshakeContext handshakeContext)
+        public void InitEarlySecret(HandshakeContext handshakeContext, byte[] psk)
         {
             byte[] clientHello = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
             byte[] zeroValueOfHashLen = new byte[hashFunction.HashSizeBytes];
+            this.psk = psk;
             byte[] pskSecret = this.psk != null ? psk : zeroValueOfHashLen;
             EarlySecret = new byte[this.hashFunction.HashSizeBytes];
-
 
             bool externalBinder = false; // ? 
 

@@ -459,8 +459,8 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
                 return;
             }
 
-            crypto.SetupPsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
-            crypto.InitEarlySecret(handshakeContext);
+            byte[] psk = crypto.GeneratePsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
+            crypto.InitEarlySecret(handshakeContext, psk);
 
             validate.Handshake.AlertFatal(
                 !crypto.IsPskBinderValueValid(handshakeContext, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]),
@@ -555,7 +555,7 @@ namespace Arctium.Connection.Tls.Tls13.Protocol
             
             messageIO.WriteHandshake(serverHello);
 
-            crypto.InitEarlySecret(handshakeContext);
+            crypto.InitEarlySecret(handshakeContext, null);
             crypto.InitHandshakeSecret(handshakeContext);
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);

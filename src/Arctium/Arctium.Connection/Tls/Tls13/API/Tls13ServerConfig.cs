@@ -22,7 +22,7 @@ namespace Arctium.Connection.Tls.Tls13.API
             c.DerEncodedCertificateBytes = certBytes;
             c.CertificatePrivateKey = privateKey;
 
-            c.UseNewSessionTicketPsk = false;
+            c.UseNewSessionTicketPsk = true;
             c.HandshakeRequestCertificateFromClient = true;
             c.CipherSuites = new CipherSuite[]
                 {
