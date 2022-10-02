@@ -250,7 +250,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ClientFinished()
         {
-            var finished = messageIO.LoadHandshakeMessage<Finished>();
+            var finished = messageIO.ReadHandshakeMessage<Finished>();
 
             validate.Finished.FinishedSigValid(crypto.VerifyClientFinished(finished.VerifyData, handshakeContext));
 
@@ -295,7 +295,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ClientCertificateVerity()
         {
-            var certVer = messageIO.LoadHandshakeMessage<CertificateVerify>();
+            var certVer = messageIO.ReadHandshakeMessage<CertificateVerify>();
 
             // todo implement this
             if (!crypto.VerifyClientCertificate(certVer))
@@ -307,7 +307,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_ClientCertificate()
         {
             //messageIO.recordLayer.Read();
-            var certificate = messageIO.LoadHandshakeMessage<Certificate>();
+            var certificate = messageIO.ReadHandshakeMessage<Certificate>();
 
             if (certificate.CertificateList.Length > 0)
             {
@@ -366,7 +366,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             messageIO.WriteHandshake(context.HelloRetryRequest);
 
-            context.ClientHello2 = messageIO.LoadHandshakeMessage<ClientHello>();
+            context.ClientHello2 = messageIO.ReadHandshakeMessage<ClientHello>();
 
             var selectedByServer = ((KeyShareHelloRetryRequestExtension)context.HelloRetryRequest.Extensions.First(ext => ext.ExtensionType == ExtensionType.KeyShare)).SelectedGroup;
             var sharedFromClient = context.ClientHello2.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare).ClientShares;
@@ -597,7 +597,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ClientHello1()
         {
-            ClientHello clientHello = messageIO.LoadHandshakeMessage<ClientHello>();
+            ClientHello clientHello = messageIO.ReadHandshakeMessage<ClientHello>();
             validate.ClientHello.GeneralValidateClientHello(clientHello);
 
             context.ClientHello1 = clientHello;

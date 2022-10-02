@@ -23,7 +23,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.CertificatePrivateKey = privateKey;
 
             c.UseNewSessionTicketPsk = true;
-            c.HandshakeRequestCertificateFromClient = true;
+            c.HandshakeRequestCertificateFromClient = false;
             c.CipherSuites = new CipherSuite[]
                 {
                     CipherSuite.TLS_AES_128_GCM_SHA256

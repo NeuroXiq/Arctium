@@ -64,7 +64,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             if (info.ContentType == ContentType.ApplicationData)
             {
-                MemCpy.Copy(buffer, 0, outBuffer, 0, info.Length);
+                MemCpy.Copy(buffer, 0, outBuffer, outOffs, info.Length);
                 applicationDataLength = info.Length;
 
                 byteBuffer.TrimStart(info.Length);
@@ -96,15 +96,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             recordLayer.Write(ContentType.Handshake, modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength);
         }
 
-        public T LoadHandshakeMessage<T>(bool isInitialClientHello = false)
+        public HandshakeType LoadHandshakeMessage()
         {
-            int loaded = 0;
-
             LoadHandshake();
 
-            int constHandshakeFieldsCount = 4;
+            return (HandshakeType)buffer[0];
+        }
 
-            HandshakeType type = (HandshakeType)buffer[0];
+        public T ReadHandshakeMessage<T>()
+        {
+            HandshakeType type = LoadHandshakeMessage();
 
             object result = clientModelDeserialization.Deserialize<T>(buffer, 0);
 

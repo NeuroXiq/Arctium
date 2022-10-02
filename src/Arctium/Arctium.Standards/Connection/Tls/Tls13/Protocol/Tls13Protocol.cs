@@ -40,7 +40,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void OpenServer()
         {
-            ClientHello hello = handshakeReader.LoadHandshakeMessage<ClientHello>(true);
+            ClientHello hello = handshakeReader.ReadHandshakeMessage<ClientHello>();
             this.clientHello = hello;
             var clientKeyShare = hello.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
                 .ClientShares
@@ -124,7 +124,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             var c = recordLayer.Read();
 
-            var clientFinished = handshakeReader.LoadHandshakeMessage<Finished>();
+            var clientFinished = handshakeReader.ReadHandshakeMessage<Finished>();
 
             var clienthello_clientfinised = new byte[handshakeContext.Select(x => x.Length).Sum()];
             var clienthello_serverfinised = new byte[clienthello_clientfinised.Length - handshakeContext.Last().Length];

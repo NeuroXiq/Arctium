@@ -13,10 +13,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     class Tls13ClientStreamInternal : Tls13Stream
     {
         Tls13ClientProtocol protocol;
+        int remainingApplicationData;
 
         public Tls13ClientStreamInternal(Tls13ClientProtocol protocol)
         {
             this.protocol = protocol;
+            remainingApplicationData = 0;
         }
 
         public override bool CanRead => throw new NotImplementedException();
@@ -36,7 +38,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            if (remainingApplicationData == 0)
+            {
+                protocol.LoadApplicationData();
+                remainingApplicationData = protocol.ApplicationDataLength;
+            }
+
+            int maxRead = count < remainingApplicationData ? count : remainingApplicationData;
+
+            MemCpy.Copy(protocol.ApplicationDataBuffer, protocol.ApplicationDataLength - remainingApplicationData, buffer, offset, maxRead);
+            remainingApplicationData -= maxRead;
+
+            return maxRead;
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -51,7 +64,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            protocol.WriteApplicationData(buffer, offset, count);
         }
     }
 

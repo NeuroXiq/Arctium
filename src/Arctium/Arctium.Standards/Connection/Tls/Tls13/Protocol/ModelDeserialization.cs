@@ -55,8 +55,64 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(EncryptedExtensions)] = DeserializeEncryptedExtensions,
                 [typeof(CertificateVerify)] = DeserializeCertificateVerify,
                 [typeof(Finished)] = DeserializeFinished,
-                [typeof(Certificate)] = DeserializeCertificate
+                [typeof(Certificate)] = DeserializeCertificate,
+                [typeof(NewSessionTicket)] = DeserializeNewSessionTicket
             };
+        }
+
+        private object DeserializeNewSessionTicket(byte[] buf, int offs)
+        {
+            HandshakeType type = (HandshakeType)buf[offs];
+            int msgLen = ToInt3BytesBE(buf, offs + 1);
+            RangeCursor c;
+
+            uint ticketLifetime, ticketAgeAdd;
+            int ticketLen, extLen;
+            byte[] ticket, ticketNonce;
+            List<Extension> extensions = new List<Extension>();
+
+            validate.NewSessionTicket.AlertFatalDecodeError(msgLen < 6, "handshake.length", "invalid length (minimum length is 6 bytes)");
+
+            c = new RangeCursor(offs + 4, offs + 4 + msgLen - 1);
+
+            validate.Handshake.AlertFatal(type != HandshakeType.NewSessionTicket, AlertDescription.UnexpectedMessage, "expected to deserialize newessionticket");
+
+            c.ThrowIfOutside(3);
+            ticketLifetime = MemMap.ToUInt4BytesBE(buf, c);
+            
+            c += 4; c.ThrowIfOutside(3);
+            ticketAgeAdd = MemMap.ToUInt4BytesBE(buf, c);
+
+            c += 4;
+            int ticketNonceLen = buf[c];
+            ticketNonce = new byte[ticketNonceLen];
+            
+            MemCpy.Copy(buf, c + 1, ticketNonce, 0, ticketNonceLen);
+            c += 1 + ticketNonceLen;
+
+            ticketLen = MemMap.ToUShort2BytesBE(buf, c);
+            validate.NewSessionTicket.AlertFatalDecodeError(ticketLen < 1, "ticket.length", "length less than 1");
+            
+            c += 2;
+
+            ticket = new byte[ticketLen];
+            MemCpy.Copy(buf, c, ticket, 0, ticketLen);
+
+            c += ticketLen;
+            c.ThrowIfOutside(1);
+
+            extLen = MemMap.ToUShort2BytesBE(buf, c);
+            c++;
+
+            while(!c.OnMaxPosition)
+            {
+                c++;
+                DeserializeExtension(Endpoint.Client, buf, c);
+            }
+
+            validate.NewSessionTicket.AlertFatalDecodeError(!c.OnMaxPosition, "handshake.length", "cursor not on last position");
+
+            return new NewSessionTicket(ticketLifetime, ticketAgeAdd, ticketNonce, ticket, extensions.ToArray());
         }
 
         private Extension DeserializeExtension_PreSharedKey_Client(byte[] buf, int offs)
@@ -141,16 +197,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private Extension DeserializeExtension_KeyShare_Client(byte[] buf, int offs)
         {
-            return null;
+            // can be key share, or serverhellokeyshareretry
             int length;
             RangeCursor cursor;
             ExtensionDeserializeSetup(buf, offs, out cursor, out length);
+
+            validate.Extensions.AlertFatalDecodeError(length < 2, "extension.length", "keyshare extension length less than 2 bytes");
 
             SupportedGroupExtension.NamedGroup group;
             ushort keyExchLen;
             byte[] keyExch;
 
             group = (SupportedGroupExtension.NamedGroup)((buf[cursor + 0] << 8) | (buf[cursor + 1] << 0));
+
+            if (length == 2)
+            {
+                return new KeyShareServerHelloExtension(new KeyShareEntry((NamedGroup)group, null));
+            }
+
             cursor += 2;
 
             cursor.ThrowIfShiftOutside(1);
@@ -167,7 +231,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 cursor += keyExchLen - 1;
             }
 
-            validate.Extensions.ThrowGeneral(!cursor.OnMaxPosition, "keyshare_client: cursor is not on last position after deserialize");
+            validate.Extensions.AlertFatalDecodeError(!cursor.OnMaxPosition, "probably one or more vectors length",
+                "keyshare client side: cursor is not on last position after deserialize)");
 
             KeyShareServerHelloExtension ext = new KeyShareServerHelloExtension(new KeyShareEntry(group, keyExch));
 

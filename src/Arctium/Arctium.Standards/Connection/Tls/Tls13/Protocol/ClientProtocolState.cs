@@ -5,6 +5,7 @@
         Start,
         Handshake,
         Connected,
+        PostHandshake,
         Closed,
         FatalError
     }

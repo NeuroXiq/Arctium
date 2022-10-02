@@ -14,8 +14,13 @@
         Handshake_ClientCertificate,
         Handshake_ClientCertificateVerify,
         Handshake_ClientFinished,
+        Handshake_HandshakeCompletedSuccessfully,
+        Connected_ReceivedPostHandshakeMessage,
 
         Connected_ReadApplicationData,
         Connected_WriteApplicationData,
+
+        PostHandshake_ProcessPostHandshakeMessage,
+        PostHandshake_FinishedProcessingPostHandshakeMessages,
     }
 }

@@ -35,6 +35,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public CertificateValidate Certificate { get; private set; }
         public ClientHelloValidate ClientHello { get; private set; }
         public FinishedValidate Finished { get; private set; }
+        public ServerHelloValidate ServerHello { get; private set; }
+        public NewSessionTicketValidate NewSessionTicket { get; private set; }
 
         public Validate()
         {
@@ -44,8 +46,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.Extensions = new ExtensionsValidate(errorHandler);
             this.ClientHello = new ClientHelloValidate(errorHandler);
             Finished = new FinishedValidate(errorHandler);
+            ServerHello = new ServerHelloValidate(errorHandler);
+            NewSessionTicket = new NewSessionTicketValidate(errorHandler);
 
             Certificate = new CertificateValidate(errorHandler);
+        }
+
+        public class NewSessionTicketValidate : ValidateBase
+        {
+            public NewSessionTicketValidate(ValidationErrorHandler handler) : base(handler, "NewSessionTicket")
+            {
+            }
         }
 
         public class ValidationErrorHandler
@@ -163,10 +174,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public void GeneralServerHelloValidate(ServerHello hello)
             {
-                ExtensionType[] validExtensionsForServerHello = new ExtensionType[]
+                foreach (var extension in hello.Extensions)
                 {
-
-                };
+                    if (IllegalExtensionAppearInMessage(extension.ExtensionType, HandshakeType.ServerHello))
+                    {
+                        string msg = String.Format("illegal extension: {0} (raw extensiontype as int: {1})", extension.ExtensionType.ToString(), (int)extension.ExtensionType);
+                        AlertFatal(true, AlertDescription.Illegal_parameter, msg);
+                    }
+                }
             }
         }
 
@@ -322,7 +337,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 if (recordType != ContentType.Handshake)
                 {
                     Throw("Handshake record types are not interleaved on record layer. " + 
-                        "Expected record content type: {0}, current record content type: {1]",
+                        "Expected record content type: {0}, current record content type: {1}",
                         ContentType.Handshake,
                         recordType);
                 }

@@ -359,6 +359,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, hashFunction.HashSizeBytes);
         }
 
+        public void SelectCipherSuite(CipherSuite serverHelloSuite)
+        {
+            this.SetupCryptoAlgorithms(serverHelloSuite);
+        }
+
+        public void SelectEcEcdheGroup(SupportedGroupExtension.NamedGroup serverHelloGroup)
+        {
+            
+        }
+
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
         {
             var supportedCipherSuites = config.CipherSuites; // new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
@@ -546,7 +556,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public byte[] ServerFinished(HandshakeContext handshakeContext)
         {
-            byte[] baseKey = ServerHandshakeTrafficSecret;
+            byte[] baseKey = currentEndpoint == Endpoint.Server ? ServerHandshakeTrafficSecret : ClientHandshakeTrafficSecret;
             byte[] finishedKey = HkdfExpandLabel(baseKey, "finished", new byte[0], hashFunction.HashSizeBytes);
             byte[] result = new byte[hmac.HashFunctionHashSizeBytes];
 
