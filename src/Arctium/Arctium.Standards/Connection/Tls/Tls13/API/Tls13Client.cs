@@ -5,16 +5,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public class Tls13Client
     {
-        Tls13ClientConfig config;
+        Tls13ClientContext context;
 
-        public Tls13Client(Tls13ClientConfig config)
+        public Tls13Client(Tls13ClientContext config)
         {
-            this.config = config;
+            this.context = config;
         }
 
         public Tls13Stream Connect(Stream rawNetworkStream)
         {
-            var protocol = new Tls13ClientProtocol(rawNetworkStream, config);
+            var protocol = new Tls13ClientProtocol(rawNetworkStream, context);
             protocol.Connect();
 
             return new Tls13ClientStreamInternal(protocol);

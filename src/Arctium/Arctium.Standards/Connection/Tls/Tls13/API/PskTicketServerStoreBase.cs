@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
-    public abstract class Tls13PskTicketStoreBase
+    public abstract class PskTicketServerStoreBase
     {
         public void SaveTicket()
         {

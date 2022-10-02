@@ -41,7 +41,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public bool IsPskSessionResumption;
             public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
 
-            public Tls13ServerContext.PskTicket SelectedPskTicket { get; internal set; }
+            public PskTicket SelectedPskTicket { get; internal set; }
         }
 
         private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
@@ -189,11 +189,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             NewSessionTicket newSessTicket = new NewSessionTicket(lifetime, ageAdd, nonce, ticket, new Extension[0]);
             
-            serverContext.SavePskTicket(crypto.Ecdhe_or_dhe_SharedSecret,
-                crypto.ResumptionMasterSecret,
+            serverContext.SavePskTicket(crypto.ResumptionMasterSecret,
                 newSessTicket.Ticket,
                 newSessTicket.TicketNonce,
-                crypto.SelectedCipherSuiteHashFunctionName);
+                newSessTicket.TicketLifetime,
+                newSessTicket.TicketAgeAdd,
+                crypto.SelectedCipherSuiteHashFunctionId);
 
             messageIO.WriteHandshake(newSessTicket);
 
@@ -444,7 +445,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             int selectedClientIdentity;
-            var pskTicket = serverContext.GetPskTicket(preSharedKeyExtension, crypto.SelectedCipherSuiteHashFunctionName, out selectedClientIdentity);
+            var pskTicket = serverContext.GetPskTicket(preSharedKeyExtension, crypto.SelectedCipherSuiteHashFunctionId, out selectedClientIdentity);
 
             if (selectedClientIdentity == -1)
             {

@@ -3,33 +3,12 @@ using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Helpers;
 using System.Collections.Generic;
+using Arctium.Cryptography.Utils;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
     class Tls13ServerContext
     {
-        public struct PskTicket
-        {
-            public byte[] Ec_or_Ecdhe;
-            public byte[] ResumptionMasterSecret;
-            public byte[] Ticket;
-            public byte[] TicketNonce;
-            public string HashFunctionName;
-
-            public PskTicket(byte[] ec_or_Ecdhe,
-                byte[] ticket,
-                byte[] nonce,
-                byte[] resumptionMastserSecret,
-                string hashFunctionName)
-            {
-                Ec_or_Ecdhe = ec_or_Ecdhe;
-                Ticket = ticket;
-                TicketNonce = nonce;
-                ResumptionMasterSecret = resumptionMastserSecret;
-                HashFunctionName = hashFunctionName;
-            }
-        }
-
         public Tls13ServerConfig Config { get; private set; }
 
         public List<PskTicket> PskTickets { get; private set; }
@@ -41,7 +20,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         }
 
         public PskTicket GetPskTicket(PreSharedKeyClientHelloExtension preSharedKeyExtension,
-            string selectedCipherSuiteHashFunctionName,
+            HashFunctionId selectedCipherSuiteHashFunctionId,
             out int clientSelectedIndex)
         {
             clientSelectedIndex = -1;
@@ -53,7 +32,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 for (int j = 0; j < this.PskTickets.Count; j++)
                 {
                     if (MemOps.Memcmp(this.PskTickets[j].Ticket, clientIdentities[i].Identity) &&
-                        selectedCipherSuiteHashFunctionName == PskTickets[j].HashFunctionName)
+                        selectedCipherSuiteHashFunctionId == PskTickets[j].HashFunctionId)
                     {
                         clientSelectedIndex = (int)i;
                         serverSelected = j;
@@ -70,13 +49,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return PskTickets[serverSelected];
         }
 
-        public void SavePskTicket(byte[] ec_or_ecdhe,
-            byte[] resumptionMasterSecret,
+        public void SavePskTicket(byte[] resumptionMasterSecret,
             byte[] ticket,
             byte[] nonce,
-            string hashFunctionName)
+            uint ticketLifetime,
+            uint ticketAgeAdd,
+            HashFunctionId hashFunctionId)
         {
-            this.PskTickets.Add(new PskTicket(ec_or_ecdhe, ticket, nonce, resumptionMasterSecret, hashFunctionName));
+            this.PskTickets.Add(new PskTicket(ticket, nonce, resumptionMasterSecret, ticketLifetime, ticketAgeAdd, hashFunctionId));
         }
     }
 }

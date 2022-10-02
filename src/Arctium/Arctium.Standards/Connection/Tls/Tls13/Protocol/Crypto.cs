@@ -71,9 +71,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             get { return selectedSignatureScheme.HasValue ? selectedSignatureScheme.Value : throw new ArctiumExceptionInternal(); }
             private set { selectedSignatureScheme = value; }
         }
-        public string SelectedCipherSuiteHashFunctionName
+        public HashFunctionId SelectedCipherSuiteHashFunctionId
         {
-            get { return selectedCipherSuiteHashFunctionName != null ? hashFunction.GetType().Name : throw new ArctiumExceptionInternal(); }
+            get { return selectedCipherSuiteHashFunctionId.HasValue ? selectedCipherSuiteHashFunctionId.Value : throw new ArctiumExceptionInternal(); }
         }
 
         private static readonly byte[] Tls13Label = Encoding.ASCII.GetBytes("tls13 ");
@@ -91,6 +91,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private CipherSuite? selectedCipherSuite = null;
         private SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme = null;
         private string selectedCipherSuiteHashFunctionName = null;
+        private HashFunctionId? selectedCipherSuiteHashFunctionId = null;
 
         private Tls13ServerConfig config;
 
@@ -338,13 +339,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         //    KeyShareServerHelloExtension keyShare = null;
         //    byte[] keyToSend = null;
 
-            
+
         //}
 
         internal bool VerifyClientCertificate(CertificateVerify certVer)
         {
             //todo implement this
             return true;
+        }
+
+        internal int GetHashSizeInBytes(HashFunctionId hashFunctionId)
+        {
+            switch (hashFunctionId)
+            {
+                case HashFunctionId.SHA2_256: return 32;
+                case HashFunctionId.SHA2_384: return 48;
+            }
+
+            Validation.ThrowInternal(); return -1;
         }
 
         public void asdf(ClientHello clientHello)
@@ -572,7 +584,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         }
 
         public bool IsPskBinderValueValid(HandshakeContext handshakeContext,
-            Tls13ServerContext.PskTicket ticket,
+            PskTicket ticket,
             byte[] clientBinderValue)
         {
             if (psk == null) throw new ArctiumExceptionInternal("psk must be set");
@@ -588,6 +600,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             hmac.Final(result, 0);
 
             return MemOps.Memcmp(result, clientBinderValue);
+        }
+
+        public void ComputeBinderValue(byte[] handshakeContextTranscriptHashToBinders)
+        {
+            
         }
 
         public void ClientFinished()

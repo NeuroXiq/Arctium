@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -22,10 +23,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ServerHello HelloRetryRequest;
             public ClientHello ClientHello2;
             public bool CertificateRequest;
+
+            public PskTicket[] PskTickets { get; internal set; }
         }
 
         Context context;
-        Tls13ClientConfig config;
+        Tls13ClientConfig config { get { return clientContext.Config; } }
         ClientProtocolState state;
         Queue<ClientProtocolCommand> commandQueue;
         Crypto crypto;
@@ -34,15 +37,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         Validate validate;
         HandshakeContext hscontext;
         ClientProtocolCommand currentCommand;
+        Tls13ClientContext clientContext;
 
         byte[] writeApplicationDataBuffer;
         long writeApplicationDataOffset;
         long writeApplicationDataLength;
         int applicationDataLength;
 
-        public Tls13ClientProtocol(Stream networkRawStream, Tls13ClientConfig config)
+        public Tls13ClientProtocol(Stream networkRawStream, Tls13ClientContext clientContext)
         {
-            this.config = config;
+            this.clientContext = clientContext;
             this.context = new Context();
             this.crypto = new Crypto(Endpoint.Client, null);
             validate = new Validate();
@@ -177,6 +181,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (messageType == HandshakeType.NewSessionTicket)
             {
                 var ticket = messageIO.ReadHandshakeMessage<NewSessionTicket>();
+                clientContext.SaveTicket(ticket.Ticket,
+                    ticket.TicketNonce,
+                    crypto.ResumptionMasterSecret,
+                    ticket.TicketLifetime,
+                    ticket.TicketAgeAdd,
+                    crypto.SelectedCipherSuiteHashFunctionId);
+
                 ProcessCommand(ClientProtocolCommand.PostHandshake_FinishedProcessingPostHandshakeMessages);
             }
             else throw new NotSupportedException();
@@ -292,6 +303,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 validate.ServerHello.GeneralServerHelloValidate(sh);
             }
 
+            // if ()
+
             var keyShare = (KeyShareServerHelloExtension)sh.Extensions.Find(e => e.ExtensionType == ExtensionType.KeyShare);
 
             crypto.SelectCipherSuite(sh.CipherSuite);
@@ -314,16 +327,28 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var random = new byte[Tls13Const.HelloRandomFieldLength];
             byte[] sesId = new byte[Tls13Const.ClientHello_LegacySessionIdMaxLen];
             CipherSuite[] suites = new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
+
             List<Extension> extensions = new List<Extension>
             {
                 new ClientSupportedVersionsExtension(new ushort[] { 0x0304 }),
-                new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") })
+                new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") }),
+                new SignatureSchemeListExtension(new SignatureSchemeListExtension.SignatureScheme[]
+                {
+                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
+                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
+                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
+                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
+                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
+                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
+                }),
+                new SupportedGroupExtension(new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 })
             };
 
             if (isClientHello1)
             {
                 GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
                 GlobalConfig.RandomGeneratorCryptSecure(sesId, 0, sesId.Length);
+                context.PskTickets = clientContext.GetPskTickets();
 
                 byte[] keyShareToSendRawBytes;
                 crypto.GeneratePrivateKeyAndKeyShareToSend(SupportedGroupExtension.NamedGroup.X25519, out keyShareToSendRawBytes, out privateKey);
@@ -333,20 +358,41 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyShareToSendRawBytes),
                 }));
 
-                extensions.Add(new SupportedGroupExtension(new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 }));
-                extensions.Add(new SignatureSchemeListExtension(new SignatureSchemeListExtension.SignatureScheme[]
+                if (context.PskTickets.Length > 0)
                 {
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
-                }));
+                    var identities = new List<PreSharedKeyClientHelloExtension.PskIdentity>();
+                    List<byte[]> binders = new List<byte[]>();
+
+                    foreach (var ticket in context.PskTickets)
+                    {
+                        uint obfustatedTicketAge = ticket.TicketLifetime + ticket.TicketAgeAdd;
+                        identities.Add(new PreSharedKeyClientHelloExtension.PskIdentity(ticket.Ticket, obfustatedTicketAge));
+
+                        binders.Add(new byte[crypto.GetHashSizeInBytes(ticket.HashFunctionId)]);
+                    }
+                }
+            }
+            else
+            {
+                // clienthello2
+                throw new NotImplementedException();
             }
 
             var clientHello = new ClientHello(random, sesId, suites, extensions);
-            messageIO.WriteHandshake(clientHello);
+
+            if (context.PskTickets.Length > 0)
+            {
+                // need to compute binder values, more tricky
+                ModelSerialization serialization = new ModelSerialization();
+                serialization.ToBytes(clientHello);
+
+                crypto.ComputeClientHelloBinderValue()
+            }
+            else
+            {
+                // no tickets, not need to compute binder values, just send
+                messageIO.WriteHandshake(clientHello);
+            }
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHello);
             messageIO.SetBackwardCompatibilityMode(compatibilityAllowRecordLayerVersionLower0x0303: false, compatibilitySilentlyDropUnencryptedChangeCipherSpec: true);
