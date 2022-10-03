@@ -28,6 +28,7 @@
         public const int PreSharedKeyExtension_IdentitiesMinLength = 7;
         public const int PreSharedKeyExtension_BindersMinLength = 33;
         public const int PreSharedKeyExtension_PskBinderEntryMinLength = 32;
+        public const int PreSharedKeyExtension_PskBinderEntryMaxLength = 255;
         public const int PreSharedKeyExtension_IdentityMinLength = 1;
 
         /* Pre Shared Key Exchange Modes */

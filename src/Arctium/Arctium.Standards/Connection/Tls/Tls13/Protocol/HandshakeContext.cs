@@ -68,5 +68,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             // ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello
         }
+
+        public void RemoveLast()
+        {
+            byteBuffer.DataLength -= MessagesInfo[MessagesInfo.Count - 1].Length;
+            MessagesInfo.RemoveAt(MessagesInfo.Count - 1);
+        }
     }
 }

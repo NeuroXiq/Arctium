@@ -43,7 +43,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public void CleanUpExpired()
         {
             var now = DateTime.Now;
-            tickets.RemoveAll(tdata => tdata.Expiration > now);
+            //tickets.RemoveAll(tdata => tdata.Expiration < now);
         }
     }
 }

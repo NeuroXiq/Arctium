@@ -56,7 +56,56 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(ClientSupportedVersionsExtension)] = Serialize_Extension_ClientSupportedVersionsExtension,
                 [typeof(KeyShareClientHelloExtension)] = Serialize_Extension_KeyShareClientHelloExtension,
                 [typeof(SupportedGroupExtension)] = Serialize_Extension_SupportedGroupExtension,
+                [typeof(PreSharedKeyExchangeModeExtension)] = Serialize_Extension_PreSharedKeyExchangeModeExtension,
+                [typeof(PreSharedKeyClientHelloExtension)] = Serialize_Extension_PreSharedKeyClientHelloExtension,
             };
+        }
+
+        private void Serialize_Extension_PreSharedKeyClientHelloExtension(object obj)
+        {
+            PreSharedKeyClientHelloExtension ext = (PreSharedKeyClientHelloExtension)obj;
+
+            int identitiesLenOffs = tempSerializedExtension.OutsideAppend(2);
+
+            foreach (var identity in ext.Identities)
+            {
+                int identityLenOffs = tempSerializedExtension.OutsideAppend(2);
+                int identityOffs = tempSerializedExtension.OutsideAppend(identity.Identity.Length);
+                int obfusTickAgeOffs = tempSerializedExtension.OutsideAppend(4);
+
+                MemMap.ToBytes1UShortBE((ushort)identity.Identity.Length, tempSerializedExtension.Buffer, identityLenOffs);
+                MemCpy.Copy(identity.Identity, 0, tempSerializedExtension.Buffer, identityOffs, identityOffs);
+                MemMap.ToBytes1UIntBE(identity.ObfuscatedTicketAge, tempSerializedExtension.Buffer, obfusTickAgeOffs);
+            }
+
+            int identitiesLen = tempSerializedExtension.DataLength - identitiesLenOffs - 2;
+            MemMap.ToBytes1UShortBE((ushort)identitiesLen, tempSerializedExtension.Buffer, identitiesLenOffs);
+
+            int bindersLenOffs = tempSerializedExtension.OutsideAppend(2);
+
+            foreach (var binder in ext.Binders)
+            {
+                Validation.ThrowInternal(binder.Length < Tls13Const.PreSharedKeyExtension_PskBinderEntryMinLength ||  binder.Length > Tls13Const.PreSharedKeyExtension_PskBinderEntryMaxLength);
+
+                tempSerializedExtension.Append((byte)binder.Length);
+                int binderOffs = tempSerializedExtension.OutsideAppend(binder.Length);
+                MemCpy.Copy(binder, 0, tempSerializedExtension.Buffer, binderOffs, binder.Length);
+            }
+        }
+
+        private void Serialize_Extension_PreSharedKeyExchangeModeExtension(object obj)
+        {
+            PreSharedKeyExchangeModeExtension ext = (PreSharedKeyExchangeModeExtension)obj;
+
+            Validation.ThrowInternal(ext.KeModes.Length < 1 || ext.KeModes.Length > 255);
+
+            tempSerializedExtension.Append((byte)ext.KeModes.Length);
+            int offs = tempSerializedExtension.OutsideAppend(ext.KeModes.Length);
+
+            for (int i = 0; i < ext.KeModes.Length; i++)
+            {
+                tempSerializedExtension.Buffer[i + offs] = (byte)ext.KeModes[i];
+            }
         }
 
         private void Serialize_Extension_SupportedGroupExtension(object obj)

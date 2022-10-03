@@ -1,5 +1,6 @@
 ﻿using Arctium.Shared;
 using Arctium.Shared.Helpers;
+using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
@@ -327,6 +328,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var random = new byte[Tls13Const.HelloRandomFieldLength];
             byte[] sesId = new byte[Tls13Const.ClientHello_LegacySessionIdMaxLen];
             CipherSuite[] suites = new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
+            PreSharedKeyClientHelloExtension preSharedKeyExtension = null;
 
             List<Extension> extensions = new List<Extension>
             {
@@ -341,7 +343,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
                     SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
                 }),
-                new SupportedGroupExtension(new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 })
+                new SupportedGroupExtension(new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 }),
+                new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };
 
             if (isClientHello1)
@@ -370,6 +373,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                         binders.Add(new byte[crypto.GetHashSizeInBytes(ticket.HashFunctionId)]);
                     }
+
+                    extensions.Add(new PreSharedKeyClientHelloExtension(identities.ToArray(), binders.ToArray()));
                 }
             }
             else
@@ -385,8 +390,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 // need to compute binder values, more tricky
                 ModelSerialization serialization = new ModelSerialization();
                 serialization.ToBytes(clientHello);
+                int toBindersLen = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(serialization.SerializedData, 0);
 
-                crypto.ComputeClientHelloBinderValue()
+                byte[] contextToBinders = new byte[hscontext.TotalLength + toBindersLen];
+                MemCpy.Copy(hscontext.HandshakeMessages, 0, contextToBinders, 0, hscontext.TotalLength);
+                MemCpy.Copy(serialization.SerializedData, 0, contextToBinders, hscontext.TotalLength, toBindersLen);
+
+                // hscontext.Add(HandshakeType.ClientHello, serialization.SerializedData, 0, (int)serialization.SerializedDataLength);
+
+                for (int i = 0; i < context.PskTickets.Length; i++)
+                {
+                    var tic = context.PskTickets[i];
+                    var binder = crypto.ComputeBinderValue(hscontext, tic);
+
+                    preSharedKeyExtension.Binders[i] = binder;
+                }
+
+                // hscontext.RemoveLast();
             }
             else
             {
