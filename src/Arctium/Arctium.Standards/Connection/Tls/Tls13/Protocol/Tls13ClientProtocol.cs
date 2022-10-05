@@ -26,6 +26,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public bool CertificateRequest;
 
             public PskTicket[] PskTickets { get; internal set; }
+            public int CH1Length = -1;
+            public bool IsPskSessionResumption;
         }
 
         Context context;
@@ -39,6 +41,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         HandshakeContext hscontext;
         ClientProtocolCommand currentCommand;
         Tls13ClientContext clientContext;
+        ByteBuffer hsctx;
 
         byte[] writeApplicationDataBuffer;
         long writeApplicationDataOffset;
@@ -50,12 +53,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.clientContext = clientContext;
             this.context = new Context();
             this.crypto = new Crypto(Endpoint.Client, null);
+            hsctx = new ByteBuffer();
             validate = new Validate();
             hscontext = new HandshakeContext();
             messageIO = new MessageIO(networkRawStream, validate, hscontext);
             ApplicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
 
             commandQueue = new Queue<ClientProtocolCommand>();
+            messageIO.OnHandshakeReadWrite += MessageIO_OnHandshakeReadWrite;
+        }
+
+        private void MessageIO_OnHandshakeReadWrite(byte[] buffer, int offset, int length)
+        {
+            bool ch1 = hsctx.DataLength == 0;
+
+            hsctx.Append(buffer, offset, length);
+
+            if (ch1) context.CH1Length = length;
         }
 
         public void Connect()
@@ -73,14 +87,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ProcessCommand()
         {
-            try
+            //try
             {
                 InnerProcessCommand();
             }
-            catch (System.Exception)
+            //catch (System.Exception)
             {
 
-                throw;
+                //throw;
             }
         }
 
@@ -209,7 +223,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             // todo post handshake actions
             state = ClientProtocolState.Connected;
-            crypto.InitMasterSecret(hscontext);
+            
+            // crypto.InitMasterSecret(hscontext);
             
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
             
@@ -222,7 +237,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var finishedVerData = crypto.ServerFinished(hscontext);
             var finished = new Finished(finishedVerData);
 
+            crypto.SetupMasterSecret(hsctx);
             messageIO.WriteHandshake(finished);
+            crypto.SetupResumptionMasterSecret(hsctx);
+
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_HandshakeCompletedSuccessfully);
         }
@@ -273,7 +291,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             var encryptedExt = messageIO.ReadHandshakeMessage<EncryptedExtensions>();
 
-            if (messageIO.LoadHandshakeMessage() == HandshakeType.CertificateRequest)
+            if (context.IsPskSessionResumption) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
+            else if (messageIO.LoadHandshakeMessage() == HandshakeType.CertificateRequest)
             {
                 context.CertificateRequest = true;
                 commandQueue.Enqueue(ClientProtocolCommand.Handshake_CertificateRequest);
@@ -304,16 +323,34 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 validate.ServerHello.GeneralServerHelloValidate(sh);
             }
 
-            // if ()
-
             var keyShare = (KeyShareServerHelloExtension)sh.Extensions.Find(e => e.ExtensionType == ExtensionType.KeyShare);
+            var preSharedKeySh = sh.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.PreSharedKey) as PreSharedKeyServerHelloExtension;
+            byte[] psk = null;
 
             crypto.SelectCipherSuite(sh.CipherSuite);
-            crypto.SelectEcEcdheGroup(keyShare.ServerShare.NamedGroup);
-            crypto.ComputeSharedSecret(keyShare.ServerShare.NamedGroup, this.privateKey, keyShare.ServerShare.KeyExchangeRawBytes);
-            
-            crypto.InitEarlySecret(hscontext, null);
-            crypto.InitHandshakeSecret(hscontext);
+
+            // todo check if server response is correct compared to sended CH (check if this class send keyexchangemode.psk_ke)
+            if (keyShare.ServerShare == null) throw new NotSupportedException();
+            else
+            {
+                crypto.SelectEcEcdheGroup(keyShare.ServerShare.NamedGroup);
+                crypto.ComputeSharedSecret(keyShare.ServerShare.NamedGroup, this.privateKey, keyShare.ServerShare.KeyExchangeRawBytes);
+            }
+
+            if (preSharedKeySh != null)
+            {
+                validate.ServerHello.AlertFatal(preSharedKeySh.SelectedIdentity >= context.PskTickets.Length, AlertDescription.Illegal_parameter, "server send selected identity out of range");
+                var ticket = context.PskTickets[preSharedKeySh.SelectedIdentity];
+                psk = crypto.GeneratePsk(ticket.ResumptionMasterSecret, ticket.TicketNonce);
+                context.IsPskSessionResumption = true;
+            }
+
+            // crypto.InitEarlySecret(hscontext, null);
+            // crypto.InitHandshakeSecret(hscontext);
+
+            crypto.SetupEarlySecret(hsctx, psk);
+            crypto.SetupHandshakeSecret(hsctx);
+
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_EncryptedExtensions);
@@ -373,8 +410,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                         binders.Add(new byte[crypto.GetHashSizeInBytes(ticket.HashFunctionId)]);
                     }
-
-                    extensions.Add(new PreSharedKeyClientHelloExtension(identities.ToArray(), binders.ToArray()));
+                    preSharedKeyExtension = new PreSharedKeyClientHelloExtension(identities.ToArray(), binders.ToArray());
+                    extensions.Add(preSharedKeyExtension);
                 }
             }
             else
@@ -392,16 +429,19 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 serialization.ToBytes(clientHello);
                 int toBindersLen = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(serialization.SerializedData, 0);
 
-                byte[] contextToBinders = new byte[hscontext.TotalLength + toBindersLen];
-                MemCpy.Copy(hscontext.HandshakeMessages, 0, contextToBinders, 0, hscontext.TotalLength);
-                MemCpy.Copy(serialization.SerializedData, 0, contextToBinders, hscontext.TotalLength, toBindersLen);
-
+                //byte[] contextToBinders = new byte[hscontext.TotalLength + toBindersLen];
+                //MemCpy.Copy(hscontext.HandshakeMessages, 0, contextToBinders, 0, hscontext.TotalLength);
+                //MemCpy.Copy(serialization.SerializedData, 0, contextToBinders, hscontext.TotalLength, toBindersLen);
                 // hscontext.Add(HandshakeType.ClientHello, serialization.SerializedData, 0, (int)serialization.SerializedDataLength);
+
+                ByteBuffer hsContextToBinders = new ByteBuffer();
+                hsContextToBinders.Append(hsctx.Buffer, 0, hsctx.DataLength);
+                hsContextToBinders.Append(serialization.SerializedData, 0, toBindersLen);
 
                 for (int i = 0; i < context.PskTickets.Length; i++)
                 {
                     var tic = context.PskTickets[i];
-                    var binder = crypto.ComputeBinderValue(hscontext, tic);
+                    var binder = crypto.ComputeBinderValue(hsContextToBinders, tic);
 
                     preSharedKeyExtension.Binders[i] = binder;
                 }
@@ -411,8 +451,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else
             {
                 // no tickets, not need to compute binder values, just send
-                messageIO.WriteHandshake(clientHello);
             }
+
+            if (!isClientHello1)
+            {
+                // need to replace ClientHello1 (when HelloRetryRequest) with artificial 'Message Hash' message
+                byte[] clientHello1Hash = crypto.TranscriptHash(hsctx.Buffer, 0, context.CH1Length);
+                hsctx.TrimStart(context.CH1Length);
+                hsctx.PrependOutside(4 + clientHello1Hash.Length);
+                hsctx.Buffer[0] = (byte)HandshakeType.MessageHash;
+                MemMap.ToBytes1UShortBE((ushort)clientHello1Hash.Length, hsctx.Buffer, 2);
+                MemCpy.Copy(clientHello1Hash, 0, hsctx.Buffer, 4, clientHello1Hash.Length);
+            }
+
+            messageIO.WriteHandshake(clientHello);
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHello);
             messageIO.SetBackwardCompatibilityMode(compatibilityAllowRecordLayerVersionLower0x0303: false, compatibilitySilentlyDropUnencryptedChangeCipherSpec: true);

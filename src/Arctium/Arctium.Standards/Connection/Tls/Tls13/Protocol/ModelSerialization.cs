@@ -70,11 +70,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             foreach (var identity in ext.Identities)
             {
                 int identityLenOffs = tempSerializedExtension.OutsideAppend(2);
+                ushort identityLen = (ushort)identity.Identity.Length;
                 int identityOffs = tempSerializedExtension.OutsideAppend(identity.Identity.Length);
                 int obfusTickAgeOffs = tempSerializedExtension.OutsideAppend(4);
 
-                MemMap.ToBytes1UShortBE((ushort)identity.Identity.Length, tempSerializedExtension.Buffer, identityLenOffs);
-                MemCpy.Copy(identity.Identity, 0, tempSerializedExtension.Buffer, identityOffs, identityOffs);
+                MemMap.ToBytes1UShortBE(identityLen, tempSerializedExtension.Buffer, identityLenOffs);
+                MemCpy.Copy(identity.Identity, 0, tempSerializedExtension.Buffer, identityOffs, identityLen);
                 MemMap.ToBytes1UIntBE(identity.ObfuscatedTicketAge, tempSerializedExtension.Buffer, obfusTickAgeOffs);
             }
 
@@ -91,6 +92,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 int binderOffs = tempSerializedExtension.OutsideAppend(binder.Length);
                 MemCpy.Copy(binder, 0, tempSerializedExtension.Buffer, binderOffs, binder.Length);
             }
+
+            int binderLen = tempSerializedExtension.DataLength - bindersLenOffs - 2;
+            MemMap.ToBytes1UShortBE((ushort)binderLen, tempSerializedExtension.Buffer, bindersLenOffs);
         }
 
         private void Serialize_Extension_PreSharedKeyExchangeModeExtension(object obj)

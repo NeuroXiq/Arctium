@@ -44,7 +44,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             this.bufferForStream = buffer;
             this.validate = validate;
-            this.RecordFragmentBytes = new byte[MaxTlsPlaintextLength];
+            this.RecordFragmentBytes = new byte[WriteBufferLength];
             this.plaintextWriteBuffer = new byte[WriteBufferLength];
             this.plaintextReadBuffer = new byte[MaxTlsPlaintextLength];
             readSequenceNumber = 0;

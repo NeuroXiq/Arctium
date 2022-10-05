@@ -73,5 +73,17 @@ namespace Arctium.Shared.Helpers.Buffers
 
             Buffer = newBuffer;
         }
+
+        public void PrependOutside(int prependLength)
+        {
+            ExtendIfNeededBuffer(prependLength);
+            DataLength += prependLength;
+
+            // move data to free beginning of the buffer (shift data right to make free 'predendLength' at buffer start)
+            for (int i = 0; i < prependLength; i++)
+            {
+                Buffer[DataLength - 1 - i] = Buffer[DataLength - prependLength - 1]; 
+            }
+        }
     }
 }

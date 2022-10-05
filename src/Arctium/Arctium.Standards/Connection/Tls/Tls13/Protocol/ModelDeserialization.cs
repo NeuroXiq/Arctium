@@ -121,9 +121,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             int len;
             ExtensionDeserializeSetup(buf, offs, out cursor, out len);
 
-            MemDump.HexDump(buf, cursor, 10);
+            validate.Extensions.AlertFatalDecodeError(len != 2, "fromserver.presharedkey.selectedidentity", "length should be equal 2 (single selected identity by server");
 
-            throw new Exception();
+            ushort selectedIdentity = MemMap.ToUShort2BytesBE(buf, cursor);
+
+            return new PreSharedKeyServerHelloExtension(selectedIdentity);
         }
 
         public static int HelperGetOffsetOfPskExtensionInClientHello(byte[] buffer, int clientHelloOffset)
@@ -197,7 +199,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private Extension DeserializeExtension_KeyShare_Client(byte[] buf, int offs)
         {
-            // can be key share, or serverhellokeyshareretry
+            // following possible:
+            // 1. group + keybytes
+            // 2. group + null (no key bytes, when server sends helloretryrequest)
+            // 3. null + null (no keyShareEntry, possible when 'PskKeyExchangeMode.psk_ke' pre shared key without DH/DHE)
             int length;
             RangeCursor cursor;
             ExtensionDeserializeSetup(buf, offs, out cursor, out length);
@@ -210,6 +215,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             group = (SupportedGroupExtension.NamedGroup)((buf[cursor + 0] << 8) | (buf[cursor + 1] << 0));
 
+            if (length == 0)
+            {
+                return new KeyShareServerHelloExtension(null);
+            }
             if (length == 2)
             {
                 return new KeyShareServerHelloExtension(new KeyShareEntry((NamedGroup)group, null));

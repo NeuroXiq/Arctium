@@ -10,6 +10,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
     internal class MessageIO
     {
+        public delegate void ReadWriteCallback(byte[] buffer, int offset, int length);
+        public event ReadWriteCallback OnHandshakeReadWrite;
+
         public RecordLayer recordLayer;
         private ByteBuffer byteBuffer;
         private Validate validate;
@@ -139,6 +142,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         void HandshakeContextAdd(HandshakeType type, byte[] buffer, long offset, long length)
         {
             handshakeContext.Add(type, buffer, (int)offset, (int)length);
+            OnHandshakeReadWrite?.Invoke(buffer, (int)offset, (int)length);
 
             // if (type == HandshakeType.ClientHello)
             // {

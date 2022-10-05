@@ -206,8 +206,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             if (config.UseNewSessionTicketPsk)
             {
-                for (int i = 0; i < 20; i++) PostHandshake_NewSessionTicket();
-                CommandQueue.Enqueue(ServerProcolCommand.PostHandshake_NewSessionTicket);
+                for (int i = 0; i < 1; i++) CommandQueue.Enqueue(ServerProcolCommand.PostHandshake_NewSessionTicket);
                 State = ServerProtocolState.PostHandshake;
             }
             else
@@ -441,7 +440,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 clientKeyShare = context.ClientHello2.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
                     .ClientShares.FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
 
-                if (clientKeyShare == null) Validation.ThrowInternal("must never happer because is clienthello2");
+                Validation.ThrowInternal(clientKeyShare == null, "must never happer because is clienthello2");
             }
 
             int selectedClientIdentity;
