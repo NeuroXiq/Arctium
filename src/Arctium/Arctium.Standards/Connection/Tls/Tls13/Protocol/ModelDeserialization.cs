@@ -107,7 +107,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             while(!c.OnMaxPosition)
             {
                 c++;
-                DeserializeExtension(Endpoint.Client, buf, c);
+                var result = DeserializeExtension(Endpoint.Client, buf, c);
+                c += result.Length - 1;
             }
 
             validate.NewSessionTicket.AlertFatalDecodeError(!c.OnMaxPosition, "handshake.length", "cursor not on last position");

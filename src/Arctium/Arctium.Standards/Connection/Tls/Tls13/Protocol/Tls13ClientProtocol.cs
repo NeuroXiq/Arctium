@@ -238,7 +238,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ClientFinished()
         {
-            var finishedVerData = crypto.ServerFinished(hscontext);
+            var finishedVerData = crypto.ServerFinished(hsctx);
             var finished = new Finished(finishedVerData);
 
             crypto.SetupMasterSecret(hsctx);
@@ -339,7 +339,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // crypto.InitEarlySecret(hscontext, null);
             // crypto.InitHandshakeSecret(hscontext);
 
-            crypto.SetupEarlySecret(hsctx, psk);
+            crypto.SetupEarlySecret(psk);
             crypto.SetupHandshakeSecret(hsctx);
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
@@ -360,12 +360,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 // need to replace ClientHello1 (when HelloRetryRequest) with artificial 'Message Hash' message
                 // in handshake context bytes (for transcript hash) for future calculations
-                byte[] clientHello1Hash = crypto.TranscriptHash(hsctx.Buffer, 0, context.CH1Length);
-                hsctx.TrimStart(context.CH1Length);
-                hsctx.PrependOutside(4 + clientHello1Hash.Length);
-                hsctx.Buffer[0] = (byte)HandshakeType.MessageHash;
-                MemMap.ToBytes1UShortBE((ushort)clientHello1Hash.Length, hsctx.Buffer, 2);
-                MemCpy.Copy(clientHello1Hash, 0, hsctx.Buffer, 4, clientHello1Hash.Length);
+                //byte[] clientHello1Hash = crypto.TranscriptHash(hsctx.Buffer, 0, context.CH1Length);
+                //hsctx.TrimStart(context.CH1Length);
+                //hsctx.PrependOutside(4 + clientHello1Hash.Length);
+                //hsctx.Buffer[0] = (byte)HandshakeType.MessageHash;
+                //MemMap.ToBytes1UShortBE((ushort)clientHello1Hash.Length, hsctx.Buffer, 2);
+                //MemCpy.Copy(clientHello1Hash, 0, hsctx.Buffer, 4, clientHello1Hash.Length);
+
+                crypto.ReplaceClientHello1WithMessageHash(hsctx, context.CH1Length);
 
 
                 validate.Handshake.AlertFatal(context.HelloRetryRequest != null, AlertDescription.UnexpectedMessage, "Already received HelloRetryRequest but received it second time, expected ServerHello");

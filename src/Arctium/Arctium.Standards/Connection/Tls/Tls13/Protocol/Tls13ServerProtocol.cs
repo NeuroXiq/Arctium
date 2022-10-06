@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -58,7 +59,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private Crypto crypto;
         private Validate validate;
         // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
-        private HandshakeContext handshakeContext;
+        //private HandshakeContext handshakeContext;
+        private ByteBuffer hsctx;
         private Context context;
         private Tls13ServerConfig config { get { return serverContext.Config; } }
         private Tls13ServerContext serverContext;
@@ -69,13 +71,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.serverContext = serverContext;
             validate = new Validate();
             // handshakeContext = new List<KeyValuePair<HandshakeType, byte[]>>();
-            handshakeContext = new HandshakeContext();
+            // handshakeContext = new HandshakeContext();
+            hsctx = new ByteBuffer();
 
-            messageIO = new MessageIO(networkStream, validate, handshakeContext);
+            messageIO = new MessageIO(networkStream, validate, new HandshakeContext());
+            messageIO.OnHandshakeReadWrite += MessageIO_OnHandshakeReadWrite;
             crypto = new Crypto(Endpoint.Server, config);
             context = new Context();
             applicationDataLength = 0;
             CommandQueue = new Queue<ServerProcolCommand>();
+        }
+
+        private void MessageIO_OnHandshakeReadWrite(byte[] buffer, int offset, int length)
+        {
+            hsctx.Append(buffer, offset, length);
         }
 
         public void Listen()
@@ -252,9 +261,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             var finished = messageIO.ReadHandshakeMessage<Finished>();
 
-            validate.Finished.FinishedSigValid(crypto.VerifyClientFinished(finished.VerifyData, handshakeContext));
+            validate.Finished.FinishedSigValid(crypto.VerifyClientFinished(finished.VerifyData, hsctx));
 
-            crypto.InitMasterSecret2(handshakeContext);
+            // crypto.InitMasterSecret2(handshakeContext);
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
             
             messageIO.SetBackwardCompatibilityMode(
@@ -262,21 +271,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 compatibilitySilentlyDropUnencryptedChangeCipherSpec: false);
 
             State = ServerProtocolState.Handshake;
+            crypto.SetupResumptionMasterSecret(hsctx);
 
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_HandshakeCompletedSuccessfully);
         }
 
         private void ServerFinished()
         {
-            var finishedVerifyData = crypto.ServerFinished(handshakeContext);
+            var finishedVerifyData = crypto.ServerFinished(hsctx);
             var finished = new Finished(finishedVerifyData);
 
             messageIO.WriteHandshake(finished);
+            crypto.SetupMasterSecret(hsctx);
         }
 
         private void ServerCertificateVerify()
         {
-            var signature = crypto.GenerateServerCertificateVerifySignature(handshakeContext);
+            var signature = crypto.GenerateServerCertificateVerifySignature(hsctx);
 
             var certificateVerify = new CertificateVerify(crypto.SelectedSignatureScheme, signature);
 
@@ -364,6 +375,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_HelloRetryRequest()
         {
+
             messageIO.WriteHandshake(context.HelloRetryRequest);
 
             context.ClientHello2 = messageIO.ReadHandshakeMessage<ClientHello>();
@@ -456,10 +468,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             context.IsPskSessionResumption = true;
 
             byte[] psk = crypto.GeneratePsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
-            crypto.InitEarlySecret(handshakeContext, psk);
+
+            crypto.SetupEarlySecret(psk);
+            // crypto.InitEarlySecret(handshakeContext, psk);
+
+            int toBinders = -1;
+            if (isClientHello1) toBinders = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(hsctx.Buffer, 0);
+            else
+            {
+                // jump over first msg which is artificial 'clienthello1 hash'
+                int hashLen = MemMap.ToUShort2BytesBE(hsctx.Buffer, 2); // only 2 bytes because this is hash
+                int startOffset = 4 + hashLen;
+                toBinders = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(hsctx.Buffer, startOffset);
+            }
 
             validate.Handshake.AlertFatal(
-                !crypto.IsPskBinderValueValid(handshakeContext, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]),
+                !crypto.IsPskBinderValueValid(hsctx, toBinders, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]),
                 AlertDescription.DecryptError, "binder value invalid");
 
             extensions.Add(new PreSharedKeyServerHelloExtension((ushort)selectedClientIdentity));
@@ -482,7 +506,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             messageIO.WriteHandshake(serverHello);
 
-            crypto.InitHandshakeSecret(handshakeContext);
+            crypto.SetupHandshakeSecret(hsctx);
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
 
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
@@ -560,8 +584,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             
             messageIO.WriteHandshake(serverHello);
 
-            crypto.InitEarlySecret(handshakeContext, null);
-            crypto.InitHandshakeSecret(handshakeContext);
+            crypto.SetupEarlySecret(null);
+            crypto.SetupHandshakeSecret(hsctx);
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
 

@@ -95,7 +95,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private SupportedGroupExtension.NamedGroup? selectedNamedGroup = null;
         private CipherSuite? selectedCipherSuite = null;
         private SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme = null;
-        private string selectedCipherSuiteHashFunctionName = null;
         private HashFunctionId? selectedCipherSuiteHashFunctionId = null;
 
         private Tls13ServerConfig config;
@@ -109,8 +108,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void SetupCryptoAlgorithms(CipherSuite suite)
         {
-            this.psk = psk;
-            //this.Ecdhe_or_dhe_SharedSecret = ecdhe_or_dhe;
             this.suite = suite;
             this.selectedCipherSuite = suite;
 
@@ -137,16 +134,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             hkdf = new HKDF(new Cryptography.HashFunctions.MAC.HMAC(hkdfHashFunc, new byte[0], 0, 0));
-            selectedCipherSuiteHashFunctionName = hashFunction.GetType().Name;
             selectedCipherSuite = suite;
         }
 
-        internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, HandshakeContext handshakeContext)
+        internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, ByteBuffer handshakeContext)
         {
+            // todo verify this
             return true;
         }
 
-        internal byte[] GenerateServerCertificateVerifySignature(HandshakeContext handshakeContext)
+        internal byte[] GenerateServerCertificateVerifySignature(ByteBuffer handshakeContext)
         {
             if (SelectedSignatureScheme != SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256) throw new Exception();
             var hashFuncType = HashFunctionId.SHA2_256;
@@ -157,14 +154,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             string contextStr = "TLS 1.3, server CertificateVerify";
             byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
 
-           //List<byte[]> tohash = new List<byte[]>();
+            //List<byte[]> tohash = new List<byte[]>();
             // 
             //tohash.Add(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength));
             //tohash.AddRange(handshakeContext.Select(x => x.Value));
             // tohash.Add(this.serverConfig.DerEncodedCertificateBytes);
 
             //byte[] hash = TranscriptHash(tohash.ToArray());
-             byte[] hash = HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1);
+            //byte[] hash = HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1);
+            byte[] hash = TranscriptHash(handshakeContext.Buffer, 0, handshakeContext.DataLength);
 
             byte[] tosign = new byte[64 + stringBytes.Length + 1 + hash.Length];
 
@@ -190,48 +188,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // return r.SignData(tosign, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pss);
 
             return signature;
-        }
-
-        public void InitMasterSecret2(HandshakeContext handshakeContext)
-        {
-
-            int sfIdx = -1;
-
-            for (int i = 0; i < handshakeContext.MessagesInfo.Count && sfIdx == -1; i++)
-                if (handshakeContext.MessagesInfo[i].HandshakeType == HandshakeType.Finished) sfIdx = i;
-
-            byte[] ch_sf_bytes = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[sfIdx].LengthTo);
-            byte[] ch_cf_bytes = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[handshakeContext.MessagesInfo.Count - 1].LengthTo);
-
-            InitMasterSecret(handshakeContext);
-        }
-
-        public void InitMasterSecret(HandshakeContext hcontext)
-        {
-            byte[] derived = DeriveSecret(HandshakeSecret, "derived", new byte[0]);
-            byte[] zeroValueOfHashLen = new byte[hashFunction.HashSizeBytes];
-            MasterSecret = new byte[this.hashFunction.HashSizeBytes];
-
-            hkdf.Extract(derived, zeroValueOfHashLen, MasterSecret);
-
-            int sf = -1, cf = -1;
-
-            for (int i = 0; i < hcontext.MessagesInfo.Count && (sf == -1 || cf == -1); i++)
-            {
-                if (hcontext.MessagesInfo[i].HandshakeType == HandshakeType.Finished)
-                {
-                    if (sf == -1) sf = i;
-                    else if (cf == -1) { cf = i; }
-                    else Validation.ThrowInternal("");
-                }
-            }
-
-            if (sf == -1 || cf == -1) Validation.ThrowInternal("");
-
-            ClientApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "c ap traffic", hcontext, sf);
-            ServerApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "s ap traffic", hcontext, sf);
-            ExporterMasterSecret = DeriveSecret(MasterSecret, "exp master", hcontext, cf);
-            ResumptionMasterSecret = DeriveSecret(MasterSecret, "res master", hcontext, cf);
         }
 
         public void GeneratePrivateKeyAndKeyShareToSend(SupportedGroupExtension.NamedGroup namedGroup, out byte[] keyShareToSendRawBytes, out byte[] privateKey)
@@ -336,17 +292,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
             else throw new NotSupportedException();
         }
-
-        //public byte[] GenerateSharedSecretAndGetKeyShareToSend(KeyShareEntry clientKeyShareEntry)
-        //{
-        //    if (clientKeyShareEntry.NamedGroup != SelectedNamedGroup) throw new ArctiumExceptionInternal();
-
-        //    var clientShare = clientKeyShareEntry;
-        //    KeyShareServerHelloExtension keyShare = null;
-        //    byte[] keyToSend = null;
-
-
-        //}
 
         internal bool VerifyClientCertificate(CertificateVerify certVer)
         {
@@ -549,7 +494,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         #region Secrets generation
 
-        public void SetupEarlySecret(ByteBuffer hscontext, byte[] psk)
+        public void SetupEarlySecret(byte[] psk)
         {
             byte[] zeroValueOfHashLen = new byte[hashFunction.HashSizeBytes];
             this.psk = psk;
@@ -599,46 +544,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         #endregion
 
-        public void InitEarlySecret(HandshakeContext handshakeContext, byte[] psk)
-        {
-            byte[] zeroValueOfHashLen = new byte[hashFunction.HashSizeBytes];
-            this.psk = psk;
-            byte[] pskSecret = this.psk != null ? psk : zeroValueOfHashLen;
-            EarlySecret = new byte[this.hashFunction.HashSizeBytes];
-
-            bool externalBinder = false; // ? 
-
-            hkdf.Extract(zeroValueOfHashLen, pskSecret, EarlySecret);
-
-            BinderKey = DeriveSecret(EarlySecret, externalBinder ? "ext binder" : "res binder", new byte[0]);
-
-            ClientEarlyTrafficSecret = DeriveSecret(EarlySecret, "c e traffic", handshakeContext, 0);
-        }
-
-        public void InitHandshakeSecret(HandshakeContext handshakeContext)
-        {
-            // byte[] buf = new byte[messages[0].Length + messages[1].Length];
-            // MemCpy.Copy(messages[0], 0, buf, 0, messages[0].Length);
-            // MemCpy.Copy(messages[1], 0, buf, messages[0].Length, messages[1].Length);
-
-            // second server hello (skip helloretryrequest)
-            int sh2OrSh1 = handshakeContext.MessagesInfo.FindLastIndex(x => x.HandshakeType == HandshakeType.ServerHello);
-
-            // byte[] buf = MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[1].LengthTo);
-
-            byte[] derived = DeriveSecret(EarlySecret, "derived", new byte[0]);
-
-            HandshakeSecret = new byte[hashFunction.HashSizeBytes];
-            hkdf.Extract(derived, this.Ecdhe_or_dhe_SharedSecret, HandshakeSecret);
-
-            // ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", buf);
-            // ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", buf);
-
-            ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", handshakeContext, sh2OrSh1);
-            ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", handshakeContext, sh2OrSh1);
-        }
-
-        public byte[] ServerFinished(HandshakeContext handshakeContext)
+        public byte[] ServerFinished(ByteBuffer handshakeContext)
         {
             byte[] baseKey = currentEndpoint == Endpoint.Server ? ServerHandshakeTrafficSecret : ClientHandshakeTrafficSecret;
             byte[] finishedKey = HkdfExpandLabel(baseKey, "finished", new byte[0], hashFunction.HashSizeBytes);
@@ -647,7 +553,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             hmac.Reset();
             
             hmac.ChangeKey(finishedKey);
-            hmac.ProcessBytes(HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1));
+            // hmac.ProcessBytes(HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1));
+            var transcriptHash = TranscriptHash(handshakeContext);
+            hmac.ProcessBytes(transcriptHash);
             // hmac.ProcessBytes(TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength)));
 
             hmac.Final(result, 0);
@@ -655,19 +563,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return result;
         }
 
-        public bool IsPskBinderValueValid(HandshakeContext handshakeContext,
+        public bool IsPskBinderValueValid(ByteBuffer handshakeContextToBinders,
+            int lengthToPskBindersInBuffer,
             PskTicket ticket,
             byte[] clientBinderValue)
         {
             if (psk == null) throw new ArctiumExceptionInternal("psk must be set");
+            var baseKey = GenerateBinderKey(psk, this.hkdf, this.hashFunction);
 
-            var hash = HandshakeContextTranscriptHash(handshakeContext, -1, true);
+            // var hash = HandshakeContextTranscriptHash(handshakeContext, -1, true);
+            var hash = TranscriptHash(handshakeContextToBinders.Buffer, 0, lengthToPskBindersInBuffer);
             byte[] result = new byte[hash.Length];
 
-            byte[] binderKey = HkdfExpandLabel(BinderKey, "finished", new byte[0], hashFunction.HashSizeBytes);
+            byte[] baseKeyForHash = HkdfExpandLabel(baseKey, "finished", new byte[0], hashFunction.HashSizeBytes);
 
             hmac.Reset();
-            hmac.ChangeKey(binderKey);
+            hmac.ChangeKey(baseKeyForHash);
             hmac.ProcessBytes(hash);
             hmac.Final(result, 0);
 
@@ -730,6 +641,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return result;
         }
 
+        public void ReplaceClientHello1WithMessageHash(ByteBuffer hsctx, int CH1Length)
+        {
+            byte[] clientHello1Hash = TranscriptHash(hsctx.Buffer, 0, CH1Length);
+            hsctx.TrimStart(CH1Length);
+            hsctx.PrependOutside(4 + clientHello1Hash.Length);
+            hsctx.Buffer[0] = (byte)HandshakeType.MessageHash;
+            MemMap.ToBytes1UShortBE((ushort)clientHello1Hash.Length, hsctx.Buffer, 2);
+            MemCpy.Copy(clientHello1Hash, 0, hsctx.Buffer, 4, clientHello1Hash.Length);
+        }
+
         public void ClientFinished()
         {
             throw new NotImplementedException();
@@ -738,83 +659,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public void PostHandshakeFinished()
         {
             throw new Exception();
-        }
-
-        private byte[] HandshakeContextTranscriptHash(HandshakeContext handshakeContext, int indexLastMsgToInclude, bool forPskBinders = false)
-        {
-            return HandshakeContextTranscriptHash(this.hashFunction, handshakeContext, indexLastMsgToInclude, forPskBinders);
-        }
-
-        private byte[] HandshakeContextTranscriptHash(HashFunction hashFunction, HandshakeContext handshakeContext, int indexLastMsgToInclude, bool forPskBinders = false)
-        {
-            // todo clean up needed here
-            bool ch2 = false;
-            int chCount = 0;
-
-
-            for (int i = 0; i <= indexLastMsgToInclude; i++)
-                if (handshakeContext.MessagesInfo[i].HandshakeType == HandshakeType.ClientHello) chCount++;
-
-            if (forPskBinders) chCount = handshakeContext.MessagesInfo.Count(m => m.HandshakeType == HandshakeType.ClientHello);
-
-            ch2 = chCount == 2;
-            int clientHello1Len = -1;
-            hashFunction.Reset();
-
-            if (forPskBinders)
-            {
-                if (!ch2)
-                {
-                    hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.LengthToPskBinders);
-                    return hashFunction.HashFinal();
-                }
-
-                clientHello1Len = handshakeContext.MessagesInfo[0].LengthTo;
-                byte[] tempCh1 = new byte[4];
-
-                tempCh1[0] = (byte)HandshakeType.MessageHash;
-                MemMap.ToBytes1UShortBE((ushort)hashFunction.HashSizeBytes, tempCh1, 2);
-
-                hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
-                byte[] clientHello1Hash = hashFunction.HashFinal();
-
-                hashFunction.Reset();
-                hashFunction.HashBytes(tempCh1);
-                hashFunction.HashBytes(clientHello1Hash);
-                hashFunction.HashBytes(handshakeContext.HandshakeMessages, clientHello1Len, handshakeContext.LengthToPskBinders - clientHello1Len);
-
-                return hashFunction.HashFinal();
-            }
-
-            // special case when helloretryrequest (so two clienthello in context)
-            if (ch2)
-            {
-                byte[] tempCh1 = new byte[4];
-
-                tempCh1[0] = (byte)HandshakeType.MessageHash;
-                MemMap.ToBytes1UShortBE((ushort)hashFunction.HashSizeBytes, tempCh1, 2);
-
-                hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
-                byte[] clientHello1Hash = hashFunction.HashFinal();
-
-                hashFunction.Reset();
-                hashFunction.HashBytes(tempCh1);
-                hashFunction.HashBytes(clientHello1Hash);
-            }
-            else
-            {
-                // not special case just hash
-                hashFunction.HashBytes(handshakeContext.HandshakeMessages, 0, handshakeContext.MessagesInfo[0].LengthTo);
-            }
-
-            // hash everything but not first message (CH 1) because can be special case as above
-            clientHello1Len = handshakeContext.MessagesInfo[0].Length;
-
-            int length = handshakeContext.MessagesInfo[indexLastMsgToInclude].LengthTo - clientHello1Len;
-
-            hashFunction.HashBytes(handshakeContext.HandshakeMessages, clientHello1Len, length);
-
-            return hashFunction.HashFinal();
         }
 
         byte[] HkdfExpandLabel(HKDF hkdf, byte[] secret, string labelText, byte[] context, int length)
@@ -846,36 +690,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return HkdfExpandLabel(this.hkdf, secret, labelText, context, length);
         }
 
-        byte[] HkdfExpandLabel_org(byte[] secret, string labelText, byte[] context, int length)
-        {
-            byte[] label = Encoding.ASCII.GetBytes(labelText);
-            byte[] result = new byte[length];
-            byte labelLen = (byte)(label.Length + Tls13Label.Length);
-
-            byte[] hkdfLabel = new byte[2 + 1 + 1 + context.Length + Tls13Label.Length + label.Length];
-            MemMap.ToBytes1UShortBE((ushort)length, hkdfLabel, 0);
-            hkdfLabel[2] = labelLen;
-
-            MemCpy.Copy(Tls13Label, 0, hkdfLabel, 3, Tls13Label.Length);
-            MemCpy.Copy(label, 0, hkdfLabel, 3 + Tls13Label.Length, label.Length);
-
-            int contextStart = 2 + 1 + Tls13Label.Length + label.Length;
-
-            hkdfLabel[contextStart] = (byte)context.Length;
-
-            MemCpy.Copy(context, 0, hkdfLabel, contextStart + 1, context.Length);
-
-
-            hkdf.Expand(secret, label, result, length);
-
-            return result;
-        }
-
-        byte[] DeriveSecret(byte[] secret, string label, HandshakeContext handshakeContext, int hContextLastMsgIndex)
-        {
-            return HkdfExpandLabel(secret, label, HandshakeContextTranscriptHash(handshakeContext, hContextLastMsgIndex), hashFunction.HashSizeBytes);
-        }
-
         byte[] DeriveSecret(byte[] secret, string label, byte[] messages)
         {
             return HkdfExpandLabel(secret, label, TranscriptHash(messages), hashFunction.HashSizeBytes);
@@ -884,11 +698,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         byte[] DeriveSecret(byte[] secret, string label, ByteBuffer messages)
         {
             return HkdfExpandLabel(secret, label, TranscriptHash(messages), hashFunction.HashSizeBytes);
-        }
-
-        byte[] DeriveSecret(HKDF hkdf, byte[] secret, string label, byte[] messages, int length)
-        {
-            return HkdfExpandLabel(hkdf, secret, label, TranscriptHash(messages), length);
         }
     }
 }
