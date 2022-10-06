@@ -172,8 +172,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
             }
 
-            public void GeneralServerHelloValidate(ServerHello hello)
+            public void GeneralServerHelloValidate(ClientHello clientHello1, ServerHello hello)
             {
+                // clientHello1 -> not null on hello retry reuqest, null if not helloretryrequest
                 foreach (var extension in hello.Extensions)
                 {
                     if (IllegalExtensionAppearInMessage(extension.ExtensionType, HandshakeType.ServerHello))

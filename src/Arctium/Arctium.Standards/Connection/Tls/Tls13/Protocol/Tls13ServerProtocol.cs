@@ -389,8 +389,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             PreSharedKeyClientHelloExtension preSharedKeyExtension;
             KeyShareEntry clientKeyShare = null;
 
-            context.IsPskSessionResumption = true;
-
             if (isClientHello1)
             {
                 ClientHello clientHello = context.ClientHello1;
@@ -454,6 +452,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloNotPsk);
                 return;
             }
+
+            context.IsPskSessionResumption = true;
 
             byte[] psk = crypto.GeneratePsk(pskTicket.ResumptionMasterSecret, pskTicket.TicketNonce);
             crypto.InitEarlySecret(handshakeContext, psk);

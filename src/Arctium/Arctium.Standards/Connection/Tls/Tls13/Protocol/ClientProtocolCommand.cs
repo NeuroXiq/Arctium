@@ -4,7 +4,10 @@
     {
         Start_Connect,
 
-        Handshake_ClientHello,
+        Handshake_ClientHello1,
+        Handshake_ServerHelloOrHelloRetryRequest,
+        Handshake_HelloRetryRequest,
+        Handshake_ClientHello2,
         Handshake_ServerHello,
         Handshake_EncryptedExtensions,
         Handshake_CertificateRequest,
