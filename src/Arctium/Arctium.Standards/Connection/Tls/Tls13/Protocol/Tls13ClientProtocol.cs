@@ -341,6 +341,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // crypto.InitHandshakeSecret(hscontext);
 
             crypto.SetupEarlySecret(psk);
+
             crypto.SetupHandshakeSecret(hsctx);
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
@@ -355,6 +356,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             // need to replace ClientHello1 (when HelloRetryRequest) with artificial 'Message Hash' message
             // in handshake context bytes (for transcript hash) for future calculations
+
             crypto.ReplaceClientHello1WithMessageHash(hsctx, context.CH1Length);
 
             var extensions2 = context.ClientHello1.Extensions.Where(ext => ext.ExtensionType != ExtensionType.KeyShare).ToList();
@@ -365,6 +367,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.GeneratePrivateKeyAndKeyShareToSend(serverKeyShare.SelectedGroup, out keyShareToSendRawBytes, out privateKey);
 
             extensions2.Add(new KeyShareClientHelloExtension(new KeyShareEntry[] { new KeyShareEntry(serverKeyShare.SelectedGroup, keyShareToSendRawBytes) }));
+
+            // todo compute binder values again
 
             var hello2 = new ClientHello(context.ClientHello1.Random, context.ClientHello1.LegacySessionId, context.ClientHello1.CipherSuites, extensions2);
             messageIO.WriteHandshake(hello2);
@@ -463,10 +467,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 }
 
                 // hscontext.RemoveLast();
-            }
-            else
-            {
-                // no tickets, not need to compute binder values, just send
             }
 
             messageIO.WriteHandshake(clientHello);

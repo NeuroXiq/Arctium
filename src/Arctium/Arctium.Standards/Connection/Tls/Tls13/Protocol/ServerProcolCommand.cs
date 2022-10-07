@@ -7,10 +7,11 @@
 
         Handshake_FirstClientHello,
         Handshake_ClientHello1,
-        Handshake_HelloRetryRequest,
         Handshake_ClientHello2,
         Handshake_ServerHelloNotPsk,
-        Handshake_ServerHelloPsk,
+        Handshake_ServerHelloPsk_Dhe,
+        Handshake_ServerHelloPsk_Ke,
+        Handshake_SendHelloRetryRequestIfNeeded,
         Handshake_EncryptedExtensions,
         Handshake_CertificateRequest,
         Handshake_ServerCertificate,

@@ -14,9 +14,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             config.SupportedGroups = new NamedGroup[]
             {
-                // NamedGroup.X25519,
-                NamedGroup.Ffdhe2048,
-                NamedGroup.Ffdhe3072,
+                NamedGroup.X25519,
+                // NamedGroup.Ffdhe2048,
+                // NamedGroup.Ffdhe3072,
             };
 
             return config;

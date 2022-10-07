@@ -85,7 +85,7 @@ namespace Arctium.Shared.Helpers.Buffers
             // move data to free beginning of the buffer (shift data right to make free 'predendLength' at buffer start)
             for (int i = 0; i < shiftRight; i++)
             {
-                Buffer[DataLength - 1 - i] = Buffer[DataLength - prependLength - 1]; 
+                Buffer[DataLength - 1 - i] = Buffer[DataLength - prependLength - 1 - i]; 
             }
         }
     }

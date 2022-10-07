@@ -518,7 +518,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             // ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", buf);
             // ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", buf);
-
+            
             ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", hscontext);
             ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", hscontext);
         }
@@ -647,6 +647,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             byte[] clientHello1Hash = TranscriptHash(hsctx.Buffer, 0, CH1Length);
             hsctx.TrimStart(CH1Length);
             hsctx.PrependOutside(4 + clientHello1Hash.Length);
+            
 
             // insert hashed client hello
             hsctx.Buffer[0] = (byte)HandshakeType.MessageHash;
