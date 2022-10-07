@@ -643,9 +643,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void ReplaceClientHello1WithMessageHash(ByteBuffer hsctx, int CH1Length)
         {
+            // remove original client hello
             byte[] clientHello1Hash = TranscriptHash(hsctx.Buffer, 0, CH1Length);
             hsctx.TrimStart(CH1Length);
             hsctx.PrependOutside(4 + clientHello1Hash.Length);
+
+            // insert hashed client hello
             hsctx.Buffer[0] = (byte)HandshakeType.MessageHash;
             MemMap.ToBytes1UShortBE((ushort)clientHello1Hash.Length, hsctx.Buffer, 2);
             MemCpy.Copy(clientHello1Hash, 0, hsctx.Buffer, 4, clientHello1Hash.Length);

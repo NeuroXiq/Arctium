@@ -222,7 +222,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
             if (length == 2)
             {
-                return new KeyShareServerHelloExtension(new KeyShareEntry((NamedGroup)group, null));
+                return new KeyShareHelloRetryRequestExtension((NamedGroup)group);
             }
 
             cursor += 2;

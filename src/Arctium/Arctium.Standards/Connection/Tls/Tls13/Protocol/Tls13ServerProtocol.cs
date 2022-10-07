@@ -41,6 +41,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public byte[] EcdhOrDheSharedSecret;
             public bool IsPskSessionResumption;
             public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
+            public int CH2Offset;
 
             public PskTicket SelectedPskTicket { get; internal set; }
         }
@@ -229,6 +230,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 var x = 0;
             }
 
+            if (context.HelloRetryRequest != null)
+            {
+                var t = "";
+            }
+
             if (config.HandshakeRequestCertificateFromClient)
             {
                 var x = "";
@@ -375,9 +381,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_HelloRetryRequest()
         {
-
+            crypto.ReplaceClientHello1WithMessageHash(hsctx, hsctx.DataLength);
             messageIO.WriteHandshake(context.HelloRetryRequest);
 
+            context.CH2Offset = hsctx.DataLength;
             context.ClientHello2 = messageIO.ReadHandshakeMessage<ClientHello>();
 
             var selectedByServer = ((KeyShareHelloRetryRequestExtension)context.HelloRetryRequest.Extensions.First(ext => ext.ExtensionType == ExtensionType.KeyShare)).SelectedGroup;
@@ -477,9 +484,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else
             {
                 // jump over first msg which is artificial 'clienthello1 hash'
-                int hashLen = MemMap.ToUShort2BytesBE(hsctx.Buffer, 2); // only 2 bytes because this is hash
-                int startOffset = 4 + hashLen;
-                toBinders = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(hsctx.Buffer, startOffset);
+                //int hashLen = MemMap.ToUShort2BytesBE(hsctx.Buffer, 2); // only 2 bytes because this is hash
+                //int startOffset = 4 + hashLen;
+                toBinders = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(hsctx.Buffer, context.CH2Offset);
             }
 
             validate.Handshake.AlertFatal(
@@ -528,7 +535,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 ServerSupportedVersionsExtension.ServerHelloTls13, //todo uncomment
             };
-
 
             if (isClientHello1)
             {
