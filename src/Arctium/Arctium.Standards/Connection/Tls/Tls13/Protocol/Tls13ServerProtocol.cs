@@ -59,8 +59,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private MessageIO messageIO;
         private Crypto crypto;
         private Validate validate;
-        // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
-        //private HandshakeContext handshakeContext;
         private ByteBuffer hsctx;
         private Context context;
         private Tls13ServerConfig config { get { return serverContext.Config; } }
@@ -75,7 +73,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // handshakeContext = new HandshakeContext();
             hsctx = new ByteBuffer();
 
-            messageIO = new MessageIO(networkStream, validate, new HandshakeContext());
+            messageIO = new MessageIO(networkStream, validate);
             messageIO.OnHandshakeReadWrite += MessageIO_OnHandshakeReadWrite;
             crypto = new Crypto(Endpoint.Server, config);
             context = new Context();
@@ -224,6 +222,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 //CommandQueue.Enqueue(ServerProcolCommand.BreakLoopWaitForOtherCommand);
                 State = ServerProtocolState.Connected;
             }
+
+            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
 
             if (context.IsPskSessionResumption)
             {
@@ -416,7 +416,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             int toBinders = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(hsctx.Buffer, clientHelloWithBindersOffs);
 
             validate.Handshake.AlertFatal(
-                !crypto.IsPskBinderValueValid(hsctx, toBinders, pskTicket, preSharedKeyExtension.Binders[selectedClientIdentity]),
+                !crypto.IsPskBinderValueValid(hsctx, toBinders, preSharedKeyExtension.Binders[selectedClientIdentity]),
                 AlertDescription.DecryptError, "binder value invalid");
 
             extensions.Add(new PreSharedKeyServerHelloExtension((ushort)selectedClientIdentity));
@@ -515,7 +515,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var legacySessionId = context.ClientHello1.LegacySessionId;
 
 
-            bool retryNeeded = clientShares.Any(share => share.NamedGroup == crypto.SelectedNamedGroup);
+            bool retryNeeded = !clientShares.Any(share => share.NamedGroup == crypto.SelectedNamedGroup);
+            bool hasPskExtension = context.ClientHello1.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _);
 
             if (retryNeeded)
             {
@@ -540,9 +541,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 validate.Handshake.AlertFatal(sharedFromClient.Count() != 1 || sharedFromClient[0].NamedGroup != selectedByServer,
                     AlertDescription.Illegal_parameter,
                     "Invalid share in ClientHello2 (after HelloRetry). Not single share or other that select on server");
-            }
 
-            bool hasPskExtension = context.ClientHello2.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _);
+                hasPskExtension = context.ClientHello2.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _);
+            }
 
             if (hasPskExtension)
             {

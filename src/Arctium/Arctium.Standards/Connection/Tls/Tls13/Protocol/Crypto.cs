@@ -379,15 +379,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (signAlgoOk) this.SelectedSignatureScheme = supportedSignAlgo[selectedSignAlgoIdx];
         }
 
-        public void SelectSuiteAndEcEcdheGroupAndSigAlgo(ClientHello hello, out bool groupOk, out bool cipherSuiteOk, out bool signAlgoOk)
-        {
-            SelectCipherSuite(hello, out cipherSuiteOk);
-            SelectSigAlgo(hello, out signAlgoOk);
-            SelectEcEcdheGroup(hello, out groupOk);
-
-            if (cipherSuiteOk) SetupCryptoAlgorithms(SelectedCipherSuite);
-        }
-
         public byte[] TranscriptHash(byte[] buffer, long offset, long length)
         {
             hashFunction.Reset();
@@ -417,7 +408,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             return hashFunction.HashFinal();
         }
-
 
         public void ChangeRecordLayerCrypto(RecordLayer recordLayer, RecordLayerKeyType keyType)
         {
@@ -501,12 +491,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             byte[] pskSecret = this.psk != null ? psk : zeroValueOfHashLen;
             EarlySecret = new byte[this.hashFunction.HashSizeBytes];
 
-            bool externalBinder = false; // ?
+            bool externalBinder = false; // todo?
 
             hkdf.Extract(zeroValueOfHashLen, pskSecret, EarlySecret);
-
-            // BinderKey = DeriveSecret(EarlySecret, externalBinder ? "ext binder" : "res binder", new byte[0]);
-            // ClientEarlyTrafficSecret = DeriveSecret(EarlySecret, "c e traffic", handshakeContext, 0);
         }
 
         public void SetupHandshakeSecret(ByteBuffer hscontext)
@@ -515,9 +502,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             HandshakeSecret = new byte[hashFunction.HashSizeBytes];
             hkdf.Extract(derived, this.Ecdhe_or_dhe_SharedSecret, HandshakeSecret);
-
-            // ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", buf);
-            // ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", buf);
             
             ClientHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "c hs traffic", hscontext);
             ServerHandshakeTrafficSecret = DeriveSecret(HandshakeSecret, "s hs traffic", hscontext);
@@ -534,7 +518,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             ClientApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "c ap traffic", hscontext);
             ServerApplicationTrafficSecret0 = DeriveSecret(MasterSecret, "s ap traffic", hscontext);
             ExporterMasterSecret = DeriveSecret(MasterSecret, "exp master", hscontext);
-            // ResumptionMasterSecret = DeriveSecret(MasterSecret, "res master", hcontext); // todo
         }
 
         public void SetupResumptionMasterSecret(ByteBuffer hsctx)
@@ -553,10 +536,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             hmac.Reset();
             
             hmac.ChangeKey(finishedKey);
-            // hmac.ProcessBytes(HandshakeContextTranscriptHash(handshakeContext, handshakeContext.MessagesInfo.Count - 1));
             var transcriptHash = TranscriptHash(handshakeContext);
             hmac.ProcessBytes(transcriptHash);
-            // hmac.ProcessBytes(TranscriptHash(MemCpy.CopyToNewArray(handshakeContext.HandshakeMessages, 0, handshakeContext.TotalLength)));
 
             hmac.Final(result, 0);
 
@@ -565,7 +546,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public bool IsPskBinderValueValid(ByteBuffer handshakeContextToBinders,
             int lengthToPskBindersInBuffer,
-            PskTicket ticket,
             byte[] clientBinderValue)
         {
             if (psk == null) throw new ArctiumExceptionInternal("psk must be set");
@@ -609,9 +589,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             hkdf.Extract(zeroValueOfHashLen, pskSecret, earlySecret);
 
-            // BinderKey = DeriveSecret(EarlySecret, externalBinder ? "ext binder" : "res binder", new byte[0]);
             var binderKey = HkdfExpandLabel(hkdf, earlySecret, externalBinder ? "ext binder" : "res binder", TranscriptHash(hf, new byte[0]), hashSizeBytes);
-            // var binderKey = DeriveSecret(hkdf, earlySecret, externalBinder ? "ext binder" : "res binder", new byte[0], hashSizeBytes);
 
             return binderKey;
         }

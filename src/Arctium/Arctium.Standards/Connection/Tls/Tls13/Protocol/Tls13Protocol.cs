@@ -22,7 +22,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private BufferForStream streamBuffer;
         private RecordLayer recordLayer;
         private Validate validate;
-        HandshakeContext handshakeContexta = new HandshakeContext();
         // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContexta = new List<KeyValuePair<HandshakeType, byte[]>>();
         private List<byte[]> handshakeContext = new List<byte[]>();
         private Crypto crypto;
@@ -34,7 +33,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.validate = new Validate();
             this.streamBuffer = new BufferForStream(stream);
             this.recordLayer = new RecordLayer(streamBuffer, validate);
-            this.handshakeReader = new MessageIO(stream, validate, handshakeContexta);
+            this.handshakeReader = new MessageIO(stream, validate);
             this.serverConfig = serverConfig;
         }
 

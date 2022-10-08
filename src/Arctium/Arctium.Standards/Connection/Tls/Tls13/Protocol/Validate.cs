@@ -24,6 +24,7 @@ using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Helpers.Binary;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -37,6 +38,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public FinishedValidate Finished { get; private set; }
         public ServerHelloValidate ServerHello { get; private set; }
         public NewSessionTicketValidate NewSessionTicket { get; private set; }
+        public HelloRetryRequestValidate HelloRetryRequest { get; private set; }
 
         public Validate()
         {
@@ -48,6 +50,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             Finished = new FinishedValidate(errorHandler);
             ServerHello = new ServerHelloValidate(errorHandler);
             NewSessionTicket = new NewSessionTicketValidate(errorHandler);
+            HelloRetryRequest = new HelloRetryRequestValidate(errorHandler);
 
             Certificate = new CertificateValidate(errorHandler);
         }
@@ -86,7 +89,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 messageName = messageName ?? string.Empty;
                 fieldName = fieldName ?? string.Empty;
                 error = error ?? string.Empty;
-                
+
                 // fieldName = fieldName == null ? "null" : fieldName;
 
                 return $"MESSAGE: {messageName}, FIELD: {fieldName}, Error: {error}";
@@ -105,7 +108,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             public void Throw(bool condition, string error) => Throw(condition, null, error);
-            
+
             public void AlertFatalDecodeError(bool condition, string field, string error)
             {
                 if (condition)
@@ -122,7 +125,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public void Throw(bool condition, string field, string error)
             {
                 if (condition) handler.Throw(messageName, null, error);
-            }   
+            }
+        }
+
+        public class HelloRetryRequestValidate : ValidateBase
+        {
+            public HelloRetryRequestValidate(ValidationErrorHandler handler) : base(handler, "HelloRetryRequest")
+            {
+            }
+
+            public void GeneralValidate(ClientHello clientHello1, ServerHello helloRetry)
+            {
+                AlertFatal(!clientHello1.CipherSuites.Contains(helloRetry.CipherSuite), AlertDescription.Illegal_parameter, "cipher suite from server not match clienthello");
+
+                var keyShareHrr = helloRetry.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.KeyShare) as KeyShareHelloRetryRequestExtension;
+                var clientGroups = clientHello1.Extensions.First(ext => ext.ExtensionType == ExtensionType.SupportedGroups) as SupportedGroupExtension;
+
+                AlertFatal(keyShareHrr == null, AlertDescription.Illegal_parameter, "server didnt send keysharehelloretryrequest or send keyshare with keyexchange bytes instead of retry");
+                AlertFatal(!clientGroups.NamedGroupList.Contains(keyShareHrr.SelectedGroup), AlertDescription.Illegal_parameter, "server selected group not listed in clienthello");
+            }
         }
 
         public class FinishedValidate : ValidateBase

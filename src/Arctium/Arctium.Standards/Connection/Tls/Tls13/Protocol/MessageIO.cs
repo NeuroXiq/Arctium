@@ -19,7 +19,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private ModelDeserialization clientModelDeserialization;
         private ModelSerialization modelSerialization;
         // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
-        private HandshakeContext handshakeContext;
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
@@ -27,8 +26,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
 
         public MessageIO(Stream networkStream,
-            Validate validate,
-            HandshakeContext handshakeContext)
+            Validate validate)
         {
             this.recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
 
@@ -39,7 +37,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.byteBuffer = new ByteBuffer();
             this.validate = validate;
             this.clientModelDeserialization = new ModelDeserialization(validate);
-            this.handshakeContext = handshakeContext;
         }
 
         public void SetBackwardCompatibilityMode(
@@ -114,7 +111,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 
-            // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
             HandshakeContextAdd(type, buffer, 0, len + 4);
 
             byteBuffer.TrimStart(len + 4);
@@ -139,17 +135,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         //    byteBuffer.TrimStart(len + 4);
         //}
 
-        void HandshakeContextAdd(HandshakeType type, byte[] buffer, long offset, long length)
-        {
-            handshakeContext.Add(type, buffer, (int)offset, (int)length);
-            OnHandshakeReadWrite?.Invoke(buffer, (int)offset, (int)length);
-
-            // if (type == HandshakeType.ClientHello)
-            // {
-            //     int pskInClientHelloOffset = clientModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(modelSerialization.SerializedData, 0);
-            //     handshakeContext.SetClientHelloPskExtensionOffset(pskInClientHelloOffset);
-            // }
-        }
+        void HandshakeContextAdd(HandshakeType type, byte[] buffer, long offset, long length) => OnHandshakeReadWrite?.Invoke(buffer, (int)offset, (int)length);
 
         // void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
 

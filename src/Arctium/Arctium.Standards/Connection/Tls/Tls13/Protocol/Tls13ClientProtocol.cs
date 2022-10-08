@@ -40,7 +40,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         byte[] privateKey;
         MessageIO messageIO;
         Validate validate;
-        HandshakeContext hscontext;
         ClientProtocolCommand currentCommand;
         Tls13ClientContext clientContext;
         ByteBuffer hsctx;
@@ -57,8 +56,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.crypto = new Crypto(Endpoint.Client, null);
             hsctx = new ByteBuffer();
             validate = new Validate();
-            hscontext = new HandshakeContext();
-            messageIO = new MessageIO(networkRawStream, validate, hscontext);
+            messageIO = new MessageIO(networkRawStream, validate);
             ApplicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
 
             commandQueue = new Queue<ClientProtocolCommand>();
@@ -227,11 +225,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             // todo post handshake actions
             state = ClientProtocolState.Connected;
-            
-            // crypto.InitMasterSecret(hscontext);
-            
+
+            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
-            
             
             messageIO.SetBackwardCompatibilityMode(false, false);
         }
@@ -244,7 +240,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.SetupMasterSecret(hsctx);
             messageIO.WriteHandshake(finished);
             crypto.SetupResumptionMasterSecret(hsctx);
-
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_HandshakeCompletedSuccessfully);
         }
@@ -349,6 +344,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_ClientHello2()
         {
             // process HelloRetryRequst
+            validate.HelloRetryRequest.GeneralValidate(context.ClientHello1, context.HelloRetryRequest);
             crypto.SelectCipherSuite(context.HelloRetryRequest.CipherSuite);
             crypto.ReplaceClientHello1WithMessageHash(hsctx, context.CH1Length);
 
@@ -362,12 +358,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             foreach (var extensionInCH1 in context.ClientHello1.Extensions)
             {
-                if (extensionInCH1.ExtensionType == ExtensionType.KeyShare) continue;
-                if (extensionInCH1.ExtensionType == ExtensionType.PreSharedKey)
-                {
-                    pskExtension = extensionInCH1 as PreSharedKeyClientHelloExtension;
+                if (extensionInCH1.ExtensionType == ExtensionType.KeyShare ||
+                    extensionInCH1.ExtensionType == ExtensionType.PreSharedKey)
                     continue;
-                }
 
                 extensions2.Add(extensionInCH1);
             }
