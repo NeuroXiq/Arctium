@@ -322,7 +322,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (!onHelloRetry) crypto.SelectCipherSuite(sh.CipherSuite);
 
             // todo check if server response is correct compared to sended CH (check if this class send keyexchangemode.psk_ke)
-            if (keyShare.ServerShare == null) throw new NotSupportedException();
+            // todo server could select KeyExchangeMode_ke (not dhe), need to implement this
+            if (keyShare.ServerShare == null) throw new InvalidOperationException();
             else
             {
                 crypto.SelectEcEcdheGroup(keyShare.ServerShare.NamedGroup);
@@ -337,11 +338,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 context.IsPskSessionResumption = true;
             }
 
-            // crypto.InitEarlySecret(hscontext, null);
-            // crypto.InitHandshakeSecret(hscontext);
-
             crypto.SetupEarlySecret(psk);
-
             crypto.SetupHandshakeSecret(hsctx);
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
@@ -353,27 +350,74 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             // process HelloRetryRequst
             crypto.SelectCipherSuite(context.HelloRetryRequest.CipherSuite);
-
-            // need to replace ClientHello1 (when HelloRetryRequest) with artificial 'Message Hash' message
-            // in handshake context bytes (for transcript hash) for future calculations
-
             crypto.ReplaceClientHello1WithMessageHash(hsctx, context.CH1Length);
 
-            var extensions2 = context.ClientHello1.Extensions.Where(ext => ext.ExtensionType != ExtensionType.KeyShare).ToList();
-
+            var extensions2 = new List<Extension>();
             var serverKeyShare = (KeyShareHelloRetryRequestExtension)context.HelloRetryRequest.Extensions.First(ext => ext.ExtensionType == ExtensionType.KeyShare);
-
             byte[] keyShareToSendRawBytes;
+
             crypto.GeneratePrivateKeyAndKeyShareToSend(serverKeyShare.SelectedGroup, out keyShareToSendRawBytes, out privateKey);
+
+            PreSharedKeyClientHelloExtension pskExtension = null;
+
+            foreach (var extensionInCH1 in context.ClientHello1.Extensions)
+            {
+                if (extensionInCH1.ExtensionType == ExtensionType.KeyShare) continue;
+                if (extensionInCH1.ExtensionType == ExtensionType.PreSharedKey)
+                {
+                    pskExtension = extensionInCH1 as PreSharedKeyClientHelloExtension;
+                    continue;
+                }
+
+                extensions2.Add(extensionInCH1);
+            }
 
             extensions2.Add(new KeyShareClientHelloExtension(new KeyShareEntry[] { new KeyShareEntry(serverKeyShare.SelectedGroup, keyShareToSendRawBytes) }));
 
-            // todo compute binder values again
-
             var hello2 = new ClientHello(context.ClientHello1.Random, context.ClientHello1.LegacySessionId, context.ClientHello1.CipherSuites, extensions2);
+            AppendLastExtensionPreSharedKey(hello2);
             messageIO.WriteHandshake(hello2);
-            //
+            
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHelloOrHelloRetryRequest);
+        }
+
+        private void AppendLastExtensionPreSharedKey(ClientHello clientHello)
+        {
+            PreSharedKeyClientHelloExtension preSharedKeyExtension;
+
+            context.PskTickets = clientContext.GetPskTickets();
+            
+            if (context.PskTickets.Length == 0) return;
+
+            var identities = new List<PreSharedKeyClientHelloExtension.PskIdentity>();
+            List<byte[]> binders = new List<byte[]>();
+
+            foreach (var ticket in context.PskTickets)
+            {
+                uint obfustatedTicketAge = ticket.TicketLifetime + ticket.TicketAgeAdd;
+                identities.Add(new PreSharedKeyClientHelloExtension.PskIdentity(ticket.Ticket, obfustatedTicketAge));
+
+                binders.Add(new byte[crypto.GetHashSizeInBytes(ticket.HashFunctionId)]);
+            }
+            preSharedKeyExtension = new PreSharedKeyClientHelloExtension(identities.ToArray(), binders.ToArray());
+            clientHello.Extensions.Add(preSharedKeyExtension);
+
+            // need to compute binder values, more tricky
+            ModelSerialization serialization = new ModelSerialization();
+            serialization.ToBytes(clientHello);
+            int toBindersLen = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(serialization.SerializedData, 0);
+
+            ByteBuffer hsContextToBinders = new ByteBuffer();
+            hsContextToBinders.Append(hsctx.Buffer, 0, hsctx.DataLength);
+            hsContextToBinders.Append(serialization.SerializedData, 0, toBindersLen);
+
+            for (int i = 0; i < context.PskTickets.Length; i++)
+            {
+                var tic = context.PskTickets[i];
+                var binder = crypto.ComputeBinderValue(hsContextToBinders, tic);
+
+                preSharedKeyExtension.Binders[i] = binder;
+            }
         }
 
         private void Handshake_ServerHelloOrHelloRetryRequest()
@@ -419,60 +463,21 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
             GlobalConfig.RandomGeneratorCryptSecure(sesId, 0, sesId.Length);
-            context.PskTickets = clientContext.GetPskTickets();
 
             byte[] keyShareToSendRawBytes;
             crypto.GeneratePrivateKeyAndKeyShareToSend(config.SupportedGroups[0], out keyShareToSendRawBytes, out privateKey);
 
             extensions.Add(new KeyShareClientHelloExtension(new KeyShareEntry[]
             {
-                    new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyShareToSendRawBytes),
+                new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyShareToSendRawBytes),
             }));
 
-            if (context.PskTickets.Length > 0)
-            {
-                var identities = new List<PreSharedKeyClientHelloExtension.PskIdentity>();
-                List<byte[]> binders = new List<byte[]>();
-
-                foreach (var ticket in context.PskTickets)
-                {
-                    uint obfustatedTicketAge = ticket.TicketLifetime + ticket.TicketAgeAdd;
-                    identities.Add(new PreSharedKeyClientHelloExtension.PskIdentity(ticket.Ticket, obfustatedTicketAge));
-
-                    binders.Add(new byte[crypto.GetHashSizeInBytes(ticket.HashFunctionId)]);
-                }
-                preSharedKeyExtension = new PreSharedKeyClientHelloExtension(identities.ToArray(), binders.ToArray());
-                extensions.Add(preSharedKeyExtension);
-            }
-
             var clientHello = new ClientHello(random, sesId, suites, extensions);
-
-            if (context.PskTickets.Length > 0)
-            {
-                // need to compute binder values, more tricky
-                ModelSerialization serialization = new ModelSerialization();
-                serialization.ToBytes(clientHello);
-                int toBindersLen = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(serialization.SerializedData, 0);
-
-                ByteBuffer hsContextToBinders = new ByteBuffer();
-                hsContextToBinders.Append(hsctx.Buffer, 0, hsctx.DataLength);
-                hsContextToBinders.Append(serialization.SerializedData, 0, toBindersLen);
-
-                for (int i = 0; i < context.PskTickets.Length; i++)
-                {
-                    var tic = context.PskTickets[i];
-                    var binder = crypto.ComputeBinderValue(hsContextToBinders, tic);
-
-                    preSharedKeyExtension.Binders[i] = binder;
-                }
-
-                // hscontext.RemoveLast();
-            }
+            AppendLastExtensionPreSharedKey(clientHello);
 
             messageIO.WriteHandshake(clientHello);
             context.ClientHello1 = clientHello;
 
-            // commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHello);
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHelloOrHelloRetryRequest);
             messageIO.SetBackwardCompatibilityMode(compatibilityAllowRecordLayerVersionLower0x0303: false,
                 compatibilitySilentlyDropUnencryptedChangeCipherSpec: true);

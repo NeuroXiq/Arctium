@@ -49,7 +49,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model
             
             if (!TryGetExtension<T>(type, out extension))
             {
-                throw new InvalidOperationException("Extension missing in list");
+                throw new InvalidOperationException("Extension missing in list:  " + type.ToString());
             }
 
             return extension;
