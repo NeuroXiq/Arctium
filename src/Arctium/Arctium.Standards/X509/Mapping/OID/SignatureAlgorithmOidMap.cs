@@ -18,11 +18,14 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID
             Initialize();
         }
 
+        static ObjectIdentifier ecdsa(ulong last)
+        {
+            return new ObjectIdentifier(1, 2, 840, 10045, 4, 3, last);
+        }
+
         private static void Initialize()
         {
-
-            //map[SignatureAlgorithm.MD5WithRSAEncryption]  = 1,4),
-            //map[SignatureAlgorithm.SHA1WithRSAEncryption] = 1,5),
+            map[SignatureAlgorithm.SHA1WithRSAEncryption] = new ObjectIdentifier(1, 2, 840, 113549, 1, 1, 5);
             map[SignatureAlgorithm.MD2WithRSAEncryption] = pkcs1(2);
             map[SignatureAlgorithm.DSAWithSha1] = pkcs1(3);
             map[SignatureAlgorithm.ECDSAWithSHA1] = pkcs1(1);
@@ -31,6 +34,10 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID
             map[SignatureAlgorithm.SHA256WithRSAEncryption] = pkcs1(11);
             map[SignatureAlgorithm.SHA384WithRSAEncryption] = pkcs1(12);
             map[SignatureAlgorithm.SHA512WithRSAEncryption] = pkcs1(13);
+            map[SignatureAlgorithm.ECDSAWithSHA224] = ecdsa(1);
+            map[SignatureAlgorithm.ECDSAWithSHA256] = ecdsa(2);
+            map[SignatureAlgorithm.ECDSAWithSHA384] = ecdsa(3);
+            map[SignatureAlgorithm.ECDSAWithSHA512] = ecdsa(4);
         }
     }
 }

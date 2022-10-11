@@ -32,6 +32,7 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders
         public UniversalString UniversalString(DerDecoded derDecoded) => GenericDecoder<UniversalString>(derDecoded);
         public IA5String IA5String(DerDecoded decoded) => GenericDecoder<IA5String>(decoded);
         public GeneralizedTime GeneralizedTime(DerDecoded decoded) => GenericDecoder<GeneralizedTime>(decoded);
+        public TeletextString TeletextString(DerDecoded decoded) => GenericDecoder<TeletextString>(decoded);
 
         public OctetString OctetString(DerDecoded decoded) => GenericDecoder<OctetString>(decoded);
 
@@ -47,6 +48,7 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders
             decoders[typeof(ASN.Boolean)] = new BooleanDecoder();
             decoders[typeof(OctetString)] = new OctetStringDecoder();
             decoders[typeof(IA5String)] = new IA5StringDecoder();
+            decoders[typeof(TeletextString)] = new TeletextStringDecoder();
         }
 
         private T GenericDecoder<T>(DerDecoded decoded)

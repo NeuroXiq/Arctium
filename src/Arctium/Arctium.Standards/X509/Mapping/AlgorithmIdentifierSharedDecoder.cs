@@ -1,7 +1,9 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Serialization.X690;
 using Arctium.Standards.ASN1.Serialization.X690.DER;
+using Arctium.Standards.X509.Mapping.OID;
 using Arctium.Standards.X509.X509Cert;
+using Arctium.Standards.X509.X509Cert.Algorithms.AlgorithmParms.EcpkParms;
 using System;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Mapping
@@ -27,20 +29,18 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             // validates, 3 possible cases of CHOICE type
             valid.AnyTags(node, BuildInTag.Null, BuildInTag.ObjectIdentifier, BuildInTag.Sequence);
 
-            if (node.TagEqual(BuildInTag.Null))
-            {
-                // implicitlyCA case
-                return new EcpkParameters();
-            }
+            if (node.TagEqual(BuildInTag.Null)) return EcpkParameters.CreateImplicitlyCA();
             else if (node.TagEqual(BuildInTag.ObjectIdentifier))
             {
                 // named curve case
                 ObjectIdentifier namedCurveOid = DerDecoders.DecodeWithoutTag<ObjectIdentifier>(node);
+                NamedCurve curve = X509Oid.Get<NamedCurve>(namedCurveOid);
 
-                return new EcpkParameters(namedCurveOid);
+                return new EcpkParameters(curve);
             }
             else if (node.TagEqual(BuildInTag.Sequence))
             {
+                throw new NotSupportedException("todo implement");
                 // ecParameters case 
             }
             else

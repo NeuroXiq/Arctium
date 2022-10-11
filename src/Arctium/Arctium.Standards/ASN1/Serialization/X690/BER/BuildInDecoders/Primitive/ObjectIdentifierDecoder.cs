@@ -1,4 +1,5 @@
-﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
+﻿using Arctium.Shared.Helpers.Buffers;
+using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Serialization.Exceptions;
 using System.Collections.Generic;
 
@@ -10,7 +11,6 @@ namespace Arctium.Standards.ASN1.Serialization.X690.BER.BuildInDecoders.Primitiv
 
         public ObjectIdentifier Decode(byte[] buffer, long offset, long length)
         {
-            
             long i = offset;
             List<byte[]> subi = new List<byte[]>();
 
@@ -40,7 +40,9 @@ namespace Arctium.Standards.ASN1.Serialization.X690.BER.BuildInDecoders.Primitiv
         {
             // every first bit is removed from bit string
             // round to bytes
-            int length = ((((8 * subLength) - 1) - subLength) / 8) + 1;
+            // int length = ((((8 * subLength) - 1) - subLength) / 8) + 1;
+            
+            int length = ((7 * subLength) + 7) / 8;
 
             byte[] converted = new byte[length];
 
@@ -61,7 +63,12 @@ namespace Arctium.Standards.ASN1.Serialization.X690.BER.BuildInDecoders.Primitiv
                 freeBits++;
             }
 
-            int bitLength = (8 * subLength) - subLength;
+            if (converted.Length > 1 && converted[0] == 0)
+            {
+                byte[] afterTrimZero = new byte[converted.Length - 1];
+                MemCpy.Copy(converted, 1, afterTrimZero, 0, afterTrimZero.Length);
+                return afterTrimZero;
+            }
 
             return converted;
 

@@ -1,4 +1,6 @@
-﻿namespace Arctium.Standards.X509.X509Cert.Extensions
+﻿using Arctium.Standards.ASN1.Shared;
+
+namespace Arctium.Standards.X509.X509Cert.Extensions
 {
     public class ExtendedKeyUsageExtension : CertificateExtension
     {

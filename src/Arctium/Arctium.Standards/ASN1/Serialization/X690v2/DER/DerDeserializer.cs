@@ -18,6 +18,13 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
         const byte LengthIsInLongForm = 0x80;
         const byte LengthLongFormBytesCount = 0x7F;
 
+        public static DerDeserializedContext Deserialize2(byte[] buffer, long offset)
+        {
+            var decoded = Deserialize(buffer, offset);
+
+            return new DerDeserializedContext(decoded, buffer);
+        }
+
         public static DerDecoded Deserialize(byte[] buffer, long offset)
         {
             Stack<DerDecoded> constructorsRecursion = new Stack<DerDecoded>();

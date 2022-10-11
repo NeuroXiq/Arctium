@@ -1,5 +1,6 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Serialization.X690.DER;
+using Arctium.Standards.ASN1.Shared;
 using Arctium.Standards.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Standards.ASN1.Standards.X509.Model;
 using Arctium.Standards.X509.X509Cert;
@@ -21,7 +22,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions
             foreach (var oidNode in sequence)
             {
                 ObjectIdentifier extKeyUsageOid = DerDecoders.DecodeWithoutTag<ObjectIdentifier>(oidNode);
-                KeyPurposeId mapped = KeyPurposeIdOidMap.Get(extKeyUsageOid);
+                var mapped = KeyPurposeIdOidMap.Get(extKeyUsageOid);
                 keyPurposes.Add(mapped);
             }
 

@@ -2,7 +2,7 @@
 using System;
 using System.Numerics;
 
-namespace Arctium.Standards
+namespace Arctium.Standards.EllipticCurves
 {
     /// <summary>
     /// RFC 7748

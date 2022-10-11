@@ -5,6 +5,7 @@ using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
+using Arctium.Standards.X509.X509Cert;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,6 +25,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ServerHello HelloRetryRequest;
             public ClientHello ClientHello2;
             public bool CertificateRequest;
+            public X509Certificate ServerCertificate;
 
             public PskTicket[] PskTickets;
             public ServerHello ServerHello;
@@ -267,7 +269,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ServerCertificateVerify()
         {
+            int dataLengthToSign = hsctx.DataLength;
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
+
+
+
+            validate.Handshake.AlertFatal(crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate),
+                AlertDescription.DecryptError, "invalid servercertificateverify signature");
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
         }
@@ -275,6 +283,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_ServerCertificate()
         {
             var certificate = messageIO.ReadHandshakeMessage<Certificate>();
+
+            X509CertificateDeserializer deserialized = new X509CertificateDeserializer();
+            var cert = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificateVerify);
         }
@@ -367,9 +378,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             extensions2.Add(new KeyShareClientHelloExtension(new KeyShareEntry[] { new KeyShareEntry(serverKeyShare.SelectedGroup, keyShareToSendRawBytes) }));
 
-            var hello2 = new ClientHello(context.ClientHello1.Random, context.ClientHello1.LegacySessionId, context.ClientHello1.CipherSuites, extensions2);
-            AppendLastExtensionPreSharedKey(hello2);
-            messageIO.WriteHandshake(hello2);
+            context.ClientHello2 = new ClientHello(context.ClientHello1.Random,
+                context.ClientHello1.LegacySessionId,
+                context.ClientHello1.CipherSuites,
+                extensions2);
+
+            AppendLastExtensionPreSharedKey(context.ClientHello2);
+            messageIO.WriteHandshake(context.ClientHello2);
             
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHelloOrHelloRetryRequest);
         }

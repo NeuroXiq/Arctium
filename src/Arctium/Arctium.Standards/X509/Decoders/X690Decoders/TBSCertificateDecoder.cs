@@ -18,19 +18,22 @@ namespace Arctium.Standards.ASN1.Standards.X509.NodeDecoders.X690NodeDecoders
         AlgorithmIdentifierModelDecoder algoIdDecoder = new AlgorithmIdentifierModelDecoder();
         NameDecoder nameDecoder = new NameDecoder();
 
-
-
-        public TBSCertificate Decode(DerTypeDecoder decoder, DerDecoded node)
+        public TBSCertificate Decode(DerDeserializedContext context)
         {
+            var decoder = context.DerTypeDecored;
+            var node = context.Current;
+
             TBSCertificate tbs = new TBSCertificate();
             tbs.Version = decoder.Integer(node[0][0]);
             tbs.SerialNumber = decoder.Integer(node[1]);
-            tbs.Signature = algoIdDecoder.Decode(decoder, node[2]);
+            context.Current = node[2];
+            tbs.Signature = algoIdDecoder.Decode(context);
             tbs.Issuer = nameDecoder.Decode(decoder, node[3]);
 
             tbs.Validity = validityDecoder.Decode(decoder, node[4]);
             tbs.Subject = nameDecoder.Decode(decoder, node[5]);
-            tbs.SubjectPublicKeyInfo = DecodeSubjectPublicKeyInfo(decoder, node[6]);
+            context.Current = node[6];
+            tbs.SubjectPublicKeyInfo = DecodeSubjectPublicKeyInfo(context);
 
             // simulate, that all optionals are present
             int[] optionals = new int[10];
@@ -99,10 +102,14 @@ namespace Arctium.Standards.ASN1.Standards.X509.NodeDecoders.X690NodeDecoders
             return extensions.ToArray();
         }
 
-        private SubjectPublicKeyInfoModel DecodeSubjectPublicKeyInfo(DerTypeDecoder decoder, DerDecoded decoded)
+        private SubjectPublicKeyInfoModel DecodeSubjectPublicKeyInfo(DerDeserializedContext context)
         {
-            AlgorithmIdentifierModel algorithmIdentifier = algoIdDecoder.Decode(decoder, decoded[0]);
-            BitString publicKey = decoder.BitString(decoded[1]);
+            var current = context.Current;
+            context.Current = current[0];
+            var decoder = context.DerTypeDecored;
+
+            AlgorithmIdentifierModel algorithmIdentifier = algoIdDecoder.Decode(context);
+            BitString publicKey = decoder.BitString(current[1]);
 
             return new SubjectPublicKeyInfoModel(algorithmIdentifier, publicKey);
         }

@@ -9,6 +9,7 @@ namespace Arctium.Standards.X509.X509Cert
 {
     public class X509CertificateDeserializer
     {
+        const string BeginCertificatePemLabel = "CERTIFICATE";
         X509CertificateModelDecoder certRootNodeDecoder;
         X509CertificateMapper certificateMapper;
 
@@ -20,18 +21,19 @@ namespace Arctium.Standards.X509.X509Cert
 
         public X509Certificate FromPem(string filename)
         {
-            PemFile pemfile = PemFile.FromFile(filename);   
+            PemFile pemfile = PemFile.FromFile(filename);
+            if (pemfile.BeginLabel != BeginCertificatePemLabel)
+                throw new ArgumentException(
+                    string.Format("Pem file start label is not equal to '{0}'. Current label: {1}", BeginCertificatePemLabel, pemfile.BeginLabel));
 
             return FromBytes(pemfile.DecodedData);
         }
 
         public X509Certificate FromBytes(byte[] data)
         {
-            
             X509Certificate result;
-            var decoded = DerDeserializer.Deserialize(data, 0);
-            DerTypeDecoder derTypesDecoder = new DerTypeDecoder(data);
-            var certificateModel = certRootNodeDecoder.Decode(derTypesDecoder, decoded);
+            var decodedContext = DerDeserializer.Deserialize2(data, 0);
+            var certificateModel = certRootNodeDecoder.Decode(decodedContext);
 
             result = certificateMapper.MapFromModel(certificateModel);
             try

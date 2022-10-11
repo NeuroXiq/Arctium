@@ -13,5 +13,11 @@
         SHA256WithRSAEncryption,
         MD2WithRSAEncryption,
         MD5WithRSAEncryption,
+
+        // ecdsa
+        ECDSAWithSHA384,
+        ECDSAWithSHA224,
+        ECDSAWithSHA256,
+        ECDSAWithSHA512,
     }
 }

@@ -72,6 +72,7 @@ namespace Arctium.Standards.X501.Decoders.X690Decoders
             {
                 value = decoder.IA5String(decoded[1]);
             }
+            else if (valueTag == BuildInTag.TeletexString) value = decoder.TeletextString(decoded[1]);
             else
             {
                 throw new X690DecoderException("Current tag for value of the AttributeTypeAndValue are invalid or not supported by this implementation. " + valueTag.ToString());

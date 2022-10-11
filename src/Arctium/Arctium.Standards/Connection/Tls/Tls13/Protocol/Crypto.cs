@@ -26,6 +26,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Arctium.Standards.X509.X509Cert;
+using static Arctium.Standards.Connection.Tls.Tls13.Model.Extensions.SignatureSchemeListExtension;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -291,6 +293,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 this.Ecdhe_or_dhe_SharedSecret = FFDHE.ComputeSharedSecret(ffdheParams, privateKey, keyExchangeRawBytes);
             }
             else throw new NotSupportedException();
+        }
+
+        internal bool IsServerCertificateVerifyValid(byte[] hscontext,
+            int hscontextlen,
+            CertificateVerify certVerify,
+            X509Certificate serverCertificate)
+        {
+            return false;
+        }
+
+        internal void Signature()
+        {
+            // SignatureScheme
+            //switch ()
+            //{
+            //    default:
+            //        break; Validation.ThrowInternal(); break;
+            //}
         }
 
         internal bool VerifyClientCertificate(CertificateVerify certVer)

@@ -20,8 +20,17 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
     {
         HashSet<SignatureAlgorithm> parmsMustBeNull = new HashSet<SignatureAlgorithm>()
         {
-            SHA224WithRSAEncryption, SHA384WithRSAEncryption, SHA512WithRSAEncryption, SHA256WithRSAEncryption,
-            MD2WithRSAEncryption, MD5WithRSAEncryption,
+            SHA1WithRSAEncryption,
+            SHA224WithRSAEncryption,
+            SHA384WithRSAEncryption,
+            SHA512WithRSAEncryption,
+            SHA256WithRSAEncryption,
+            MD2WithRSAEncryption,
+            MD5WithRSAEncryption,
+            ECDSAWithSHA224,
+            ECDSAWithSHA256,
+            ECDSAWithSHA384,
+            ECDSAWithSHA512,
         };
 
 

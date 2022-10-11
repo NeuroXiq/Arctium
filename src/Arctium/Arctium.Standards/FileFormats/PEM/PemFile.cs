@@ -2,6 +2,7 @@
 using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Arctium.Standards.FileFormat.PEM
 {
@@ -47,7 +48,10 @@ namespace Arctium.Standards.FileFormat.PEM
         {
             ByteBuffer buffer = new ByteBuffer();
 
-            string[] lines = content.Split("\r\n");
+            content = content.Trim('\r', '\n');
+            string[] lines = content.Split("\n");
+            for (int i = 0; i < lines.Length; i++) lines[i] = lines[i].Trim('\r');
+
             if (lines.Length < 3) Throw("Invalid file format. Minimum lines count is 3");
 
             string beginLabel = GetLabel(lines[0], "BEGIN");

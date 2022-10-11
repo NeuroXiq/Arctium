@@ -2,6 +2,7 @@
 {
     public enum KeyPurposeId
     {
+        UNKNOW_NotImplemented,
         AnyExtendedKeyUsage,
         ServerAuth,
         ClientAuth,

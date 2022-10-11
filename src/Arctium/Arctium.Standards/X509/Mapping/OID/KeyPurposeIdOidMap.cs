@@ -2,6 +2,7 @@
 using Arctium.Standards.X509.X509Cert.Extensions;
 using Arctium.Shared.Helpers.DataStructures;
 using System.Collections.Generic;
+using Arctium.Standards.ASN1.Shared;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID
 {
@@ -28,11 +29,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID
         {
             if (!map.ContainsKey(oid))
             {
-                if (!map.ContainsKey(oid))
-                {
-                    throw new KeyNotFoundException($"{MapName}: " +
-                        $"Map from OID {oid.ToString()} to {nameof(KeyPurposeId)} enum not found ");
-                }
+                return KeyPurposeId.UNKNOW_NotImplemented;
             }
 
             return map[oid];

@@ -8,8 +8,11 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
 {
     class AlgorithmIdentifierModelDecoder
     {
-        public AlgorithmIdentifierModel Decode(DerTypeDecoder decoder, DerDecoded decoded)
+        public AlgorithmIdentifierModel Decode(DerDeserializedContext context)
         {
+            var decoder = context.DerTypeDecored;
+            var decoded = context.Current;
+
             ObjectIdentifier algorithmId = decoder.ObjectIdentifier(decoded[0]);
             byte[] parameters = null;
 
