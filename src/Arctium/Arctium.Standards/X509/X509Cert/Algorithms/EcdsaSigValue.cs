@@ -4,5 +4,11 @@
     {
         public byte[] R;
         public byte[] S;
+
+        public EcdsaSigValue(byte[] r, byte[] s)
+        {
+            R = r;
+            S = s;
+        }
     }
 }

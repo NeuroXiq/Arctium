@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
-    public enum AlgorithmIdentifierParametersType
+    public enum PublicKeyAlgorithmIdentifierParametersType
     {
         /// <summary>
         /// rfc3279

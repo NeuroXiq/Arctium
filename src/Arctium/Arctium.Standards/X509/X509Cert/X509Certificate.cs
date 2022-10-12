@@ -42,7 +42,8 @@ namespace Arctium.Standards.X509.X509Cert
         public byte[] IssuerUniqueId { get; internal set; }
         public byte[] SubjectUniqueId { get; internal set; }
         public CertificateExtension[] Extensions { get; internal set; }
-        public Signature Signature { get; internal set; }
+        public SignatureAlgorithmIdentifier SignatureAlgorithm { get; internal set; }
+        public SignatureValue SignatureValue { get; internal set; }
         public SubjectPublicKeyInfo SubjectPublicKeyInfo { get; internal set; }
     }
 }

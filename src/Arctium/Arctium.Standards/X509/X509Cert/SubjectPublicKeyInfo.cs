@@ -5,10 +5,10 @@ namespace Arctium.Standards.X509.X509Cert
 {
     public class SubjectPublicKeyInfo
     {
-        public AlgorithmIdentifier AlgorithmIdentifier { get; private set; }
+        public PublicKeyAlgorithmIdentifier AlgorithmIdentifier { get; private set; }
         public SubjectPublicKeyInfoPublicKey PublicKey { get; private set; }
 
-        public SubjectPublicKeyInfo(AlgorithmIdentifier algorithmIdentifier,
+        public SubjectPublicKeyInfo(PublicKeyAlgorithmIdentifier algorithmIdentifier,
             SubjectPublicKeyInfoPublicKey publicKey)
         {
             AlgorithmIdentifier = algorithmIdentifier;

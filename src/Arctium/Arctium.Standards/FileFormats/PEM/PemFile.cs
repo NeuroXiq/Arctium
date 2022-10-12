@@ -106,33 +106,3 @@ namespace Arctium.Standards.FileFormat.PEM
 
     }
 }
-
-/*const string regionDelimiter = "-----";
-        const string beginString = "-----BEGIN";
-        const string endString = "-----END";
-        const int minLength = 31;
-        const string pemException = "";*/
-
-//public static PemFile FromFile(string fileName)
-//{
-//    string file = File.ReadAllText(fileName);
-//    if (file.Length < 31) Throw("Minimum length not reached");
-
-//    int startIndex = file.IndexOf(beginString);
-//    int startClose = file.IndexOf(regionDelimiter, startIndex + 5);
-
-
-//    if (startIndex < 0) Throw("Begin Not found");
-//    if (startClose < 0) Throw("Begin closing tag not found");
-
-
-//    int endIndex = file.IndexOf(endString, startClose + 5);
-//    int endClose = file.IndexOf(regionDelimiter, endIndex + 5);
-
-//    if (endIndex < 0) Throw("End not found");
-//    if(endClose < 0) Throw("End closing not found");
-
-//    //int endExpected = file.Length
-
-
-//}

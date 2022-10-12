@@ -20,9 +20,9 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 
     class SubjectPublicKeyInfoMapper
     {
-        static HashSet<AlgorithmIdentifierType> parmsMustBeNull = new HashSet<AlgorithmIdentifierType>()
+        static HashSet<PublicKeyAlgorithmIdentifierType> parmsMustBeNull = new HashSet<PublicKeyAlgorithmIdentifierType>()
         {
-            AlgorithmIdentifierType.RSAEncryption, 
+            PublicKeyAlgorithmIdentifierType.RSAEncryption, 
         };
 
 
@@ -42,32 +42,32 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             byte[] algoParms = algoModel.EncodedParameters;
             byte[] publicKey = subjectPublicKeyInfo.SubjectPublicKey.Value;
 
-            AlgorithmIdentifierType algorithm = PublicKeyAlgorithmOidMap.Get(algoOid);
+            PublicKeyAlgorithmIdentifierType algorithm = PublicKeyAlgorithmOidMap.Get(algoOid);
             
             object mappedPublicKey = MapPublicKey(algorithm, publicKey);
 
-            AlgorithmIdentifierParametersType? parmsType;
+            PublicKeyAlgorithmIdentifierParametersType? parmsType;
             var parmsObj = MapParms(algorithm, algoParms, out parmsType);
 
-            AlgorithmIdentifierParameters subParms = null;
+            PublicKeyAlgorithmIdentifierParameters subParms = null;
 
             if (parmsType != null)
             {
-                subParms = new AlgorithmIdentifierParameters(parmsType.Value, parmsObj);
+                subParms = new PublicKeyAlgorithmIdentifierParameters(parmsType.Value, parmsObj);
             }
 
             var subPubKey = new SubjectPublicKeyInfoPublicKey(algorithm, mappedPublicKey);
-            var algoIdentifier = new AlgorithmIdentifier(algorithm, subParms);
+            var algoIdentifier = new PublicKeyAlgorithmIdentifier(algorithm, subParms);
 
             return new SubjectPublicKeyInfo(algoIdentifier, subPubKey);
         }
 
-        private object MapPublicKey(AlgorithmIdentifierType algorithm, byte[] keyRawValue)
+        private object MapPublicKey(PublicKeyAlgorithmIdentifierType algorithm, byte[] keyRawValue)
         {
             switch (algorithm)
             {
-                case AlgorithmIdentifierType.RSAEncryption: return decoders.RSAPublicKey(keyRawValue);
-                case AlgorithmIdentifierType.ECPublicKey: return decoders.ECPublicKey(keyRawValue);
+                case PublicKeyAlgorithmIdentifierType.RSAEncryption: return decoders.RSAPublicKey(keyRawValue);
+                case PublicKeyAlgorithmIdentifierType.ECPublicKey: return decoders.ECPublicKey(keyRawValue);
                 default: break;
             }
 
@@ -76,7 +76,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
                     algorithm.ToString());
         }
 
-        private object MapParms(AlgorithmIdentifierType algorithm, byte[] algoParms, out AlgorithmIdentifierParametersType? type)
+        private object MapParms(PublicKeyAlgorithmIdentifierType algorithm, byte[] algoParms, out PublicKeyAlgorithmIdentifierParametersType? type)
         {
             type = null;
 
@@ -95,8 +95,8 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 
             switch (algorithm)
             {
-                case AlgorithmIdentifierType.ECPublicKey:
-                    type = AlgorithmIdentifierParametersType.EcpkParameters;
+                case PublicKeyAlgorithmIdentifierType.ECPublicKey:
+                    type = PublicKeyAlgorithmIdentifierParametersType.EcpkParameters;
                     return decoders.ECPublicKeyParms(algoParms);
                 default: break;
             }

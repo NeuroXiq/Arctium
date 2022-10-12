@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
-    public enum SignatureAlgorithm
+    public enum SignatureAlgorithmType
     {
         SHA1WithRSAEncryption,
         DSAWithSha1,

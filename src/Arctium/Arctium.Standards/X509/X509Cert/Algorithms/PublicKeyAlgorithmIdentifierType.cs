@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
-    public enum AlgorithmIdentifierType
+    public enum PublicKeyAlgorithmIdentifierType
     {
         RSAEncryption,
         ECPublicKey,

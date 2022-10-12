@@ -1,8 +1,9 @@
-﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
+﻿using System;
+using System.Collections.Generic;
+using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Shared.Mappings.OID;
 using Arctium.Standards.X509.X509Cert.Algorithms;
-using System;
-using System.Collections.Generic;
+using static Arctium.Standards.ASN1.Standards.X509.Mapping.OID.X509CommonOidsBuilder;
 
 namespace Arctium.Standards.X509.Mapping.OID
 {
@@ -34,9 +35,31 @@ namespace Arctium.Standards.X509.Mapping.OID
 
         private static void Init()
         {
-            // var namedCurves = NamedCurves();
             allMappings.Add(typeof(NamedCurve), NamedCurves());
+            allMappings.Add(typeof(SignatureAlgorithmType), CreateSignatureAlgorithmType());
+        }
 
+        static ObjectIdentifier ecdsa(ulong last) => new ObjectIdentifier(1, 2, 840, 10045, 4, 3, last);
+
+        private static EnumToOidMap<SignatureAlgorithmType> CreateSignatureAlgorithmType()
+        {
+            EnumToOidMap<SignatureAlgorithmType> map = new EnumToOidMap<SignatureAlgorithmType>(nameof(SignatureAlgorithmType));
+
+            map[SignatureAlgorithmType.SHA1WithRSAEncryption] = new ObjectIdentifier(1, 2, 840, 113549, 1, 1, 5);
+            map[SignatureAlgorithmType.MD2WithRSAEncryption] = pkcs1(2);
+            map[SignatureAlgorithmType.DSAWithSha1] = pkcs1(3);
+            map[SignatureAlgorithmType.ECDSAWithSHA1] = pkcs1(1);
+
+            map[SignatureAlgorithmType.SHA224WithRSAEncryption] = pkcs1(14);
+            map[SignatureAlgorithmType.SHA256WithRSAEncryption] = pkcs1(11);
+            map[SignatureAlgorithmType.SHA384WithRSAEncryption] = pkcs1(12);
+            map[SignatureAlgorithmType.SHA512WithRSAEncryption] = pkcs1(13);
+            map[SignatureAlgorithmType.ECDSAWithSHA224] = ecdsa(1);
+            map[SignatureAlgorithmType.ECDSAWithSHA256] = ecdsa(2);
+            map[SignatureAlgorithmType.ECDSAWithSHA384] = ecdsa(3);
+            map[SignatureAlgorithmType.ECDSAWithSHA512] = ecdsa(4);
+
+            return map;
         }
 
         static ObjectIdentifier cTwoCurve(ulong last) => new ObjectIdentifier(1,2,840,10045,3,0, last);

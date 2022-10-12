@@ -7,10 +7,10 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID
 {
     public static class PublicKeyAlgorithmOidMap
     {
-        static EnumToOidMap<AlgorithmIdentifierType> map = new EnumToOidMap<AlgorithmIdentifierType>(nameof(AlgorithmIdentifierType));
+        static EnumToOidMap<PublicKeyAlgorithmIdentifierType> map = new EnumToOidMap<PublicKeyAlgorithmIdentifierType>(nameof(PublicKeyAlgorithmIdentifierType));
 
-        public static AlgorithmIdentifierType Get(ObjectIdentifier oid) => map[oid];
-        public static ObjectIdentifier Get(AlgorithmIdentifierType algorithm) => map[algorithm];
+        public static PublicKeyAlgorithmIdentifierType Get(ObjectIdentifier oid) => map[oid];
+        public static ObjectIdentifier Get(PublicKeyAlgorithmIdentifierType algorithm) => map[algorithm];
 
         static PublicKeyAlgorithmOidMap()
         {
@@ -19,8 +19,8 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID
 
         private static void Initialize()
         {
-            map[AlgorithmIdentifierType.RSAEncryption] = pkcs1(1);
-            map[AlgorithmIdentifierType.ECPublicKey] = new ObjectIdentifier(1, 2, 840, 10045, 2, 1);
+            map[PublicKeyAlgorithmIdentifierType.RSAEncryption] = pkcs1(1);
+            map[PublicKeyAlgorithmIdentifierType.ECPublicKey] = new ObjectIdentifier(1, 2, 840, 10045, 2, 1);
         }
     }
 }
