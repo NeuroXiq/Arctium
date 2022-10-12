@@ -1,4 +1,4 @@
-﻿namespace Arctium.Standards.X509.X509Cert
+﻿namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
     /// <summary>
     /// Represents Diffie-Hellman key exchange (dhpublicnumber) algorithm parameters.

@@ -1,5 +1,5 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
-using Arctium.Standards.X509.X509Cert;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 using Arctium.Shared.Helpers.DataStructures;
 using System.Collections.Generic;
 

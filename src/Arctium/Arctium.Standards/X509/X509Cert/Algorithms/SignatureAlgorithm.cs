@@ -1,4 +1,4 @@
-﻿namespace Arctium.Standards.X509.X509Cert
+﻿namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
     public enum SignatureAlgorithm
     {

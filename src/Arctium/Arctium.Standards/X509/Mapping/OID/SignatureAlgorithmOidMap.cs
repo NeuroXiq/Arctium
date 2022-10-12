@@ -1,6 +1,7 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Shared.Mappings.OID;
 using Arctium.Standards.X509.X509Cert;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 using static Arctium.Standards.ASN1.Standards.X509.Mapping.OID.X509CommonOidsBuilder;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID

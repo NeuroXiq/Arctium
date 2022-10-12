@@ -1,4 +1,5 @@
 ﻿using Arctium.Standards.ASN1.Shared.Exceptions;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 using System;
 
 namespace Arctium.Standards.X509.X509Cert

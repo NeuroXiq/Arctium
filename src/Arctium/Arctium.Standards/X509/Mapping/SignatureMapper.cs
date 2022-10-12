@@ -5,7 +5,7 @@ using Arctium.Standards.ASN1.Standards.X509.Exceptions;
 using Arctium.Standards.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Standards.ASN1.Standards.X509.Model;
 using Arctium.Standards.X509.X509Cert;
-using static Arctium.Standards.X509.X509Cert.SignatureAlgorithm;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 {
@@ -20,17 +20,17 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
     {
         HashSet<SignatureAlgorithm> parmsMustBeNull = new HashSet<SignatureAlgorithm>()
         {
-            SHA1WithRSAEncryption,
-            SHA224WithRSAEncryption,
-            SHA384WithRSAEncryption,
-            SHA512WithRSAEncryption,
-            SHA256WithRSAEncryption,
-            MD2WithRSAEncryption,
-            MD5WithRSAEncryption,
-            ECDSAWithSHA224,
-            ECDSAWithSHA256,
-            ECDSAWithSHA384,
-            ECDSAWithSHA512,
+            SignatureAlgorithm.SHA1WithRSAEncryption,
+            SignatureAlgorithm.SHA224WithRSAEncryption,
+            SignatureAlgorithm.SHA384WithRSAEncryption,
+            SignatureAlgorithm.SHA512WithRSAEncryption,
+            SignatureAlgorithm.SHA256WithRSAEncryption,
+            SignatureAlgorithm.MD2WithRSAEncryption,
+            SignatureAlgorithm.MD5WithRSAEncryption,
+            SignatureAlgorithm.ECDSAWithSHA224,
+            SignatureAlgorithm.ECDSAWithSHA256,
+            SignatureAlgorithm.ECDSAWithSHA384,
+            SignatureAlgorithm.ECDSAWithSHA512,
         };
 
 

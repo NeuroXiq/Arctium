@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Arctium.Standards.ASN1.Shared
 {
-    public class ChoiceObj<TKey> where TKey: struct
+    public abstract class ChoiceObj<TKey> where TKey: struct
     {
-        public struct TypeDef
+        protected struct TypeDef
         {
             public Type Type;
             public TKey Key;
@@ -20,28 +20,25 @@ namespace Arctium.Standards.ASN1.Shared
             }
         }
 
-        protected TypeDef[] definitions { get; private set; }
+        protected abstract TypeDef[] ChoiceObjConfig { get; }
+
+        public TKey? ValueKey { get { return key; } }
 
         private object obj;
         private TKey? key;
-
-        protected ChoiceObj(TypeDef[] definition)
-        {
-            this.definitions = definition;
-        }
 
         public virtual T GetStruct<T>() where T: struct
         {
             var type = typeof(T);
 
-            foreach (var item in definitions)
+            foreach (var item in ChoiceObjConfig)
             {
                 if (item.Type == type) return (T)obj;
             }
 
             string msg = string.Format("Generic Argument 'T' ({0}) is invalid for this context. Valid types: {1}",
                 type.Name,
-                string.Join(", ", definitions.Select(d => d.Type.Name)));
+                string.Join(", ", ChoiceObjConfig.Select(d => d.Type.Name)));
 
             throw new ArgumentException(msg);
         }
@@ -50,14 +47,14 @@ namespace Arctium.Standards.ASN1.Shared
         {
             var type = typeof(T);
 
-            foreach (var item in definitions)
+            foreach (var item in ChoiceObjConfig)
             {
                 if (item.Type == type) return obj as T;
             }
 
             string msg = string.Format("Generic Argument 'T' ({0}) is invalid for this context. Valid types: {1}",
                 type.Name,
-                string.Join(", ", definitions.Select(d => d.Type.Name)));
+                string.Join(", ", ChoiceObjConfig.Select(d => d.Type.Name)));
 
             throw new ArgumentException(msg);
         }
@@ -72,7 +69,7 @@ namespace Arctium.Standards.ASN1.Shared
 
         protected void ThrowIfTypeInvalid(object obj, TKey a)
         {
-            foreach (var item in definitions)
+            foreach (var item in ChoiceObjConfig)
             {
                 if (item.Key.Equals(a))
                 {

@@ -1,6 +1,6 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Shared.Mappings.OID;
-using Arctium.Standards.X509.X509Cert.Algorithms.AlgorithmParms.EcpkParms;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 using System;
 using System.Collections.Generic;
 

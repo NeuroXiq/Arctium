@@ -1,7 +1,7 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using System;
 
-namespace Arctium.Standards.X509.X509Cert
+namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
     /// <summary>
     /// Variation of the choice type <see cref="EcpkParameters"/> algorithm parameters

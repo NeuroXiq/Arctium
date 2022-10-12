@@ -1,7 +1,8 @@
 ﻿using Arctium.Standards.ASN1.Shared;
-using Arctium.Standards.X509.X509Cert.Algorithms.AlgorithmParms.EcpkParms;
+using Arctium.Standards.X509.X509Cert.Algorithms;
+using System;
 
-namespace Arctium.Standards.X509.X509Cert
+namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
     public class EcpkParameters : ChoiceObj<EcpkParameters.EcpkParmsType>
     {
@@ -14,12 +15,22 @@ namespace Arctium.Standards.X509.X509Cert
 
         public enum EcpkParmsType
         {
-            ECParameters,
             NamedCurve,
+            
+            /// <summary>
+            /// must not be used (rfc5480)
+            /// </summary>
+            ECParameters,
+
+            /// <summary>
+            /// must not be used (rfc5480)
+            /// </summary>
             ImplicitlyCA
         };
 
         public EcpkParmsType ParmsType { get; private set; }
+
+        protected override TypeDef[] ChoiceObjConfig => config;
 
         public static EcpkParameters CreateImplicitlyCA() => new EcpkParameters();
 
@@ -31,8 +42,9 @@ namespace Arctium.Standards.X509.X509Cert
         public EcpkParameters(NamedCurve nameCurveOid) : this(nameCurveOid, EcpkParmsType.NamedCurve) { }
         public EcpkParameters(ECParameters ecParameters) : this(ecParameters, EcpkParmsType.ECParameters) { }
 
-        private EcpkParameters(object value, EcpkParmsType type) : base(config)
+        private EcpkParameters(object value, EcpkParmsType type)
         {
+            if (type != EcpkParmsType.NamedCurve) throw new ArgumentException("NamedCurve only allowed");
             base.Set(type, value);
         }
 

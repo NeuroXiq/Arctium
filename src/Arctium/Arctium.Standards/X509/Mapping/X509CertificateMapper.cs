@@ -31,7 +31,6 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             X509Certificate cert = new X509Certificate();
             TBSCertificate tbs = modelObject.TBSCertificate;
 
-
             cert.Version = (int)tbs.Version.ToULong();
             cert.SerialNumber = tbs.SerialNumber.BinaryValue;
 
@@ -46,7 +45,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             cert.Extensions = MapExtensions(modelObject.TBSCertificate.Extensions);
 
             cert.Signature = signatureAlgoIdentifierMapper.Map(modelObject.TBSCertificate.Signature, modelObject.SignatureValue);
-            cert.SubjectPublicKey = subjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
+            cert.SubjectPublicKeyInfo = subjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
             
             return cert;
         }

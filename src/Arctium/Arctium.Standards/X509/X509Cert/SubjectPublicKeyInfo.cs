@@ -1,30 +1,31 @@
 ﻿using Arctium.Standards.ASN1.Shared;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 
 namespace Arctium.Standards.X509.X509Cert
 {
-    public class SubjectPublicKeyInfo : ChoiceObj<AlgorithmIdentifierId>
+    public class SubjectPublicKeyInfo
     {
-        static TypeDef[] config = new TypeDef[]
+        public AlgorithmIdentifier AlgorithmIdentifier { get; private set; }
+        public SubjectPublicKeyInfoPublicKey PublicKey { get; private set; }
+
+        public SubjectPublicKeyInfo(AlgorithmIdentifier algorithmIdentifier,
+            SubjectPublicKeyInfoPublicKey publicKey)
         {
-            new TypeDef(typeof(RSAPublicKey), AlgorithmIdentifierId.RSAEncryption),
-            new TypeDef(typeof(byte[]), AlgorithmIdentifierId.ECPublicKey),
-        };
-
-        public AlgorithmIdentifierId Algorithm { get; private set; }
-
-        // public PublicKeyAlgorithm AlgorithmType { get; private set; }
-        // ANY parameters defined by algotype above(todo)
-        public object EcpkParameters { get; private set; }
-
-        internal SubjectPublicKeyInfo(AlgorithmIdentifierId algorithm, EcpkParameters parms, object publicKey) : base(config)
-        {
-            base.Set(algorithm, publicKey);
-
-            Algorithm = algorithm;
-            EcpkParameters = parms;
+            AlgorithmIdentifier = algorithmIdentifier;
+            PublicKey = publicKey;
         }
 
-        public RSAPublicKey GetRSAPublicKey() => Get<RSAPublicKey>();
-        public byte[] GetECPublicKey() => Get<byte[]>();
+
+        //public SubjectPublicKeyInfoParameters Parameters { get; private set; }
+        //public SubjectPublicKeyInfoPublicKey PublicKey { get; private set; }
+
+        //public SubjectPublicKeyInfo(SubjectPublicKeyInfoPublicKey publicKey, SubjectPublicKeyInfoParameters parameters)
+        //{
+        //    Parameters = parameters;
+        //    PublicKey = publicKey;
+        //}
+
+        // public RSAPublicKey GetRSAPublicKey() => Get<RSAPublicKey>();
+        // public byte[] GetECPublicKey() => Get<byte[]>();
     }
 }

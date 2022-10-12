@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Standards.X509.X509Cert
+namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
     /// <summary>
     /// Represents Characteristic two parameters for <see cref="ECParameters"/> FieldId.Parameters field.

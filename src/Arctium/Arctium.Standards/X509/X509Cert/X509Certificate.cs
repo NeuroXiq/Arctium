@@ -4,6 +4,7 @@
 using Arctium.Shared.Algorithms;
 using System;
 using Arctium.Standards.X509.X509Cert.Extensions;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 
 
 /*
@@ -42,6 +43,6 @@ namespace Arctium.Standards.X509.X509Cert
         public byte[] SubjectUniqueId { get; internal set; }
         public CertificateExtension[] Extensions { get; internal set; }
         public Signature Signature { get; internal set; }
-        public SubjectPublicKeyInfo SubjectPublicKey { get; internal set; }
+        public SubjectPublicKeyInfo SubjectPublicKeyInfo { get; internal set; }
     }
 }

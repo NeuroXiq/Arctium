@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Arctium.Standards.X509.X509Cert
+namespace Arctium.Standards.X509.X509Cert.Algorithms
 {
     /// <summary>
     /// Represents Pentanomial parameters for Basic = Pp  for <see cref="CharacteristicTwo"/>
