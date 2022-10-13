@@ -5,6 +5,7 @@ using Arctium.Standards.ASN1.Standards.X509.Mapping.OID;
 using Arctium.Standards.ASN1.Standards.X509.Model;
 using Arctium.Standards.X509.X509Cert;
 using Arctium.Standards.X509.X509Cert.Extensions;
+using Arctium.Standards.X509.X509Cert.GenName;
 using System.Collections.Generic;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions

@@ -12,6 +12,7 @@ using Arctium.Standards.X509.X509Cert;
 using Arctium.Standards.X509.X509Cert.Extensions;
 using System;
 using System.Collections.Generic;
+using Arctium.Standards.X509.X509Cert.GenName;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions
 {

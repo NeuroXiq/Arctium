@@ -1,4 +1,4 @@
-﻿namespace Arctium.Standards.X509.X509Cert
+﻿namespace Arctium.Standards.X509.X509Cert.GenName
 {
     public enum GeneralNameType
     {
@@ -10,7 +10,7 @@
         /// <summary>
         /// X501 Name
         /// </summary>
-        DirectoryName,
+        Name,
         EdiPartyName,
         UniformResourceIdentifier,
         IPAddress,

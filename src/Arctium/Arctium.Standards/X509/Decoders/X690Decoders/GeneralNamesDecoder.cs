@@ -1,10 +1,11 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
-using Arctium.Standards.X509.X509Cert;
+using Arctium.Standards.X509.X509Cert.GenName;
 using System;
+using System.Collections.Generic;
 
-namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions
+namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
 {
     public class GeneralNamesDecoder
     {
@@ -15,34 +16,20 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions
             // choice  [0 - 8], EXPLICIT tags
             switch (number)
             {
-                case 6:
-                    decodedGeneralName = DecodeURI(decoder, decoded);
-                    break;
-                case 2:
-                    decodedGeneralName = DecodeDnsName(decoder, decoded);
-                    break;
+                case 1: decodedGeneralName = new GeneralName(GeneralNameType.Rfc822Name, decoder.IA5String(decoded).Value); break;
+                case 2: decodedGeneralName = new GeneralName(GeneralNameType.DNSName, decoder.IA5String(decoded).Value); break;
+                case 0: throw new NotSupportedException("decodersneeded"); break;
+                case 6: decodedGeneralName = new GeneralName(GeneralNameType.UniformResourceIdentifier, decoder.IA5String(decoded).Value); break;
+                case 7: decodedGeneralName = new GeneralName(GeneralNameType.IPAddress, decoder.OctetString(decoded).Value); break;
+                case 3:
+                case 4:
+                case 5:
+                case 8:
                 default:
                     throw new NotSupportedException("Not supported decoding for GeneralName (X590) for number " + number);
             }
 
             return decodedGeneralName;
-        }
-
-
-        private GeneralName DecodeURI(DerTypeDecoder decoder,  DerDecoded decoded)
-        {
-            IA5String ia5String = decoder.IA5String(decoded);
-            GeneralName uriGeneralName = new GeneralName(GeneralNameType.UniformResourceIdentifier, ia5String);
-
-            return uriGeneralName;
-        }
-
-
-
-        public GeneralName DecodeDnsName(DerTypeDecoder decoder, DerDecoded decoded)
-        {
-            string dnsName = decoder.IA5String(decoded);
-            return new GeneralName(GeneralNameType.DNSName, dnsName);
         }
     }
 }

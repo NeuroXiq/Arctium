@@ -78,7 +78,7 @@ namespace Arctium.Standards.ASN1.Shared
                 }
             }
 
-            throw new ArgumentException("Current type is:");
+            throw new ArgumentException("Current type is: " + obj.GetType().Name);
         }
     }
 }

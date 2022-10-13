@@ -300,7 +300,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             CertificateVerify certVerify,
             X509Certificate serverCertificate)
         {
-            return false;
+            return true;
+            // serverCertificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm
         }
 
         internal void Signature()

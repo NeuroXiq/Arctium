@@ -14,18 +14,5 @@ namespace Arctium.Standards.X509.X509Cert
             AlgorithmIdentifier = algorithmIdentifier;
             PublicKey = publicKey;
         }
-
-
-        //public SubjectPublicKeyInfoParameters Parameters { get; private set; }
-        //public SubjectPublicKeyInfoPublicKey PublicKey { get; private set; }
-
-        //public SubjectPublicKeyInfo(SubjectPublicKeyInfoPublicKey publicKey, SubjectPublicKeyInfoParameters parameters)
-        //{
-        //    Parameters = parameters;
-        //    PublicKey = publicKey;
-        //}
-
-        // public RSAPublicKey GetRSAPublicKey() => Get<RSAPublicKey>();
-        // public byte[] GetECPublicKey() => Get<byte[]>();
     }
 }

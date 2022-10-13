@@ -23,13 +23,11 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
     public class X509CertificateMapper
     {
         SubjectPublicKeyInfoMapper subjectPublicKeyInfoMapper;
-        // SignatureMapper signatureAlgoIdentifierMapper;
         ExtensionsDecoder extensionDecoders = new ExtensionsDecoder();
 
         public X509CertificateMapper()
         {
             subjectPublicKeyInfoMapper = new SubjectPublicKeyInfoMapper();
-            //signatureAlgoIdentifierMapper = new SignatureMapper();
         }
 
         public X509Certificate MapFromModel(X509CertificateModel modelObject)
@@ -39,18 +37,13 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 
             cert.Version = (int)tbs.Version.ToULong();
             cert.SerialNumber = tbs.SerialNumber.BinaryValue;
-
             cert.Issuer = tbs.Issuer;
             cert.ValidNotBefore = tbs.Validity.NotBefore;
             cert.ValidNotAfter = tbs.Validity.NotAfter;
             cert.Subject = tbs.Subject;
-            
             cert.IssuerUniqueId =  tbs.IssuerUniqueId.Value;
             cert.SubjectUniqueId = tbs.SubjectUniqueId.Value;
-
             cert.Extensions = MapExtensions(modelObject.TBSCertificate.Extensions);
-
-            // cert.Signature = signatureAlgoIdentifierMapper.Map(modelObject.TBSCertificate.Signature, modelObject.SignatureValue);
             cert.SubjectPublicKeyInfo = subjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
 
             MapSignature(modelObject, out var signAlgoIdentif, out var sigValue);

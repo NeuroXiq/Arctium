@@ -1,5 +1,6 @@
 ﻿
 using Arctium.Standards.X509.X509Cert.Extensions;
+using Arctium.Standards.X509.X509Cert.GenName;
 
 namespace Arctium.Standards.X509.X509Cert.Extensions
 {

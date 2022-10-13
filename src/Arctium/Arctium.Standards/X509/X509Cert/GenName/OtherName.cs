@@ -1,6 +1,6 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 
-namespace Arctium.Standards.X509.X509Cert
+namespace Arctium.Standards.X509.X509Cert.GenName
 {
     public class OtherName
     {

@@ -271,11 +271,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             int dataLengthToSign = hsctx.DataLength;
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
+            bool isSignatureValid = crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate);
 
-
-
-            validate.Handshake.AlertFatal(crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate),
-                AlertDescription.DecryptError, "invalid servercertificateverify signature");
+            validate.Handshake.AlertFatal(isSignatureValid, AlertDescription.DecryptError, "invalid servercertificateverify signature");
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
         }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Arctium.Standards.X501.Types
 {
     /// <summary>
-    /// Represents Name type of X500 standart. Name consists of set of <see cref="AttributeTypeAndValue"/> 
+    /// Represents Name type of X500 standard. Name consists of set of <see cref="AttributeTypeAndValue"/> 
     /// </summary>
     public struct Name
     {

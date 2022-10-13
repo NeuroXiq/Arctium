@@ -1,5 +1,7 @@
 ﻿
 
+using Arctium.Standards.X509.X509Cert.GenName;
+
 namespace Arctium.Standards.X509.X509Cert.Extensions
 {
     public class SubjectAlternativeNamesExtension : CertificateExtension
