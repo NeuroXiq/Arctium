@@ -36,19 +36,28 @@ namespace Arctium.Standards.PKCS1.v2_2
             public BigInteger Modulus;
             public BigInteger PublicExponent;
 
-            public PublicKey(RSAPublicKey publicKey)
+            public PublicKey(RSAPublicKey publicKey) : this(
+                new BigInteger(new ReadOnlySpan<byte>(publicKey.Modulus), true, true),
+                new BigInteger(new ReadOnlySpan<byte>(publicKey.PublicExponent), true, true))
             {
-                Modulus = new BigInteger(new ReadOnlySpan<byte>(publicKey.Modulus), true, true);
-                PublicExponent = new BigInteger(new ReadOnlySpan<byte>(publicKey.PublicExponent), true, true);
-                ModulusByteCount = Modulus.GetByteCount(true);
             }
 
-            public PublicKey(byte[] n, byte[] e)
+            public PublicKey(byte[] n, byte[] e) : this(new BigInteger(new ReadOnlySpan<byte>(n), true, true), new BigInteger(new ReadOnlySpan<byte>(e), true, true))
             {
-                Modulus = new BigInteger(new ReadOnlySpan<byte>(n), true, true);
-                PublicExponent = new BigInteger(new ReadOnlySpan<byte>(e), true, true);
+            }
+
+            public PublicKey(BigInteger n, BigInteger e)
+            {
+                Modulus = n;
+                PublicExponent = e;
+
                 ModulusByteCount = Modulus.GetByteCount(true);
-                ModulusBitsCount = BitsCountInModulus(n);
+                ModulusBitsCount = BitsCountInModulus(n.ToByteArray(true, true));
+            }
+
+            public static PublicKey FromDefault(Arctium.Cryptography.Ciphers.RSA.RSAPublicKey defaultPublicKey)
+            {
+                return new PublicKey(defaultPublicKey.Modulus, defaultPublicKey.PublicExponent);
             }
         }
 
@@ -548,6 +557,24 @@ namespace Arctium.Standards.PKCS1.v2_2
             byte[] sAsBytes = I2OSP(sAsInt, privateKey.ModulusByteCount);
             
             return sAsBytes;
+        }
+
+        /// <summary>
+        /// Verifies PSS Signature. Method invokes <see cref="RSASSA_PSS_VERIFY(PublicKey, byte[], byte[], int, HashFunction, MGF)"/>
+        /// With sLen (seedLength) equal to hash function output length,
+        /// hashFunction equal to hashFunctionId in parameters, MGF equal to MGF1 (default from standard, maskgenerationfunction).
+        /// This is common/popular algorithm for signature verification
+        /// </summary>
+        /// <param name="publicKey">Public key</param>
+        /// <param name="M">Message signed with private key</param>
+        /// <param name="S">Signature to be verified</param>
+        /// <param name="hashFunctionId">Hash functinon used in signature generation algorithm</param>
+        /// <returns></returns>
+        public static bool RSASSA_PSS_VERIFY(PublicKey publicKey, byte[] M, byte[] S, HashFunctionId hashFunctionId)
+        {
+            var hashFunc = CryptoAlgoFactory.CreateHashFunction(hashFunctionId);
+
+            return RSASSA_PSS_VERIFY(publicKey, M, S, hashFunc.HashSizeBytes, hashFunc, null);
         }
 
         /// <summary>

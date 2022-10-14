@@ -273,7 +273,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
             bool isSignatureValid = crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate);
 
-            validate.Handshake.AlertFatal(isSignatureValid, AlertDescription.DecryptError, "invalid servercertificateverify signature");
+            validate.Handshake.AlertFatal(!isSignatureValid, AlertDescription.DecryptError, "invalid servercertificateverify signature");
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
         }
@@ -283,7 +283,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var certificate = messageIO.ReadHandshakeMessage<Certificate>();
 
             X509CertificateDeserializer deserialized = new X509CertificateDeserializer();
-            var cert = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
+            context.ServerCertificate = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificateVerify);
         }
@@ -456,12 +456,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") }),
                 new SignatureSchemeListExtension(new SignatureSchemeListExtension.SignatureScheme[]
                 {
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
+                    // SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256,
+                    // SignatureSchemeListExtension.SignatureScheme.EcdsaSecp384r1Sha384,
+                    // SignatureSchemeListExtension.SignatureScheme.EcdsaSecp521r1Sha512,
+
+                    // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
+                    //SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
                     SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
+                    // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
+                    // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
+                    // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
                 }),
                 new SupportedGroupExtension(config.SupportedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })

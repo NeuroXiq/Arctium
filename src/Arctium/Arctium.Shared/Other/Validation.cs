@@ -26,6 +26,21 @@ namespace Arctium.Shared.Other
 
         public static void ThrowInternal(string message) => throw new ArctiumExceptionInternal(message);
 
+        public static void EnumEqualTo<TEnum>(TEnum currentValue, TEnum expectedValue, string argName, string additionalInfo = null) where TEnum: struct
+        {
+            if (currentValue.Equals(expectedValue)) return;
+
+            additionalInfo = additionalInfo == null ? String.Empty : additionalInfo;
+
+            string msg = string.Format("Invalid argument: {0}. Expected value: {1} current value: {2}. Additional info: {3}",
+                argName,
+                expectedValue.ToString(),
+                currentValue.ToString(),
+                additionalInfo);
+
+            throw new ArgumentException(msg);
+        }
+
         public static void Length(byte[] bytes, long expectedLength, string argName, string additionalInfo = null)
         {
             if (bytes == null) throw new ArgumentNullException($"{argName} is null");

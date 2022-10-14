@@ -192,6 +192,28 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return signature;
         }
 
+        byte[] FormatDataForSignature(byte[] handshakeContext, int dataLength)
+        {
+            string contextStr = "TLS 1.3, server CertificateVerify";
+            byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
+            byte[] hash = TranscriptHash(handshakeContext, 0, dataLength);
+
+            byte[] tosign = new byte[64 + stringBytes.Length + 1 + hash.Length];
+
+            int c = 0;
+
+            MemOps.Memset(tosign, 0, 64, 0x20);
+            c += 64;
+            MemCpy.Copy(stringBytes, 0, tosign, c, stringBytes.Length);
+            c += stringBytes.Length;
+            tosign[c] = 0;
+            c += 1;
+
+            MemCpy.Copy(hash, 0, tosign, c, hash.Length);
+
+            return tosign;
+        }
+
         public void GeneratePrivateKeyAndKeyShareToSend(SupportedGroupExtension.NamedGroup namedGroup, out byte[] keyShareToSendRawBytes, out byte[] privateKey)
         {
             if (namedGroup == SupportedGroupExtension.NamedGroup.Xx448)
@@ -300,8 +322,50 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             CertificateVerify certVerify,
             X509Certificate serverCertificate)
         {
-            return true;
-            // serverCertificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm
+            byte[] toSign = FormatDataForSignature(hscontext, hscontextlen);
+            var algorithmType = serverCertificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
+            HashFunctionId hashFunctionId;
+
+
+            switch (certVerify.SignatureScheme)
+            {
+                case SignatureScheme.RsaPssRsaeSha256:
+                case SignatureScheme.EcdsaSecp256r1Sha256:
+                    hashFunctionId = HashFunctionId.SHA2_256;
+                    break;
+                case SignatureScheme.EcdsaSecp384r1Sha384:
+                case SignatureScheme.RsaPssRsaeSha384:
+                    hashFunctionId = HashFunctionId.SHA2_384;
+                    break;
+                case SignatureScheme.EcdsaSecp521r1Sha512:
+                case SignatureScheme.RsaPssRsaeSha512:
+                    hashFunctionId = HashFunctionId.SHA2_512;
+                    break;
+                //case SignatureScheme.Ed25519:
+                //    hashFunctionId = HashFunctionId.SHA2_512
+                //    break;
+                //case SignatureScheme.Ed448:
+
+                    break;
+                default: throw new NotSupportedException("not supported signatue scheme");
+            }
+
+            var rsaeAlgos = new SignatureScheme[] { SignatureScheme.RsaPssRsaeSha256, SignatureScheme.RsaPssRsaeSha384, SignatureScheme.RsaPssRsaeSha512 };
+            var ecdsaAlgos = new SignatureScheme[] {  SignatureScheme.EcdsaSecp521r1Sha512, SignatureScheme.EcdsaSecp384r1Sha384, SignatureScheme.EcdsaSecp256r1Sha256 };
+
+            if (rsaeAlgos.Contains(certVerify.SignatureScheme))
+            {
+                var defPubKey = X509Util.GetRSAPublicKeyDefault(serverCertificate);
+                var apiKey = PKCS1v2_2API.PublicKey.FromDefault(defPubKey);
+
+                return PKCS1v2_2API.RSASSA_PSS_VERIFY(apiKey, toSign, certVerify.Signature, hashFunctionId);
+            }
+            else if (ecdsaAlgos.Contains(certVerify.SignatureScheme))
+            {
+                throw new NotImplementedException();
+            }
+            else throw new NotSupportedException("certverify not supported");
+
         }
 
         internal void Signature()
