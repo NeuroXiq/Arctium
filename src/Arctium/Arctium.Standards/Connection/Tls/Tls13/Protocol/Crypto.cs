@@ -251,7 +251,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 var secret = SEC1_ECFpAlgorithm.EllipticCurveKeyPairGenerationPrimitive(ecparams, out pointToSend);
 
                 privateKey = secret;
-                keyShareToSendRawBytes = SEC1_EllipticCurve.EllipticCurvePointToOctetString(ecparams, pointToSend, SEC1_EllipticCurve.ECPointCompression.NotCompressed);
+                keyShareToSendRawBytes = SEC1_FpEllipticCurve.EllipticCurvePointToOctetString(ecparams, pointToSend, SEC1_FpEllipticCurve.ECPointCompression.NotCompressed);
             }
             else if (
                 namedGroup == SupportedGroupExtension.NamedGroup.Ffdhe2048 ||
@@ -297,7 +297,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 }
 
                 var ecparams = SEC2_EllipticCurves.CreateParameters(parms);
-                var clientPoint = SEC1_EllipticCurve.OctetStringToEllipticCurvePoint(keyExchangeRawBytes, ecparams.p);
+                var clientPoint = SEC1_FpEllipticCurve.OctetStringToEllipticCurvePoint(keyExchangeRawBytes, ecparams.p);
 
                 this.Ecdhe_or_dhe_SharedSecret = SEC1_ECFpAlgorithm.EllipticCurveDiffieHellmanPrimitive(ecparams, privateKey, clientPoint);
             }

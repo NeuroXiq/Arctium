@@ -7,10 +7,12 @@
  * 
  */
 
+using Arctium.Cryptography.Utils;
 using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared.Other;
 using Arctium.Shared.Security;
 using System;
 using System.Numerics;
@@ -23,6 +25,87 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
     /// </summary>
     public class SEC1_ECFpAlgorithm
     {
+        /// <summary>
+        /// 4.1.3 Signing Operation
+        /// </summary>
+        /// <param name="M">Message to be signed</param>
+        /// <param name="dU">Private key</param>
+        public static ECSignature ECDSA_SigningOperation(ECFpDomainParameters ecparams, HashFunctionId hashFunction, BytesRange M, byte[] dU)
+        {
+            int againCount = 0;
+            BigInteger s = 0, r = 0;
+
+            do
+            {
+                Validation.ThrowInternal(againCount++ > 15, "this should not happen. Tried 15 times to generate signature and always fail (always zero). Aborting (all params ok?)");
+
+                ECFpPoint R;
+                byte[] kBytes = SEC1_ECFpAlgorithm.EllipticCurveKeyPairGenerationPrimitive(ecparams, out R);
+                BigInteger k = new BigInteger(kBytes, true, true);
+                BigInteger dUInt = new BigInteger(dU, true, true);
+                BigInteger n = ecparams.n;
+
+                r = R.X % ecparams.n;
+                // byte[] hash = 
+                var hashFunc = CryptoAlgoFactory.CreateHashFunction(hashFunction);
+                hashFunc.HashBytes(M.Buffer, M.Offset, M.Length);
+                byte[] H = hashFunc.HashFinal();
+                BigInteger e = DeriveIntegerFromHash(ecparams.n, H);
+
+                s = (SEC1_ECFpAlgorithm.MultiplicativeInverse(k, ecparams.n) * (e + (r * dUInt))) % n;
+            }
+            while (s.IsZero);
+
+            return new ECSignature(r, s);
+        }
+
+
+        public static bool ECDSA_Verify(ECFpDomainParameters ecparams, HashFunctionId hashFunction, BytesRange M, ECFpPoint signingPartyPublicKey, ECSignature signature)
+        {
+            if (signature.R > ecparams.n || signature.R < 1 ||
+                signature.S > ecparams.n || signature.S < 1)
+                return false;
+
+            var hashFunc = CryptoAlgoFactory.CreateHashFunction(hashFunction);
+            hashFunc.HashBytes(M.Buffer, M.Offset, M.Length);
+            byte[] hash = hashFunc.HashFinal();
+
+            BigInteger e = DeriveIntegerFromHash(ecparams.n, hash);
+            BigInteger u1 = (e * MultiplicativeInverse(signature.S, ecparams.n));
+            BigInteger u2 = (signature.R * MultiplicativeInverse(signature.S, ecparams.n));
+
+            BigInteger x1, y1, x2, y2, xr, yr;
+            ScalarMultiplication(ecparams, ecparams.G, u1, out x1, out y1);
+            ScalarMultiplication(ecparams, signingPartyPublicKey, u2, out x2, out y2);
+
+            AddTwoPoints(ecparams, x1, y1, x2, y2, out xr, out yr);
+            
+            if (xr == 0 || yr == 0) return false;
+
+            BigInteger v = xr % ecparams.n;
+            
+            bool isValid = v == signature.R;
+
+            return isValid;
+        }
+
+        static BigInteger DeriveIntegerFromHash(BigInteger n, byte[] hash)
+        {
+            long bitlen = n.GetBitLength();
+            long resultLength = bitlen >= 8 * hash.Length ? (bitlen + 7) / 8 : hash.Length;
+
+            BigInteger r = new BigInteger(new ReadOnlySpan<byte>(hash, 0, (int)resultLength), true, true);
+
+            // need to shift bytes? (not exactly muyltiply of 8, so ends with zeros)
+            int mod = (int)(bitlen % 8);
+            if (mod != 0)
+            {
+                r = (r >> (8 - mod));
+            }
+
+            return r;
+        }
+
         public static byte[] EllipticCurveKeyPairGenerationPrimitive(ECFpDomainParameters ecparams, out ECFpPoint computedPointToSendToOtherParty)
         {
             long bitslen = ecparams.n.GetBitLength();

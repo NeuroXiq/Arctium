@@ -1,22 +1,22 @@
-﻿using Arctium.Cryptography.Ciphers.EllipticCurves;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Standards.EllipticCurves.SEC2;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Numerics;
-using System.Text;
+using Arctium.Cryptography.Ciphers.EllipticCurves;
+using Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms;
+using Arctium.Cryptography.Utils;
+using Arctium.Shared.Helpers;
+using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Standards.EllipticCurves
 {
-    public class SEC1_EllipticCurve
+    public class SEC1_FpEllipticCurve
     {
+       
+
         public enum ECPointCompression
         {
             NotCompressed,
             Compressed
         }
-
-        
 
         public static byte[] EllipticCurvePointToOctetString(ECFpDomainParameters ecparams, ECFpPoint point, ECPointCompression compressionType)
         {
@@ -98,5 +98,17 @@ namespace Arctium.Standards.EllipticCurves
         {
             return new BigInteger(new Span<byte>(octetString), isUnsigned: true, isBigEndian: true);
         }
+
+        public static void EllipticCurveKeyPairGenerationPrimitive()
+        {
+
+        }
+
+        #region Signatures
+
+
+       
+
+        #endregion
     }
 }

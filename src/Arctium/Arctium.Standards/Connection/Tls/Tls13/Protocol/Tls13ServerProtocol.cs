@@ -1,4 +1,9 @@
-﻿using Arctium.Standards.Connection.Tls.Tls13.API;
+﻿/*
+ *  TLS 1.3 Server Implementation
+ *  Implemented by NeuroXiq 2022
+ */
+
+using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared;

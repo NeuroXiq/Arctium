@@ -1,4 +1,9 @@
-﻿using Arctium.Shared;
+﻿/*
+ *  TLS 1.3 Client implementation
+ *  Implemented by NeuroXiq 2022
+ */
+
+using Arctium.Shared;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;

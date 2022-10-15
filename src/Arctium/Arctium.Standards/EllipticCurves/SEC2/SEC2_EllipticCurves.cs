@@ -35,17 +35,24 @@ namespace Arctium.Standards.EllipticCurves.SEC2
 
         public static ECFpDomainParameters ToEcFpDomainParameters(SEC2_ECFpDomainParams rawParams)
         {
-            BigInteger p = SEC1_EllipticCurve.Fp_OctetStringToFieldElement(rawParams.p);
+            BigInteger p = SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.p);
 
             return new ECFpDomainParameters(
                 p,
-                SEC1_EllipticCurve.Fp_OctetStringToFieldElement(rawParams.a),
-                SEC1_EllipticCurve.Fp_OctetStringToFieldElement(rawParams.b),
-                SEC1_EllipticCurve.OctetStringToEllipticCurvePoint(rawParams.G, p),
-                SEC1_EllipticCurve.Fp_OctetStringToFieldElement(rawParams.n),
-                SEC1_EllipticCurve.Fp_OctetStringToFieldElement(rawParams.h));
+                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.a),
+                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.b),
+                SEC1_FpEllipticCurve.OctetStringToEllipticCurvePoint(rawParams.G, p),
+                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.n),
+                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.h));
         }
 
+        /// <summary>
+        /// Returns object with byte arrays properties.
+        /// Byte arrays meaning and content are equal as SEC2 specifies (copy & paste from SEC2 specification)
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static SEC2_ECFpDomainParams CreateRawParameters(Parameters parameters)
         {
             SEC2_ECFpDomainParams r;
