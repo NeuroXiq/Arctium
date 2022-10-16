@@ -387,6 +387,16 @@ namespace Arctium.Shared.Helpers.Binary
         }
 
 
+        public static byte[] FromString(string hexString, bool autotrim)
+        {
+            hexString = hexString.Trim();
+            hexString = hexString.Replace(" ", "");
+            hexString = hexString.Replace("\r", "");
+            hexString = hexString.Replace("\n", "");
+
+            return FromString(hexString);
+        }
+
         /// <summary>
         /// Converts string to byte array. Stream must contain valid 
         /// hexadecimal values, must be multiply of 2 and must not contain any delimiters (space etc.).

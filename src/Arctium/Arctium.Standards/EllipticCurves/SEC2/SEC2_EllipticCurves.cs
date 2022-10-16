@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.EllipticCurves;
+using Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms;
 using System;
 using System.Numerics;
 
@@ -35,15 +36,15 @@ namespace Arctium.Standards.EllipticCurves.SEC2
 
         public static ECFpDomainParameters ToEcFpDomainParameters(SEC2_ECFpDomainParams rawParams)
         {
-            BigInteger p = SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.p);
+            BigInteger p = SEC1_Fp.Fp_OctetStringToFieldElement(rawParams.p);
 
             return new ECFpDomainParameters(
                 p,
-                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.a),
-                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.b),
-                SEC1_FpEllipticCurve.OctetStringToEllipticCurvePoint(rawParams.G, p),
-                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.n),
-                SEC1_FpEllipticCurve.Fp_OctetStringToFieldElement(rawParams.h));
+                SEC1_Fp.Fp_OctetStringToFieldElement(rawParams.a),
+                SEC1_Fp.Fp_OctetStringToFieldElement(rawParams.b),
+                SEC1_ECFpAlgorithm.OctetStringToEllipticCurvePointNotCompressed(rawParams.G, p),
+                SEC1_Fp.Fp_OctetStringToFieldElement(rawParams.n),
+                SEC1_Fp.Fp_OctetStringToFieldElement(rawParams.h));
         }
 
         /// <summary>

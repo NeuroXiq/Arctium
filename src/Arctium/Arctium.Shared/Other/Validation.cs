@@ -54,6 +54,15 @@ namespace Arctium.Shared.Other
             }
         }
 
+        public static void Argument(bool shouldThrow, string parameterName, string additinalInfo = null)
+        {
+            if (!shouldThrow) return;
+
+            additinalInfo = additinalInfo ?? String.Empty;
+
+            throw new ArgumentException($"Invalid parameter: {parameterName}. Additional info: {additinalInfo}");
+        }
+
         public static void Length(long currentLength, long expectedLength, string argName, string additionalInfo = null)
         {
             if (currentLength != expectedLength)

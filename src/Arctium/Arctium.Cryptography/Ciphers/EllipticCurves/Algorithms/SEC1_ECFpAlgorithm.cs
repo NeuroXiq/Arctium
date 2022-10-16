@@ -21,10 +21,17 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
 {
     /// <summary>
     /// Algorithms for elliptic curves used in Arctium project.
-    /// Algorithms base on SEC1 Standard.
+    /// Algorithms based on SEC1 Standard.
     /// </summary>
     public class SEC1_ECFpAlgorithm
     {
+
+        public enum ECPointCompression
+        {
+            NotCompressed,
+            Compressed
+        }
+
         /// <summary>
         /// 4.1.3 Signing Operation
         /// </summary>
@@ -52,13 +59,12 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
                 byte[] H = hashFunc.HashFinal();
                 BigInteger e = DeriveIntegerFromHash(ecparams.n, H);
 
-                s = (SEC1_ECFpAlgorithm.MultiplicativeInverse(k, ecparams.n) * (e + (r * dUInt))) % n;
+                s = (MultiplicativeInverse(k, ecparams.n) * (e + (r * dUInt))) % n;
             }
             while (s.IsZero);
 
             return new ECSignature(r, s);
         }
-
 
         public static bool ECDSA_Verify(ECFpDomainParameters ecparams, HashFunctionId hashFunction, BytesRange M, ECFpPoint signingPartyPublicKey, ECSignature signature)
         {
@@ -71,8 +77,8 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
             byte[] hash = hashFunc.HashFinal();
 
             BigInteger e = DeriveIntegerFromHash(ecparams.n, hash);
-            BigInteger u1 = (e * MultiplicativeInverse(signature.S, ecparams.n));
-            BigInteger u2 = (signature.R * MultiplicativeInverse(signature.S, ecparams.n));
+            BigInteger u1 = (e * MultiplicativeInverse(signature.S, ecparams.n)) % ecparams.n;
+            BigInteger u2 = (signature.R * MultiplicativeInverse(signature.S, ecparams.n)) % ecparams.n;
 
             BigInteger x1, y1, x2, y2, xr, yr;
             ScalarMultiplication(ecparams, ecparams.G, u1, out x1, out y1);
@@ -92,7 +98,7 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
         static BigInteger DeriveIntegerFromHash(BigInteger n, byte[] hash)
         {
             long bitlen = n.GetBitLength();
-            long resultLength = bitlen >= 8 * hash.Length ? (bitlen + 7) / 8 : hash.Length;
+            long resultLength = bitlen >= 8 * hash.Length ? hash.Length : (bitlen + 7) / 8;
 
             BigInteger r = new BigInteger(new ReadOnlySpan<byte>(hash, 0, (int)resultLength), true, true);
 
@@ -127,6 +133,134 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
             computedPointToSendToOtherParty = new ECFpPoint(rx, ry);
 
             return rand;
+        }
+
+        public static ECFpPoint OctetStringToEllipticCurvePointNotCompressed(byte[] octetString, BigInteger primeP)
+        {
+            BigInteger q = primeP;
+
+            if ((octetString.Length - 1) % 2 != 0) throw new ArgumentException("octetstrin.Length");
+            int len = (octetString.Length - 1) / 2;
+
+            if (octetString[0] != 0x04) throw new ArgumentException("octet string not starts with 0x04");
+            byte[] xBytes = new byte[len];
+            byte[] yBytes = new byte[len];
+
+            Array.Copy(octetString, 1, xBytes, 0, len);
+            Array.Copy(octetString, len + 1, yBytes, 0, len);
+
+            BigInteger x = Fp_OctetStringToFieldElement(xBytes);
+            BigInteger y = Fp_OctetStringToFieldElement(yBytes);
+
+            return new ECFpPoint(x, y);
+        }
+
+        public static ECFpPoint OctetStringToEllipticCurvePoint(byte[] octetString, ECFpDomainParameters ecparams)
+        {
+            BigInteger q = ecparams.p;
+
+            if (q.IsPowerOfTwo) throw new NotSupportedException("todo implem ent");
+
+            byte[] qBytes = q.ToByteArray(isUnsigned: true, isBigEndian: true);
+            int qLenBytes = qBytes.Length;
+
+            if (octetString[0] != 0x04) throw new NotImplementedException(); // compressed form
+
+            if (octetString.Length != qLenBytes + 1 && octetString.Length != (2 * qLenBytes) + 1)
+            {
+                throw new ArgumentException("octetstring or qlen invalid (not equal octetstring.lenth + 1 or 2 * octetstring.length + 1");
+            }
+
+            if (octetString.Length == qLenBytes + 1)
+            {
+                byte[] felementBytes = new byte[octetString.Length - 1];
+                byte Y = octetString[0];
+                MemCpy.Copy(octetString, 1, felementBytes, 0, felementBytes.Length);
+                BigInteger xp = Fp_OctetStringToFieldElement(felementBytes);
+
+                Validation.Argument(Y != 0x02 && Y != 0x03, nameof(octetString), "first byte should be 0x02 or 0x03");
+
+                // BigInteger yp = Y == 0x02 ? 0 : 1;
+                BigInteger yp = 0;
+
+                BigInteger alpha = (BigInteger.ModPow(xp, 3, q) + (ecparams.a * xp) + ecparams.b) % q;
+
+                BigInteger modType = BigInteger.ModPow(alpha, (q - 1) / 2, q) % 4;
+
+                // modulus congruent  to 3 mod 4
+                if (modType != 3) throw new NotSupportedException("modulust congruent to 3 mod 4 implemented only, other types not implemented");
+
+                // square root of alpha in mod p (when congruent to 3 mod 4)
+                BigInteger beta = BigInteger.ModPow(alpha, (q + 1) / 4, q);
+
+                if (beta.IsEven && Y == 0) yp = beta;
+                else yp = Subtract(q, q, beta);
+
+                return new ECFpPoint(xp, yp);
+            }
+            else
+            {
+                return OctetStringToEllipticCurvePointNotCompressed(octetString, q);
+
+                //if ((octetString.Length - 1) % 2 != 0) throw new ArgumentException("octetstrin.Length");
+                //int len = (octetString.Length - 1) / 2;
+
+                //if (octetString[0] != 0x04) throw new ArgumentException("octent string not starts with 0x04");
+                //byte[] xBytes = new byte[len];
+                //byte[] yBytes = new byte[len];
+
+                //Array.Copy(octetString, 1, xBytes, 0, len);
+                //Array.Copy(octetString, len + 1, yBytes, 0, len);
+
+                //BigInteger x = Fp_OctetStringToFieldElement(xBytes);
+                //BigInteger y = Fp_OctetStringToFieldElement(yBytes);
+
+                //return new ECFpPoint(x, y);
+            }
+
+            return null;
+        }
+
+        public static byte[] EllipticCurvePointToOctetString(ECFpDomainParameters ecparams, ECFpPoint point, ECPointCompression compressionType)
+        {
+            if (compressionType == ECPointCompression.Compressed) throw new NotSupportedException();
+            long len = (ecparams.p.GetBitLength() + 7) / 8;
+
+            byte[] os = new byte[1 + 2 * len];
+
+            byte[] x = point.X.ToByteArray(true, true);
+            byte[] y = point.Y.ToByteArray(true, true);
+
+            os[0] = 0x04;
+            MemCpy.Copy(x, 0, os, 1 + len - x.Length, x.Length);
+            MemCpy.Copy(y, 0, os, os.Length - y.Length, y.Length);
+
+            return os;
+        }
+
+
+
+        public static BigInteger Fp_OctetStringToFieldElement(byte[] octetString)
+        {
+            return OctetStringToInteger(octetString);
+        }
+
+        public static byte[] IntegerToOctetString(BigInteger integer, int mLenInBytes)
+        {
+            if (integer >= (new BigInteger(1) << (8 * mLenInBytes))) throw new ArgumentException(nameof(mLenInBytes) + " less than integer");
+
+            byte[] result = new byte[mLenInBytes];
+
+            byte[] integerAsBytes = integer.ToByteArray(isUnsigned: true, isBigEndian: true);
+
+            Array.Copy(integerAsBytes, 0, result, mLenInBytes - integerAsBytes.Length, integerAsBytes.Length);
+
+            return result;
+        }
+
+        public static BigInteger OctetStringToInteger(byte[] octetString)
+        {
+            return new BigInteger(new Span<byte>(octetString), isUnsigned: true, isBigEndian: true);
         }
 
         public static byte[] EllipticCurveDiffieHellmanPrimitive(ECFpDomainParameters ecparams, byte[] privKey, ECFpPoint publicKeyFromOtherParty)

@@ -1,5 +1,7 @@
 ﻿using Arctium.Cryptography.Utils;
+using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
+using Arctium.Standards.ASN1.Serialization.X690v2.DER;
 using Arctium.Standards.X509.X509Cert.Algorithms;
 using System.Numerics;
 
@@ -25,6 +27,22 @@ namespace Arctium.Standards.X509.X509Cert
             var defaultPubKey = new Arctium.Cryptography.Ciphers.RSA.RSAPublicKey(modulus, pubExponent);
 
             return defaultPubKey;
+        }
+
+        public static EcdsaSigValue ASN1_DerDecodeEcdsaSigValue(byte[] derEncodedBytes)
+        {
+            var decodeCtx = DerDeserializer.Deserialize2(derEncodedBytes, 0);
+            MemDump.HexDump(derEncodedBytes);
+
+            var rBytes = decodeCtx.DerTypeDecored.Integer(decodeCtx.Current[0]).BinaryValue;
+            var sBytes = decodeCtx.DerTypeDecored.Integer(decodeCtx.Current[1]).BinaryValue;
+
+            return new EcdsaSigValue(rBytes, sBytes);
+        }
+
+        public static void ASN1_DerEncodeEcdsaSigValue(EcdsaSigValue ecdsaSigValue)
+        {
+
         }
     }
 }

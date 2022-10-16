@@ -12,7 +12,6 @@ using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Standards.X509.X509Cert;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -30,7 +29,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ServerHello HelloRetryRequest;
             public ClientHello ClientHello2;
             public bool CertificateRequest;
-            public X509Certificate ServerCertificate;
+            public X509.X509Cert.X509Certificate ServerCertificate;
+            public byte[] cerbytes;
 
             public PskTicket[] PskTickets;
             public ServerHello ServerHello;
@@ -266,7 +266,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_ServerFinished()
         {
             var finished = messageIO.ReadHandshakeMessage<Finished>();
-            //todo verify finished
+            // todo verify finished
 
             if (context.CertificateRequest) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificate);
             else commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientFinished);
@@ -276,6 +276,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             int dataLengthToSign = hsctx.DataLength;
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
+
             bool isSignatureValid = crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate);
 
             validate.Handshake.AlertFatal(!isSignatureValid, AlertDescription.DecryptError, "invalid servercertificateverify signature");
@@ -289,13 +290,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             X509CertificateDeserializer deserialized = new X509CertificateDeserializer();
             context.ServerCertificate = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
+            context.cerbytes = certificate.CertificateList[0].CertificateEntryRawBytes;
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificateVerify);
         }
 
         private void Handshake_CertificateRequest()
         {
-            var certReq = messageIO.ReadHandshakeMessage<CertificateRequest>();
+            // var certReq = messageIO.ReadHandshakeMessage<CertificateRequest>();
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificate);
         }
@@ -446,6 +448,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 context.ServerHello = sh;
                 commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHello);
             }
+
+            messageIO.SetBackwardCompatibilityMode(compatibilityAllowRecordLayerVersionLower0x0303: false,
+                compatibilitySilentlyDropUnencryptedChangeCipherSpec: true);
         }
 
         private void Handshake_ClientHello1()
@@ -461,13 +466,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") }),
                 new SignatureSchemeListExtension(new SignatureSchemeListExtension.SignatureScheme[]
                 {
-                    // SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256,
-                    // SignatureSchemeListExtension.SignatureScheme.EcdsaSecp384r1Sha384,
-                    // SignatureSchemeListExtension.SignatureScheme.EcdsaSecp521r1Sha512,
+                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256,
+                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp384r1Sha384,
+                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp521r1Sha512,
 
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
-                    //SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
+                    // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
+                    // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
@@ -494,8 +499,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             context.ClientHello1 = clientHello;
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerHelloOrHelloRetryRequest);
-            messageIO.SetBackwardCompatibilityMode(compatibilityAllowRecordLayerVersionLower0x0303: false,
-                compatibilitySilentlyDropUnencryptedChangeCipherSpec: true);
         }
 
         private void Start_Connect()

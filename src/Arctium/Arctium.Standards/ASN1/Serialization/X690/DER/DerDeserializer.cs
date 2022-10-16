@@ -7,6 +7,7 @@ namespace Arctium.Standards.ASN1.Serialization.X690.DER
 {
     // constructors stack is a recursion but is accomplished by this stack
 
+    [Obsolete("dont use, use X690v2 namespace")]
     public class DerDeserializer
     {
         BufferFrame bufferFrame;

@@ -28,6 +28,8 @@ using System.Linq;
 using System.Text;
 using Arctium.Standards.X509.X509Cert;
 using static Arctium.Standards.Connection.Tls.Tls13.Model.Extensions.SignatureSchemeListExtension;
+using Arctium.Standards.X509.X509Cert.Algorithms;
+using System.Numerics;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -251,7 +253,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 var secret = SEC1_ECFpAlgorithm.EllipticCurveKeyPairGenerationPrimitive(ecparams, out pointToSend);
 
                 privateKey = secret;
-                keyShareToSendRawBytes = SEC1_FpEllipticCurve.EllipticCurvePointToOctetString(ecparams, pointToSend, SEC1_FpEllipticCurve.ECPointCompression.NotCompressed);
+                keyShareToSendRawBytes = SEC1_Fp.EllipticCurvePointToOctetString(ecparams, pointToSend, SEC1_Fp.ECPointCompression.NotCompressed);
             }
             else if (
                 namedGroup == SupportedGroupExtension.NamedGroup.Ffdhe2048 ||
@@ -297,7 +299,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 }
 
                 var ecparams = SEC2_EllipticCurves.CreateParameters(parms);
-                var clientPoint = SEC1_FpEllipticCurve.OctetStringToEllipticCurvePoint(keyExchangeRawBytes, ecparams.p);
+                var clientPoint = SEC1_Fp.OctetStringToEllipticCurvePoint(keyExchangeRawBytes, ecparams);
 
                 this.Ecdhe_or_dhe_SharedSecret = SEC1_ECFpAlgorithm.EllipticCurveDiffieHellmanPrimitive(ecparams, privateKey, clientPoint);
             }
@@ -323,31 +325,50 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             X509Certificate serverCertificate)
         {
             byte[] toSign = FormatDataForSignature(hscontext, hscontextlen);
+            hscontext = null; hscontextlen = -1; // this is not needed anymore
+
             var algorithmType = serverCertificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
             HashFunctionId hashFunctionId;
-
+            ECFpDomainParameters ecparams = null;
 
             switch (certVerify.SignatureScheme)
             {
                 case SignatureScheme.RsaPssRsaeSha256:
                 case SignatureScheme.EcdsaSecp256r1Sha256:
                     hashFunctionId = HashFunctionId.SHA2_256;
+                    ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp256r1);
                     break;
                 case SignatureScheme.EcdsaSecp384r1Sha384:
                 case SignatureScheme.RsaPssRsaeSha384:
                     hashFunctionId = HashFunctionId.SHA2_384;
+                    ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp384r1);
                     break;
                 case SignatureScheme.EcdsaSecp521r1Sha512:
                 case SignatureScheme.RsaPssRsaeSha512:
                     hashFunctionId = HashFunctionId.SHA2_512;
+                    ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp521r1);
                     break;
                 //case SignatureScheme.Ed25519:
                 //    hashFunctionId = HashFunctionId.SHA2_512
                 //    break;
                 //case SignatureScheme.Ed448:
-
                     break;
-                default: throw new NotSupportedException("not supported signatue scheme");
+                default: throw new NotSupportedException("not supported signatue scheme: " + certVerify.SignatureScheme.ToString());
+            }
+
+            switch (certVerify.SignatureScheme)
+            {
+                case SignatureScheme.EcdsaSecp256r1Sha256:
+                    ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp256r1);
+                    break;
+                case SignatureScheme.EcdsaSecp384r1Sha384:
+                    ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp384r1);
+                    break;
+                case SignatureScheme.EcdsaSecp521r1Sha512:
+                    ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp521r1);
+                    break;
+
+                default: break;
             }
 
             var rsaeAlgos = new SignatureScheme[] { SignatureScheme.RsaPssRsaeSha256, SignatureScheme.RsaPssRsaeSha384, SignatureScheme.RsaPssRsaeSha512 };
@@ -362,7 +383,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
             else if (ecdsaAlgos.Contains(certVerify.SignatureScheme))
             {
-                throw new NotImplementedException();
+
+                var ecpubkey = serverCertificate.SubjectPublicKeyInfo.PublicKey.Get<byte[]>();
+                var publicKeyPoint = SEC1_ECFpAlgorithm.OctetStringToEllipticCurvePoint(ecpubkey, ecparams);
+
+                var sigValue = X509Util.ASN1_DerDecodeEcdsaSigValue(certVerify.Signature);
+
+                var r = new BigInteger(sigValue.R, true, true);
+                var s = new BigInteger(sigValue.S, true, true);
+
+                var ecsignature = new ECSignature(r, s);
+
+                bool isvalid = SEC1_ECFpAlgorithm.ECDSA_Verify(ecparams, hashFunctionId, toSign, publicKeyPoint, ecsignature);
+
+                return isvalid;
             }
             else throw new NotSupportedException("certverify not supported");
 
