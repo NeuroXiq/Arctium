@@ -31,7 +31,6 @@ namespace Arctium.Cryptography.HashFunctions.MAC
 
         private void ProcessFullBlocks(byte[] buffer, long offset, long length)
         {
-            //MemDump.HexDump(buffer, (int)offset, (int)length, 1, 64, "");
             Poly1305Algorithm.ProcessFullBlocks(context, buffer, offset, length);
         }
 

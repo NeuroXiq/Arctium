@@ -389,10 +389,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 var sigValue = X509Util.ASN1_DerDecodeEcdsaSigValue(certVerify.Signature);
 
-                var r = new BigInteger(sigValue.R, true, true);
-                var s = new BigInteger(sigValue.S, true, true);
-
-                var ecsignature = new ECSignature(r, s);
+                var ecsignature = new ECSignature(sigValue.R, sigValue.S);
 
                 bool isvalid = SEC1_ECFpAlgorithm.ECDSA_Verify(ecparams, hashFunctionId, toSign, publicKeyPoint, ecsignature);
 

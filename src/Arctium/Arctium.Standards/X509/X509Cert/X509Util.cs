@@ -32,7 +32,6 @@ namespace Arctium.Standards.X509.X509Cert
         public static EcdsaSigValue ASN1_DerDecodeEcdsaSigValue(byte[] derEncodedBytes)
         {
             var decodeCtx = DerDeserializer.Deserialize2(derEncodedBytes, 0);
-            MemDump.HexDump(derEncodedBytes);
 
             var rBytes = decodeCtx.DerTypeDecored.Integer(decodeCtx.Current[0]).BinaryValue;
             var sBytes = decodeCtx.DerTypeDecored.Integer(decodeCtx.Current[1]).BinaryValue;
