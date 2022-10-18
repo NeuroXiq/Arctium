@@ -4,6 +4,7 @@ using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Helpers;
 using System.Collections.Generic;
 using Arctium.Cryptography.Utils;
+using System.Linq;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -11,12 +12,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
     {
         public Tls13ServerConfig Config { get; private set; }
 
-        public List<PskTicket> PskTickets { get; private set; }
+        private PskTicketServerStoreBase pskTicketStore;
 
-        public Tls13ServerContext(Tls13ServerConfig config)
+        public Tls13ServerContext(Tls13ServerConfig config, PskTicketServerStoreBase pskTicketStore)
         {
             Config = config;
-            PskTickets = new List<PskTicket>();
+            this.pskTicketStore = pskTicketStore;
         }
 
         public PskTicket GetPskTicket(PreSharedKeyClientHelloExtension preSharedKeyExtension,
@@ -24,29 +25,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             out int clientSelectedIndex)
         {
             clientSelectedIndex = -1;
-            int serverSelected = -1;
             var clientIdentities = preSharedKeyExtension.Identities;
 
-            for (int i = 0; i < clientIdentities.Length; i++)
-            {
-                for (int j = 0; j < this.PskTickets.Count; j++)
-                {
-                    if (MemOps.Memcmp(this.PskTickets[j].Ticket, clientIdentities[i].Identity) &&
-                        selectedCipherSuiteHashFunctionId == PskTickets[j].HashFunctionId)
-                    {
-                        clientSelectedIndex = (int)i;
-                        serverSelected = j;
-                        goto _break;
-                    }
-                }
-            }_break:
+            var tickets = preSharedKeyExtension.Identities.Select(identity => identity.Identity).ToArray();
 
-            if (clientSelectedIndex == -1)
+            var selectedTicket = pskTicketStore.GetTicket(tickets, selectedCipherSuiteHashFunctionId);
+
+            if (selectedTicket == null) return null;
+
+            for (int i = 0; clientSelectedIndex == -1 && i < preSharedKeyExtension.Identities.Length; i++)
             {
-                return default(PskTicket);
+                if (MemOps.Memcmp(clientIdentities[i].Identity, selectedTicket.Ticket))
+                {
+                    clientSelectedIndex = i;
+                }
             }
 
-            return PskTickets[serverSelected];
+            return selectedTicket;
         }
 
         public void SavePskTicket(byte[] resumptionMasterSecret,
@@ -56,7 +51,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             uint ticketAgeAdd,
             HashFunctionId hashFunctionId)
         {
-            this.PskTickets.Add(new PskTicket(ticket, nonce, resumptionMasterSecret, ticketLifetime, ticketAgeAdd, hashFunctionId));
+            pskTicketStore.SaveTicket(new PskTicket(ticket, nonce, resumptionMasterSecret, ticketLifetime, ticketAgeAdd, hashFunctionId));
         }
     }
 }

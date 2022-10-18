@@ -14,6 +14,14 @@ namespace Arctium.Standards.X509.X509Cert
         //    var hashFunc = cert.
         //}
 
+        public static byte[] X509CertificateToDerEncodedBytes(X509Certificate certificate)
+        {
+            if (certificate.DerEncodedBytesDeserializedBytes == null)
+                Validation.NotSupported("for now only decoded certificates decoded supported, serialization of created object not supported");
+
+            return certificate.DerEncodedBytesDeserializedBytes;
+        }
+
         public static Arctium.Cryptography.Ciphers.RSA.RSAPublicKey GetRSAPublicKeyDefault(X509Certificate certificate)
         {
             var algorithm = certificate.SubjectPublicKeyInfo.AlgorithmIdentifier;

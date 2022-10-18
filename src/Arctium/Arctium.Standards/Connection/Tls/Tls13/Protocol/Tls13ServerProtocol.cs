@@ -43,7 +43,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             //public Finished FinishedClient;
 
             public CipherSuite SelectedCipherSuite;
-            public byte[] EcdhOrDheSharedSecret;
             public bool IsPskSessionResumption;
             public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
             public int CH2Offset;
@@ -198,7 +197,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             uint ageAdd = (uint)System.Environment.TickCount;
             byte[] nonce = Guid.NewGuid().ToByteArray();
             byte[] ticket = Guid.NewGuid().ToByteArray();
-            ticket[0] = ((byte)serverContext.PskTickets.Count); ticket[1] = (byte)(serverContext.PskTickets.Count >> 8);
 
             NewSessionTicket newSessTicket = new NewSessionTicket(lifetime, ageAdd, nonce, ticket, new Extension[0]);
             

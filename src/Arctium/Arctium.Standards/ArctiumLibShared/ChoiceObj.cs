@@ -25,7 +25,7 @@ namespace Arctium.Standards.ASN1.Shared
         public TKey? ValueKey { get { return key; } }
 
         private object obj;
-        private TKey? key;
+        protected TKey? key;
 
         public virtual T GetStruct<T>() where T: struct
         {

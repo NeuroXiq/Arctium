@@ -1,14 +1,11 @@
-﻿namespace Arctium.Standards.Connection.Tls.Tls13.API
+﻿using Arctium.Cryptography.Utils;
+
+namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public abstract class PskTicketServerStoreBase
     {
-        public void SaveTicket()
-        {
-        }
+        public abstract void SaveTicket(PskTicket ticketToSave);
 
-        public void GetTicket()
-        {
-
-        }
+        public abstract PskTicket GetTicket(byte[][] availableTicketsFromClient, HashFunctionId hashFunctionId);
     }
 }

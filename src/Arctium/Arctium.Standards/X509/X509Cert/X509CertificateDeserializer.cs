@@ -4,6 +4,8 @@ using System;
 using Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
 using Arctium.Standards.FileFormat.PEM;
+using System.IO;
+using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Standards.X509.X509Cert
 {
@@ -19,9 +21,8 @@ namespace Arctium.Standards.X509.X509Cert
             certificateMapper = new X509CertificateMapper();
         }
 
-        public X509Certificate FromPem(string filename)
+        public X509Certificate FromPem(PemFile pemfile)
         {
-            PemFile pemfile = PemFile.FromFile(filename);
             if (pemfile.BeginLabel != BeginCertificatePemLabel)
                 throw new ArgumentException(
                     string.Format("Pem file start label is not equal to '{0}'. Current label: {1}", BeginCertificatePemLabel, pemfile.BeginLabel));
@@ -36,6 +37,9 @@ namespace Arctium.Standards.X509.X509Cert
             var certificateModel = certRootNodeDecoder.Decode(decodedContext);
 
             result = certificateMapper.MapFromModel(certificateModel);
+
+            result.DerEncodedBytesDeserializedBytes = MemCpy.CopyToNewArray(data, 0, data.Length);
+
             try
             {
               

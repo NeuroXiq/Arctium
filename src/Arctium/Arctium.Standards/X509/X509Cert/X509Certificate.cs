@@ -45,5 +45,7 @@ namespace Arctium.Standards.X509.X509Cert
         public SignatureAlgorithmIdentifier SignatureAlgorithm { get; internal set; }
         public SignatureValue SignatureValue { get; internal set; }
         public SubjectPublicKeyInfo SubjectPublicKeyInfo { get; internal set; }
+        
+        internal byte[] DerEncodedBytesDeserializedBytes { get; set; }
     }
 }

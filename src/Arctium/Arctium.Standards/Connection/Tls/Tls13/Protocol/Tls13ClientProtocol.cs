@@ -30,7 +30,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ClientHello ClientHello2;
             public bool CertificateRequest;
             public X509.X509Cert.X509Certificate ServerCertificate;
-            public byte[] cerbytes;
 
             public PskTicket[] PskTickets;
             public ServerHello ServerHello;
@@ -290,7 +289,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             X509CertificateDeserializer deserialized = new X509CertificateDeserializer();
             context.ServerCertificate = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
-            context.cerbytes = certificate.CertificateList[0].CertificateEntryRawBytes;
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificateVerify);
         }

@@ -82,7 +82,7 @@ namespace Arctium.Shared.Other
 
         static void ThrowArctium(string msg) => throw new ArctiumException(msg);
 
-        public static void NotSupported()
+        public static void NotSupported(string additinalMessage = null)
         {
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
             var version = assembly.GetName().Version.ToString();
@@ -93,6 +93,11 @@ namespace Arctium.Shared.Other
 
             string msg = "This feature is currently not supported by Arctium implementation. (current date: ''{0}'' version: ''{1}'', assembly.name: ''{2}'' )";
             msg = string.Format(msg, date, version ?? "", name ?? "");
+
+            if (additinalMessage != null)
+            {
+                msg = string.Format("{0}. {1}", additinalMessage, msg);
+            }
 
             throw new NotSupportedException(msg);
         }

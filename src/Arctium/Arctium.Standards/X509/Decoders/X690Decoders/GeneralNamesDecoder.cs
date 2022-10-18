@@ -21,7 +21,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
                 case 0: throw new NotSupportedException("decodersneeded"); break;
                 case 6: decodedGeneralName = new GeneralName(GeneralNameType.UniformResourceIdentifier, decoder.IA5String(decoded).Value); break;
                 case 7: decodedGeneralName = new GeneralName(GeneralNameType.IPAddress, decoder.OctetString(decoded).Value); break;
-                case 3:
+                case 3: 
                 case 4:
                 case 5:
                 case 8:
