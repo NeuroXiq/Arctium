@@ -26,26 +26,30 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
         };
 
 
-        PublicKeyDecoders decoders;
-        DerDeserializer der;
+        static PublicKeyDecoders decoders;
 
-        public SubjectPublicKeyInfoMapper()
+        static SubjectPublicKeyInfoMapper()
         {
             decoders = new PublicKeyDecoders();
-            der = new DerDeserializer();
         }
 
-        internal SubjectPublicKeyInfo Map(SubjectPublicKeyInfoModel subjectPublicKeyInfo)
+        internal static SubjectPublicKeyInfo Map(PublicKeyInfoModel subjectPublicKeyInfo)
         {
-            AlgorithmIdentifierModel algoModel = subjectPublicKeyInfo.Algorithm;
+            byte[] publicKey = subjectPublicKeyInfo.SubjectPublicKey.Value;
+            PublicKeyAlgorithmIdentifier algoIdentifier = MapAlgorithmIdentifier(subjectPublicKeyInfo.Algorithm);
+            object mappedPublicKey = MapPublicKey(algoIdentifier.Algorithm, publicKey);
+
+            var subPubKey = new SubjectPublicKeyInfoPublicKey(algoIdentifier.Algorithm, mappedPublicKey);
+
+            return new SubjectPublicKeyInfo(algoIdentifier, subPubKey);
+        }
+
+        public static PublicKeyAlgorithmIdentifier MapAlgorithmIdentifier(AlgorithmIdentifierModel algoModel)
+        {
             ObjectIdentifier algoOid = algoModel.Algorithm;
             byte[] algoParms = algoModel.EncodedParameters;
-            byte[] publicKey = subjectPublicKeyInfo.SubjectPublicKey.Value;
 
             PublicKeyAlgorithmIdentifierType algorithm = PublicKeyAlgorithmOidMap.Get(algoOid);
-            
-            object mappedPublicKey = MapPublicKey(algorithm, publicKey);
-
             PublicKeyAlgorithmIdentifierParametersType? parmsType;
             var parmsObj = MapParms(algorithm, algoParms, out parmsType);
 
@@ -56,13 +60,12 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
                 subParms = new PublicKeyAlgorithmIdentifierParameters(parmsType.Value, parmsObj);
             }
 
-            var subPubKey = new SubjectPublicKeyInfoPublicKey(algorithm, mappedPublicKey);
             var algoIdentifier = new PublicKeyAlgorithmIdentifier(algorithm, subParms);
 
-            return new SubjectPublicKeyInfo(algoIdentifier, subPubKey);
+            return algoIdentifier;
         }
 
-        private object MapPublicKey(PublicKeyAlgorithmIdentifierType algorithm, byte[] keyRawValue)
+        private static object MapPublicKey(PublicKeyAlgorithmIdentifierType algorithm, byte[] keyRawValue)
         {
             switch (algorithm)
             {
@@ -76,7 +79,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
                     algorithm.ToString());
         }
 
-        private object MapParms(PublicKeyAlgorithmIdentifierType algorithm, byte[] algoParms, out PublicKeyAlgorithmIdentifierParametersType? type)
+        private static object MapParms(PublicKeyAlgorithmIdentifierType algorithm, byte[] algoParms, out PublicKeyAlgorithmIdentifierParametersType? type)
         {
             type = null;
 

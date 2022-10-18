@@ -6,14 +6,14 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
     {
         public DerDecoded Root { get; private set; }
         public DerDecoded Current { get; set; }
-        public DerTypeDecoder DerTypeDecored { get; private set; }
+        public DerTypeDecoder DerTypeDecoder { get; private set; }
         public byte[] Buffer { get; private set; }
 
         public DerDeserializedContext(DerDecoded root, byte[] buffer)
         {
             this.Root = root;
             this.Buffer = buffer;
-            this.DerTypeDecored = new DerTypeDecoder(buffer);
+            this.DerTypeDecoder = new DerTypeDecoder(buffer);
             this.Current = root;
         }
     }

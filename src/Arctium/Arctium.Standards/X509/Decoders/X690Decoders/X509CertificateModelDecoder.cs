@@ -8,7 +8,6 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
     public class X509CertificateModelDecoder
     {
         TBSCertificateDecoder tbsDecoder = new TBSCertificateDecoder();
-        AlgorithmIdentifierModelDecoder algoIdDecoder = new AlgorithmIdentifierModelDecoder();
 
         public X509CertificateModel Decode(DerDeserializedContext context)
         {
@@ -16,10 +15,10 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
             TBSCertificate tbsCert = tbsDecoder.Decode(context);
             
             context.Current = context.Root[1];
-            AlgorithmIdentifierModel algoId = algoIdDecoder.Decode(context);
+            AlgorithmIdentifierModel algoId = AlgorithmIdentifierModelDecoder.Decode(context);
 
             context.Current = context.Root[2];
-            BitString signatureValue = context.DerTypeDecored.BitString(context.Current);
+            BitString signatureValue = context.DerTypeDecoder.BitString(context.Current);
 
             X509CertificateModel model = new X509CertificateModel(tbsCert, algoId, signatureValue);
             return model;

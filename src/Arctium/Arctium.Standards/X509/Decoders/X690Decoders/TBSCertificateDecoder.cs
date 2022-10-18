@@ -15,19 +15,19 @@ namespace Arctium.Standards.ASN1.Standards.X509.NodeDecoders.X690NodeDecoders
     public class TBSCertificateDecoder
     {
         ValidityDecoder validityDecoder = new ValidityDecoder();
-        AlgorithmIdentifierModelDecoder algoIdDecoder = new AlgorithmIdentifierModelDecoder();
+        // AlgorithmIdentifierModelDecoder algoIdDecoder = new AlgorithmIdentifierModelDecoder();
         NameDecoder nameDecoder = new NameDecoder();
 
         public TBSCertificate Decode(DerDeserializedContext context)
         {
-            var decoder = context.DerTypeDecored;
+            var decoder = context.DerTypeDecoder;
             var node = context.Current;
 
             TBSCertificate tbs = new TBSCertificate();
             tbs.Version = decoder.Integer(node[0][0]);
             tbs.SerialNumber = decoder.Integer(node[1]);
             context.Current = node[2];
-            tbs.Signature = algoIdDecoder.Decode(context);
+            tbs.Signature = AlgorithmIdentifierModelDecoder.Decode(context);
             tbs.Issuer = nameDecoder.Decode(decoder, node[3]);
 
             tbs.Validity = validityDecoder.Decode(decoder, node[4]);
@@ -102,16 +102,16 @@ namespace Arctium.Standards.ASN1.Standards.X509.NodeDecoders.X690NodeDecoders
             return extensions.ToArray();
         }
 
-        private SubjectPublicKeyInfoModel DecodeSubjectPublicKeyInfo(DerDeserializedContext context)
+        private PublicKeyInfoModel DecodeSubjectPublicKeyInfo(DerDeserializedContext context)
         {
             var current = context.Current;
             context.Current = current[0];
-            var decoder = context.DerTypeDecored;
+            var decoder = context.DerTypeDecoder;
 
-            AlgorithmIdentifierModel algorithmIdentifier = algoIdDecoder.Decode(context);
+            AlgorithmIdentifierModel algorithmIdentifier = AlgorithmIdentifierModelDecoder.Decode(context);
             BitString publicKey = decoder.BitString(current[1]);
 
-            return new SubjectPublicKeyInfoModel(algorithmIdentifier, publicKey);
+            return new PublicKeyInfoModel(algorithmIdentifier, publicKey);
         }
 
        

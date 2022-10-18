@@ -33,8 +33,8 @@ namespace Arctium.Standards.X509.X509Cert
         {
             var decodeCtx = DerDeserializer.Deserialize2(derEncodedBytes, 0);
 
-            var rBytes = decodeCtx.DerTypeDecored.Integer(decodeCtx.Current[0]).BinaryValue;
-            var sBytes = decodeCtx.DerTypeDecored.Integer(decodeCtx.Current[1]).BinaryValue;
+            var rBytes = decodeCtx.DerTypeDecoder.Integer(decodeCtx.Current[0]).BinaryValue;
+            var sBytes = decodeCtx.DerTypeDecoder.Integer(decodeCtx.Current[1]).BinaryValue;
 
             return new EcdsaSigValue(rBytes, sBytes);
         }

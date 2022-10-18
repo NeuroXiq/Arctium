@@ -11,7 +11,6 @@
     <Folder Include="ASN1\Serialization\X690\DER\BuildInDecoders\Primitive\" />
     <Folder Include="Connection\OCSP\" />
     <Folder Include="EllipticCurves\SEC1\" />
-    <Folder Include="PKCS8\v1_2\" />
     <Folder Include="X400\Decoders\X690Decoders\" />
   </ItemGroup>
 

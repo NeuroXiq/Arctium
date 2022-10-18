@@ -14,7 +14,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Model
         public X500::Name Issuer;
         public Validity Validity;
         public X500::Name Subject;
-        public SubjectPublicKeyInfoModel SubjectPublicKeyInfo;
+        public PublicKeyInfoModel SubjectPublicKeyInfo;
         public BitString IssuerUniqueId;
         public BitString SubjectUniqueId;
         public ExtensionModel[] Extensions;

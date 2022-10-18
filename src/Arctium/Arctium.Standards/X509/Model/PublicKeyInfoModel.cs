@@ -2,12 +2,12 @@
 
 namespace Arctium.Standards.ASN1.Standards.X509.Model
 {
-    public class SubjectPublicKeyInfoModel
+    public class PublicKeyInfoModel
     {
         public AlgorithmIdentifierModel Algorithm;
         public BitString SubjectPublicKey;
 
-        public SubjectPublicKeyInfoModel(AlgorithmIdentifierModel algorithmIdentifier, BitString subjectPublicKey)
+        public PublicKeyInfoModel(AlgorithmIdentifierModel algorithmIdentifier, BitString subjectPublicKey)
         {
             Algorithm = algorithmIdentifier;
             SubjectPublicKey = subjectPublicKey;

@@ -327,7 +327,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             byte[] toSign = FormatDataForSignature(hscontext, hscontextlen);
             hscontext = null; hscontextlen = -1; // this is not needed anymore
 
-            var algorithmType = serverCertificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
             HashFunctionId hashFunctionId;
             ECFpDomainParameters ecparams = null;
 

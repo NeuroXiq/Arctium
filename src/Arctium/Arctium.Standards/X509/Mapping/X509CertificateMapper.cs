@@ -22,12 +22,10 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 {
     public class X509CertificateMapper
     {
-        SubjectPublicKeyInfoMapper subjectPublicKeyInfoMapper;
         ExtensionsDecoder extensionDecoders = new ExtensionsDecoder();
 
         public X509CertificateMapper()
         {
-            subjectPublicKeyInfoMapper = new SubjectPublicKeyInfoMapper();
         }
 
         public X509Certificate MapFromModel(X509CertificateModel modelObject)
@@ -35,7 +33,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             X509Certificate cert = new X509Certificate();
             TBSCertificate tbs = modelObject.TBSCertificate;
 
-            cert.Version = (int)tbs.Version.ToULong();
+            cert.Version = (int)tbs.Version.ToLong();
             cert.SerialNumber = tbs.SerialNumber.BinaryValue;
             cert.Issuer = tbs.Issuer;
             cert.ValidNotBefore = tbs.Validity.NotBefore;
@@ -44,7 +42,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             cert.IssuerUniqueId =  tbs.IssuerUniqueId.Value;
             cert.SubjectUniqueId = tbs.SubjectUniqueId.Value;
             cert.Extensions = MapExtensions(modelObject.TBSCertificate.Extensions);
-            cert.SubjectPublicKeyInfo = subjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
+            cert.SubjectPublicKeyInfo = SubjectPublicKeyInfoMapper.Map(modelObject.TBSCertificate.SubjectPublicKeyInfo);
 
             MapSignature(modelObject, out var signAlgoIdentif, out var sigValue);
 
@@ -85,8 +83,8 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 
                 var decodingContext = DerDeserializer.Deserialize2(sigBytes, 0);
 
-                byte[] rBytes = decodingContext.DerTypeDecored.Integer(decodingContext.Current[0]).BinaryValue;
-                byte[] sBytes = decodingContext.DerTypeDecored.Integer(decodingContext.Current[1]).BinaryValue;
+                byte[] rBytes = decodingContext.DerTypeDecoder.Integer(decodingContext.Current[0]).BinaryValue;
+                byte[] sBytes = decodingContext.DerTypeDecoder.Integer(decodingContext.Current[1]).BinaryValue;
 
                 signatueValueObject = new EcdsaSigValue(rBytes, sBytes);
             }

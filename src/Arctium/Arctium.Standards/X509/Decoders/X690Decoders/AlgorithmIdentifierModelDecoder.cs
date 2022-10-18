@@ -8,9 +8,9 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
 {
     class AlgorithmIdentifierModelDecoder
     {
-        public AlgorithmIdentifierModel Decode(DerDeserializedContext context)
+        public static AlgorithmIdentifierModel Decode(DerDeserializedContext context)
         {
-            var decoder = context.DerTypeDecored;
+            var decoder = context.DerTypeDecoder;
             var decoded = context.Current;
 
             ObjectIdentifier algorithmId = decoder.ObjectIdentifier(decoded[0]);
@@ -26,8 +26,6 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
                     MemCpy.Copy(decoder.Buffer, decoded[1].Offset, parameters, 0, decoded[1].Length);
                 }
             }
-
-
 
             AlgorithmIdentifierModel algoIdModel = new AlgorithmIdentifierModel(algorithmId, parameters);
 

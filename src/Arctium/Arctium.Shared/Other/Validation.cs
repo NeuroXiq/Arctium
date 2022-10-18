@@ -81,5 +81,31 @@ namespace Arctium.Shared.Other
         }
 
         static void ThrowArctium(string msg) => throw new ArctiumException(msg);
+
+        public static void NotSupported()
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var version = assembly.GetName().Version.ToString();
+            var name = assembly.FullName;
+            var date = DateTime.Now;
+
+            var arctiumVersion = typeof(Validation).Assembly;
+
+            string msg = "This feature is currently not supported by Arctium implementation. (current date: ''{0}'' version: ''{1}'', assembly.name: ''{2}'' )";
+            msg = string.Format(msg, date, version ?? "", name ?? "");
+
+            throw new NotSupportedException(msg);
+        }
+
+        public static void NotNull(object referenceTypeToCheckIfNull, string argName, string additionalInfo = null)
+        {
+            if (referenceTypeToCheckIfNull != null) return;
+
+            string msg = "Argument: '{0}' is null";
+
+            if (additionalInfo != null) string.Format("{0}. Additional info: {1}", msg, additionalInfo);
+
+            throw new ArgumentNullException(argName, msg);
+        }
     }
 }

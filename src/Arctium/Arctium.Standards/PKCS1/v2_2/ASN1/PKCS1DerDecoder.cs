@@ -54,7 +54,7 @@ namespace Arctium.Standards.PKCS1.v2_2.ASN1
         {
             RSAPrivateKey privateKey = new RSAPrivateKey();
 
-            privateKey.Version = (int)pkModel.Version.ToULong();
+            privateKey.Version = (int)pkModel.Version.ToLong();
             privateKey.Modulus = pkModel.Modulus.BinaryValue;
             privateKey.PublicExponent = pkModel.PublicExponent.BinaryValue;
             privateKey.PrivateExponent = pkModel.PrivateExponent.BinaryValue;
