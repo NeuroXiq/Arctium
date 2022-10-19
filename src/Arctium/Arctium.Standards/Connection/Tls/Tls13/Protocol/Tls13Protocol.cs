@@ -62,7 +62,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var certificate = new Certificate(new byte[0],
                 new CertificateEntry[]
                 {
-                    new CertificateEntry(CertificateType.X509, serverConfig.DerEncodedCertificateBytes, new Extension[0])
+                    // new CertificateEntry(CertificateType.X509, serverConfig.DerEncodedCertificateBytes, new Extension[0])
                 });
             // var certificate = new Certificate(new byte[0], new CertificateEntry[0]);
 
@@ -264,10 +264,12 @@ Connection: Closed
 
             MemCpy.Copy(hash, 0, tosign, c, hash.Length);
 
-            var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(serverConfig.CertificatePrivateKey));
-            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hash.Length, new Cryptography.HashFunctions.Hashes.SHA2_256());
+            throw new Exception();
 
-            return signature;
+            //ar key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(serverConfig.CertificatePrivateKey));
+            //yte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hash.Length, new Cryptography.HashFunctions.Hashes.SHA2_256());
+            //
+            //return signature;
         }
 
         internal void Write(byte[] buffer, int offset, int count)

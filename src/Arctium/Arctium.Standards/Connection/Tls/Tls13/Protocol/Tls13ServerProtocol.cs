@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Standards.X509.X509Cert;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -46,6 +47,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public bool IsPskSessionResumption;
             public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
             public int CH2Offset;
+            public X509CertWithKey SelectedCertificate;
+            public SignatureSchemeListExtension.SignatureScheme? SelectedSignatureScheme;
+
 
             public PskTicket SelectedPskTicket { get; internal set; }
         }
@@ -307,7 +311,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             var certificate = new Certificate(new byte[0], new CertificateEntry[]
             {
-                new CertificateEntry(CertificateType.X509, config.DerEncodedCertificateBytes, new Extension[0])
+                new CertificateEntry(CertificateType.X509, X509Util.X509CertificateToDerEncodedBytes(context.SelectedCertificate.Certificate), new Extension[0])
             });
 
             messageIO.WriteHandshake(certificate);
@@ -361,7 +365,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512,
                     SignatureSchemeListExtension.SignatureScheme.RsaPkcs1Sha1,
                     SignatureSchemeListExtension.SignatureScheme.EcdsaSha1,
-                })
+                }, ExtensionType.SignatureAlgorithms)
             };
 
             var certRequest = new CertificateRequest(new byte[0], ext);
@@ -449,8 +453,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void ServerHelloNotPsk()
         {
             // full crypto (not PSK), select: ciphersuite, (ec)dhe group, signature algorithm
-            bool signAlgoOk;
-            crypto.SelectSigAlgo(context.ClientHello1, out signAlgoOk);
+            SignatureSchemeListExtension clientSupporetdCertSignatures = null;
+            var clientSupportedSignatures = context.ClientHello1.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms).Schemes;
+            context.ClientHello1.TryGetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithmsCert, out clientSupporetdCertSignatures);
+
+            bool selectedOk = crypto.SelectSigAlgoAndCert(
+                clientSupportedSignatures,
+                clientSupporetdCertSignatures?.Schemes,
+                config.CertificatesWithKeys,
+                ref context.SelectedSignatureScheme,
+                ref context.SelectedCertificate);
+
+            validate.Handshake.AlertFatal(!selectedOk, AlertDescription.HandshakeFailure, "configured x509 certificates and signatue schemes does not match mutually with supported with client");
 
             var clientHello = context.ClientHello2 ?? context.ClientHello1;
             KeyShareEntry keyShareEntry = null;

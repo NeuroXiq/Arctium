@@ -96,6 +96,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
         }
 
+        internal static void EnumDefined<T>(T enumValue) where T: struct, Enum
+        {
+            if (Enum.IsDefined<T>(enumValue)) return;
+
+            var msg = string.Format("Enum value not defined. Enum Type: {0}, trying to use enum following enum value: {1} ", typeof(T).Name, enumValue.ToString());
+
+            throw new ArgumentException(msg);
+        }
+
         public class ValidateBase
         {
             private ValidationErrorHandler handler;

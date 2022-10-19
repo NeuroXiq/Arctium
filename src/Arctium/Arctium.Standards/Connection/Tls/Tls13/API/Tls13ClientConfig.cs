@@ -1,4 +1,5 @@
 ﻿using Arctium.Standards.Connection.Tls.Tls13.Model;
+using System;
 using static Arctium.Standards.Connection.Tls.Tls13.Model.Extensions.SupportedGroupExtension;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
@@ -20,6 +21,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             };
 
             return config;
+        }
+
+        internal void ThrowIfInvalidState()
+        {
         }
     }
 }

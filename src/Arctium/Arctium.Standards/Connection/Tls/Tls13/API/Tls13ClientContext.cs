@@ -11,6 +11,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public Tls13ClientContext(Tls13ClientConfig config, PskTicketClientStoreBase ticketsStore)
         {
+            config.ThrowIfInvalidState();
             Config = config;
             pskTicketStore = ticketsStore;
         }

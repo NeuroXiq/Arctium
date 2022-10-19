@@ -474,7 +474,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
                     // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
-                }),
+                }, ExtensionType.SignatureAlgorithms),
                 new SupportedGroupExtension(config.SupportedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };

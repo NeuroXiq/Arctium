@@ -2,11 +2,10 @@
 {
     public enum SignatureAlgorithmType
     {
-        SHA1WithRSAEncryption,
         DSAWithSha1,
-        ECDSAWithSHA1,
 
         // RSA
+        SHA1WithRSAEncryption,
         SHA224WithRSAEncryption,
         SHA384WithRSAEncryption,
         SHA512WithRSAEncryption,
@@ -15,6 +14,7 @@
         MD5WithRSAEncryption,
 
         // ecdsa
+        ECDSAWithSHA1,
         ECDSAWithSHA384,
         ECDSAWithSHA224,
         ECDSAWithSHA256,

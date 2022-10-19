@@ -9,11 +9,14 @@ namespace Arctium.Standards.PKCS8.v12
         static TypeDef[] config = new TypeDef[]
         {
             new TypeDef(typeof(EllipticCurvePrivateKey), PrivateKeyType.EllipticCurve),
-            new TypeDef(typeof(RSAPublicKey), PrivateKeyType.RSAEncryption)
+            new TypeDef(typeof(RSAPrivateKey), PrivateKeyType.RSAEncryption)
         };
 
         protected override TypeDef[] ChoiceObjConfig => config;
 
         public PrivateKey(PrivateKeyType type, object privKey) { base.Set(type, privKey); }
+
+        public EllipticCurvePrivateKey Choice_EllipticCurvePrivateKey() => base.Get<EllipticCurvePrivateKey>();
+        public RSAPrivateKey Choice_RSAPrivateKey() => base.Get<RSAPrivateKey>();
     }
 }

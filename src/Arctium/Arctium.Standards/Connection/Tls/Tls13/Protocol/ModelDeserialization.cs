@@ -849,9 +849,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return new SupportedGroupExtension(curves.ToArray());
         }
 
-        private Extension DeserializeExtension_SignatureAlgorithmsCert(byte[] arg1, int arg2)
+        private Extension DeserializeExtension_SignatureAlgorithmsCert(byte[] buf, int offs)
         {
-            throw new NotImplementedException();
+            SignatureSchemeListExtension ext = (SignatureSchemeListExtension)DeserializeExtension_SignatureAlgorithms(buf, offs);
+
+            return new SignatureSchemeListExtension(ext.Schemes, ExtensionType.SignatureAlgorithmsCert);
         }
 
         private Extension DeserializeExtension_SignatureAlgorithms(byte[] buffer, int offset)
@@ -877,7 +879,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 schemes.Add(scheme);
             }
 
-            return new SignatureSchemeListExtension(schemes.ToArray());
+            return new SignatureSchemeListExtension(schemes.ToArray(), ExtensionType.SignatureAlgorithms);
         }
 
         private Extension DeserializeExtension_Cookie(byte[] arg1, int arg2)

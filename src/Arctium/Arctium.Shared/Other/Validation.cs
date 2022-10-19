@@ -1,5 +1,8 @@
 ﻿using Arctium.Shared.Exceptions;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Arctium.Shared.Other
 {
@@ -25,6 +28,28 @@ namespace Arctium.Shared.Other
         public static void ThrowInternal(bool shouldThrow) { if (shouldThrow) throw new ArctiumExceptionInternal(); }
 
         public static void ThrowInternal(string message) => throw new ArctiumExceptionInternal(message);
+
+
+        public static void IsInS<TType>(TType currentValue, string argName, params TType[] validValues) where TType : struct
+        {
+            IsInS(currentValue, validValues, argName, null);
+        }
+
+        public static void IsInS<TType>(TType currentValue, TType[] validValues, string argName, string additionalInfo = null) where TType: struct
+        {
+            foreach (var valid in validValues)
+            {
+                if (valid.Equals(currentValue)) return;
+            }
+
+
+
+            string msg = string.Format("Invalid argument: {0}. Value is not in possible ranges of values for this argument", argName);
+
+            if (additionalInfo != null) msg = $"{msg}. Additional info: {additionalInfo}";
+
+            throw new ArgumentException(msg, argName);
+        }
 
         public static void EnumEqualTo<TEnum>(TEnum currentValue, TEnum expectedValue, string argName, string additionalInfo = null) where TEnum: struct
         {
@@ -100,6 +125,17 @@ namespace Arctium.Shared.Other
             }
 
             throw new NotSupportedException(msg);
+        }
+
+        public static void NotEmpty<T>(IEnumerable<T> enumerable, string argName, string additinalInfo = null)
+        {
+            NotNull(enumerable, argName, additinalInfo);
+
+            if (enumerable.Any()) return;
+
+            string msg = string.Format("Value cannot be empty. Value: '{0}'", argName);
+
+            if (additinalInfo != null) msg = string.Format("{0}. Additional info: {1}", msg, additinalInfo);
         }
 
         public static void NotNull(object referenceTypeToCheckIfNull, string argName, string additionalInfo = null)

@@ -5,10 +5,12 @@ using Arctium.Shared.Helpers;
 using System.Collections.Generic;
 using Arctium.Cryptography.Utils;
 using System.Linq;
+using System;
+using Arctium.Standards.X509.X509Cert;
 
-namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
+namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
-    class Tls13ServerContext
+    public class Tls13ServerContext
     {
         public Tls13ServerConfig Config { get; private set; }
 
@@ -16,11 +18,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public Tls13ServerContext(Tls13ServerConfig config, PskTicketServerStoreBase pskTicketStore)
         {
+            config.ThrowIfInvalidObjectState();
             Config = config;
             this.pskTicketStore = pskTicketStore;
         }
 
-        public PskTicket GetPskTicket(PreSharedKeyClientHelloExtension preSharedKeyExtension,
+        internal PskTicket GetPskTicket(PreSharedKeyClientHelloExtension preSharedKeyExtension,
             HashFunctionId selectedCipherSuiteHashFunctionId,
             out int clientSelectedIndex)
         {
@@ -52,6 +55,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             HashFunctionId hashFunctionId)
         {
             pskTicketStore.SaveTicket(new PskTicket(ticket, nonce, resumptionMasterSecret, ticketLifetime, ticketAgeAdd, hashFunctionId));
+        }
+
+        public static Tls13ServerContext DefaultUnsafe(X509CertWithKey[] certificates)
+        {
+            var config = Tls13ServerConfig.DefaultUnsafe(certificates);
+            var context = new Tls13ServerContext(config, new PskTicketServerStoreDefaultInMemory());
+
+            return context;
         }
     }
 }

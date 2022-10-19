@@ -3,6 +3,8 @@ using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER;
 using Arctium.Standards.X509.X509Cert.Algorithms;
+using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Arctium.Standards.X509.X509Cert
@@ -13,6 +15,27 @@ namespace Arctium.Standards.X509.X509Cert
         //{
         //    var hashFunc = cert.
         //}
+
+        static readonly SignatureAlgorithmType[] ECDSASignatureAlgorithmTypes = new SignatureAlgorithmType[]
+        {
+            SignatureAlgorithmType.ECDSAWithSHA1,
+            SignatureAlgorithmType.ECDSAWithSHA224,
+            SignatureAlgorithmType.ECDSAWithSHA256,
+            SignatureAlgorithmType.ECDSAWithSHA384,
+            SignatureAlgorithmType.ECDSAWithSHA512,
+        };
+
+        static readonly SignatureAlgorithmType[] RSAEncryptionSignatureAlgorithmTypes = new SignatureAlgorithmType[]
+        {
+            SignatureAlgorithmType.MD2WithRSAEncryption,
+            SignatureAlgorithmType.SHA1WithRSAEncryption,
+            SignatureAlgorithmType.SHA224WithRSAEncryption,
+            SignatureAlgorithmType.SHA384WithRSAEncryption,
+            SignatureAlgorithmType.SHA512WithRSAEncryption,
+            SignatureAlgorithmType.SHA256WithRSAEncryption,
+            SignatureAlgorithmType.MD2WithRSAEncryption,
+            SignatureAlgorithmType.MD5WithRSAEncryption,
+        };
 
         public static byte[] X509CertificateToDerEncodedBytes(X509Certificate certificate)
         {
@@ -51,5 +74,23 @@ namespace Arctium.Standards.X509.X509Cert
         {
 
         }
+
+        /// <summary>
+        /// Returns true if Certificate is signed with ECDSA algorithm.
+        /// This is helper method, same can be achiever comparing <see cref="SignatureAlgorithmType"/> or certificate
+        /// with all possible ECDSA types
+        /// </summary>
+        /// <param name="cert">certificate to check for signature algorithm</param>
+        /// <returns>True if certificate is signed with ECDSA otherwise false</returns>
+        public static bool IsCertSignatureECDSA(X509Certificate cert) => ECDSASignatureAlgorithmTypes.Contains(cert.SignatureAlgorithm.SignatureAlgorithmType);
+
+        /// <summary>
+        /// Returns true if Certificate is signed with RSAEncryption algorithm.
+        /// This is helper method, same can be achiever comparing <see cref="SignatureAlgorithmType"/> or certificate
+        /// with all possible RSAEncryption types
+        /// </summary>
+        /// <param name="cert">certificate to check for signature algorithm</param>
+        /// <returns>True if certificate is signed with RSAEncryption otherwise false</returns>
+        public static bool IsCerSignatureRSAEncryption(X509Certificate cert) => RSAEncryptionSignatureAlgorithmTypes.Contains(cert.SignatureAlgorithm.SignatureAlgorithmType);
     }
 }

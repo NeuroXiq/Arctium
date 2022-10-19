@@ -2,7 +2,7 @@
 using Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation;
 using Arctium.Shared.Other;
 
-namespace Arctium.Standards.Crypto
+namespace Arctium.Standards.RFC
 {
     /// <summary>
     /// Predefined values for AEAD ciphers (method sets valid Authentication tag length).
@@ -15,7 +15,7 @@ namespace Arctium.Standards.Crypto
     /// 
     /// An Interface and Algorithms for Authenticated Encryption
     /// </summary>
-    public class AEAD_Predefined
+    public class RFC5116_AEAD_Predefined
     {
         /// <summary>
         /// Creates new instance of AEAD_AES_128_CCM

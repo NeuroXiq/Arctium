@@ -175,6 +175,10 @@ namespace Arctium.Standards.PKCS1.v2_2
                 ModulusBitsCount = ndPair.ModulusBitsCount;
             }
 
+            /// <summary>
+            /// Initialize one of possible version of private key - Chinese reminder theory
+            /// </summary>
+            /// <param name="crt"></param>
             public PrivateKey(PrivateKeyCRT crt)
             {
                 PrivateKeyCRT = crt;

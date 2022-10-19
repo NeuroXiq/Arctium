@@ -1,4 +1,6 @@
-﻿namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
+﻿using Arctium.Shared.Other;
+
+namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
     class SignatureSchemeListExtension : Extension
     {
@@ -34,8 +36,10 @@
             PrivateUse = 0xFE00 /* 0xFE00..0xFFFF*/,
         }
 
-        public SignatureSchemeListExtension(SignatureScheme[] schemes)
+        public SignatureSchemeListExtension(SignatureScheme[] schemes, ExtensionType sigAlgoOrSigAlgoCertType)
         {
+            Validation.IsInS(sigAlgoOrSigAlgoCertType, nameof(sigAlgoOrSigAlgoCertType), ExtensionType.SignatureAlgorithmsCert, ExtensionType.SignatureAlgorithms);
+
             this.Schemes = schemes;
         }
     }

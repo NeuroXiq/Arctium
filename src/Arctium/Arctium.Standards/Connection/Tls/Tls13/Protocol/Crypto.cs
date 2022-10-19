@@ -1,5 +1,4 @@
-﻿using Arctium.Standards.Connection.Tls.Tls13.API;
-using Arctium.Standards.Connection.Tls.Tls13.Model;
+﻿using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation;
@@ -17,7 +16,7 @@ using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
 using Arctium.Standards;
-using Arctium.Standards.Crypto;
+using Arctium.Standards.RFC;
 using Arctium.Standards.DiffieHellman;
 using Arctium.Standards.EllipticCurves;
 using Arctium.Standards.EllipticCurves.SEC2;
@@ -35,17 +34,70 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
     internal class Crypto
     {
-        public enum KeyScheduleKey
-        {
-
-        }
-
         public enum RecordLayerKeyType
         {
             Zero_RTT_Application,
             Handshake,
             ApplicationData
         }
+
+        public struct SignatureSchemeInfo
+        {
+            public SignatureScheme SignatureScheme;
+            public PublicKeyAlgorithmIdentifierType RelatedPublicKeyType;
+            public HashFunctionId SignatureHashFunctionId;
+
+            public SignatureSchemeInfo(SignatureScheme scheme, PublicKeyAlgorithmIdentifierType relatedWithKeyType, HashFunctionId signatureHashFunction)
+            {
+                SignatureScheme = scheme;
+                RelatedPublicKeyType = relatedWithKeyType;
+                SignatureHashFunctionId = signatureHashFunction;
+            }
+        }
+
+        public static readonly SignatureSchemeInfo[] SignaturesInfo = new SignatureSchemeInfo[]
+        {
+            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp256r1Sha256, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_256),
+            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp384r1Sha384, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_384),
+            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp521r1Sha512, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_512),
+            new SignatureSchemeInfo(SignatureScheme.RsaPssRsaeSha256,     PublicKeyAlgorithmIdentifierType.RSAEncryption, HashFunctionId.SHA2_256),
+            new SignatureSchemeInfo(SignatureScheme.RsaPssRsaeSha384,     PublicKeyAlgorithmIdentifierType.RSAEncryption, HashFunctionId.SHA2_384),
+            new SignatureSchemeInfo(SignatureScheme.RsaPssRsaeSha512,     PublicKeyAlgorithmIdentifierType.RSAEncryption, HashFunctionId.SHA2_512),
+        };
+
+        /// <summary>
+        /// Tries to convert certificate signature into TLS 'SignatureScheme' value.
+        /// If not possible (for exaple MD5 / DSA etc.) returns null
+        /// </summary>
+        static SignatureScheme? TryConvertX509SeignatureToTlsSignatureScheme(X509Certificate cert)
+        {
+            // not simple to implement, need to know signing certificate (parent certificate)
+            // to determine for example curvetype SECP512 ... etc.
+            throw new NotImplementedException(); //
+            
+
+            if (X509Util.IsCertSignatureECDSA(cert))
+            {
+                // var parameters = var certSignature = cert.SignatureAlgorithm.SignatureAlgorithmParameters
+                // if (cert.
+            }
+            else if (X509Util.IsCerSignatureRSAEncryption(cert))
+            {
+                
+            }
+
+            return null;
+        }
+        
+        // static readonly Dictionary<SignatureAlgorithmType, SignatureScheme> X509CertSignAlgoToTlsSignAlgo = new Dictionary<SignatureAlgorithmType, SignatureScheme>()
+        // {
+        //     { SignatureAlgorithmType.SHA384WithRSAEncryption, SignatureScheme.RsaPssRsaeSha384},
+        //     { SignatureAlgorithmType.SHA512WithRSAEncryption, SignatureScheme.RsaPssRsaeSha512},
+        //     { SignatureAlgorithmType.SHA256WithRSAEncryption, SignatureScheme.RsaPssRsaeSha256},
+        //     { SignatureAlgorithmType.ECDSAWithSHA384, SignatureScheme.},
+        //     { SignatureAlgorithmType.ECDSAWithSHA256, SignatureScheme.},
+        //     { SignatureAlgorithmType.ECDSAWithSHA512, SignatureScheme.},
+        // };
 
         public readonly IReadOnlyList<CipherSuite> SupportedCipherSuites = new List<CipherSuite>
         {
@@ -101,9 +153,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme = null;
         private HashFunctionId? selectedCipherSuiteHashFunctionId = null;
 
-        private Tls13ServerConfig config;
+        private API.Tls13ServerConfig config;
 
-        public Crypto(Endpoint currentEndpoint, Tls13ServerConfig config)
+        public Crypto(Endpoint currentEndpoint, API.Tls13ServerConfig config)
         {
             this.config = config;
             this.currentEndpoint = currentEndpoint;
@@ -182,16 +234,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             MemCpy.Copy(hash, 0, tosign, c, hash.Length);
 
             var digest = new Cryptography.HashFunctions.Hashes.SHA2_256();
-            var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(config.CertificatePrivateKey));
-            byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hashFuncType);
 
+            throw new Exception();
+            // var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(config.CertificatePrivateKey));
+            // byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(key, tosign, hashFuncType);
 
-            // var r = System.Security.Cryptography.RSA.Create();
-            // r.ImportFromPem(config.RSAPrivateKeyString);
-
-            // return r.SignData(tosign, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pss);
-
-            return signature;
+            // return signature;
         }
 
         byte[] FormatDataForSignature(byte[] handshakeContext, int dataLength)
@@ -427,10 +475,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public byte[] GeneratePsk(byte[] resumptionMasterSecretFromPreviousSession, byte[] ticketNonce)
         {
-            // todo other ciphers than aes_gcm..
-            // todo other hash funcs (32 constant for now)
-            // need to select valid hash function 
-            
             return HkdfExpandLabel(resumptionMasterSecretFromPreviousSession, "resumption", ticketNonce, hashFunction.HashSizeBytes);
         }
 
@@ -446,7 +490,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
         {
-            var supportedCipherSuites = config.CipherSuites; // new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
+            var supportedCipherSuites = config.CipherSuites;
             var clientCiphers = hello.CipherSuites;
             int selectedCipherSuiteIdx = -1;
 
@@ -476,22 +520,42 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (groupOk) this.SelectedNamedGroup = supportedGroups[selectedGroupIdx];
         }
 
-        public void SelectSigAlgo(ClientHello hello, out bool signAlgoOk)
+        public bool SelectSigAlgoAndCert(
+            SignatureScheme[] clientHelloSignatureSchemes,
+            SignatureScheme[] clientHelloCertificateSignatureSchemes,
+            X509CertWithKey[] availableCertificates,
+            ref SignatureScheme? signature,
+            ref X509CertWithKey selectedcert)
         {
-            var supportedSignAlgo = new SignatureSchemeListExtension.SignatureScheme[] { SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256 };
-            var clientSignAlgos = hello.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms).Schemes;
+            clientHelloCertificateSignatureSchemes = clientHelloCertificateSignatureSchemes ?? new SignatureScheme[0];
 
-            int selectedSignAlgoIdx = -1;
+            var mutualSignatures = clientHelloSignatureSchemes.Where(clientSig => config.SignatureSchemes.Contains(clientSig));
+            var mutualSigInfo = SignaturesInfo.Where(info => mutualSignatures.Contains(info.SignatureScheme));
 
-            for (int i = 0; i < supportedSignAlgo.Length && selectedSignAlgoIdx == -1; i++)
-                for (int j = 0; j < clientSignAlgos.Length && selectedSignAlgoIdx == -1; j++)
-                {
-                    if (supportedSignAlgo[i] == clientSignAlgos[j]) selectedSignAlgoIdx = i;
-                }
+            if (mutualSignatures.Count() == 0) return false;
 
-            signAlgoOk = clientSignAlgos.Length > 0 && selectedSignAlgoIdx < supportedSignAlgo.Length && selectedSignAlgoIdx >= 0;
+            var certificatesThatCanGenerateSignatures = config.CertificatesWithKeys.Where(certWithKey =>
+            {
+                var certpubkey = certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
+                return mutualSigInfo.Any(info => info.RelatedPublicKeyType == certpubkey);
+            });
 
-            if (signAlgoOk) this.SelectedSignatureScheme = supportedSignAlgo[selectedSignAlgoIdx];
+            if (certificatesThatCanGenerateSignatures.Count() == 0) return false;
+
+            if (certificatesThatCanGenerateSignatures.Count() > 1 &&
+                clientHelloCertificateSignatureSchemes != null &&
+                clientHelloCertificateSignatureSchemes.Length > 0)
+            {
+                // todo tls13 clientHelloCertificateSignatureSchemes select certificate if possible
+                // for now not implemented
+            }
+
+            var firstValidCert = certificatesThatCanGenerateSignatures.First();
+            
+            selectedcert = firstValidCert;
+            signature = mutualSigInfo.First(info => info.RelatedPublicKeyType == firstValidCert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm).SignatureScheme;
+
+            return true;
         }
 
         public byte[] TranscriptHash(byte[] buffer, long offset, long length)
@@ -572,8 +636,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
                     serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
 
-                    serverWriteAead = AEAD_Predefined.Create_AEAD_AES_128_CCM(skey);
-                    clientWriteAead = AEAD_Predefined.Create_AEAD_AES_128_CCM(ckey);
+                    serverWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_128_CCM(skey);
+                    clientWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_128_CCM(ckey);
                     break;
                 case CipherSuite.TLS_AES_256_GCM_SHA384:
                     ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 32);
@@ -581,8 +645,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
                     serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
 
-                    serverWriteAead = AEAD_Predefined.Create_AEAD_AES_256_GCM(skey);
-                    clientWriteAead = AEAD_Predefined.Create_AEAD_AES_256_GCM(ckey);
+                    serverWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_256_GCM(skey);
+                    clientWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_256_GCM(ckey);
                     break;
                 default: throw new NotImplementedException();
             }
@@ -709,7 +773,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return binderKey;
         }
 
-        public byte[] ComputeBinderValue(ByteBuffer hscontextToBinders, PskTicket ticket)
+        public byte[] ComputeBinderValue(ByteBuffer hscontextToBinders, API.PskTicket ticket)
         {
             // byte[] psk = GeneratePsk(ticket.ResumptionMasterSecret, ticket.TicketNonce);
             

@@ -1,5 +1,11 @@
-﻿using Arctium.Standards.Connection.Tls.Tls13.Model;
+﻿using Arctium.Shared.Other;
+using Arctium.Standards.Connection.Tls.Tls13.Model;
+using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
+using Arctium.Standards.Connection.Tls.Tls13.Protocol;
 using Arctium.Standards.PKCS1.v2_2;
+using Arctium.Standards.X509.X509Cert;
+using System.Collections.Generic;
+using System.Linq;
 using static Arctium.Standards.Connection.Tls.Tls13.Model.Extensions.SupportedGroupExtension;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
@@ -9,21 +15,19 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public bool UseNewSessionTicketPsk { get; internal set; }
         internal CipherSuite[] CipherSuites;
         internal NamedGroup[] NamedGroups;
+        internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes;
 
         public bool HandshakeRequestCertificateFromClient;
-        public byte[] DerEncodedCertificateBytes;
-        public RSAPrivateKey CertificatePrivateKey;
-        public string RSAPrivateKeyString;
+        public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
-        public static Tls13ServerConfig DefaultUnsafe(byte[] certBytes, RSAPrivateKey privateKey)
+        public static Tls13ServerConfig DefaultUnsafe(X509CertWithKey[] listOfCertsWithKeys)
         {
             var c = new Tls13ServerConfig();
 
-            c.DerEncodedCertificateBytes = certBytes;
-            c.CertificatePrivateKey = privateKey;
-
+            c.CertificatesWithKeys = listOfCertsWithKeys;
             c.UseNewSessionTicketPsk = true;
             c.HandshakeRequestCertificateFromClient = false;
+
             c.CipherSuites = new CipherSuite[]
                 {
                     CipherSuite.TLS_AES_128_GCM_SHA256
@@ -34,7 +38,56 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                 NamedGroup.Secp256r1,
                 NamedGroup.Ffdhe2048 };
 
+            c.ConfigueSupportedSignatureSchemes(new SignatureScheme[]
+            {
+                SignatureScheme.EcdsaSecp256r1Sha256,
+                SignatureScheme.EcdsaSecp384r1Sha384,
+                SignatureScheme.EcdsaSecp521r1Sha512,
+                SignatureScheme.RsaPssRsaeSha256,
+                SignatureScheme.RsaPssRsaeSha384,
+                SignatureScheme.RsaPssRsaeSha512,
+            });
+
             return c;
+        }
+
+        public void ThrowIfInvalidObjectState()
+        {
+            Validation.NotEmpty(SignatureSchemes, nameof(Tls13ServerConfig.SignatureSchemes));
+            Validation.NotEmpty(NamedGroups, nameof(NamedGroups));
+            Validation.NotEmpty(CipherSuites, nameof(CipherSuites));
+            Validation.NotEmpty(CertificatesWithKeys, nameof(CertificatesWithKeys), "Certificate list cannot be empty");
+
+
+            var configuredSignatures = Crypto.SignaturesInfo.Where(info => SignatureSchemes.Contains(info.SignatureScheme));
+            var certsForSignatures = CertificatesWithKeys.Where(cert =>
+            {
+                var certAlgo = cert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
+                var certSupportAlgo = configuredSignatures.Any(info => info.RelatedPublicKeyType == certAlgo);
+
+                return certSupportAlgo;
+            });
+
+            // configures certificates and signatureschemes does not match
+            if (!certsForSignatures.Any())
+            {
+                string msg = $"Current configurations of: X509Certificates and {nameof(SignatureScheme)} does not match. That means that " + 
+                    $"all certificates cannot generate signatures specified in {nameof(SignatureScheme)} list. Change X509Certificate list " + 
+                    $"or change {SignatureSchemes} to have valid signature-certificate configuration for at least single certificate";
+
+                Validation.Argument(true, nameof(SignatureScheme), msg);
+            }
+        }
+
+        public void ConfigueSupportedSignatureSchemes(SignatureScheme[] schemes)
+        {
+            Validation.NotEmpty(schemes, nameof(schemes));
+
+            foreach (var value in schemes) Validate.EnumDefined(value);
+
+            var internalList = schemes.Select(apiScheme => (SignatureSchemeListExtension.SignatureScheme)apiScheme).ToArray();
+
+            SignatureSchemes = internalList;
         }
     }
 }

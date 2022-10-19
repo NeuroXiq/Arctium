@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Standards.ArctiumLibShared
 {
-    public interface IToArctiumLibSharedConvertable<T>
+    public interface IArctiumConvertable<T>
     {
         T Convert();
     }

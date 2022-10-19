@@ -3,6 +3,9 @@ using Arctium.Standards.RFC.RFC5915;
 
 namespace Arctium.Standards.RFC
 {
+    /// <summary>
+    /// Represents API for RFC5915 standard
+    /// </summary>
     public class RFC5915_ECPrivateKey
     {
         /// <summary>

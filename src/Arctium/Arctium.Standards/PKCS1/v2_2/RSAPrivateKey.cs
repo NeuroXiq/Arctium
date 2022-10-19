@@ -1,11 +1,13 @@
-﻿namespace Arctium.Standards.PKCS1.v2_2
+﻿using Arctium.Standards.ArctiumLibShared;
+
+namespace Arctium.Standards.PKCS1.v2_2
 {
     /// <summary>
     /// PKCS v 2.2 RSA private key (as RFC defines)
     /// Stored for example in '-- BEGIN RSA PRIVATE KEY ---' PEM files
     /// Can be decoded by PKCS1_v2_2_API static method
     /// </summary>
-    public class RSAPrivateKey
+    public class RSAPrivateKey : IArctiumConvertable<ArctiumLibShared.RSAPrivateKeyCRT>
     {
         public int Version;
         
@@ -49,5 +51,20 @@
         /// </summary>
         public byte[] Coefficient;
         public OtherPrimeInfo[] OtherPrimeInfos;
+
+        public RSAPrivateKeyCRT Convert()
+        {
+            var sk = new RSAPrivateKeyCRT();
+
+            sk.Modulus = this.Modulus;
+            sk.PublicExponent = this.PublicExponent;
+            sk.PrivateExponent = this.PrivateExponent;
+            sk.Prime1 = this.Prime1;
+            sk.Prime2 = this.Prime2;
+            sk.Exponent1 = this.Exponent1;
+            sk.Exponent2 = this.Exponent2;
+
+            return sk;
+        }
     }
 }

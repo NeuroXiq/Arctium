@@ -1,4 +1,5 @@
-﻿using Arctium.Standards.X509.X509Cert.Algorithms;
+﻿using Arctium.Standards.ArctiumLibShared;
+using Arctium.Standards.X509.X509Cert.Algorithms;
 
 namespace Arctium.Standards.RFC.RFC5915
 {
@@ -6,7 +7,7 @@ namespace Arctium.Standards.RFC.RFC5915
     /// RFC 5915
     ///  Elliptic Curve Private Key Structure
     /// </summary>
-    public class EllipticCurvePrivateKey
+    public class EllipticCurvePrivateKey : IArctiumConvertable<ECPrivateKey>
     {
         public long Version { get; private set; }
 
@@ -40,6 +41,11 @@ namespace Arctium.Standards.RFC.RFC5915
             PrivateKey = privateKey;
             Parameters = parameters;
             PublicKey = publicKey;
+        }
+
+        public ECPrivateKey Convert()
+        {
+            return new ECPrivateKey(PrivateKey);
         }
     }
 }

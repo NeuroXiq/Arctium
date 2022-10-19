@@ -6,17 +6,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     public class Tls13Server
     {
         private Stream stream;
-        private Tls13ServerConfig config;
         private Tls13ServerContext serverContext;
 
         // private Tls13Protocol protocol;
         Tls13ServerProtocol protocol;
         // Tls13Protocol protocol;
 
-        public Tls13Server(Tls13ServerConfig config)
+        public Tls13Server(Tls13ServerContext ctx)
         {
-            this.config = config;
-            this.serverContext = new Tls13ServerContext(config);
+            this.serverContext = ctx;
         }
 
         public Tls13Stream Accept(Stream networkStream)
