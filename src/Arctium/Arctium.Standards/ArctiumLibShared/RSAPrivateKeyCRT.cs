@@ -1,6 +1,8 @@
-﻿namespace Arctium.Standards.ArctiumLibShared
+﻿using Arctium.Standards.PKCS1.v2_2;
+
+namespace Arctium.Standards.ArctiumLibShared
 {
-    public class RSAPrivateKeyCRT
+    public class RSAPrivateKeyCRT : IArctiumConvertable<PKCS1.v2_2.PKCS1v2_2API.PrivateKeyCRT>
     {
         /// <summary>
         /// N / Represents RSA Modulus
@@ -36,5 +38,20 @@
         /// d mod q - 1
         /// </summary>
         public byte[] Exponent2;
+
+        PKCS1v2_2API.PrivateKeyCRT IArctiumConvertable<PKCS1v2_2API.PrivateKeyCRT>.Convert()
+        {
+            var c = new PKCS1.v2_2.RSAPrivateKey();
+
+            c.Modulus = Modulus;
+            c.PublicExponent = PublicExponent;
+            c.PrivateExponent = PrivateExponent;
+            c.Prime1 = Prime1;
+            c.Prime2 = Prime2;
+            c.Exponent1 = Exponent1;
+            c.Exponent2 = Exponent2;
+
+            return new PKCS1v2_2API.PrivateKeyCRT(c);
+        }
     }
 }

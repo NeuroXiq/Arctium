@@ -300,7 +300,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ServerCertificateVerify()
         {
-            var signature = crypto.GenerateServerCertificateVerifySignature(hsctx);
+            var signature = crypto.GenerateServerCertificateVerifySignature(hsctx, context.SelectedCertificate, context.SelectedSignatureScheme.Value);
 
             var certificateVerify = new CertificateVerify(crypto.SelectedSignatureScheme, signature);
 

@@ -21,5 +21,8 @@ namespace Arctium.Standards.X509.X509Cert
 
         public X509CertPrivateKey(RSAPrivateKeyCRT privKey) : this(PublicKeyAlgorithmIdentifierType.RSAEncryption, privKey) { }
         public X509CertPrivateKey(ECPrivateKey privKey) : this(PublicKeyAlgorithmIdentifierType.ECPublicKey, privKey) { }
+
+        public RSAPrivateKeyCRT Choice_RSAPrivateKeyCRT() => base.Get<RSAPrivateKeyCRT>();
+        public ECPrivateKey Choice_ECPrivateKey() => base.Get<ECPrivateKey>();
     }
 }

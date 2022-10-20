@@ -16,6 +16,7 @@ using System;
 using System.Numerics;
 using System.Collections.Generic;
 using Arctium.Cryptography.HashFunctions.Hashes;
+using Arctium.Standards.ArctiumLibShared;
 
 namespace Arctium.Standards.PKCS1.v2_2
 {
@@ -185,6 +186,8 @@ namespace Arctium.Standards.PKCS1.v2_2
                 ModulusByteCount = crt.ModulusByteCount;
                 ModulusBitsCount = crt.ModulusBitsCount;
             }
+
+            public PrivateKey(IArctiumConvertable<PKCS1v2_2API.PrivateKeyCRT> converable) : this(converable.Convert()) { }
         }
 
         /// <summary>

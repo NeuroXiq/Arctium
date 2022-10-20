@@ -11,13 +11,20 @@ namespace Arctium.Standards.EllipticCurves
 {
     public class SEC1_Fp
     {
-       
-
         public enum ECPointCompression
         {
             NotCompressed,
             Compressed
         }
+
+        public static SEC1.ECSignature ECDSA_SigningOperation(ECFpDomainParameters ecparams, HashFunctionId hashFunction, BytesRange M, byte[] dU)
+        {
+            var sig = SEC1_ECFpAlgorithm.ECDSA_SigningOperation(ecparams, hashFunction, M, dU);
+            return new SEC1.ECSignature(sig.R, sig.S);
+        }
+
+        public static bool ECDSA_Verify(ECFpDomainParameters ecparams, HashFunctionId hashFunction, BytesRange M, ECFpPoint signingPartyPublicKey, ECSignature signature) =>
+            SEC1_ECFpAlgorithm.ECDSA_Verify(ecparams, hashFunction, M, signingPartyPublicKey, signature);
 
         public static ECFpPoint OctetStringToEllipticCurvePoint(byte[] octetString, ECFpDomainParameters ecparams) => SEC1_ECFpAlgorithm.OctetStringToEllipticCurvePoint(octetString, ecparams);
 

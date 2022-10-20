@@ -37,6 +37,14 @@ namespace Arctium.Standards.X509.X509Cert
             SignatureAlgorithmType.MD5WithRSAEncryption,
         };
 
+        /// <summary>
+        /// If certificate was decoded from DER bytes then this method returns this bytes otherwise throws notsupportedexception.
+        /// Converting x509 cert to bytes is valid operation but for now 
+        /// serialization of x509 certificate is not implemented, so if certificate was not 
+        /// deserialized from bytes but created as an object operation is not supported.
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <returns></returns>
         public static byte[] X509CertificateToDerEncodedBytes(X509Certificate certificate)
         {
             if (certificate.DerEncodedBytesDeserializedBytes == null)
@@ -70,7 +78,7 @@ namespace Arctium.Standards.X509.X509Cert
             return new EcdsaSigValue(rBytes, sBytes);
         }
 
-        public static void ASN1_DerEncodeEcdsaSigValue(EcdsaSigValue ecdsaSigValue)
+        public static byte[] ASN1_DerEncodeEcdsaSigValue(EcdsaSigValue ecdsaSigValue)
         {
 
         }
