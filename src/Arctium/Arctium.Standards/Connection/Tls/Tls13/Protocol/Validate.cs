@@ -1,4 +1,4 @@
-﻿/* FOLLOWING SPECIFICATION IMPLEMENTED: 
+﻿/* FOLLOWING SPECIFICATION GOINT TO BE IMPLEMENTED: 
  * 
 Internet Engineering Task Force (IETF) E. Rescorla
 Request for Comments: 8446 Mozilla
@@ -17,6 +17,13 @@ Abstract
  5246, and 6961. This document also specifies new requirements for
  TLS 1.2 implementations.
  */
+
+/* This class doesn't have special logic or meaning,
+ * it just throws exceptions and perform validation of input.
+ * This is a centralized place to store all exceptions/validations
+ * 
+ */
+
 
 using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;

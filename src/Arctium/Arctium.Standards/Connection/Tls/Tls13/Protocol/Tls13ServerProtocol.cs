@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.X509.X509Cert;
+using Arctium.Shared.Helpers;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -278,11 +279,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ClientFinished()
         {
+            // compute expected finished data before reading <finished> from client (because is not inclueded in calculations)
+            var expectedClientFinished = crypto.ComputeFinishedVerData(hsctx, Endpoint.Client);
             var finished = messageIO.ReadHandshakeMessage<Finished>();
+            bool clientFinishedOk = MemOps.Memcmp(finished.VerifyData, expectedClientFinished);
 
-            validate.Finished.FinishedSigValid(crypto.VerifyClientFinished(finished.VerifyData, hsctx));
+            validate.Finished.FinishedSigValid(clientFinishedOk);
 
-            // crypto.InitMasterSecret2(handshakeContext);
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
             
             messageIO.SetBackwardCompatibilityMode(
@@ -297,7 +300,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ServerFinished()
         {
-            var finishedVerifyData = crypto.ServerFinished(hsctx);
+            var finishedVerifyData = crypto.ComputeFinishedVerData(hsctx, Endpoint.Server);
             var finished = new Finished(finishedVerifyData);
 
             messageIO.WriteHandshake(finished);

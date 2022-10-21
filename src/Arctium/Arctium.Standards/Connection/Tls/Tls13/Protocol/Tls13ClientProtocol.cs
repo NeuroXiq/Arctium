@@ -240,7 +240,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ClientFinished()
         {
-            var finishedVerData = crypto.ServerFinished(hsctx);
+            var finishedVerData = crypto.ComputeFinishedVerData(hsctx, Endpoint.Client);
             var finished = new Finished(finishedVerData);
 
             crypto.SetupMasterSecret(hsctx);

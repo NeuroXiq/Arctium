@@ -201,7 +201,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             selectedCipherSuite = suite;
         }
 
-        internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, ByteBuffer handshakeContext)
+        internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, BytesRange handshakeContext)
         {
             // todo verify this
             return true;
@@ -554,7 +554,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 var certpubkey = certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
 
-                if (certpubkey == PublicKeyAlgorithmIdentifierType.RSAEncryption) return mutualSigInfo.Any(info => info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.RSAEncryption);
+                if (certpubkey == PublicKeyAlgorithmIdentifierType.RSAEncryption)
+                    return mutualSigInfo.Any(info => info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.RSAEncryption);
 
                 return mutualSigInfo.Any(info => info.X509Curve == certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Parameters.Choice_EcpkParameters().Choice_NamedCurve());
 
@@ -739,9 +740,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         #endregion
 
-        public byte[] ServerFinished(ByteBuffer handshakeContext)
+        public byte[] ComputeFinishedVerData(ByteBuffer handshakeContext, Endpoint endpoint)
         {
-            byte[] baseKey = currentEndpoint == Endpoint.Server ? ServerHandshakeTrafficSecret : ClientHandshakeTrafficSecret;
+            byte[] baseKey = endpoint == Endpoint.Server ? ServerHandshakeTrafficSecret : ClientHandshakeTrafficSecret;
             byte[] finishedKey = HkdfExpandLabel(baseKey, "finished", new byte[0], hashFunction.HashSizeBytes);
             byte[] result = new byte[hmac.HashFunctionHashSizeBytes];
 
