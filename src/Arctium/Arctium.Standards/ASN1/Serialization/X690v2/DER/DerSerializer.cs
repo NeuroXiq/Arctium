@@ -13,7 +13,7 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
         {
             int start = endoffset;
 
-            if (contentslen > (2 << 10)) Validation.NotSupported();
+            if (contentslen > 255) Validation.NotSupported();
 
             if (contentslen <= 0x7F)
             {
@@ -24,9 +24,9 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
             {
                 outputbuf[endoffset] = (byte)(contentslen & 0xFF);
                 endoffset--;
-                outputbuf[endoffset] = (byte)(((contentslen >> 8) & 0xFF));
-                endoffset--;
-                outputbuf[endoffset] = (byte)(0x80 | (2));
+                // outputbuf[endoffset] = (byte)(((contentslen >> 8) & 0xFF));
+                //endoffset--;
+                outputbuf[endoffset] = (byte)(0x80 | (1));
                 endoffset--;
             }
 

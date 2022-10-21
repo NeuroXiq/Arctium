@@ -238,12 +238,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             if (certPKAlgo == PublicKeyAlgorithmIdentifierType.RSAEncryption)
             {
-                // var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(config.CertificatePrivateKey));
                 var keyFromCert = cert.PrivateKey.Choice_RSAPrivateKeyCRT();
                 var keyForPkcs1 = new PKCS1v2_2API.PrivateKey(keyFromCert);
                 
                 resultSignature = PKCS1v2_2API.RSASSA_PSS_SIGN(keyForPkcs1, tosign, info.SignatureHashFunctionId);
-                //resultSignature = PKCS1v2_2API.RSASSA_PSS_SIGN(qwe, tosign, info.SignatureHashFunctionId);
             }
             else if (certPKAlgo == PublicKeyAlgorithmIdentifierType.ECPublicKey)
             {
@@ -251,10 +249,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 var ecparams = SEC2_EllipticCurves.CreateParameters(info.SEC2_NamedCurve.Value);
                 var ecsignature = SEC1_Fp.ECDSA_SigningOperation(ecparams, info.SignatureHashFunctionId, tosign, certPrivKey);
-                // var ecsigval = ecsignature.
 
-                resultSignature = X509Util.ASN1_DerEncodeEcdsaSigValue(new EcdsaSigValue(ecsignature));
-                // var deccc = X509Util.ASN1_DerDecodeEcdsaSigValue(resultSignature);
+                var ecdsasigval = new EcdsaSigValue(ecsignature);
+                resultSignature = X509Util.ASN1_DerEncodeEcdsaSigValue(ecdsasigval);
             }
             else Validation.ThrowInternal("something is wrong because certificate doesn't match with selected signaturescheme");
 
