@@ -58,7 +58,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             Validation.NotEmpty(CipherSuites, nameof(CipherSuites));
             Validation.NotEmpty(CertificatesWithKeys, nameof(CertificatesWithKeys), "Certificate list cannot be empty");
 
-
             var configuredSignatures = Crypto.SignaturesInfo.Where(info => SignatureSchemes.Contains(info.SignatureScheme));
             var certsForSignatures = CertificatesWithKeys.Where(cert =>
             {

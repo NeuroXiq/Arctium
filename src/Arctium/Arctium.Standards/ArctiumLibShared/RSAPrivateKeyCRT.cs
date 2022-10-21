@@ -39,6 +39,11 @@ namespace Arctium.Standards.ArctiumLibShared
         /// </summary>
         public byte[] Exponent2;
 
+        /// <summary>
+        /// (inverse of q) mod p
+        /// </summary>
+        public byte[] Coefficient;
+
         PKCS1v2_2API.PrivateKeyCRT IArctiumConvertable<PKCS1v2_2API.PrivateKeyCRT>.Convert()
         {
             var c = new PKCS1.v2_2.RSAPrivateKey();
@@ -50,6 +55,7 @@ namespace Arctium.Standards.ArctiumLibShared
             c.Prime2 = Prime2;
             c.Exponent1 = Exponent1;
             c.Exponent2 = Exponent2;
+            c.Coefficient = Coefficient;
 
             return new PKCS1v2_2API.PrivateKeyCRT(c);
         }

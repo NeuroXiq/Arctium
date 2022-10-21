@@ -48,7 +48,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
             public int CH2Offset;
             public X509CertWithKey SelectedCertificate;
-            public SignatureSchemeListExtension.SignatureScheme? SelectedSignatureScheme;
+            public SignatureSchemeListExtension.SignatureScheme SelectedSignatureScheme
+            {
+                get { if (!selectedSignatureScheme.HasValue) { Validation.ThrowInternal(); } return selectedSignatureScheme.Value; }
+                set { selectedSignatureScheme = value; }
+            }
+
+            public SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme;
 
 
             public PskTicket SelectedPskTicket { get; internal set; }
@@ -300,9 +306,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ServerCertificateVerify()
         {
-            var signature = crypto.GenerateServerCertificateVerifySignature(hsctx, context.SelectedCertificate, context.SelectedSignatureScheme.Value);
+            var signature = crypto.GenerateServerCertificateVerifySignature(hsctx, context.SelectedCertificate, context.SelectedSignatureScheme);
 
-            var certificateVerify = new CertificateVerify(crypto.SelectedSignatureScheme, signature);
+            var certificateVerify = new CertificateVerify(context.SelectedSignatureScheme, signature);
 
             messageIO.WriteHandshake(certificateVerify);
         }
@@ -457,19 +463,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var clientSupportedSignatures = context.ClientHello1.GetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithms).Schemes;
             context.ClientHello1.TryGetExtension<SignatureSchemeListExtension>(ExtensionType.SignatureAlgorithmsCert, out clientSupporetdCertSignatures);
 
+            SignatureSchemeListExtension.SignatureScheme? selectedSigScheme = null;
+
             bool selectedOk = crypto.SelectSigAlgoAndCert(
                 clientSupportedSignatures,
                 clientSupporetdCertSignatures?.Schemes,
                 config.CertificatesWithKeys,
-                ref context.SelectedSignatureScheme,
+                ref selectedSigScheme,
                 ref context.SelectedCertificate);
 
             validate.Handshake.AlertFatal(!selectedOk, AlertDescription.HandshakeFailure, "configured x509 certificates and signatue schemes does not match mutually with supported with client");
 
+            context.SelectedSignatureScheme = selectedSigScheme.Value;
+
             var clientHello = context.ClientHello2 ?? context.ClientHello1;
             KeyShareEntry keyShareEntry = null;
             ServerHello serverHello;
-            var random = new byte[Tls13Const.HelloRandomFieldLength];
+            var random = GlobalConfig.RandomByteArray(Tls13Const.HelloRandomFieldLength);
             var legacySessId = context.ClientHello1.LegacySessionId;
 
             List<Extension> extensions = new List<Extension>()
@@ -480,8 +490,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             keyShareEntry = clientHello.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare)
                 .ClientShares
                 .FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
-
-            GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
 
             // todo validate if set on ch2
 

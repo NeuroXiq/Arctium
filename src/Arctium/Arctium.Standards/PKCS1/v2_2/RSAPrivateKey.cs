@@ -50,8 +50,15 @@ namespace Arctium.Standards.PKCS1.v2_2
         /// (inverse of q) mod p
         /// </summary>
         public byte[] Coefficient;
+
+
         public OtherPrimeInfo[] OtherPrimeInfos;
 
+
+        /// <summary>
+        /// Convert ignores <see cref="OtherPrimeInfo"/> because it is impossible (there is no corresponding field in result class)
+        /// </summary>
+        /// <returns>Current object converter into other</returns>
         public RSAPrivateKeyCRT Convert()
         {
             var sk = new RSAPrivateKeyCRT();
@@ -63,6 +70,7 @@ namespace Arctium.Standards.PKCS1.v2_2
             sk.Prime2 = this.Prime2;
             sk.Exponent1 = this.Exponent1;
             sk.Exponent2 = this.Exponent2;
+            sk.Coefficient = this.Coefficient;
 
             return sk;
         }

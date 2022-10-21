@@ -19,5 +19,7 @@ namespace Arctium.Standards.X509.X509Cert.Algorithms
 
         public PublicKeyAlgorithmIdentifierParameters(EcpkParameters ecpkParams) : this(PublicKeyAlgorithmIdentifierParametersType.EcpkParameters, ecpkParams) { }
         public PublicKeyAlgorithmIdentifierParameters(DomainParameters domainParams) : this(PublicKeyAlgorithmIdentifierParametersType.DomainParameters, domainParams) { }
+
+        public EcpkParameters Choice_EcpkParameters() => base.Get<EcpkParameters>();
     }
 }

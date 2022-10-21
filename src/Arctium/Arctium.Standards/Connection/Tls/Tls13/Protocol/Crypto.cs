@@ -47,23 +47,27 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public PublicKeyAlgorithmIdentifierType RelatedPublicKeyType;
             public HashFunctionId SignatureHashFunctionId;
             public SEC2_EllipticCurves.Parameters? SEC2_NamedCurve;
+            public NamedCurve? X509Curve;
 
             public SignatureSchemeInfo(SignatureScheme scheme,
                 PublicKeyAlgorithmIdentifierType relatedWithKeyType,
                 HashFunctionId signatureHashFunction,
-                SEC2_EllipticCurves.Parameters? sec2NamedCurve = null)
+                SEC2_EllipticCurves.Parameters? sec2NamedCurve = null,
+                NamedCurve? x509Curve = null)
             {
                 SignatureScheme = scheme;
                 RelatedPublicKeyType = relatedWithKeyType;
                 SignatureHashFunctionId = signatureHashFunction;
+                SEC2_NamedCurve = sec2NamedCurve;
+                X509Curve = x509Curve;
             }
         }
 
         public static readonly SignatureSchemeInfo[] SignaturesInfo = new SignatureSchemeInfo[]
         {
-            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp256r1Sha256, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_256, SEC2_EllipticCurves.Parameters.secp256r1),
-            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp384r1Sha384, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_384, SEC2_EllipticCurves.Parameters.secp384r1),
-            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp521r1Sha512, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_512, SEC2_EllipticCurves.Parameters.secp521r1),
+            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp256r1Sha256, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_256, SEC2_EllipticCurves.Parameters.secp256r1, NamedCurve.secp256r1),
+            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp384r1Sha384, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_384, SEC2_EllipticCurves.Parameters.secp384r1, NamedCurve.secp384r1),
+            new SignatureSchemeInfo(SignatureScheme.EcdsaSecp521r1Sha512, PublicKeyAlgorithmIdentifierType.ECPublicKey, HashFunctionId.SHA2_512, SEC2_EllipticCurves.Parameters.secp521r1, NamedCurve.secp521r1),
             new SignatureSchemeInfo(SignatureScheme.RsaPssRsaeSha256,     PublicKeyAlgorithmIdentifierType.RSAEncryption, HashFunctionId.SHA2_256),
             new SignatureSchemeInfo(SignatureScheme.RsaPssRsaeSha384,     PublicKeyAlgorithmIdentifierType.RSAEncryption, HashFunctionId.SHA2_384),
             new SignatureSchemeInfo(SignatureScheme.RsaPssRsaeSha512,     PublicKeyAlgorithmIdentifierType.RSAEncryption, HashFunctionId.SHA2_512),
@@ -229,15 +233,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             MemCpy.Copy(hash, 0, tosign, c, hash.Length);
 
             // after formatting data to sign ('tosing' byte array)
-            // generate signature 'signatureScheme'
+            // generate signature for selected 'signatureScheme'
+            byte[] resultSignature = null;
 
             if (certPKAlgo == PublicKeyAlgorithmIdentifierType.RSAEncryption)
             {
                 // var key = new PKCS1v2_2API.PrivateKey(new PKCS1v2_2API.PrivateKeyCRT(config.CertificatePrivateKey));
                 var keyFromCert = cert.PrivateKey.Choice_RSAPrivateKeyCRT();
                 var keyForPkcs1 = new PKCS1v2_2API.PrivateKey(keyFromCert);
-
-                byte[] signature = PKCS1v2_2API.RSASSA_PSS_SIGN(keyForPkcs1, tosign, info.SignatureHashFunctionId);
+                
+                resultSignature = PKCS1v2_2API.RSASSA_PSS_SIGN(keyForPkcs1, tosign, info.SignatureHashFunctionId);
+                //resultSignature = PKCS1v2_2API.RSASSA_PSS_SIGN(qwe, tosign, info.SignatureHashFunctionId);
             }
             else if (certPKAlgo == PublicKeyAlgorithmIdentifierType.ECPublicKey)
             {
@@ -247,13 +253,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 var ecsignature = SEC1_Fp.ECDSA_SigningOperation(ecparams, info.SignatureHashFunctionId, tosign, certPrivKey);
                 // var ecsigval = ecsignature.
 
-                byte[] derencoded = X509Util.ASN1_DerEncodeEcdsaSigValue(new EcdsaSigValue(ecsignature));
+                resultSignature = X509Util.ASN1_DerEncodeEcdsaSigValue(new EcdsaSigValue(ecsignature));
+                // var deccc = X509Util.ASN1_DerDecodeEcdsaSigValue(resultSignature);
             }
-            else Validation.ThrowInternal();
+            else Validation.ThrowInternal("something is wrong because certificate doesn't match with selected signaturescheme");
 
-            throw new Exception();
-
-            // return signature;
+            return resultSignature;
         }
 
         byte[] FormatDataForSignature(byte[] handshakeContext, int dataLength)
@@ -551,7 +556,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var certificatesThatCanGenerateSignatures = config.CertificatesWithKeys.Where(certWithKey =>
             {
                 var certpubkey = certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
-                return mutualSigInfo.Any(info => info.RelatedPublicKeyType == certpubkey);
+
+                if (certpubkey == PublicKeyAlgorithmIdentifierType.RSAEncryption) return mutualSigInfo.Any(info => info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.RSAEncryption);
+
+                return mutualSigInfo.Any(info => info.X509Curve == certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Parameters.Choice_EcpkParameters().Choice_NamedCurve());
+
             });
 
             if (certificatesThatCanGenerateSignatures.Count() == 0) return false;
@@ -567,7 +576,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var firstValidCert = certificatesThatCanGenerateSignatures.First();
             
             selectedcert = firstValidCert;
-            signature = mutualSigInfo.First(info => info.RelatedPublicKeyType == firstValidCert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm).SignatureScheme;
+            // signature = mutualSigInfo.First(info => info.RelatedPublicKeyType == firstValidCert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm).SignatureScheme;
+
+            signature = mutualSigInfo.First(info =>
+            {
+                var algoid = firstValidCert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier;
+                if (algoid.Algorithm == PublicKeyAlgorithmIdentifierType.RSAEncryption)
+                {
+                    return info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.ECPublicKey;
+                }
+                else
+                {
+                    return info.X509Curve == algoid.Parameters.Choice_EcpkParameters().Choice_NamedCurve();
+                }
+            }).SignatureScheme;
 
             return true;
         }

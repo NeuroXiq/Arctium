@@ -19,7 +19,7 @@ namespace Arctium.Standards.ArctiumLibShared
             this.S = new BigInteger(s, true, true);
         }
 
-        public ECSignature(BigInteger r, BigInteger s) : this()
+        public ECSignature(BigInteger r, BigInteger s)
         {
             this.R = r;
             this.S = s;

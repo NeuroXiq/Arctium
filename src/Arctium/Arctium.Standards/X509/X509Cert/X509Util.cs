@@ -80,7 +80,53 @@ namespace Arctium.Standards.X509.X509Cert
 
         public static byte[] ASN1_DerEncodeEcdsaSigValue(EcdsaSigValue ecdsaSigValue)
         {
+            Validation.NotSupported(ecdsaSigValue.R.Length > 127 || ecdsaSigValue.S.Length > 127,
+                "one of byte[] array values are larger than 65 bytes. current implementation does not support encoding " + 
+                "this until asn1 serializer is implemented, only < 66 bytes for both values can be serialized");
 
+            // TODO asn1 serialize: when serializer implemented change this to 'normal' serialization
+            // instead of hardcoded one
+            //
+            //
+            // byte 1:
+            // 8-7     | 6   |    5 - 1
+            // [class] | p/c | tag number
+            // byte 2:
+            // length
+
+
+            // Sequence = 16 
+            // ----
+            // pc=1
+            // class = 0
+            // num = = 16
+
+            byte[] buf = new byte[234];
+            int endsOn = buf.Length - 1;
+
+            // 2 == integer
+
+            MemCpy.Copy(ecdsaSigValue.S, 0, buf, buf.Length - ecdsaSigValue.S.Length, ecdsaSigValue.S.Length);
+            endsOn -= ecdsaSigValue.S.Length;
+
+            endsOn -= DerSerializer.Emit(0, false, 2, ecdsaSigValue.S.Length, buf, endsOn);
+
+            var r = ecdsaSigValue.R;
+            MemCpy.Copy(r, 0, buf, endsOn - r.Length + 1, r.Length);
+            endsOn -= ecdsaSigValue.R.Length;
+
+            endsOn -= DerSerializer.Emit(0, false, 2, ecdsaSigValue.R.Length, buf, endsOn);
+
+            int contentlen = buf.Length - endsOn - 1;
+
+            endsOn -= DerSerializer.Emit(0, true, 16, contentlen, buf, endsOn);
+
+            int totallen = buf.Length - endsOn - 1;
+
+            byte[] res = new byte[totallen];
+            MemCpy.Copy(buf, endsOn + 1, res, 0, totallen);
+
+            return res;
         }
 
         /// <summary>

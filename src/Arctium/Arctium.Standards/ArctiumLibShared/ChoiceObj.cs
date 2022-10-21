@@ -4,6 +4,13 @@ using System.Linq;
 
 namespace Arctium.Standards.ASN1.Shared
 {
+    /// <summary>
+    /// Object thats simulate to be 'generic' object and can store multiple not related values.
+    /// typicaly Tkey  will be enum value that indicates underlying object.
+    /// For now, where convenient for typical usage, inheritors creates methods 'Choice_QQQQQQ' where QQQQ is name of underlying object
+    /// to easly access them instead of calling 'Get<T>' or 'GetStruc<T>'.
+    /// </summary>
+    /// <typeparam name="TKey"></typeparam>
     public abstract class ChoiceObj<TKey> where TKey: struct
     {
         protected struct TypeDef

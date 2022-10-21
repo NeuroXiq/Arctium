@@ -107,6 +107,12 @@ namespace Arctium.Shared.Other
 
         static void ThrowArctium(string msg) => throw new ArctiumException(msg);
 
+        public static void NotSupported(bool notsupportedm, string additionalMessage)
+        {
+            if (!notsupportedm) return;
+            NotSupported(additionalMessage);
+        }
+
         public static void NotSupported(string additinalMessage = null)
         {
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();

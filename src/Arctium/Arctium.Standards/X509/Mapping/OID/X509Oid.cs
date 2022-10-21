@@ -108,13 +108,13 @@ namespace Arctium.Standards.X509.Mapping.OID
             map[NamedCurve.sect571k1] = rfc5480(38);
             map[NamedCurve.sect571r1] = rfc5480(39);            
 
-            map[NamedCurve.prime192v1] = primeCurve(1);
-            map[NamedCurve.prime192v2] = primeCurve(2);
-            map[NamedCurve.prime192v3] = primeCurve(3);
+            // map[NamedCurve.prime192v1] = primeCurve(1);
+            // map[NamedCurve.prime192v2] = primeCurve(2);
+            // map[NamedCurve.prime192v3] = primeCurve(3);
             map[NamedCurve.prime239v1] = primeCurve(4);
             map[NamedCurve.prime239v2] = primeCurve(5);
             map[NamedCurve.prime239v3] = primeCurve(6);
-            map[NamedCurve.prime256v1] = primeCurve(7);
+            // map[NamedCurve.prime256v1] = primeCurve(7);
 
             return map;
         }

@@ -38,12 +38,12 @@
         c2tnb359v1,
         c2pnb368w1,
         c2tnb431r1,
-        prime192v1,
-        prime192v2,
-        prime192v3,
+        //prime192v1,
+        //prime192v2,
+        //prime192v3,
         prime239v1,
         prime239v2,
         prime239v3,
-        prime256v1,
+        //prime256v1,
     }
 }

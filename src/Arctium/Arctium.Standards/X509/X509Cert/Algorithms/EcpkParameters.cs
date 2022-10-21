@@ -48,7 +48,7 @@ namespace Arctium.Standards.X509.X509Cert.Algorithms
             base.Set(type, value);
         }
 
-        public NamedCurve GetNamedCurve() => GetStruct<NamedCurve>();
+        public NamedCurve Choice_NamedCurve() => GetStruct<NamedCurve>();
         public ECParameters GetECParameters() => GetStruct<ECParameters>();
         
         /// <summary>
