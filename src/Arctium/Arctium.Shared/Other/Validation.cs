@@ -25,6 +25,18 @@ namespace Arctium.Shared.Other
 
         public static void ThrowInternal(bool shouldThrow, string msg) { if (shouldThrow) throw new ArctiumExceptionInternal(msg); }
 
+        public static void NotNegative(long value, string argName, string addtionalInfo = null)
+        {
+            if (value >= 0) return;
+
+            string msg = "Invalid argument: '{0}'. Value cannot be null. Current value: '{1}'";
+            msg = string.Format(msg, argName, value);
+
+            if (addtionalInfo != null) msg = string.Format("{0}. {1}", msg, addtionalInfo);
+
+            throw new ArgumentException(msg, argName);
+        }
+
         public static void ThrowInternal(bool shouldThrow) { if (shouldThrow) throw new ArctiumExceptionInternal(); }
 
         public static void ThrowInternal(string message) => throw new ArctiumExceptionInternal(message);
@@ -47,6 +59,22 @@ namespace Arctium.Shared.Other
             string msg = string.Format("Invalid argument: {0}. Value is not in possible ranges of values for this argument", argName);
 
             if (additionalInfo != null) msg = $"{msg}. Additional info: {additionalInfo}";
+
+            throw new ArgumentException(msg, argName);
+        }
+
+        public static void EnumValueDefined<T>(T[] values, string argName, string additionalInfo = null) where T : struct, Enum
+        {
+            foreach (var val in values) EnumValueDefined(val, argName, additionalInfo);
+        }
+
+        public static void EnumValueDefined<T>(T v, string argName, string additionalInfo = null) where T: struct, Enum
+        {
+            if (Enum.IsDefined<T>(v)) return;
+
+            string msg = string.Format("Argument '{0}' invalid. Enum value not defined: {1}", argName, v.ToString());
+
+            if (!string.IsNullOrEmpty(additionalInfo)) msg = string.Format("{0}. {1}", additionalInfo);
 
             throw new ArgumentException(msg, argName);
         }

@@ -36,6 +36,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
             PrivateUse = 0xFE00 /* 0xFE00..0xFFFF*/,
         }
 
+        /// <summary>
+        /// Signaure schemes and Signature schemers Cert are exactly the same 
+        /// so just distinguish them by parameter ExtensionType
+        /// (doesn't make sent so copy&paste exactly same code because all the same)
+        /// </summary>
+        /// <param name="schemes"></param>
+        /// <param name="sigAlgoOrSigAlgoCertType"></param>
         public SignatureSchemeListExtension(SignatureScheme[] schemes, ExtensionType sigAlgoOrSigAlgoCertType)
         {
             Validation.IsInS(sigAlgoOrSigAlgoCertType, nameof(sigAlgoOrSigAlgoCertType), ExtensionType.SignatureAlgorithmsCert, ExtensionType.SignatureAlgorithms);

@@ -1,4 +1,4 @@
-﻿using Arctium.Standards.Connection.Tls.Tls13.API;
+﻿// using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Helpers;
@@ -987,7 +987,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void ThrowCursorOutside(int nextCursorPosition, int maxCursorPosition)
         {
             if (nextCursorPosition > maxCursorPosition)
-                throw new Tls13Exception("next cursor position outside of bounds");
+                throw new API.Tls13Exception("next cursor position outside of bounds");
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Arctium.Shared.Other;
+using Arctium.Standards.ArctiumLibShared;
 
 namespace Arctium.Standards.X509.X509Cert
 {
@@ -6,6 +7,8 @@ namespace Arctium.Standards.X509.X509Cert
     {
         public X509Certificate Certificate { get; private set; }
         public X509CertPrivateKey PrivateKey { get; private set; }
+
+        public X509CertWithKey(X509Certificate cert, IArctiumConvertable<X509CertPrivateKey> privateKey) : this(cert, privateKey.Convert()) { }
 
         public X509CertWithKey(X509Certificate certificate, X509CertPrivateKey privateKey)
         {

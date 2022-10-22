@@ -4,41 +4,25 @@ using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Standards.Connection.Tls.Tls13.Protocol;
 using Arctium.Standards.PKCS1.v2_2;
 using Arctium.Standards.X509.X509Cert;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Arctium.Standards.Connection.Tls.Tls13.Model.Extensions.SupportedGroupExtension;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public class Tls13ServerConfig
     {
         public bool UseNewSessionTicketPsk { get; internal set; }
-        internal CipherSuite[] CipherSuites;
-        internal NamedGroup[] NamedGroups;
+        internal Model.CipherSuite[] CipherSuites;
+        internal SupportedGroupExtension.NamedGroup[] NamedGroups;
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes;
 
         public bool HandshakeRequestCertificateFromClient;
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
-        public static Tls13ServerConfig DefaultUnsafe(X509CertWithKey[] listOfCertsWithKeys)
-        {
-            var c = new Tls13ServerConfig();
+        static API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
 
-            c.CertificatesWithKeys = listOfCertsWithKeys;
-            c.UseNewSessionTicketPsk = true;
-            c.HandshakeRequestCertificateFromClient = false;
-
-            c.CipherSuites = new CipherSuite[]
-                {
-                    CipherSuite.TLS_AES_128_GCM_SHA256
-                };
-
-            c.NamedGroups = new NamedGroup[] {
-                NamedGroup.X25519,
-                NamedGroup.Secp256r1,
-                NamedGroup.Ffdhe2048 };
-
-            c.ConfigueSupportedSignatureSchemes(new SignatureScheme[]
+        static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
                 SignatureScheme.EcdsaSecp256r1Sha256,
                 SignatureScheme.EcdsaSecp384r1Sha384,
@@ -46,9 +30,55 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                 SignatureScheme.RsaPssRsaeSha256,
                 SignatureScheme.RsaPssRsaeSha384,
                 SignatureScheme.RsaPssRsaeSha512,
-            });
+            };
+
+        static API.CipherSuite[] DefaultCipherSuites = new API.CipherSuite[]
+        {
+            API.CipherSuite.TLS_AES_128_GCM_SHA256,
+            API.CipherSuite.TLS_AES_256_GCM_SHA384,
+            API.CipherSuite.TLS_CHACHA20_POLY1305_SHA256
+        };
+
+        /// <summary>
+        /// Creates default instance of server configuration
+        /// </summary>
+        /// <param name="listOfCertsWithKeys"></param>
+        /// <returns></returns>
+        public static Tls13ServerConfig Default(X509CertWithKey[] listOfCertsWithKeys)
+        {
+            var c = new Tls13ServerConfig();
+
+            c.CertificatesWithKeys = listOfCertsWithKeys;
+            c.UseNewSessionTicketPsk = true;
+            c.HandshakeRequestCertificateFromClient = false;
+
+
+            c.ConfigueCipherSuites(DefaultCipherSuites);
+            c.ConfigueSupportedNamedGroupsForKeyExchange(DefaultAllGroups);
+            c.ConfigueSupportedSignatureSchemes(DefaultAllSignateSchemes);
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures cipher suites that can be used by instance
+        /// </summary>
+        public void ConfigueCipherSuites(API.CipherSuite[] suites)
+        {
+            Validation.NotEmpty(suites, nameof(suites));
+            Validation.EnumValueDefined(suites, nameof(suites));
+
+            CipherSuites = suites.Select(s => (Model.CipherSuite)s).ToArray();
+        }
+
+        /// <summary>
+        /// Configures NamedGroups that can be used by instance
+        /// </summary>
+        public void ConfigueSupportedNamedGroupsForKeyExchange(API.NamedGroup[] groups)
+        {
+            foreach (var v in groups) Validation.EnumValueDefined(v, nameof(groups));
+
+            NamedGroups = groups.Select(apiGroup => (SupportedGroupExtension.NamedGroup)apiGroup).ToArray();
         }
 
         public void ThrowIfInvalidObjectState()
@@ -82,7 +112,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         {
             Validation.NotEmpty(schemes, nameof(schemes));
 
-            foreach (var value in schemes) Validate.EnumDefined(value);
+            foreach (var value in schemes) Validation.EnumValueDefined(value, nameof(schemes));
 
             var internalList = schemes.Select(apiScheme => (SignatureSchemeListExtension.SignatureScheme)apiScheme).ToArray();
 

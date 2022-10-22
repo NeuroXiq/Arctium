@@ -462,16 +462,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         }
 
-        internal void Signature()
-        {
-            // SignatureScheme
-            //switch ()
-            //{
-            //    default:
-            //        break; Validation.ThrowInternal(); break;
-            //}
-        }
-
         internal bool VerifyClientCertificate(CertificateVerify certVer)
         {
             //todo implement this
@@ -497,11 +487,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public void SelectCipherSuite(CipherSuite serverHelloSuite)
         {
             this.SetupCryptoAlgorithms(serverHelloSuite);
-        }
-
-        public void SelectEcEcdheGroup(SupportedGroupExtension.NamedGroup serverHelloGroup)
-        {
-            
         }
 
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
@@ -546,24 +531,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             clientHelloCertificateSignatureSchemes = clientHelloCertificateSignatureSchemes ?? new SignatureScheme[0];
 
             var mutualSignatures = clientHelloSignatureSchemes.Where(clientSig => config.SignatureSchemes.Contains(clientSig));
-            var mutualSigInfo = SignaturesInfo.Where(info => mutualSignatures.Contains(info.SignatureScheme));
+            var possibleSignatures = SignaturesInfo.Where(info => mutualSignatures.Contains(info.SignatureScheme));
 
             if (mutualSignatures.Count() == 0) return false;
 
-            var certificatesThatCanGenerateSignatures = config.CertificatesWithKeys.Where(certWithKey =>
+            var possibleCertificates = config.CertificatesWithKeys.Where(certWithKey =>
             {
                 var certpubkey = certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
 
                 if (certpubkey == PublicKeyAlgorithmIdentifierType.RSAEncryption)
-                    return mutualSigInfo.Any(info => info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.RSAEncryption);
+                    return possibleSignatures.Any(info => info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.RSAEncryption);
 
-                return mutualSigInfo.Any(info => info.X509Curve == certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Parameters.Choice_EcpkParameters().Choice_NamedCurve());
+                return possibleSignatures.Any(info => info.X509Curve == certWithKey.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Parameters.Choice_EcpkParameters().Choice_NamedCurve());
 
             });
 
-            if (certificatesThatCanGenerateSignatures.Count() == 0) return false;
+            if (possibleCertificates.Count() == 0) return false;
 
-            if (certificatesThatCanGenerateSignatures.Count() > 1 &&
+            if (possibleCertificates.Count() > 1 &&
                 clientHelloCertificateSignatureSchemes != null &&
                 clientHelloCertificateSignatureSchemes.Length > 0)
             {
@@ -571,17 +556,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 // for now not implemented
             }
 
-            var firstValidCert = certificatesThatCanGenerateSignatures.First();
+            var firstValidCert = possibleCertificates.First();
             
             selectedcert = firstValidCert;
-            // signature = mutualSigInfo.First(info => info.RelatedPublicKeyType == firstValidCert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm).SignatureScheme;
 
-            signature = mutualSigInfo.First(info =>
+            signature = possibleSignatures.First(info =>
             {
                 var algoid = firstValidCert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier;
                 if (algoid.Algorithm == PublicKeyAlgorithmIdentifierType.RSAEncryption)
                 {
-                    return info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.ECPublicKey;
+                    return info.RelatedPublicKeyType == PublicKeyAlgorithmIdentifierType.RSAEncryption;
                 }
                 else
                 {

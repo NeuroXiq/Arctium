@@ -7,9 +7,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     {
         Tls13ClientContext context;
 
-        public Tls13Client(Tls13ClientContext config)
+        public Tls13Client(Tls13ClientContext context)
         {
-            this.context = config;
+            context.ThrowIfInvalidState();
+            this.context = context;
         }
 
         public Tls13Stream Connect(Stream rawNetworkStream)

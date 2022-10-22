@@ -126,11 +126,7 @@ namespace Arctium.Standards.X509.X509Cert
             byte[] res = new byte[totallen];
             MemCpy.Copy(buf, endsOn + 1, res, 0, totallen);
 
-            MemDump.HexDump(ecdsaSigValue.R);
-            Console.WriteLine();
-            MemDump.HexDump(ecdsaSigValue.S);
-            Console.WriteLine();
-            MemDump.HexDump(res);
+            
 
             return res;
         }

@@ -1,4 +1,4 @@
-﻿using Arctium.Standards.Connection.Tls.Tls13.API;
+﻿// using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared;
@@ -19,7 +19,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
     class Tls13Protocol
     {
         private MessageIO handshakeReader;
-        private Tls13ServerConfig serverConfig;
+        private API.Tls13ServerConfig serverConfig;
         private BufferForStream streamBuffer;
         private RecordLayer recordLayer;
         private Validate validate;
@@ -29,7 +29,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private ClientHello clientHello;
 
-        public Tls13Protocol(Stream stream, Tls13ServerConfig serverConfig)
+        public Tls13Protocol(Stream stream, API.Tls13ServerConfig serverConfig)
         {
             this.validate = new Validate();
             this.streamBuffer = new BufferForStream(stream);

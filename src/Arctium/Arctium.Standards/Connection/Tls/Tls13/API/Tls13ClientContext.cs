@@ -16,6 +16,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             pskTicketStore = ticketsStore;
         }
 
+        public void ThrowIfInvalidState()
+        {
+            Config.ThrowIfInvalidState();
+        }
+
         public static Tls13ClientContext DefaultUnsave()
         {
             var config = Tls13ClientConfig.DefaultUnsafe();

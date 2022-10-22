@@ -2,6 +2,7 @@
 using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.IO;
+using Arctium.Shared.Other;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
@@ -38,6 +39,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            Validation.NotNegative(count, nameof(count));
+
             if (remainingApplicationData == 0)
             {
                 protocol.LoadApplicationData();
@@ -64,6 +67,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            Validation.NotNegative(count, nameof(count));
+
             protocol.WriteApplicationData(buffer, offset, count);
         }
     }

@@ -57,9 +57,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             pskTicketStore.SaveTicket(new PskTicket(ticket, nonce, resumptionMasterSecret, ticketLifetime, ticketAgeAdd, hashFunctionId));
         }
 
-        public static Tls13ServerContext DefaultUnsafe(X509CertWithKey[] certificates)
+        public static Tls13ServerContext Default(X509CertWithKey[] certificates)
         {
-            var config = Tls13ServerConfig.DefaultUnsafe(certificates);
+            var config = Tls13ServerConfig.Default(certificates);
             var context = new Tls13ServerContext(config, new PskTicketServerStoreDefaultInMemory());
 
             return context;

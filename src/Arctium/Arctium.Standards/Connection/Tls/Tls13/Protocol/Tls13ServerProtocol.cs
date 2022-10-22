@@ -44,7 +44,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             //public Finished FinishedServer;
             //public Finished FinishedClient;
 
-            public CipherSuite SelectedCipherSuite;
+            public Model.CipherSuite SelectedCipherSuite;
             public bool IsPskSessionResumption;
             public PreSharedKeyExchangeModeExtension.PskKeyExchangeMode KeyExchangeMode;
             public int CH2Offset;
@@ -238,21 +238,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
-
-            if (context.IsPskSessionResumption)
-            {
-                var x = 0;
-            }
-
-            if (context.HelloRetryRequest != null)
-            {
-                var t = "";
-            }
-
-            if (config.HandshakeRequestCertificateFromClient)
-            {
-                var x = "";
-            }
         }
 
         private void LoadApplicationDataNotReceivedApplicationDataContent()

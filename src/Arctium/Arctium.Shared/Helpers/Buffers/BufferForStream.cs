@@ -58,10 +58,9 @@ namespace Arctium.Shared.Helpers.Buffers
             do
             {
                 maxPossibleLoad = Buffer.Length - DataLength;
-
                 lastLoad = stream.Read(Buffer, DataLength, maxPossibleLoad);
                 loaded += lastLoad;
-                DataLength = DataLength + loaded;
+                DataLength += lastLoad;
 
             } while (loaded < minimumToAppend && lastLoad > 0);
 

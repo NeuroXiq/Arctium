@@ -7,7 +7,7 @@ using Arctium.Shared;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
-using Arctium.Standards.Connection.Tls.Tls13.API;
+// using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Standards.X509.X509Cert;
@@ -31,7 +31,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public bool CertificateRequest;
             public X509.X509Cert.X509Certificate ServerCertificate;
 
-            public PskTicket[] PskTickets;
+            public API.PskTicket[] PskTickets;
             public ServerHello ServerHello;
 
             public int CH1Length = -1;
@@ -39,15 +39,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         }
 
         Context context;
-        Tls13ClientConfig config { get { return clientContext.Config; } }
+        API.Tls13ClientConfig config { get { return clientContext.Config; } }
         ClientProtocolState state;
         Queue<ClientProtocolCommand> commandQueue;
         Crypto crypto;
-        byte[] privateKey;
+        Dictionary<SupportedGroupExtension.NamedGroup, byte[]>  generatedPrivateKeys;
         MessageIO messageIO;
         Validate validate;
         ClientProtocolCommand currentCommand;
-        Tls13ClientContext clientContext;
+        API.Tls13ClientContext clientContext;
         ByteBuffer hsctx;
 
         byte[] writeApplicationDataBuffer;
@@ -55,11 +55,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         long writeApplicationDataLength;
         int applicationDataLength;
 
-        public Tls13ClientProtocol(Stream networkRawStream, Tls13ClientContext clientContext)
+        public Tls13ClientProtocol(Stream networkRawStream, API.Tls13ClientContext clientContext)
         {
             this.clientContext = clientContext;
             this.context = new Context();
             this.crypto = new Crypto(Endpoint.Client, null);
+            this.generatedPrivateKeys = new Dictionary<SupportedGroupExtension.NamedGroup, byte[]>();
             hsctx = new ByteBuffer();
             validate = new Validate();
             messageIO = new MessageIO(networkRawStream, validate);
@@ -114,8 +115,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     case ClientProtocolState.Handshake: Handshake(); break;
                     case ClientProtocolState.Connected: Connected(); break;
                     case ClientProtocolState.PostHandshake: PostHandshake(); break;
-                    case ClientProtocolState.Closed: throw new Tls13Exception("Cannot process command because connection is closed"); break;
-                    case ClientProtocolState.FatalError: throw new Tls13Exception("Cannot process command because encountered fatal error"); break;
+                    case ClientProtocolState.Closed: ThrowEx("Cannot process command because connection is closed"); break;
+                    case ClientProtocolState.FatalError: ThrowEx("Cannot process command because encountered fatal error"); break;
                     default: Validation.ThrowInternal("unrecognized protocol state"); break;
                 }
             }
@@ -128,7 +129,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 case ClientProtocolCommand.Connected_ReadApplicationData: Connected_ReadApplicationData(); break;
                 case ClientProtocolCommand.Connected_WriteApplicationData: Connected_WriteApplicationData(); break;
                 case ClientProtocolCommand.Connected_ReceivedPostHandshakeMessage: Connected_ReceivedPostHandshakeMessage(); break;
-                default: throw new Tls13Exception("invalid operation for this state");
+                default: ThrowEx("invalid operation for this state"); break;
             }
         }
 
@@ -137,7 +138,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             switch (currentCommand)
             {
                 case ClientProtocolCommand.Start_Connect: Start_Connect(); break;
-                default: throw new Tls13Exception("command invalid for this state");
+                default: ThrowEx("command invalid for this state"); break;
             }
         }
 
@@ -147,7 +148,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 case ClientProtocolCommand.PostHandshake_ProcessPostHandshakeMessage: PostHandshake_ProcessPostHandshakeMessage(); break;
                 case ClientProtocolCommand.PostHandshake_FinishedProcessingPostHandshakeMessages: PostHandshake_FinishedProcessingPostHandshakeMessages(); break;
-                default: throw new Tls13Exception("inavlid command for this state");
+                default: ThrowEx("inavlid command for this state"); break;
             }
         }
 
@@ -168,8 +169,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 case ClientProtocolCommand.Handshake_ClientCertificateVerify: Handshake_ClientCertificateVerify(); break;
                 case ClientProtocolCommand.Handshake_ClientFinished: Handshake_ClientFinished(); break;
                 case ClientProtocolCommand.Handshake_HandshakeCompletedSuccessfully: Handshake_HandshakeCompletedSuccessfully(); break;
-                default: throw new Tls13Exception("invalid command for this state"); break;
+                default: ThrowEx("invalid command for this state"); break;
             }
+        }
+
+        private void ThrowEx(string msg)
+        {
+            throw new API.Tls13Exception(msg); 
+            
         }
 
         public void LoadApplicationData() => ProcessCommand(ClientProtocolCommand.Connected_ReadApplicationData);
@@ -335,8 +342,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (keyShare.ServerShare == null) throw new InvalidOperationException();
             else
             {
-                crypto.SelectEcEcdheGroup(keyShare.ServerShare.NamedGroup);
-                crypto.ComputeSharedSecret(keyShare.ServerShare.NamedGroup, this.privateKey, keyShare.ServerShare.KeyExchangeRawBytes);
+                crypto.ComputeSharedSecret(keyShare.ServerShare.NamedGroup, this.generatedPrivateKeys[keyShare.ServerShare.NamedGroup], keyShare.ServerShare.KeyExchangeRawBytes);
             }
 
             if (preSharedKeySh != null)
@@ -364,9 +370,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             var extensions2 = new List<Extension>();
             var serverKeyShare = (KeyShareHelloRetryRequestExtension)context.HelloRetryRequest.Extensions.First(ext => ext.ExtensionType == ExtensionType.KeyShare);
-            byte[] keyShareToSendRawBytes;
+            byte[] keyShareToSendRawBytes, privateKey;
 
             crypto.GeneratePrivateKeyAndKeyShareToSend(serverKeyShare.SelectedGroup, out keyShareToSendRawBytes, out privateKey);
+            generatedPrivateKeys[serverKeyShare.SelectedGroup] = privateKey;
 
             PreSharedKeyClientHelloExtension pskExtension = null;
 
@@ -455,40 +462,34 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             var random = new byte[Tls13Const.HelloRandomFieldLength];
             byte[] sesId = new byte[Tls13Const.ClientHello_LegacySessionIdMaxLen];
-            CipherSuite[] suites = new CipherSuite[] { CipherSuite.TLS_AES_128_GCM_SHA256 };
+            CipherSuite[] suites = config.CipherSuites;
             PreSharedKeyClientHelloExtension preSharedKeyExtension = null;
 
             List<Extension> extensions = new List<Extension>
             {
                 new ClientSupportedVersionsExtension(new ushort[] { 0x0304 }),
                 new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") }),
-                new SignatureSchemeListExtension(new SignatureSchemeListExtension.SignatureScheme[]
-                {
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256,
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp384r1Sha384,
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp521r1Sha512,
-
-                    // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
-                    // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
-                    // SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
-                    // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
-                    // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
-                    // SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512
-                }, ExtensionType.SignatureAlgorithms),
-                new SupportedGroupExtension(config.SupportedGroups),
+                new SignatureSchemeListExtension(config.SignatureSchemes, ExtensionType.SignatureAlgorithms),
+                new SupportedGroupExtension(config.NamedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };
 
             GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
             GlobalConfig.RandomGeneratorCryptSecure(sesId, 0, sesId.Length);
 
-            byte[] keyShareToSendRawBytes;
-            crypto.GeneratePrivateKeyAndKeyShareToSend(config.SupportedGroups[0], out keyShareToSendRawBytes, out privateKey);
+            List<KeyShareEntry> generatedKeysToExchange = new List<KeyShareEntry>();
 
-            extensions.Add(new KeyShareClientHelloExtension(new KeyShareEntry[]
+            foreach (var toSendInKeyShare in config.NamedGroupsToSendInKeyExchangeInClientHello1)
             {
-                new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyShareToSendRawBytes),
-            }));
+                byte[] keyShareToSendRawBytes, privateKey;
+
+                crypto.GeneratePrivateKeyAndKeyShareToSend(toSendInKeyShare, out keyShareToSendRawBytes, out privateKey);
+                generatedPrivateKeys[toSendInKeyShare] = privateKey;
+
+                generatedKeysToExchange.Add(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyShareToSendRawBytes));
+            }
+
+            extensions.Add(new KeyShareClientHelloExtension(generatedKeysToExchange.ToArray()));
 
             var clientHello = new ClientHello(random, sesId, suites, extensions);
             AppendLastExtensionPreSharedKey(clientHello);

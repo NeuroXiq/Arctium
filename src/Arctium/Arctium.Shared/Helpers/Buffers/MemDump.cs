@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Arctium.Shared.Helpers.Buffers
 {
+    [Obsolete("MemDump is invoked")]
     public static unsafe class MemDump
     {
         public static void HexDump(ulong value)
