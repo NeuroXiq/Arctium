@@ -16,11 +16,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal Model.CipherSuite[] CipherSuites;
         internal SupportedGroupExtension.NamedGroup[] NamedGroups;
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes;
+        internal ushort? ExtensionRecordSizeLimit { get; private set; }
 
         public bool HandshakeRequestCertificateFromClient;
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
         static API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
+        static readonly ushort? DefaultExtensionRecordSizeLimit = null;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -56,8 +58,31 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigueCipherSuites(DefaultCipherSuites);
             c.ConfigueSupportedNamedGroupsForKeyExchange(DefaultAllGroups);
             c.ConfigueSupportedSignatureSchemes(DefaultAllSignateSchemes);
+            c.ConfigureExtensionRecordSizeLimit(DefaultExtensionRecordSizeLimit);
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures Record Size Limit extension (RFC 8449).
+        /// If value is not null and RecordSizeLImit extension received from client,
+        /// then server will select minimum value (configured by 'sizeLimit' param and received from client)
+        /// Then server will restrict record layer to send records of max plaintext length equal to value mentioned before.
+        /// If sizeLimit set to null and client sends extension then limit will be equal to value from client extension.
+        /// If client do not sent  extension then nothing happends and server continue
+        /// </summary>
+        /// <param name="sizeLimit">Maximum record size to negotiate, or null if no limit requred</param>
+        public void ConfigureExtensionRecordSizeLimit(int? sizeLimit)
+        {
+            if (sizeLimit.HasValue)
+            {
+                Validation.NumberInRange(sizeLimit.Value,
+                    Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MinValue,
+                    Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MaxValue,
+                    nameof(sizeLimit));
+            }
+
+            ExtensionRecordSizeLimit = (ushort?)sizeLimit;
         }
 
         /// <summary>

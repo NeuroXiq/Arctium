@@ -32,6 +32,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [ExtensionType.SupportedGroups] = DeserializeExtension_SupportedGroups,
                 [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Client,
                 [ExtensionType.ServerName] = DeserializeExtension_ServerName,
+                [ExtensionType.MaxFragmentLength] = DeserializeExtension_MaxFragmentLength,
+                [ExtensionType.RecordSizeLimit] = DeserializeExtension_RecordSizeLimit,
             };
 
             extensionsDeserializeOnClientSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
@@ -58,6 +60,26 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(Certificate)] = DeserializeCertificate,
                 [typeof(NewSessionTicket)] = DeserializeNewSessionTicket
             };
+        }
+
+        private Extension DeserializeExtension_RecordSizeLimit(byte[] buf, int offs)
+        {
+            ExtensionDeserializeSetup(buf, offs, out var cursor, out var len);
+
+            validate.Extensions.AlertFatalDecodeError(len != 2, "extensionlength: recordsizelimit", "length should be equal 2");
+
+            ushort maxRecordLen = MemMap.ToUShort2BytesBE(buf, cursor);
+
+            return new RecordSizeLimitExtension(maxRecordLen);
+        }
+
+        private Extension DeserializeExtension_MaxFragmentLength(byte[] buf, int offs)
+        {
+            ExtensionDeserializeSetup(buf, offs, out var cursor, out var len);
+
+            validate.Extension_MaxFragmentLength.AlertFatalDecodeError(len != 1, $"extension.length", $"invalid length, extension length should be 1 but is: {len}");
+
+            return new MaximumFragmentLengthExtensionExtension((MaximumFragmentLengthExtensionExtension.MaxFragmentLengthEnum)buf[cursor]);
         }
 
         private object DeserializeNewSessionTicket(byte[] buf, int offs)

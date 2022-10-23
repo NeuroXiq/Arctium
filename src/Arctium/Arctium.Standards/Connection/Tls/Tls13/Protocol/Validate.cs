@@ -32,11 +32,18 @@ using Arctium.Shared.Helpers.Binary;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Arctium.Shared.Other;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
     class Validate
     {
+        const string Label_ServerHello = "ServerHello";
+        const string Label_ClientHello = "ClientHello";
+        const string Label_ExtensionMaxFragmentLength = "Extension_MaxFragmentLength";
+        const string Label_EncryptedExtensions = "EncryptedExtensions";
+
+
         public RecordLayerValidate RecordLayer { get; private set; }
         public HandshakeValidate Handshake { get; private set; }
         public ExtensionsValidate Extensions { get; private set; }
@@ -46,6 +53,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public ServerHelloValidate ServerHello { get; private set; }
         public NewSessionTicketValidate NewSessionTicket { get; private set; }
         public HelloRetryRequestValidate HelloRetryRequest { get; private set; }
+        public DefaultNamedValidate Extension_MaxFragmentLength { get; private set; }
+        public EncryptedExtensionsValidate EncryptedExtensions { get; private set; }
 
         public Validate()
         {
@@ -58,8 +67,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             ServerHello = new ServerHelloValidate(errorHandler);
             NewSessionTicket = new NewSessionTicketValidate(errorHandler);
             HelloRetryRequest = new HelloRetryRequestValidate(errorHandler);
+            Extension_MaxFragmentLength = new DefaultNamedValidate(errorHandler, Label_ExtensionMaxFragmentLength);
+            EncryptedExtensions = new EncryptedExtensionsValidate(errorHandler);
 
             Certificate = new CertificateValidate(errorHandler);
+        }
+
+        public class DefaultNamedValidate : ValidateBase
+        {
+            public DefaultNamedValidate(ValidationErrorHandler handler, string messageName) : base(handler, messageName)
+            {
+            }
         }
 
         public class NewSessionTicketValidate : ValidateBase
@@ -97,21 +115,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 fieldName = fieldName ?? string.Empty;
                 error = error ?? string.Empty;
 
-                // fieldName = fieldName == null ? "null" : fieldName;
-
                 return $"MESSAGE: {messageName}, FIELD: {fieldName}, Error: {error}";
             }
         }
-
-        //internal static void EnumDefined<T>(T enumValue) where T: struct, Enum
-        //{
-        //    if (Enum.IsDefined<T>(enumValue)) return;
-
-        //    var msg = string.Format("Enum value not defined. Enum Type: {0}, trying to use enum following enum value: {1} ", typeof(T).Name, enumValue.ToString());
-
-        //    throw new ArgumentException(msg);
-        //}
-
         public class ValidateBase
         {
             private ValidationErrorHandler handler;
@@ -133,10 +139,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 }
             }
 
+            public void AlertFatal(AlertDescription description, string errorText) => AlertFatal(true, description, errorText);
+
             public void AlertFatal(bool shouldThrow, AlertDescription alertDescription, string errorText)
             {
                 if (shouldThrow) handler.ThrowAlertFatal(alertDescription, messageName, errorText);
             }
+
+            public void AlertFatal_IllegalParameter(string errorText) => AlertFatal(true, AlertDescription.Illegal_parameter, errorText);
 
             public void Throw(bool condition, string field, string error)
             {
@@ -189,87 +199,61 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public class EncryptedExtensionsValidate : ValidateBase
         {
-            public EncryptedExtensionsValidate(ValidationErrorHandler handler) : base(handler, "EncryptedExtensions")
+            ExtensionsValidate extensionsValidate;
+
+            public EncryptedExtensionsValidate(ValidationErrorHandler handler) : base(handler, Label_EncryptedExtensions)
             {
+                extensionsValidate = new ExtensionsValidate(handler, Label_EncryptedExtensions);
             }
 
-            public void General(EncryptedExtensions encryptedExtensions)
+            public void General(EncryptedExtensions encryptedExtensions, ClientHello clientHello2Or1ThatWasSend)
             {
-                ExtensionType[] validExtensionsForServerHello = new ExtensionType[]
+                var ch = clientHello2Or1ThatWasSend;
+                extensionsValidate.SharedExtensionsValidate(encryptedExtensions.Extensions.ToList(), HandshakeType.EncryptedExtensions);
+
+                var serverRecordSizeLimit = encryptedExtensions.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
+                var clientRecordSizeLimit = ch.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
+
+                if (serverRecordSizeLimit != null && clientRecordSizeLimit != null)
                 {
-                    ExtensionType.ServerName, ExtensionType.MaxFragmentLength,
-                    ExtensionType.StatusRequest, ExtensionType.SupportedGroups,
-                };
+                    AlertFatal(serverRecordSizeLimit.RecordSizeLimit > clientRecordSizeLimit.RecordSizeLimit,
+                        AlertDescription.Illegal_parameter, "Value of recordsizelimit from server exceed recordsizelimit extensions from client (that was sent)");
+                }
             }
         }
 
         public class ServerHelloValidate : ValidateBase
         {
-            public ServerHelloValidate(ValidationErrorHandler handler) : base(handler, "ServerHello")
+            ExtensionsValidate extensionsValidate;
+
+            public ServerHelloValidate(ValidationErrorHandler handler) : base(handler, Label_ServerHello)
             {
+                extensionsValidate = new ExtensionsValidate(handler, Label_ServerHello);
             }
 
             public void GeneralServerHelloValidate(ClientHello clientHello1, ServerHello hello)
             {
                 // clientHello1 -> not null on hello retry reuqest, null if not helloretryrequest
-                foreach (var extension in hello.Extensions)
-                {
-                    if (IllegalExtensionAppearInMessage(extension.ExtensionType, HandshakeType.ServerHello))
-                    {
-                        string msg = String.Format("illegal extension: {0} (raw extensiontype as int: {1})", extension.ExtensionType.ToString(), (int)extension.ExtensionType);
-                        AlertFatal(true, AlertDescription.Illegal_parameter, msg);
-                    }
-                }
+               
             }
         }
 
         public class ClientHelloValidate : ValidateBase
         {
-            public ClientHelloValidate(ValidationErrorHandler handler) : base(handler, "ClientHello")
+            ExtensionsValidate extensionsValidate;
+
+            public ClientHelloValidate(ValidationErrorHandler handler) : base(handler, Label_ClientHello)
             {
+                extensionsValidate = new ExtensionsValidate(handler, Label_ClientHello);
             }
 
             internal void GeneralValidateClientHello(ClientHello clientHello)
             {
-                HashSet<ExtensionType> extensions = new HashSet<ExtensionType>();
-
-                foreach (var ext in clientHello.Extensions)
-                {
-                    if (extensions.Contains(ext.ExtensionType))
-                    {
-                        AlertFatal(true, AlertDescription.Illegal_parameter, "Extensions: more that one extension of given type exists. Cannot be duplicate extensions");
-                    }
-
-                    extensions.Add(ext.ExtensionType);
-
-                    AlertFatal(IllegalExtensionAppearInMessage(ext.ExtensionType, HandshakeType.ClientHello), AlertDescription.Illegal_parameter, "Not expected extension");
-                }
-
-                if (extensions.Contains(ExtensionType.PreSharedKey) &&
-                    clientHello.Extensions[clientHello.Extensions.Count - 1].ExtensionType != ExtensionType.PreSharedKey)
-                {
-                    AlertFatal(true, AlertDescription.Illegal_parameter, "Extensions: containst extension 'presharedkey' but this extension is not last in the list (must be last)");
-                }
-
-                AlertFatal(!extensions.Contains(ExtensionType.SupportedVersions), AlertDescription.MissingExtension, "Missing extension: SupportedVersions");
-                AlertFatal(extensions.Contains(ExtensionType.PreSharedKey) && !extensions.Contains(ExtensionType.PskKeyExchangeModes),
-                    AlertDescription.MissingExtension,
-                    "PskKeyExchangeModes extension is required if PreSharedKey extension is present on the list");
-
-                ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
-                bool tls13NotFound = true;
-
-
-                for (int i = 0; tls13NotFound && i < supportedVersions.Length; i++)
-                {
-                    tls13NotFound = supportedVersions[i] != 0x0304;
-                }
-
-                AlertFatal(tls13NotFound, AlertDescription.ProtocolVersion, "TLS 1.3 version was not found int version extension and implementation supports only 1.3");
+                extensionsValidate.GeneralValidateClientHelloExtensions(clientHello);
             }
 
             internal void SignatureSchemesNotSupported(bool sthrow) =>
-                AlertFatal(sthrow, AlertDescription.HandshakeFailure, "signature scheme list extension not from client hello not supported in current implementation"); 
+                AlertFatal(sthrow, AlertDescription.HandshakeFailure, "signature scheme list extension does not match with supported one or with current instance configuration"); 
 
             internal void MissingSignatureAlgorithmsExtension(bool throwEx) => AlertFatal(throwEx, AlertDescription.MissingExtension, "missing signature scheme list extension");
         }
@@ -293,6 +277,29 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 Throw(certDataLen < 0, "rawpublickey OR x509", "minimum vector length is 1");
             }
+
+            internal void ValidateCertificateValidationCallbackSuccess(ServerCertificateValidionResult validationResult)
+            {
+                if (validationResult == ServerCertificateValidionResult.Success) return;
+
+
+                AlertDescription alert = AlertDescription.AccessDenied;
+
+                switch (validationResult)
+                {
+                    case ServerCertificateValidionResult.Invalid_UnknownCA: alert = AlertDescription.UnknownCa;  break;
+                    case ServerCertificateValidionResult.Invalid_OtherReason: alert = AlertDescription.CertificateUnknown;  break;
+                    case ServerCertificateValidionResult.Invalid_BadCertificateStatusResponse: alert = AlertDescription.BadCertificateStatusResponse; break;
+                    case ServerCertificateValidionResult.Invalid_CertificateUnknown: alert = AlertDescription.CertificateUnknown;  break;
+                    case ServerCertificateValidionResult.Invalid_CertificateExpired: alert = AlertDescription.CertificateExpired;  break;
+                    case ServerCertificateValidionResult.Invalid_CertificateRevoked: alert = AlertDescription.CertificateRevoked;  break;
+                    case ServerCertificateValidionResult.Invalid_UnsupportedCertificate: alert = AlertDescription.UnsupportedCertificate;  break;
+                    case ServerCertificateValidionResult.Invalid_BadCertificate: alert = AlertDescription.BadCertificate;  break;
+                    default: Validation.NotSupported(); break;
+                }
+
+                AlertFatal(true, alert, "CertificateValidationCallback returned false, certificate is invalid by current configuration.");
+            }
         }
 
         public class RecordLayerValidate : ValidateBase
@@ -307,19 +314,32 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public void AEADAuthTagInvalid(bool isAuthTagValid) => AlertFatal(!isAuthTagValid, AlertDescription.BadRecordMac, "Decrypted record with invalid authentication tag");
 
-            public void ValidateContentType(byte contentType)
+            public void Length(ushort receivedLength, ushort configuredMaxPlaintextLength)
             {
+            }
+
+            private void Throw(string msg, params object[] args)
+            {
+                string error = string.Format("Record Layer: {0}", string.Format(msg, args));
+                throw new Tls13Exception("","",error);
+            }
+
+            internal void ValidateRecord(bool isRecordEncrypted,
+                ushort length,
+                byte contentType,
+                ushort protocolVersion,
+                ushort configuredMaxPlaintextRecordLength,
+                bool compatibilityAllowRecordLayerVersionLower0x0303)
+            {
+
                 if (contentType != (byte)ContentType.Alert &&
-                    contentType != (byte)ContentType.ApplicationData &&
-                    contentType != (byte)ContentType.ChangeCipherSpec &&
-                    contentType != (byte)ContentType.Handshake)
+                   contentType != (byte)ContentType.ApplicationData &&
+                   contentType != (byte)ContentType.ChangeCipherSpec &&
+                   contentType != (byte)ContentType.Handshake)
                 {
                     Throw(string.Format("Received record with unrecognized content type value. Received content Type value: {0}", contentType));
                 }
-            }
 
-            public void ProtocolVersion(ushort protocolVersion, bool compatibilityAllowRecordLayerVersionLower0x0303)
-            {
                 bool isValid = protocolVersion == LegacyRecordVersion ||
                     (compatibilityAllowRecordLayerVersionLower0x0303 && protocolVersion < LegacyRecordVersion);
 
@@ -329,19 +349,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     BinConverter.ToStringHex(LegacyRecordVersion),
                     BinConverter.ToStringHex(protocolVersion));
 
+                int maxLength = configuredMaxPlaintextRecordLength;
+
+                if (isRecordEncrypted) maxLength += Tls13Const.RecordLayer_MaxExpansionAfterEncryptionForAnyCipher;
+
+                if (length > maxLength)
+                {
+                    string msg = string.Format(
+                        "Received record with length exceeded maximum length. " +
+                         "expected max length: {0}, received length: {1} (max received length can be configured), is record encrypted: {2}",
+                         maxLength, length, isRecordEncrypted);
+
+                    AlertFatal(AlertDescription.RecordOverflow, msg);
+                }
             }
 
-            public void Length(ushort length)
-            {
-                if (length > MaxRecordLength)
-                    Throw("Received record with length exceeded maximum length. Max length: {0}, received length: {1}", MaxRecordLength, length);
-            }
 
-            private void Throw(string msg, params object[] args)
-            {
-                string error = string.Format("Record Layer: {0}", string.Format(msg, args));
-                throw new Tls13Exception("","",error);
-            }
         }
 
         public class HandshakeValidate : ValidateBase
@@ -446,8 +469,67 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public class ExtensionsValidate : ValidateBase
         {
-            public ExtensionsValidate(ValidationErrorHandler handler) : base(handler, "Extensions")
+            public ExtensionsValidate(ValidationErrorHandler handler, string containerMessage = null) : base(handler, "Extensions " + (containerMessage ?? string.Empty))
             {
+            }
+
+            public void GeneralValidateClientHelloExtensions(ClientHello clientHello)
+            {
+                HashSet<ExtensionType> extensionsHashSet = new HashSet<ExtensionType>(clientHello.Extensions.Select(e => e.ExtensionType).ToArray());
+                var extensions = clientHello.Extensions;
+
+                if (extensionsHashSet.Contains(ExtensionType.PreSharedKey) &&
+                    clientHello.Extensions[clientHello.Extensions.Count - 1].ExtensionType != ExtensionType.PreSharedKey)
+                {
+                    AlertFatal(true, AlertDescription.Illegal_parameter, "Extensions: containst extension 'presharedkey' but this extension is not last in the list (must be last)");
+                }
+
+                AlertFatal(!extensionsHashSet.Contains(ExtensionType.SupportedVersions), AlertDescription.MissingExtension, "Missing extension: SupportedVersions");
+                AlertFatal(extensionsHashSet.Contains(ExtensionType.PreSharedKey) && !extensionsHashSet.Contains(ExtensionType.PskKeyExchangeModes),
+                    AlertDescription.MissingExtension,
+                    "PskKeyExchangeModes extension is required if PreSharedKey extension is present on the list");
+
+                ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
+                bool tls13NotFound = true;
+
+                for (int i = 0; tls13NotFound && i < supportedVersions.Length; i++)
+                {
+                    tls13NotFound = supportedVersions[i] != 0x0304;
+                }
+
+                AlertFatal(tls13NotFound, AlertDescription.ProtocolVersion, "TLS 1.3 version was not found int version extension and implementation supports only 1.3");
+            }
+
+            public void GeneralValidateServerHelloExtensions(ServerHello hello)
+            {
+                SharedExtensionsValidate(hello.Extensions, HandshakeType.ServerHello);
+            }
+
+            public void SharedExtensionsValidate(List<Extension> extensions, HandshakeType handshakeType)
+            {
+                HashSet<ExtensionType> extensionsHashSet = new HashSet<ExtensionType>();
+
+                foreach (var ext in extensions)
+                {
+                    if (extensionsHashSet.Contains(ext.ExtensionType))
+                    {
+                        AlertFatal(true, AlertDescription.Illegal_parameter, "Extensions: more that one extension of given type exists. Cannot be duplicate extensions");
+                    }
+
+                    extensionsHashSet.Add(ext.ExtensionType);
+
+                    AlertFatal(IllegalExtensionAppearInMessage(ext.ExtensionType, handshakeType), AlertDescription.Illegal_parameter, "Not expected extension");
+                }
+
+                var recordSizeLimitExt = extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
+                if (recordSizeLimitExt != null)
+                {
+                    if (recordSizeLimitExt.RecordSizeLimit < Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MinValue ||
+                        recordSizeLimitExt.RecordSizeLimit > Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MaxValue)
+                    {
+                        AlertFatal_IllegalParameter("recordsizelimitextension.recordsizelimit not in range allowed");
+                    }
+                }
             }
 
             public void ThrowGeneral(bool condition, string msg)

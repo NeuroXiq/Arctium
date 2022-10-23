@@ -1,4 +1,5 @@
 ﻿using Arctium.Shared.Other;
+using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using System;
@@ -12,11 +13,27 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal Model.Extensions.SupportedGroupExtension.NamedGroup[] NamedGroups { get; private set; }
         internal Model.Extensions.SupportedGroupExtension.NamedGroup[] NamedGroupsToSendInKeyExchangeInClientHello1 { get; private set; }
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes { get; private set; }
+        internal Func<byte[][], ServerCertificateValidionResult> X509CertificateValidationCallback;
+        internal ushort? ExtensionRecordSizeLimit { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
         static readonly API.CipherSuite[] DefaultCipherSuites = Enum.GetValues<API.CipherSuite>();
         static readonly API.NamedGroup[] DefaultNamedGroupsToSendInClientHello1 = new API.NamedGroup[] { API.NamedGroup.X25519 };
+        static readonly ushort? Extension_DefaultRecordSizeLimit = null;
+
+        /// <summary>
+        /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
+        /// default unsafe does not set validation callback (here this parameteris required).
+        /// </summary>
+        /// <param name="x509CertificateValidationCallback">validate certificate received from server</param>
+        public static Tls13ClientConfig DefaultSafe(Func<byte[][], ServerCertificateValidionResult> x509CertificateValidationCallback)
+        {
+            var config = DefaultUnsafe();
+            config.X509CertificateValidationCallback = x509CertificateValidationCallback;
+
+            return config;
+        }
 
         public static Tls13ClientConfig DefaultUnsafe()
         {
@@ -26,8 +43,29 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigueSupportedGroups(DefaultNamedGroups);
             config.ConfigueClientKeyShare(DefaultNamedGroupsToSendInClientHello1);
             config.ConfigueSupportedSignatureSchemes(DefaultSignatureSchemes);
+            config.ConfigueExtensionRecordSizeLimit(Extension_DefaultRecordSizeLimit);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures record size limit extension. If parameter is null then no extension is send to server.
+        /// If parameter is not null then extension is send. If RecordSizeLimit extension is received
+        /// from serever then record layer is updated accordingly to negotiated record size plaintext length.
+        /// If server do not respond to this extension then nothing happends and client continue
+        /// without restricting record layer plaintext bytes
+        /// </summary>
+        /// <param name="recordSizeLimit">maximum length of plaintext bytes for record (after decryption). Null if do not send any extension</param>
+        public void ConfigueExtensionRecordSizeLimit(int? recordSizeLimit)
+        {
+            if (recordSizeLimit.HasValue)
+                Validation.NumberInRange(
+                    recordSizeLimit.Value,
+                    Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MinValue,
+                    Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MaxValue,
+                    nameof(recordSizeLimit));
+
+            ExtensionRecordSizeLimit = (ushort?)recordSizeLimit;
         }
 
         public void ConfigueCipherSuites(API.CipherSuite[] suites)
@@ -96,7 +134,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                     $"doesnt match with allowed groups. All groups specified in {nameof(ConfigueClientKeyShare)} as groups to generate key " +
                     $"must also be specified as allowed group but they are not. Invalid values (not specified as allowed): " + 
                     $"{string.Join(",", invalidGroups.Select(x => x.ToString()))}. " + 
-                    $"Make sure that all groups configured by configured method: '{ConfigueClientKeyShare}' are also appear in method '{ConfigueSupportedGroups}' ";
+                    $"Make sure that all groups configured by a method: '{ConfigueClientKeyShare}' are also setup in method '{ConfigueSupportedGroups}' ";
 
                 Validation.Argument(true, nameof(ConfigueSupportedGroups), msg);
             }

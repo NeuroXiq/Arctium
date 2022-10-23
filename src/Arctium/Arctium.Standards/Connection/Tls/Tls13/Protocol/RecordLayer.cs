@@ -4,6 +4,8 @@ using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using System.Net.Sockets;
+using System;
+using Arctium.Shared.Other;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -36,12 +38,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private byte[] readIv;
         private byte[] perRecordWriteNonce;
         private byte[] perRecordReadNonce;
+        private ushort configuredMaxPlaintextRecordLength;
 
         private bool compatibilityAllowRecordLayerVersionLower0x0303;
         private bool compatibilitySilentlyDropUnencryptedChangeCipherSpec;
 
         public RecordLayer(BufferForStream buffer, Validate validate)
         {
+            this.configuredMaxPlaintextRecordLength = Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength;
             this.bufferForStream = buffer;
             this.validate = validate;
             this.RecordFragmentBytes = new byte[WriteBufferLength];
@@ -85,19 +89,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             version = (ushort)((buffer[1] << 8) | (buffer[2] << 0));
             length = (ushort)((buffer[3] << 8) | (buffer[4] << 0));
 
+            validate.RecordLayer.ValidateRecord(
+                    State == RecordLayerState.EncryptionOn,
+                    length,
+                    (byte)contentType,
+                    version,
+                    configuredMaxPlaintextRecordLength,
+                    compatibilityAllowRecordLayerVersionLower0x0303);
+
             if (contentType == ContentType.ChangeCipherSpec && compatibilitySilentlyDropUnencryptedChangeCipherSpec)
             {
-                // load this record and do totally drop it as not exists
+                // load this record and do totally drop it as not ever exists
                 // this method was invoked, so anyway other record is expected, return next one
+                // this is trick because of compatibility
                 bufferForStream.LoadToLength(firstThreeFields + length);
                 bufferForStream.TrimStart(5 + length);
 
                 return Read();
             }
-
-            validate.RecordLayer.ValidateContentType(contentTypeByte);
-            validate.RecordLayer.ProtocolVersion(version, compatibilityAllowRecordLayerVersionLower0x0303);
-            validate.RecordLayer.Length(length);
             
             bufferForStream.LoadToLength(firstThreeFields + length);
 
@@ -118,9 +127,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     bufferForStream.Buffer, authTagOffset,
                     out isAeadTagValid);
 
-                validate.RecordLayer.AEADAuthTagInvalid(isAeadTagValid);
+                int plaintextDataLength = encryptedDataLen - 1;
+                var plaintextContentType = RecordFragmentBytes[encryptedDataLen - 1];
 
-                recordInfo = new RecordInfo((ContentType)RecordFragmentBytes[encryptedDataLen - 1], version, encryptedDataLen - 1);
+                validate.RecordLayer.AEADAuthTagInvalid(isAeadTagValid);
+                validate.RecordLayer.ValidateRecord(false,
+                    (ushort)plaintextDataLength,
+                    plaintextContentType,
+                    version,
+                    configuredMaxPlaintextRecordLength,
+                    compatibilityAllowRecordLayerVersionLower0x0303);
+
+                recordInfo = new RecordInfo((ContentType)plaintextContentType, version, plaintextDataLength);
             }
             else
             {
@@ -138,8 +156,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void Write(ContentType contentType, byte[] buffer, long offset, long length)
         {
-            int chunkLen = Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength; //MaxTlsPlaintextLength; // MaxRecordContextLength;
-            // int chunks = (int)(length + chunkLen) / chunkLen;
+            int chunkLen = configuredMaxPlaintextRecordLength;
             long remToWrite = length;
             long start = offset;
 
@@ -196,6 +213,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             writeSequenceNumber++;
+        }
+
+        internal void SetRecordSizeLimit(ushort maxRecord)
+        {
+            Validation.ThrowInternal(maxRecord > Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength);
+            this.configuredMaxPlaintextRecordLength = maxRecord;
         }
 
         public void ChangeCipher(AEAD aeadWrite, AEAD aeadRead, byte[] writeIv, byte[] readIv)

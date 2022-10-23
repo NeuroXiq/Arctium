@@ -59,6 +59,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
 
             public PskTicket SelectedPskTicket { get; internal set; }
+            public ushort? ExtensionRecordSizeLimit { get; internal set; }
         }
 
         private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
@@ -370,13 +371,33 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void EncryptedExtensions()
         {
-            Extension[] extensions = new Extension[]
+            List<Extension> extensions = new List<Extension>
             {
                 new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") })
             };
 
-            var encryptedExtensions = new EncryptedExtensions(extensions);
+            // Extension: Record Size Limit
+            var clientHello = context.ClientHello2 ?? context.ClientHello1;
+            if (clientHello.TryGetExtension<RecordSizeLimitExtension>(ExtensionType.RecordSizeLimit, out var recordSizeLimitExt))
+            {
+                ushort maxRecordSizeLimit = recordSizeLimitExt.RecordSizeLimit;
 
+                if (config.ExtensionRecordSizeLimit.HasValue)
+                {
+                    maxRecordSizeLimit = maxRecordSizeLimit > config.ExtensionRecordSizeLimit.Value ?
+                        config.ExtensionRecordSizeLimit.Value : maxRecordSizeLimit;
+                }
+
+                if (maxRecordSizeLimit != 0)
+                {
+                    context.ExtensionRecordSizeLimit = maxRecordSizeLimit;
+                    messageIO.SetRecordSizeLimit(maxRecordSizeLimit);
+                    extensions.Add(new RecordSizeLimitExtension(context.ExtensionRecordSizeLimit.Value));
+                    messageIO.SetRecordSizeLimit(context.ExtensionRecordSizeLimit.Value);
+                }
+            }
+
+            var encryptedExtensions = new EncryptedExtensions(extensions.ToArray());
             messageIO.WriteHandshake(encryptedExtensions);
         }
 

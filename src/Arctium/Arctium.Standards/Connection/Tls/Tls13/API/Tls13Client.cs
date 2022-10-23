@@ -15,8 +15,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public Tls13Stream Connect(Stream rawNetworkStream)
         {
+            return Connect(rawNetworkStream, out _);
+        }
+
+        public Tls13Stream Connect(Stream rawNetworkStream, out Tls13ClientConnectionInfo connectionInfo)
+        {
             var protocol = new Tls13ClientProtocol(rawNetworkStream, context);
-            protocol.Connect();
+            var connectionInfoInternal = protocol.Connect();
+
+            connectionInfo = new Tls13ClientConnectionInfo(connectionInfoInternal);
 
             return new Tls13ClientStreamInternal(protocol);
         }

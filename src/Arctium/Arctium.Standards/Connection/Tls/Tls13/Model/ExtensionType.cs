@@ -14,6 +14,12 @@
         ClientCertificateType = 19, /* RFC 7250 */
         ServerCertificateType = 20, /* RFC 7250 */
         Padding = 21, /* RFC 7685 */
+
+        /// <summary>
+        /// Request for Comments: 8449
+        /// Record Size Limit Extension for TLS
+        /// </summary>
+        RecordSizeLimit,
         PreSharedKey = 41, /* RFC 8446 */
         EarlyData = 42, /* RFC 8446 */
         SupportedVersions = 43, /* RFC 8446 */

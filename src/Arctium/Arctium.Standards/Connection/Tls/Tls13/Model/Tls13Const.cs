@@ -12,7 +12,10 @@
         public const int ClientHello_CompressionMethodsMaxLen = 255;
         public const int ClientHello_ExtensionsMaxLen = 65535;
 
+
+        /* Record layer consts */
         public const int RecordLayer_MaxPlaintextApplicationDataLength = 1 << 14;
+        public const ushort RecordLayer_MaxExpansionAfterEncryptionForAnyCipher = 256;
 
 
         /* NewSessionTicket */
@@ -38,5 +41,13 @@
         public static int KeyShareClientHello_ClientSharesVectorMaxLen = (1 << 16) - 1;
 
         public static int KeyShareEntry_KeyExchangeVectorMaxLen = (1 << 16) - 1;
+
+        /*  */
+        public static int MaxFragmentLengthExtension_ExtensionLength = 1;
+
+        /* RecordSizelimit extension */
+        public const int Extension_RecordSizeLimit_RecordSizeLimit_MinValue = 64;
+        public const int Extension_RecordSizeLimit_RecordSizeLimit_MaxValue = RecordLayer_MaxPlaintextApplicationDataLength;
+
     }
 }

@@ -3,6 +3,8 @@
  *  Implemented by NeuroXiq 2022
  */
 
+// todo tls13 free memory after connected success
+
 using Arctium.Shared;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
@@ -20,6 +22,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
     internal class Tls13ClientProtocol
     {
+        public struct ConnectedInfo
+        {
+            public bool IsPskSessionResumption;
+            public byte[][] ServerCertificates;
+            public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
+            public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
+            public CipherSuite CipherSuite;
+            public bool ServerRequestedCertificateInHandshake;
+            public ushort? NegotiatedRecordSizeLimitExtension;
+        }
+
         public byte[] ApplicationDataBuffer { get; private set; }
         public int ApplicationDataLength { get { return applicationDataLength; } }
 
@@ -28,7 +41,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ClientHello ClientHello1;
             public ServerHello HelloRetryRequest;
             public ClientHello ClientHello2;
-            public bool CertificateRequest;
+            public bool ServerRequestedCertificateInHandshake;
             public X509.X509Cert.X509Certificate ServerCertificate;
 
             public API.PskTicket[] PskTickets;
@@ -36,6 +49,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public int CH1Length = -1;
             public bool IsPskSessionResumption;
+
+            public byte[][] ServerCertificatesRawBytes { get; internal set; }
+            public ushort? NegotiatedRecordSizeLimitExtension { get; internal set; }
+
+            public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
+            public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
         }
 
         Context context;
@@ -79,11 +98,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (ch1) context.CH1Length = length;
         }
 
-        public void Connect()
+        public ConnectedInfo Connect()
         {
             commandQueue.Enqueue(ClientProtocolCommand.Start_Connect);
 
             ProcessCommand();
+
+            var info = new ConnectedInfo
+            {
+                IsPskSessionResumption = context.IsPskSessionResumption,
+                ServerCertificates = context.ServerCertificatesRawBytes,
+                KeyExchangeNamedGroup = context.KeyExchangeNamedGroup,
+                CipherSuite = crypto.SelectedCipherSuite,
+                ServerCertificateVerifySignatureScheme = context.ServerCertificateVerifySignatureScheme,
+                ServerRequestedCertificateInHandshake = context.ServerRequestedCertificateInHandshake,
+                NegotiatedRecordSizeLimitExtension = context.NegotiatedRecordSizeLimitExtension
+            };
+
+            return info;
         }
 
         private void ProcessCommand(ClientProtocolCommand command)
@@ -188,6 +220,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             writeApplicationDataLength = length;
 
             ProcessCommand(ClientProtocolCommand.Connected_WriteApplicationData);
+
+            // free memory (do not lock buffer from external source)
+            writeApplicationDataBuffer = null;
+            writeApplicationDataOffset = -1;
+            writeApplicationDataLength = -1;
         }
 
         private void Connected_ReadApplicationData()
@@ -238,11 +275,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             // todo post handshake actions
             state = ClientProtocolState.Connected;
-
-            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
-            messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
-            
-            messageIO.SetBackwardCompatibilityMode(false, false);
         }
 
         private void Handshake_ClientFinished()
@@ -253,6 +285,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.SetupMasterSecret(hsctx);
             messageIO.WriteHandshake(finished);
             crypto.SetupResumptionMasterSecret(hsctx);
+
+            messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
+            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
+            messageIO.SetBackwardCompatibilityMode(false, false);
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_HandshakeCompletedSuccessfully);
         }
@@ -274,7 +310,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var finished = messageIO.ReadHandshakeMessage<Finished>();
             // todo verify finished
 
-            if (context.CertificateRequest) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificate);
+            if (context.ServerRequestedCertificateInHandshake) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificate);
             else commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientFinished);
         }
 
@@ -282,6 +318,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             int dataLengthToSign = hsctx.DataLength;
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
+            context.ServerCertificateVerifySignatureScheme = certVerify.SignatureScheme;
 
             bool isSignatureValid = crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate);
 
@@ -293,9 +330,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_ServerCertificate()
         {
             var certificate = messageIO.ReadHandshakeMessage<Certificate>();
+            var x509PathRawBytes = certificate.CertificateList.Select(entry => entry.CertificateEntryRawBytes).ToArray();
+            context.ServerCertificatesRawBytes = x509PathRawBytes;
 
-            X509CertificateDeserializer deserialized = new X509CertificateDeserializer();
-            context.ServerCertificate = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
+            try
+            {
+                X509CertificateDeserializer deserialized = new X509CertificateDeserializer();
+                context.ServerCertificate = deserialized.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
+            }
+            catch (Exception e)
+            {
+                validate.Certificate.AlertFatal(true, AlertDescription.BadCertificate, "cannot deserialize certificate. Maybe invalid certificate or not suppored deserialization by Arctium lib.");
+            }
+
+            if (config.X509CertificateValidationCallback != null)
+            {
+                var validationResult = config.X509CertificateValidationCallback(x509PathRawBytes);
+                validate.Certificate.ValidateCertificateValidationCallbackSuccess(validationResult);
+            }
+            
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificateVerify);
         }
@@ -310,16 +363,26 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_EncryptedExtensions()
         {
             var encryptedExt = messageIO.ReadHandshakeMessage<EncryptedExtensions>();
+            validate.EncryptedExtensions.General(encryptedExt, context.ClientHello1 ?? context.ClientHello1);
+
+            var recordSizeLimitFromServer = encryptedExt.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
+
+            if (config.ExtensionRecordSizeLimit.HasValue && recordSizeLimitFromServer != null)
+            {
+                ushort min = Math.Min(config.ExtensionRecordSizeLimit.Value, recordSizeLimitFromServer.RecordSizeLimit);
+                context.NegotiatedRecordSizeLimitExtension = min;
+                messageIO.SetRecordSizeLimit(min);
+            }
 
             if (context.IsPskSessionResumption) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
             else if (messageIO.LoadHandshakeMessage() == HandshakeType.CertificateRequest)
             {
-                context.CertificateRequest = true;
+                context.ServerRequestedCertificateInHandshake = true;
                 commandQueue.Enqueue(ClientProtocolCommand.Handshake_CertificateRequest);
             }
             else
             {
-                context.CertificateRequest = false;
+                context.ServerRequestedCertificateInHandshake = false;
                 commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificate);
             }
         }
@@ -331,7 +394,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             validate.ServerHello.GeneralServerHelloValidate(context.ClientHello2, sh);
 
-            var keyShare = (KeyShareServerHelloExtension)sh.Extensions.Find(e => e.ExtensionType == ExtensionType.KeyShare);
+            var serverKeyShare = ((KeyShareServerHelloExtension)sh.Extensions.Find(e => e.ExtensionType == ExtensionType.KeyShare)).ServerShare;
             var preSharedKeySh = sh.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.PreSharedKey) as PreSharedKeyServerHelloExtension;
             byte[] psk = null;
 
@@ -339,10 +402,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             // todo check if server response is correct compared to sended CH (check if this class send keyexchangemode.psk_ke)
             // todo server could select KeyExchangeMode_ke (not dhe), need to implement this
-            if (keyShare.ServerShare == null) throw new InvalidOperationException();
+            if (serverKeyShare == null) throw new InvalidOperationException();
             else
             {
-                crypto.ComputeSharedSecret(keyShare.ServerShare.NamedGroup, this.generatedPrivateKeys[keyShare.ServerShare.NamedGroup], keyShare.ServerShare.KeyExchangeRawBytes);
+                context.KeyExchangeNamedGroup = serverKeyShare.NamedGroup;
+                crypto.ComputeSharedSecret(serverKeyShare.NamedGroup, this.generatedPrivateKeys[serverKeyShare.NamedGroup], serverKeyShare.KeyExchangeRawBytes);
             }
 
             if (preSharedKeySh != null)
@@ -364,6 +428,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_ClientHello2()
         {
             // process HelloRetryRequst
+            // 1. send everything what was send in clienthello1 (but skip 'key share' sended in clienthello1 because server selected, this is reason of this situation here)
+            // 2. get keyshareserverhelloretry from server and send key share which server wants
+
             validate.HelloRetryRequest.GeneralValidate(context.ClientHello1, context.HelloRetryRequest);
             crypto.SelectCipherSuite(context.HelloRetryRequest.CipherSuite);
             crypto.ReplaceClientHello1WithMessageHash(hsctx, context.CH1Length);
@@ -375,10 +442,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.GeneratePrivateKeyAndKeyShareToSend(serverKeyShare.SelectedGroup, out keyShareToSendRawBytes, out privateKey);
             generatedPrivateKeys[serverKeyShare.SelectedGroup] = privateKey;
 
-            PreSharedKeyClientHelloExtension pskExtension = null;
-
             foreach (var extensionInCH1 in context.ClientHello1.Extensions)
             {
+                // skip keyshare from ch1.
+                // Skip presharedkey because this is implemented here in a way that method 'appendlstextensionpresharedkey' must be called last
                 if (extensionInCH1.ExtensionType == ExtensionType.KeyShare ||
                     extensionInCH1.ExtensionType == ExtensionType.PreSharedKey)
                     continue;
@@ -463,7 +530,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var random = new byte[Tls13Const.HelloRandomFieldLength];
             byte[] sesId = new byte[Tls13Const.ClientHello_LegacySessionIdMaxLen];
             CipherSuite[] suites = config.CipherSuites;
-            PreSharedKeyClientHelloExtension preSharedKeyExtension = null;
 
             List<Extension> extensions = new List<Extension>
             {
@@ -473,6 +539,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 new SupportedGroupExtension(config.NamedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };
+
+            if (config.ExtensionRecordSizeLimit.HasValue)
+            {
+                messageIO.SetRecordSizeLimit(config.ExtensionRecordSizeLimit.Value);
+                extensions.Add(new RecordSizeLimitExtension(config.ExtensionRecordSizeLimit.Value));
+            }
 
             GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
             GlobalConfig.RandomGeneratorCryptSecure(sesId, 0, sesId.Length);

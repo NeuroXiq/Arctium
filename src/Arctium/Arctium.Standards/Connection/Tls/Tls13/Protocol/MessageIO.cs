@@ -2,6 +2,8 @@
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using System.IO;
+using System;
+using Arctium.Shared.Other;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -179,6 +181,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
             return recordInfo;
+        }
+
+        internal void SetRecordSizeLimit(ushort value)
+        {
+            recordLayer.SetRecordSizeLimit(value);
         }
     }
 }

@@ -68,6 +68,16 @@ namespace Arctium.Shared.Other
             foreach (var val in values) EnumValueDefined(val, argName, additionalInfo);
         }
 
+        public static void NumberInRange(int value, int minValue, int maxValue, string argName, string additionalInfo = null)
+        {
+            if (value >= minValue && value <= maxValue) return;
+
+            string msg = string.Format("'{0}' value is not in valid range. Valid range: {1}-{2} but current {3}", argName, minValue, maxValue, value);
+            if (additionalInfo != null) msg = string.Format("{0}. Additional info: {1}", msg, additionalInfo);
+
+            throw new ArgumentException(msg, argName);
+        }
+
         public static void EnumValueDefined<T>(T v, string argName, string additionalInfo = null) where T: struct, Enum
         {
             if (Enum.IsDefined<T>(v)) return;

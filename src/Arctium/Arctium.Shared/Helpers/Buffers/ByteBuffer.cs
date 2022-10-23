@@ -14,7 +14,7 @@ namespace Arctium.Shared.Helpers.Buffers
             Buffer = new byte[1024];
         }
 
-        public int OutsideAppend(int length)
+        public int MallocAppend(int length)
         {
             int offset = DataLength;
             ExtendIfNeededBuffer(length);

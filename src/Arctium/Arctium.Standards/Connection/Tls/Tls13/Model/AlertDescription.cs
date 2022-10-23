@@ -12,6 +12,10 @@
         /// set of security parameters given the options available.
         /// </summary>
         HandshakeFailure = 40,
+
+        /// <summary>
+        /// bad_certificate: A certificate was corrupt, contained signatures that did not verify correctly, etc.
+        /// </summary>
         BadCertificate = 42,
         UnsupportedCertificate = 43,
         CertificateRevoked = 44,
@@ -29,6 +33,12 @@
         UserCanceled = 90,
         MissingExtension = 109,
         UnsupportedExtension = 110,
+
+        /// <summary>
+        /// RFC 6066 Server Name Indication, send when 
+        /// server name is recognized/configured 
+        /// that is listed in 'server name indication' client hello extension
+        /// </summary>
         UnrecognizedName = 112,
         BadCertificateStatusResponse = 113,
         UnknownPskIdentity = 115,
