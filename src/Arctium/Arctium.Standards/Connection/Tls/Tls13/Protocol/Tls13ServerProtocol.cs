@@ -341,26 +341,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // extension with signature algorithms must be specified 
             var ext = new Extension[]
             {
-                new SignatureSchemeListExtension(new SignatureSchemeListExtension.SignatureScheme[]
-                {
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPkcs1Sha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPkcs1Sha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPkcs1Sha512,
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp256r1Sha256,
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp384r1Sha384,
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSecp521r1Sha512,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssRsaeSha512,
-                    SignatureSchemeListExtension.SignatureScheme.Ed25519,
-                    SignatureSchemeListExtension.SignatureScheme.Ed448,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha256,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha384,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPssPssSha512,
-                    SignatureSchemeListExtension.SignatureScheme.RsaPkcs1Sha1,
-                    SignatureSchemeListExtension.SignatureScheme.EcdsaSha1,
-                }, ExtensionType.SignatureAlgorithms)
+                new SignatureSchemeListExtension(config.SignatureSchemes, ExtensionType.SignatureAlgorithms)
             };
 
             var certRequest = new CertificateRequest(new byte[0], ext);
@@ -384,17 +365,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 if (config.ExtensionRecordSizeLimit.HasValue)
                 {
-                    maxRecordSizeLimit = maxRecordSizeLimit > config.ExtensionRecordSizeLimit.Value ?
+                    maxRecordSizeLimit = (maxRecordSizeLimit > config.ExtensionRecordSizeLimit.Value) ?
                         config.ExtensionRecordSizeLimit.Value : maxRecordSizeLimit;
                 }
 
-                if (maxRecordSizeLimit != 0)
-                {
-                    context.ExtensionRecordSizeLimit = maxRecordSizeLimit;
-                    messageIO.SetRecordSizeLimit(maxRecordSizeLimit);
-                    extensions.Add(new RecordSizeLimitExtension(context.ExtensionRecordSizeLimit.Value));
-                    messageIO.SetRecordSizeLimit(context.ExtensionRecordSizeLimit.Value);
-                }
+                context.ExtensionRecordSizeLimit = maxRecordSizeLimit;
+                messageIO.SetRecordSizeLimit(maxRecordSizeLimit);
+                extensions.Add(new RecordSizeLimitExtension(context.ExtensionRecordSizeLimit.Value));
+                messageIO.SetRecordSizeLimit(context.ExtensionRecordSizeLimit.Value);
             }
 
             var encryptedExtensions = new EncryptedExtensions(extensions.ToArray());

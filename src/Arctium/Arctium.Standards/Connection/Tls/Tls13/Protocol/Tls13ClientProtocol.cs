@@ -366,9 +366,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             validate.EncryptedExtensions.General(encryptedExt, context.ClientHello1 ?? context.ClientHello1);
 
             var recordSizeLimitFromServer = encryptedExt.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
+            bool didClientSendRecordSizeLimit = config.ExtensionRecordSizeLimit.HasValue;
 
-            if (config.ExtensionRecordSizeLimit.HasValue && recordSizeLimitFromServer != null)
+            if (didClientSendRecordSizeLimit && recordSizeLimitFromServer != null)
             {
+                // todo tls13 not sure if this is correct (condition in if for this block), can server send recordsizelimit if client did not?
                 ushort min = Math.Min(config.ExtensionRecordSizeLimit.Value, recordSizeLimitFromServer.RecordSizeLimit);
                 context.NegotiatedRecordSizeLimitExtension = min;
                 messageIO.SetRecordSizeLimit(min);
@@ -530,6 +532,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var random = new byte[Tls13Const.HelloRandomFieldLength];
             byte[] sesId = new byte[Tls13Const.ClientHello_LegacySessionIdMaxLen];
             CipherSuite[] suites = config.CipherSuites;
+            List<KeyShareEntry> generatedKeysToExchange = new List<KeyShareEntry>();
+            ClientHello clientHello;
+
+            GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
+            GlobalConfig.RandomGeneratorCryptSecure(sesId, 0, sesId.Length);
 
             List<Extension> extensions = new List<Extension>
             {
@@ -546,11 +553,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 extensions.Add(new RecordSizeLimitExtension(config.ExtensionRecordSizeLimit.Value));
             }
 
-            GlobalConfig.RandomGeneratorCryptSecure(random, 0, random.Length);
-            GlobalConfig.RandomGeneratorCryptSecure(sesId, 0, sesId.Length);
-
-            List<KeyShareEntry> generatedKeysToExchange = new List<KeyShareEntry>();
-
             foreach (var toSendInKeyShare in config.NamedGroupsToSendInKeyExchangeInClientHello1)
             {
                 byte[] keyShareToSendRawBytes, privateKey;
@@ -563,7 +565,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             extensions.Add(new KeyShareClientHelloExtension(generatedKeysToExchange.ToArray()));
 
-            var clientHello = new ClientHello(random, sesId, suites, extensions);
+            clientHello = new ClientHello(random, sesId, suites, extensions);
             AppendLastExtensionPreSharedKey(clientHello);
 
             messageIO.WriteHandshake(clientHello);

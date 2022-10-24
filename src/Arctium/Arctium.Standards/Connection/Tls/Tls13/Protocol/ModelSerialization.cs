@@ -69,7 +69,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             int offs = tempSerializedExtension.MallocAppend(2);
             MemMap.ToBytes1UShortBE(ext.RecordSizeLimit, tempSerializedExtension.Buffer, offs);
-
         }
 
         private void Serialize_Extension_MaximumFragmentLengthExtensionExtension(object obj)

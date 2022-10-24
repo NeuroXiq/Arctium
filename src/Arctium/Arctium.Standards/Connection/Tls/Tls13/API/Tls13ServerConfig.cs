@@ -63,6 +63,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             return c;
         }
 
+        public void ConfigueExtensionALPN(Func<, )
+        {
+            
+        }
+
         /// <summary>
         /// Configures Record Size Limit extension (RFC 8449).
         /// If value is not null and RecordSizeLImit extension received from client,

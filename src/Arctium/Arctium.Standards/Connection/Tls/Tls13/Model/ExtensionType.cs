@@ -19,7 +19,7 @@
         /// Request for Comments: 8449
         /// Record Size Limit Extension for TLS
         /// </summary>
-        RecordSizeLimit,
+        RecordSizeLimit = 28,
         PreSharedKey = 41, /* RFC 8446 */
         EarlyData = 42, /* RFC 8446 */
         SupportedVersions = 43, /* RFC 8446 */

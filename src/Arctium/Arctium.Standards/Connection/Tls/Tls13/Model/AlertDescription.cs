@@ -43,6 +43,10 @@
         BadCertificateStatusResponse = 113,
         UnknownPskIdentity = 115,
         CertificateRequired = 116,
+
+        /// <summary>
+        /// rfc7301
+        /// </summary>
         NoApplicationProtocol = 120
  }
 }

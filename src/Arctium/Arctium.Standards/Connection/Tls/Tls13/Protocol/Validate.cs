@@ -217,7 +217,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 if (serverRecordSizeLimit != null && clientRecordSizeLimit != null)
                 {
                     AlertFatal(serverRecordSizeLimit.RecordSizeLimit > clientRecordSizeLimit.RecordSizeLimit,
-                        AlertDescription.Illegal_parameter, "Value of recordsizelimit from server exceed recordsizelimit extensions from client (that was sent)");
+                        AlertDescription.Illegal_parameter,
+                        "Value of recordsizelimit from server exceed recordsizelimit extensions from client " + 
+                        "(that was sent from client to server)");
                 }
             }
         }
