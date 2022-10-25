@@ -1,4 +1,5 @@
-﻿using Arctium.Standards.Connection.Tls.Tls13.Protocol;
+﻿using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
+using Arctium.Standards.Connection.Tls.Tls13.Protocol;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
@@ -42,6 +43,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// </summary>
         public ushort? ExtensionRecordSizeLimit { get; private set; }
 
+        /// <summary>
+        /// Result of select ALPN (application layer protocol negotiation) by server.
+        /// If server did not sent extension value is null.
+        /// If server sent extension inner value of object
+        /// always stores not null and not empty single protocol name selected by server
+        /// </summary>
+        public ExtensionResultALPN ExtensionResultALPN { get; private set; }
+
+        /// <summary>
+        /// internal constructor to create API connection info from protocol result
+        /// </summary>
+        /// <param name="info"></param>
         internal Tls13ClientConnectionInfo(Tls13ClientProtocol.ConnectedInfo info)
         {
             IsPskSessionResumption = info.IsPskSessionResumption;
@@ -53,6 +66,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             CipherSuite = (API.CipherSuite)info.CipherSuite;
             ExtensionRecordSizeLimit = info.NegotiatedRecordSizeLimitExtension;
+
+            if (info.ExtensionResultALPN != null)
+                ExtensionResultALPN = new ExtensionResultALPN(info.ExtensionResultALPN);
         }
     }
 }

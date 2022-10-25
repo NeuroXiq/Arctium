@@ -33,6 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Arctium.Shared.Other;
+using Arctium.Shared.Helpers;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -233,10 +234,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 extensionsValidate = new ExtensionsValidate(handler, Label_ServerHello);
             }
 
-            public void GeneralServerHelloValidate(ClientHello clientHello1, ServerHello hello)
+            public void GeneralServerHelloValidate(ClientHello clientHelloThatWasSend, ServerHello hello)
             {
-                // clientHello1 -> not null on hello retry reuqest, null if not helloretryrequest
-               
+                extensionsValidate.GeneralValidateServerHelloExtensions(hello);
+
+                // alpn
+                var alpn = hello.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.ApplicationLayerProtocolNegotiation) as ProtocolNameListExtension;
+                if (alpn != null)
+                {
+                    ProtocolNameListExtension sentByClient;
+                    bool alpnWasSent = clientHelloThatWasSend.TryGetExtension<ProtocolNameListExtension>(ExtensionType.ApplicationLayerProtocolNegotiation, out var alpnThatWasSend);
+
+                    if (!alpnWasSent) AlertFatal(AlertDescription.UnsupportedExtension, "received alpn but client didn not sent this extension");
+                    if (alpn.ProtocolNamesList.Length == 0) AlertFatal(AlertDescription.Illegal_parameter, "zero length of alpn in serverhello response");
+                    if (alpn.ProtocolNamesList.Length != 1) AlertFatal(AlertDescription.Illegal_parameter, "alpn server must select one protocol but received more than one in the list");
+                    bool selectedWhatWasSent = alpnThatWasSend.ProtocolNamesList.Any(wasSent => MemOps.Memcmp(wasSent, alpn.ProtocolNamesList[0]));
+
+                    AlertFatal(selectedWhatWasSent, AlertDescription.Illegal_parameter, "server alpn response does not math what was sent by client");
+                }
             }
         }
 
@@ -259,7 +274,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             internal void MissingSignatureAlgorithmsExtension(bool throwEx) => AlertFatal(throwEx, AlertDescription.MissingExtension, "missing signature scheme list extension");
         }
-
 
         public class CertificateValidate : ValidateBase
         {
@@ -480,6 +494,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 HashSet<ExtensionType> extensionsHashSet = new HashSet<ExtensionType>(clientHello.Extensions.Select(e => e.ExtensionType).ToArray());
                 var extensions = clientHello.Extensions;
 
+                SharedExtensionsValidate(clientHello.Extensions, HandshakeType.ClientHello);
+
                 if (extensionsHashSet.Contains(ExtensionType.PreSharedKey) &&
                     clientHello.Extensions[clientHello.Extensions.Count - 1].ExtensionType != ExtensionType.PreSharedKey)
                 {
@@ -500,6 +516,19 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 }
 
                 AlertFatal(tls13NotFound, AlertDescription.ProtocolVersion, "TLS 1.3 version was not found int version extension and implementation supports only 1.3");
+
+                // validate alpn
+                if (clientHello.TryGetExtension<ProtocolNameListExtension>(ExtensionType.ApplicationLayerProtocolNegotiation, out var alpnExtension))
+                {
+                    var protocolNamesList = alpnExtension.ProtocolNamesList;
+
+                    foreach (var nameBytes in protocolNamesList)
+                    {
+                        // no empty strings
+                        if (nameBytes.Length == 0) AlertFatal(AlertDescription.Illegal_parameter, "zero length of protocol name in alpn extension");
+                        if (nameBytes[0] == 0) AlertFatal(AlertDescription.Illegal_parameter, "zero byte as first byte in alpn protocol name in list");
+                    }
+                }
             }
 
             public void GeneralValidateServerHelloExtensions(ServerHello hello)
@@ -509,6 +538,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public void SharedExtensionsValidate(List<Extension> extensions, HandshakeType handshakeType)
             {
+                // 1. must be called for all messages where extensions list appear, this method must be safe
+                // this stores shared validation for extensions that appear in one or more messages
+                // doesnt make sens copy & paste because same validatation in multiple places
+                //
+                // This method must not perform context-specific validation
+                // (e.validate serverhello extension in context of what was sent in clienthello message)
+
                 HashSet<ExtensionType> extensionsHashSet = new HashSet<ExtensionType>();
 
                 foreach (var ext in extensions)
@@ -590,6 +626,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 if (protocolNameLength < 1 || protocolNameLength > 255)
                     Throw("alpn: protocol name invalid, minimum 1 max 255");
+            }
+
+            internal void ALPN_AlertFatal_NoApplicationProtocol()
+            {
+                AlertFatal(AlertDescription.NoApplicationProtocol, "ALPN: Server decided do reject handshake because application layer protocol does not match or not supported");
             }
 
             internal void SupportedVersions_Client_VersionsLength(ushort versionsLength)

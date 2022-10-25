@@ -30,6 +30,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         /// </summary>
         public int ApplicationDataLength { get { return applicationDataLength; } }
 
+        public struct ConnectedInfo
+        {
+            public byte[] ExtensionResultALPN;
+        }
+
         class Context
         {
             public ClientHello ClientHello1;
@@ -57,9 +62,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme;
 
-
             public PskTicket SelectedPskTicket { get; internal set; }
             public ushort? ExtensionRecordSizeLimit { get; internal set; }
+            public byte[] ExtensionResultALPN;
         }
 
         private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
@@ -102,12 +107,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             hsctx.Append(buffer, offset, length);
         }
 
-        public void Listen()
+        public ConnectedInfo Listen()
         {
             CommandQueue.Enqueue(ServerProcolCommand.Start);
             State = ServerProtocolState.Listen;
 
             ProcessCommandLoop();
+
+            var info = new ConnectedInfo();
+            info.ExtensionResultALPN = context.ExtensionResultALPN;
+
+            return info;
         }
 
         public void Close()
@@ -352,13 +362,39 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void EncryptedExtensions()
         {
+            var clientHello = context.ClientHello2 ?? context.ClientHello1;
+
             List<Extension> extensions = new List<Extension>
             {
-                new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") })
             };
 
+            // Extension: ALPN
+
+            if (clientHello.TryGetExtension<ProtocolNameListExtension>(ExtensionType.ApplicationLayerProtocolNegotiation, out var alpnExtension))
+            {
+                var result = serverContext.ExtensionHandleALPN(alpnExtension);
+
+                switch (result.ActionType)
+                {
+                    case API.Extensions.ExtensionServerALPNSelector.ResultType.Success:
+                        var selectedalpn = alpnExtension.ProtocolNamesList[result.SelectedIndex];
+                        extensions.Add(new ProtocolNameListExtension(new byte[][] { selectedalpn }));
+                        context.ExtensionResultALPN = selectedalpn;
+                        break;
+                    case API.Extensions.ExtensionServerALPNSelector.ResultType.NotSelectedFatalAlert:
+                        validate.Extensions.ALPN_AlertFatal_NoApplicationProtocol();
+                        break;
+                    case API.Extensions.ExtensionServerALPNSelector.ResultType.NotSelectedIgnore:
+                        /* ignore, simulate that server dont know this extension */
+                        break;
+                    default:
+                        Validation.ThrowInternal("impossible, invalid implementation not all in switch handled");
+                        break;
+                }
+            }
+
             // Extension: Record Size Limit
-            var clientHello = context.ClientHello2 ?? context.ClientHello1;
+            
             if (clientHello.TryGetExtension<RecordSizeLimitExtension>(ExtensionType.RecordSizeLimit, out var recordSizeLimitExt))
             {
                 ushort maxRecordSizeLimit = recordSizeLimitExt.RecordSizeLimit;

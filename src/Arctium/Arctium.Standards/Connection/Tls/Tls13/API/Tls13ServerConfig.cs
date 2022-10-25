@@ -1,4 +1,5 @@
 ﻿using Arctium.Shared.Other;
+using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Standards.Connection.Tls.Tls13.Protocol;
@@ -17,12 +18,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal SupportedGroupExtension.NamedGroup[] NamedGroups;
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes;
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
+        internal Func<ExtensionServerALPNSelector, ExtensionServerALPNSelector.Result> ExtensionALPN;
 
         public bool HandshakeRequestCertificateFromClient;
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
         static API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
         static readonly ushort? DefaultExtensionRecordSizeLimit = null;
+        internal static Func<ExtensionServerALPNSelector, ExtensionServerALPNSelector.Result> DefaultExtensionALPN = null;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -59,13 +62,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigueSupportedNamedGroupsForKeyExchange(DefaultAllGroups);
             c.ConfigueSupportedSignatureSchemes(DefaultAllSignateSchemes);
             c.ConfigureExtensionRecordSizeLimit(DefaultExtensionRecordSizeLimit);
+            c.ConfigueExtensionALPN(DefaultExtensionALPN);
 
             return c;
         }
 
-        public void ConfigueExtensionALPN(Func<, )
+
+        /// <summary>
+        /// Configures Application Layer Protocol Negotiation extension (rfc7301)
+        /// If input value is null server ignores ALPN extension from client and do not send response
+        /// Is invoked only when client sends ALPN extension, if client did not sent ALPN extension
+        /// then nothing happend and handshake continue, selector is never invoked
+        /// </summary>
+        /// <param name="protocolSelector">Selector function that will select protocol or do other action</param>
+        public void ConfigueExtensionALPN(Func<ExtensionServerALPNSelector, ExtensionServerALPNSelector.Result> protocolSelector)
         {
-            
+            this.ExtensionALPN = protocolSelector;
         }
 
         /// <summary>

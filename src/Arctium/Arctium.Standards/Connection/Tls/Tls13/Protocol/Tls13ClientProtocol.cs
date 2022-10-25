@@ -31,6 +31,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public CipherSuite CipherSuite;
             public bool ServerRequestedCertificateInHandshake;
             public ushort? NegotiatedRecordSizeLimitExtension;
+            public byte[] ExtensionResultALPN;
         }
 
         public byte[] ApplicationDataBuffer { get; private set; }
@@ -55,6 +56,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
             public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
+            public byte[] ExtensionALPN_ProtocolSelectedByServer;
         }
 
         Context context;
@@ -112,7 +114,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 CipherSuite = crypto.SelectedCipherSuite,
                 ServerCertificateVerifySignatureScheme = context.ServerCertificateVerifySignatureScheme,
                 ServerRequestedCertificateInHandshake = context.ServerRequestedCertificateInHandshake,
-                NegotiatedRecordSizeLimitExtension = context.NegotiatedRecordSizeLimitExtension
+                NegotiatedRecordSizeLimitExtension = context.NegotiatedRecordSizeLimitExtension,
+                ExtensionResultALPN = context.ExtensionALPN_ProtocolSelectedByServer
             };
 
             return info;
@@ -376,6 +379,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 messageIO.SetRecordSizeLimit(min);
             }
 
+            // Extension: alpn
+            var alpnServer = encryptedExt.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.ApplicationLayerProtocolNegotiation) as ProtocolNameListExtension;
+
+            if (alpnServer != null)
+            {
+                context.ExtensionALPN_ProtocolSelectedByServer = alpnServer.ProtocolNamesList[0];
+            }
+
             if (context.IsPskSessionResumption) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
             else if (messageIO.LoadHandshakeMessage() == HandshakeType.CertificateRequest)
             {
@@ -541,7 +552,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             List<Extension> extensions = new List<Extension>
             {
                 new ClientSupportedVersionsExtension(new ushort[] { 0x0304 }),
-                new ProtocolNameListExtension(new byte[][] { System.Text.Encoding.ASCII.GetBytes("http/1.1") }),
                 new SignatureSchemeListExtension(config.SignatureSchemes, ExtensionType.SignatureAlgorithms),
                 new SupportedGroupExtension(config.NamedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
@@ -551,6 +561,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 messageIO.SetRecordSizeLimit(config.ExtensionRecordSizeLimit.Value);
                 extensions.Add(new RecordSizeLimitExtension(config.ExtensionRecordSizeLimit.Value));
+            }
+
+            if (config.ExtensionALPNConfig != null)
+            {
+                extensions.Add(new ProtocolNameListExtension(config.ExtensionALPNConfig.ProtocolList.ToArray()));
             }
 
             foreach (var toSendInKeyShare in config.NamedGroupsToSendInKeyExchangeInClientHello1)

@@ -32,6 +32,13 @@
         InappropriateFallback = 86,
         UserCanceled = 90,
         MissingExtension = 109,
+
+        /// <summary>
+        /// When endpoints send extension (eg server) 
+        /// but this extension was not offered by client.
+        /// Not applicable for cookie extension because
+        /// server sends first
+        /// </summary>
         UnsupportedExtension = 110,
 
         /// <summary>

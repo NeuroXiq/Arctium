@@ -7,6 +7,8 @@ using Arctium.Cryptography.Utils;
 using System.Linq;
 using System;
 using Arctium.Standards.X509.X509Cert;
+using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
+using Arctium.Shared.Helpers.Buffers;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
@@ -63,6 +65,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             var context = new Tls13ServerContext(config, new PskTicketServerStoreDefaultInMemory());
 
             return context;
+        }
+
+        internal ExtensionServerALPNSelector.Result ExtensionHandleALPN(ProtocolNameListExtension alpnExtension)
+        {
+            if (Config.ExtensionALPN != null)
+            {
+                // clone for safety (not modified after calling selector, maybe in selector malicious code affect array)
+                byte[][] protNamesClone = alpnExtension.ProtocolNamesList
+                    .Select(originalProtocol => (byte[])originalProtocol.Clone())
+                    .ToArray();
+
+                var result = Config.ExtensionALPN.Invoke(new ExtensionServerALPNSelector(protNamesClone));
+
+                return result;
+            }
+
+            return new ExtensionServerALPNSelector.Result(ExtensionServerALPNSelector.ResultType.NotSelectedIgnore, -1);
         }
     }
 }

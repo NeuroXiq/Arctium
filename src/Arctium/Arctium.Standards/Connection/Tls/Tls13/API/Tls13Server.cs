@@ -21,7 +21,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         {
             connectionInfo = null;
             var protocol = new Tls13ServerProtocol(networkStream, serverContext);
-            protocol.Listen();
+            var conInfo = protocol.Listen();
+            connectionInfo = new Tls13ServerConnectionInfo(conInfo);
 
             return new Tls13ServerStreamInternal(protocol);
         }

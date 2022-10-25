@@ -51,6 +51,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
             return found;
         }
 
+        public static byte[] GetConstantBytes(Protocol protocol)
+        {
+            Validation.EnumValueDefined(protocol, nameof(protocol), "internal");
+
+            var orgBytes = NamedProtocolUtf8Bytes[protocol];
+
+            return (byte[])orgBytes.Clone();
+        }
+
         /// <summary>
         /// copy paste from https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids
         /// </summary>

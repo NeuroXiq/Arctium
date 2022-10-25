@@ -15,12 +15,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes { get; private set; }
         internal Func<byte[][], ServerCertificateValidionResult> X509CertificateValidationCallback;
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
+        internal ExtensionClientALPNConfig ExtensionALPNConfig { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
         static readonly API.CipherSuite[] DefaultCipherSuites = Enum.GetValues<API.CipherSuite>();
         static readonly API.NamedGroup[] DefaultNamedGroupsToSendInClientHello1 = new API.NamedGroup[] { API.NamedGroup.X25519 };
         static readonly ushort? Extension_DefaultRecordSizeLimit = null;
+        static readonly ExtensionClientALPNConfig DefaultExtensionALPNConfig = null;
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -44,8 +46,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigueClientKeyShare(DefaultNamedGroupsToSendInClientHello1);
             config.ConfigueSupportedSignatureSchemes(DefaultSignatureSchemes);
             config.ConfigueExtensionRecordSizeLimit(Extension_DefaultRecordSizeLimit);
+            config.ConfigureExtensionALPN(DefaultExtensionALPNConfig);
 
             return config;
+        }
+
+
+        /// <summary>
+        /// Configures application layer protocol negotiation extension for client.
+        /// Protocol names specified in object will be send to server in ALPN client hello extension.
+        /// alpnConfig can be null then extension will not be send to server
+        /// </summary>
+        public void ConfigureExtensionALPN(ExtensionClientALPNConfig alpnConfig)
+        {
+            if (alpnConfig != null)
+                Validation.NotEmpty(alpnConfig.ProtocolList, nameof(alpnConfig), "protocol list must not be null and have at least one protocol to send to server");
+
+            ExtensionALPNConfig = alpnConfig;
         }
 
         /// <summary>
