@@ -67,7 +67,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             return context;
         }
 
-        internal ExtensionServerALPNSelector.Result ExtensionHandleALPN(ProtocolNameListExtension alpnExtension)
+
+        /*
+         * Extension handling wrappers
+         */
+
+        internal ExtensionServerALPN.Result ExtensionHandleALPN(ProtocolNameListExtension alpnExtension)
         {
             if (Config.ExtensionALPN != null)
             {
@@ -76,12 +81,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                     .Select(originalProtocol => (byte[])originalProtocol.Clone())
                     .ToArray();
 
-                var result = Config.ExtensionALPN.Invoke(new ExtensionServerALPNSelector(protNamesClone));
+                var result = Config.ExtensionALPN.Invoke(new ExtensionServerALPN(protNamesClone));
 
                 return result;
             }
 
-            return new ExtensionServerALPNSelector.Result(ExtensionServerALPNSelector.ResultType.NotSelectedIgnore, -1);
+            return new ExtensionServerALPN.Result(ExtensionServerALPN.ResultType.NotSelectedIgnore, -1);
+        }
+
+        internal ExtensionServerConfigServerName.ResultAction HandleExtensionServerName(ServerNameListClientHelloExtension serverNameExt)
+        {
+            if (Config.ExtensionServerName == null)
+                return ExtensionServerConfigServerName.ResultAction.Success;
+            
+            var hostName = (byte[])serverNameExt.ServerNameList[0].HostName.Clone();
+            
+            return Config.ExtensionServerName.Handle(hostName);
         }
     }
 }

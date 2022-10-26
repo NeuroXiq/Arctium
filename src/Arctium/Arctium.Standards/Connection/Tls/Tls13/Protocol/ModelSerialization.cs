@@ -60,7 +60,44 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(PreSharedKeyExchangeModeExtension)] = Serialize_Extension_PreSharedKeyExchangeModeExtension,
                 [typeof(PreSharedKeyClientHelloExtension)] = Serialize_Extension_PreSharedKeyClientHelloExtension,
                 [typeof(MaximumFragmentLengthExtensionExtension)] = Serialize_Extension_MaximumFragmentLengthExtensionExtension,
+                [typeof(ServerNameListClientHelloExtension)] = Serialize_Extension_ServerNameListClientHelloExtension,
+                [typeof(ServerNameListServerHelloExtension)] = Serialize_Extension_ServerNameListServerHelloExtension,
             };
+        }
+
+        private void Serialize_Extension_ServerNameListServerHelloExtension(object obj)
+        {
+            var ext = (ServerNameListServerHelloExtension)obj;
+
+            // this is empty extension, extension.length == 0, nothing to serialize, zero length content
+
+            return;
+        }
+
+        private void Serialize_Extension_ServerNameListClientHelloExtension(object obj)
+        {
+            var ext = (ServerNameListClientHelloExtension)obj;
+
+            Validation.ThrowInternal(ext.ServerNameList.Length == 0, "list length > 1 by rfc6066 specification ");
+
+            int serverNameListOffs = tempSerializedExtension.MallocAppend(2);
+
+            foreach (var name in ext.ServerNameList)
+            {
+                var type = name.NameType;
+                var hostName = name.HostName;
+
+                tempSerializedExtension.Append((byte)type);
+
+                int hostNameLenOffs = tempSerializedExtension.MallocAppend(2);
+                MemMap.ToBytes1UShortBE((ushort)hostName.Length, tempSerializedExtension.Buffer, hostNameLenOffs);
+                tempSerializedExtension.Append(hostName);
+            }
+
+            // -2 because 2bytes to store length
+            ushort listLen = (ushort)(tempSerializedExtension.DataLength - serverNameListOffs - 2);
+
+            MemMap.ToBytes1UShortBE(listLen, tempSerializedExtension.Buffer, serverNameListOffs);
         }
 
         private void Serialize_Extension_RecordSizeLimitExtension(object obj)

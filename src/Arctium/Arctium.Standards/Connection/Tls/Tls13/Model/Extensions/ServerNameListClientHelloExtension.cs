@@ -2,7 +2,7 @@
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
-    internal class ServerNameListExtension : Extension
+    internal class ServerNameListClientHelloExtension : Extension
     {
         public override ExtensionType ExtensionType => ExtensionType.ServerName;
 
@@ -13,7 +13,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 
         public ServerName[] ServerNameList { get; private set; }
 
-        public ServerNameListExtension(ServerName[] serverNameList)
+        public ServerNameListClientHelloExtension(ServerName[] serverNameList)
         {
             ServerNameList = serverNameList;
         }

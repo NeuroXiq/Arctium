@@ -65,6 +65,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public PskTicket SelectedPskTicket { get; internal set; }
             public ushort? ExtensionRecordSizeLimit { get; internal set; }
             public byte[] ExtensionResultALPN;
+            public API.Extensions.ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
         }
 
         private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
@@ -368,6 +369,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
             };
 
+            // Extension: Server Name
+            if (clientHello.TryGetExtension<ServerNameListClientHelloExtension>(ExtensionType.ServerName, out var serverNameExt))
+            {
+                bool abort = serverContext.HandleExtensionServerName(serverNameExt) == API.Extensions.ExtensionServerConfigServerName.ResultAction.AbortFatalAlertUnrecognizedName;
+                validate.Handshake.AlertFatal(abort, AlertDescription.UnrecognizedName,
+                    "server name extension from client caused handshake failure. " +
+                    "This is because current configuration of ServerName returned action to abort handshake");
+            }
+
             // Extension: ALPN
 
             if (clientHello.TryGetExtension<ProtocolNameListExtension>(ExtensionType.ApplicationLayerProtocolNegotiation, out var alpnExtension))
@@ -376,15 +386,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 switch (result.ActionType)
                 {
-                    case API.Extensions.ExtensionServerALPNSelector.ResultType.Success:
+                    case API.Extensions.ExtensionServerALPN.ResultType.Success:
                         var selectedalpn = alpnExtension.ProtocolNamesList[result.SelectedIndex];
                         extensions.Add(new ProtocolNameListExtension(new byte[][] { selectedalpn }));
                         context.ExtensionResultALPN = selectedalpn;
                         break;
-                    case API.Extensions.ExtensionServerALPNSelector.ResultType.NotSelectedFatalAlert:
+                    case API.Extensions.ExtensionServerALPN.ResultType.NotSelectedFatalAlert:
                         validate.Extensions.ALPN_AlertFatal_NoApplicationProtocol();
                         break;
-                    case API.Extensions.ExtensionServerALPNSelector.ResultType.NotSelectedIgnore:
+                    case API.Extensions.ExtensionServerALPN.ResultType.NotSelectedIgnore:
                         /* ignore, simulate that server dont know this extension */
                         break;
                     default:
@@ -582,6 +592,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 context.CH2Offset = hsctx.DataLength;
                 context.ClientHello2 = messageIO.ReadHandshakeMessage<ClientHello>();
+                validate.ClientHello.GeneralValidateClientHello2(context.ClientHello2, context.ClientHello1, context.HelloRetryRequest);
 
                 var selectedByServer = ((KeyShareHelloRetryRequestExtension)context.HelloRetryRequest.Extensions.First(ext => ext.ExtensionType == ExtensionType.KeyShare)).SelectedGroup;
                 var sharedFromClient = context.ClientHello2.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare).ClientShares;

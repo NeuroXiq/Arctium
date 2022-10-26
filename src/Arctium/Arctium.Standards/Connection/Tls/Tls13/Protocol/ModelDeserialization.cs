@@ -31,7 +31,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [ExtensionType.SignatureAlgorithmsCert] = DeserializeExtension_SignatureAlgorithmsCert,
                 [ExtensionType.SupportedGroups] = DeserializeExtension_SupportedGroups,
                 [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Client,
-                [ExtensionType.ServerName] = DeserializeExtension_ServerName,
                 [ExtensionType.MaxFragmentLength] = DeserializeExtension_MaxFragmentLength,
                 [ExtensionType.RecordSizeLimit] = DeserializeExtension_RecordSizeLimit,
             };
@@ -40,6 +39,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions_Client,
                 [ExtensionType.KeyShare] = DeserializeExtension_KeyShare_Client,
+                [ExtensionType.ServerName] = DeserializeExtension_ServerName_Client,
             };
 
             extensionsDeserializeOnServerSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
@@ -47,7 +47,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions_Server,
                 [ExtensionType.KeyShare] = DeserializeExtension_KeyShare_Server,
                 [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Server,
-                [ExtensionType.PskKeyExchangeModes] = DeserializeExtension_PskKeyExchangeModes_Server
+                [ExtensionType.PskKeyExchangeModes] = DeserializeExtension_PskKeyExchangeModes_Server,
+                [ExtensionType.ServerName] = DeserializeExtension_ServerName_Server,
             };
 
             messageDeserialize = new Dictionary<Type, Func<byte[], int, object>>()
@@ -60,6 +61,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(Certificate)] = DeserializeCertificate,
                 [typeof(NewSessionTicket)] = DeserializeNewSessionTicket
             };
+        }
+
+        private Extension DeserializeExtension_ServerName_Client(byte[] buf, int offs)
+        {
+            ExtensionDeserializeSetup(buf, offs, out var cursor, out int length);
+
+            validate.Extensions.AlertFatalDecodeError(length != 0, "extension.length (servernamelist extension)", "server name list extension length must be 0");
+
+            return new ServerNameListServerHelloExtension();
         }
 
         private Extension DeserializeExtension_RecordSizeLimit(byte[] buf, int offs)
@@ -744,12 +754,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return result;
         }
 
-        private Extension DeserializeExtension_ServerName(byte[] buffer, int offset)
+
+
+        private Extension DeserializeExtension_ServerName_Server(byte[] buffer, int offset)
         {
             ushort contentLength = MemMap.ToUShort2BytesBE(buffer, offset + 2);
             ushort serverNameListLength = 0, hostNameLength = 0;
             int maxCursorPosition = (4 + contentLength + offset) - 1;
-            List<ServerNameListExtension.ServerName> serverNameList = new List<ServerNameListExtension.ServerName>();
+            List<ServerNameListClientHelloExtension.ServerName> serverNameList = new List<ServerNameListClientHelloExtension.ServerName>();
             RangeCursor cursor = new RangeCursor(offset + 4, maxCursorPosition);
 
             cursor.ThrowIfShiftOutside(1);
@@ -767,7 +779,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 // [<cursor> 1 byte type][2 bytes len][content of length 'len']
 
                 cursor.ThrowIfShiftOutside(2);
-                ServerNameListExtension.NameTypeEnum nameType = (ServerNameListExtension.NameTypeEnum)buffer[cursor];
+                ServerNameListClientHelloExtension.NameTypeEnum nameType = (ServerNameListClientHelloExtension.NameTypeEnum)buffer[cursor];
                 hostNameLength = MemMap.ToUShort2BytesBE(buffer, cursor + 1);
 
                 validate.Extensions.ServerNameList_NameTypeEnum(nameType);
@@ -778,14 +790,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 byte[] hostName = new byte[hostNameLength];
                 MemCpy.Copy(buffer, cursor, hostName, 0, hostNameLength);
-                serverNameList.Add(new ServerNameListExtension.ServerName(nameType, hostName));
+                serverNameList.Add(new ServerNameListClientHelloExtension.ServerName(nameType, hostName));
 
                 cursor += hostNameLength - 1;
             }
 
             validate.Extensions.ThrowGeneral(!cursor.OnMaxPosition, "servername_extension: after deserializing cursor not on last");
 
-            return new ServerNameListExtension(serverNameList.ToArray());
+            return new ServerNameListClientHelloExtension(serverNameList.ToArray());
         }
 
         private Extension DeserializeExtension_KeyShare_Server(byte[] buffer, int offset)

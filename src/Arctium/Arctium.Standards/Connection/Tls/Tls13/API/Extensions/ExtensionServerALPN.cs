@@ -8,11 +8,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
     /// RFC7301.
     /// Must select action, if no action taken then throws exception.
     /// Selector must invoke one of three methods that gain a result:
-    /// <see cref="ExtensionServerALPNSelector.NotSelectedFatalAlert"/>
-    /// or <see cref="ExtensionServerALPNSelector.NotSelectedIgnore"/>
-    /// or <see cref="ExtensionServerALPNSelector.Success(int)"/>
+    /// <see cref="ExtensionServerALPN.NotSelectedFatalAlert"/>
+    /// or <see cref="ExtensionServerALPN.NotSelectedIgnore"/>
+    /// or <see cref="ExtensionServerALPN.Success(int)"/>
     /// </summary>
-    public class ExtensionServerALPNSelector
+    public class ExtensionServerALPN
     {
         internal enum ResultType
         {
@@ -40,7 +40,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
         public int SuccessIndex { get; private set; }
         public Result SelectorResult { get; private set; }
 
-        internal ExtensionServerALPNSelector(byte[][] protocolNameListFromClient)
+        internal ExtensionServerALPN(byte[][] protocolNameListFromClient)
         {
             this.ProtocolNameListFromClient = protocolNameListFromClient;
         }

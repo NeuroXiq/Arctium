@@ -32,6 +32,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public bool ServerRequestedCertificateInHandshake;
             public ushort? NegotiatedRecordSizeLimitExtension;
             public byte[] ExtensionResultALPN;
+            public bool ExtensionResultServerName;
         }
 
         public byte[] ApplicationDataBuffer { get; private set; }
@@ -57,6 +58,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
             public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
             public byte[] ExtensionALPN_ProtocolSelectedByServer;
+            public bool ExtensionServerNameList_ReceivedFromServer;
         }
 
         Context context;
@@ -115,7 +117,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 ServerCertificateVerifySignatureScheme = context.ServerCertificateVerifySignatureScheme,
                 ServerRequestedCertificateInHandshake = context.ServerRequestedCertificateInHandshake,
                 NegotiatedRecordSizeLimitExtension = context.NegotiatedRecordSizeLimitExtension,
-                ExtensionResultALPN = context.ExtensionALPN_ProtocolSelectedByServer
+                ExtensionResultALPN = context.ExtensionALPN_ProtocolSelectedByServer,
+                ExtensionResultServerName = context.ExtensionServerNameList_ReceivedFromServer,
             };
 
             return info;
@@ -368,6 +371,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var encryptedExt = messageIO.ReadHandshakeMessage<EncryptedExtensions>();
             validate.EncryptedExtensions.General(encryptedExt, context.ClientHello1 ?? context.ClientHello1);
 
+
+            // Extension: Record Size Limit
             var recordSizeLimitFromServer = encryptedExt.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
             bool didClientSendRecordSizeLimit = config.ExtensionRecordSizeLimit.HasValue;
 
@@ -378,6 +383,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 context.NegotiatedRecordSizeLimitExtension = min;
                 messageIO.SetRecordSizeLimit(min);
             }
+
+            // Extension: server name list
+            context.ExtensionServerNameList_ReceivedFromServer = encryptedExt.Extensions.Any(e => e.ExtensionType == ExtensionType.ServerName);
 
             // Extension: alpn
             var alpnServer = encryptedExt.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.ApplicationLayerProtocolNegotiation) as ProtocolNameListExtension;
@@ -464,6 +472,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     continue;
 
                 extensions2.Add(extensionInCH1);
+            }
+
+            var cookieFromServer = context.HelloRetryRequest.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
+            if (cookieFromServer != null)
+            {
+                extensions2.Add(cookieFromServer);
             }
 
             extensions2.Add(new KeyShareClientHelloExtension(new KeyShareEntry[] { new KeyShareEntry(serverKeyShare.SelectedGroup, keyShareToSendRawBytes) }));
@@ -564,8 +578,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             if (config.ExtensionALPNConfig != null)
-            {
                 extensions.Add(new ProtocolNameListExtension(config.ExtensionALPNConfig.ProtocolList.ToArray()));
+
+            if (config.ExtensionClientConfigServerName != null)
+            {
+                var serverName = new ServerNameListClientHelloExtension.ServerName(ServerNameListClientHelloExtension.NameTypeEnum.HostName, config.ExtensionClientConfigServerName.HostName);
+                extensions.Add(new ServerNameListClientHelloExtension(new ServerNameListClientHelloExtension.ServerName[] { serverName }));
             }
 
             foreach (var toSendInKeyShare in config.NamedGroupsToSendInKeyExchangeInClientHello1)

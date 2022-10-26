@@ -14,18 +14,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     public class Tls13ServerConfig
     {
         public bool UseNewSessionTicketPsk { get; internal set; }
-        internal Model.CipherSuite[] CipherSuites;
-        internal SupportedGroupExtension.NamedGroup[] NamedGroups;
-        internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes;
+        internal Model.CipherSuite[] CipherSuites { get; private set; }
+        internal SupportedGroupExtension.NamedGroup[] NamedGroups { get; private set; }
+        internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes { get; private set; }
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
-        internal Func<ExtensionServerALPNSelector, ExtensionServerALPNSelector.Result> ExtensionALPN;
+        internal Func<ExtensionServerALPN, ExtensionServerALPN.Result> ExtensionALPN { get; private set; }
+        internal ExtensionServerConfigServerName ExtensionServerName { get; private set; }
 
         public bool HandshakeRequestCertificateFromClient;
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
-        static API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
+        static readonly API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
         static readonly ushort? DefaultExtensionRecordSizeLimit = null;
-        internal static Func<ExtensionServerALPNSelector, ExtensionServerALPNSelector.Result> DefaultExtensionALPN = null;
+        static readonly Func<ExtensionServerALPN, ExtensionServerALPN.Result> DefaultExtensionALPN = null;
+        static readonly ExtensionServerConfigServerName DefaultExtensionServerName = null;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -63,8 +65,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigueSupportedSignatureSchemes(DefaultAllSignateSchemes);
             c.ConfigureExtensionRecordSizeLimit(DefaultExtensionRecordSizeLimit);
             c.ConfigueExtensionALPN(DefaultExtensionALPN);
+            c.ConfigureExtensionServerName(DefaultExtensionServerName);
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures RFC 6066 extension server name. 
+        /// When null server do nothing
+        /// if not null then server will do action from configured object
+        /// </summary>
+        /// <param name="defaultExtensionServerName">config what to do with client server name extension or null if ignore it</param>
+        public void ConfigureExtensionServerName(ExtensionServerConfigServerName config)
+        {
+            ExtensionServerName = config;
         }
 
 
@@ -75,7 +89,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// then nothing happend and handshake continue, selector is never invoked
         /// </summary>
         /// <param name="protocolSelector">Selector function that will select protocol or do other action</param>
-        public void ConfigueExtensionALPN(Func<ExtensionServerALPNSelector, ExtensionServerALPNSelector.Result> protocolSelector)
+        public void ConfigueExtensionALPN(Func<ExtensionServerALPN, ExtensionServerALPN.Result> protocolSelector)
         {
             this.ExtensionALPN = protocolSelector;
         }

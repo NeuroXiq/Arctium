@@ -267,12 +267,59 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             internal void GeneralValidateClientHello(ClientHello clientHello)
             {
                 extensionsValidate.GeneralValidateClientHelloExtensions(clientHello);
+
+                AlertFatal(clientHello.Extensions.Any(e => e.ExtensionType == ExtensionType.Cookie), AlertDescription.UnsupportedExtension, "clienthello1 must not sent cookie");
+
+                var serverNameExt = clientHello.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.ServerName) as ServerNameListClientHelloExtension;
+
+                if (serverNameExt != null)
+                {
+                    var list = serverNameExt.ServerNameList;
+                    AlertFatal(list.Length != 1 , AlertDescription.Illegal_parameter, "Server name extension msut have only one entry but have more than 1");
+                }
             }
 
             internal void SignatureSchemesNotSupported(bool sthrow) =>
                 AlertFatal(sthrow, AlertDescription.HandshakeFailure, "signature scheme list extension does not match with supported one or with current instance configuration"); 
 
             internal void MissingSignatureAlgorithmsExtension(bool throwEx) => AlertFatal(throwEx, AlertDescription.MissingExtension, "missing signature scheme list extension");
+
+            internal void GeneralValidateClientHello2(ClientHello clientHello2, ClientHello clientHello1, ServerHello helloRetryRequest)
+            {
+                extensionsValidate.GeneralValidateClientHelloExtensions(clientHello2);
+
+                var cookieSent = helloRetryRequest.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
+                var cookieCH2 = clientHello2.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
+
+                /* Cookie */
+                // rfc 8446
+                AlertFatal(cookieSent == null && cookieCH2 != null, AlertDescription.UnsupportedExtension, "Received cookie but was not sent");
+                AlertFatal(cookieSent != null && cookieCH2 == null, AlertDescription.UnsupportedExtension, "Server sent cookie but not received");
+                AlertFatal(cookieSent != null && !MemOps.Memcmp(cookieSent.Cookie, cookieCH2.Cookie), AlertDescription.Illegal_parameter, "Cookie extension other value than sent");
+
+                // missing extensions? Must all be same what was sent in CH1
+                // (with little exceptions from this rule)
+
+                HashSet<ExtensionType> inCH1 = new HashSet<ExtensionType>(clientHello1.Extensions.Select(e => e.ExtensionType));
+                HashSet<ExtensionType> inCH2 = new HashSet<ExtensionType>(clientHello2.Extensions.Select(e => e.ExtensionType));
+                HashSet<ExtensionType> inHRR = new HashSet<ExtensionType>(helloRetryRequest.Extensions.Select(e => e.ExtensionType));
+
+                // rfc tls13
+                AlertFatal(inCH2.Contains(ExtensionType.EarlyData), AlertDescription.Illegal_parameter, "clienthello2 must not have early data extension");
+                AlertFatal(inHRR.Contains(ExtensionType.KeyShare) && !inCH2.Contains(ExtensionType.KeyShare), AlertDescription.MissingExtension,
+                    "HelloRetry contains key shrae but client did not response key_share extension in clienthello2");
+
+                inCH2.SymmetricExceptWith(inCH1);
+                inCH2.Remove(ExtensionType.Cookie);
+                inCH2.Remove(ExtensionType.Padding);
+
+                if (inCH2.Count > 0)
+                {
+                    var invalidExtensions = string.Join(", ", inCH1.Select(e => e.ToString()));
+                    string msg = string.Format("Not all extensions sent in clienthello1 appear in clienthello2. Not in CH2: {0}", invalidExtensions);
+                    AlertFatal(AlertDescription.MissingExtension, msg);
+                }
+            }
         }
 
         public class CertificateValidate : ValidateBase
@@ -594,9 +641,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 }
             }
 
-            internal void ServerNameList_NameTypeEnum(ServerNameListExtension.NameTypeEnum nameType)
+            internal void ServerNameList_NameTypeEnum(ServerNameListClientHelloExtension.NameTypeEnum nameType)
             {
-                if (!Enum.IsDefined<ServerNameListExtension.NameTypeEnum>(nameType))
+                if (!Enum.IsDefined<ServerNameListClientHelloExtension.NameTypeEnum>(nameType))
                 {
                     Throw("server name list name type not defined");
                 }

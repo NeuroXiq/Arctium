@@ -16,6 +16,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal Func<byte[][], ServerCertificateValidionResult> X509CertificateValidationCallback;
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
         internal ExtensionClientALPNConfig ExtensionALPNConfig { get; private set; }
+        internal ExtensionClientConfigServerName ExtensionClientConfigServerName { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
@@ -23,6 +24,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly API.NamedGroup[] DefaultNamedGroupsToSendInClientHello1 = new API.NamedGroup[] { API.NamedGroup.X25519 };
         static readonly ushort? Extension_DefaultRecordSizeLimit = null;
         static readonly ExtensionClientALPNConfig DefaultExtensionALPNConfig = null;
+        static readonly ExtensionClientConfigServerName DefaultExtensionClientConfigServerName = null;
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -47,8 +49,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigueSupportedSignatureSchemes(DefaultSignatureSchemes);
             config.ConfigueExtensionRecordSizeLimit(Extension_DefaultRecordSizeLimit);
             config.ConfigureExtensionALPN(DefaultExtensionALPNConfig);
+            config.ConfigureExtensionServerName(DefaultExtensionClientConfigServerName);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures RFC 6066 Extension Server name on client side. If value is null then
+        /// extension is not send. If value is not null then extension is send with parameters
+        /// in object isntace
+        /// </summary>
+        /// <param name="defaultExtensionClientConfigServerName">configuration object or null if no extension should be send</param>
+        public void ConfigureExtensionServerName(ExtensionClientConfigServerName config)
+        {
+            if (config != null)
+                Validation.NotEmpty(config.HostName, nameof(config), "list of host names is empty. Provide at least one host name");
+
+            ExtensionClientConfigServerName = config;
         }
 
 

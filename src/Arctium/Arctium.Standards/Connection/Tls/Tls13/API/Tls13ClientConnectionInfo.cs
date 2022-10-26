@@ -52,6 +52,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public ExtensionResultALPN ExtensionResultALPN { get; private set; }
 
         /// <summary>
+        /// Result of 'Server Name' extension RFC 6066.
+        /// When true then server send a 'Server name' extension to client.
+        /// When false 'Server Name' extension was not received from server
+        /// </summary>
+        public bool ExtensionResultServerName { get; private set; }
+
+        /// <summary>
         /// internal constructor to create API connection info from protocol result
         /// </summary>
         /// <param name="info"></param>
@@ -69,6 +76,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             if (info.ExtensionResultALPN != null)
                 ExtensionResultALPN = new ExtensionResultALPN(info.ExtensionResultALPN);
+
+            ExtensionResultServerName = info.ExtensionResultServerName;
         }
     }
 }
