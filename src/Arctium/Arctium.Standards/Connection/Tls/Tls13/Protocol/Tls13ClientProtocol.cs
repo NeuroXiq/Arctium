@@ -356,10 +356,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
 
-            if (config.ExtensionSignatureAlgorithmsCert != null && 
-                config.ExtensionSignatureAlgorithmsCert.ClientAction == API.Extensions.ExtensionClientConfigSignatureAlgorithmsCert.Action.ForceServerCertificateMatchOrAbortHandshake)
+            if (config.ExtensionSignatureAlgorithmsCert != null)
             {
-
+                // TOOD tls13
+                // not sure what to do with this, not so simple (need parent) to determine
+                // server certificate exact type, e.g. check if signature is secp256r1Sha256
+                // not stored in certificate received from server. 
             }
             
 

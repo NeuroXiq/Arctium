@@ -48,6 +48,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public HashFunctionId SignatureHashFunctionId;
             public SEC2_EllipticCurves.Parameters? SEC2_NamedCurve;
             public NamedCurve? X509Curve;
+            public SignatureAlgorithmType X509SignatureAlgorithmType;
 
             public SignatureSchemeInfo(SignatureScheme scheme,
                 PublicKeyAlgorithmIdentifierType relatedWithKeyType,
