@@ -354,6 +354,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 var validationResult = config.X509CertificateValidationCallback(x509PathRawBytes);
                 validate.Certificate.ValidateCertificateValidationCallbackSuccess(validationResult);
             }
+
+
+            if (config.ExtensionSignatureAlgorithmsCert != null && 
+                config.ExtensionSignatureAlgorithmsCert.ClientAction == API.Extensions.ExtensionClientConfigSignatureAlgorithmsCert.Action.ForceServerCertificateMatchOrAbortHandshake)
+            {
+
+            }
             
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificateVerify);
@@ -570,6 +577,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 new SupportedGroupExtension(config.NamedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };
+
+            if (config.ExtensionSignatureAlgorithmsCert != null)
+            {
+                extensions.Add(new SignatureSchemeListExtension(
+                    config.ExtensionSignatureAlgorithmsCert.SupportedSignatureSchemesCert,
+                    ExtensionType.SignatureAlgorithmsCert));
+            }
 
             if (config.ExtensionRecordSizeLimit.HasValue)
             {

@@ -4,7 +4,12 @@
     {
         ServerName = 0, /* RFC 6066 */
         MaxFragmentLength = 1, /* RFC 6066 */
+        
+        /// <summary>
+        /// RFC 6066
+        /// </summary>
         StatusRequest = 5, /* RFC 6066 */
+        
         SupportedGroups = 10, /* RFC 8422, 7919 */
         SignatureAlgorithms = 13, /* RFC 8446 */
         UseSrtp = 14, /* RFC 5764 */

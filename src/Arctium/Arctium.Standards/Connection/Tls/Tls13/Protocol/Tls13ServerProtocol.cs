@@ -15,6 +15,7 @@ using System.Linq;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.X509.X509Cert;
 using Arctium.Shared.Helpers;
+using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
@@ -33,6 +34,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public struct ConnectedInfo
         {
             public byte[] ExtensionResultALPN;
+            public ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
         }
 
         class Context
@@ -117,6 +119,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             var info = new ConnectedInfo();
             info.ExtensionResultALPN = context.ExtensionResultALPN;
+            info.ExtensionResultServerName = context.ExtensionResultServerName;
 
             return info;
         }
@@ -372,10 +375,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // Extension: Server Name
             if (clientHello.TryGetExtension<ServerNameListClientHelloExtension>(ExtensionType.ServerName, out var serverNameExt))
             {
-                bool abort = serverContext.HandleExtensionServerName(serverNameExt) == API.Extensions.ExtensionServerConfigServerName.ResultAction.AbortFatalAlertUnrecognizedName;
+                context.ExtensionResultServerName = serverContext.HandleExtensionServerName(serverNameExt);
+                bool abort = context.ExtensionResultServerName == API.Extensions.ExtensionServerConfigServerName.ResultAction.AbortFatalAlertUnrecognizedName;
+                
                 validate.Handshake.AlertFatal(abort, AlertDescription.UnrecognizedName,
                     "server name extension from client caused handshake failure. " +
                     "This is because current configuration of ServerName returned action to abort handshake");
+
+                if (context.ExtensionResultServerName == ExtensionServerConfigServerName.ResultAction.Success) extensions.Add(new ServerNameListServerHelloExtension());
             }
 
             // Extension: ALPN
@@ -524,8 +531,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 .ClientShares
                 .FirstOrDefault(share => share.NamedGroup == crypto.SelectedNamedGroup);
 
-            // todo validate if set on ch2
-
             byte[] keyShareToSendRawBytes, privateKey;
             
             crypto.GeneratePrivateKeyAndKeyShareToSend(keyShareEntry.NamedGroup, out keyShareToSendRawBytes, out privateKey);
@@ -631,6 +636,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
 
+            
             bool pskKeTicketExists = false, cipherSuiteOk, groupOk;
             bool hasPskExtension = clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _);
 

@@ -17,6 +17,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
         internal ExtensionClientALPNConfig ExtensionALPNConfig { get; private set; }
         internal ExtensionClientConfigServerName ExtensionClientConfigServerName { get; private set; }
+        internal ExtensionClientConfigSignatureAlgorithmsCert ExtensionSignatureAlgorithmsCert { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
@@ -25,6 +26,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ushort? Extension_DefaultRecordSizeLimit = null;
         static readonly ExtensionClientALPNConfig DefaultExtensionALPNConfig = null;
         static readonly ExtensionClientConfigServerName DefaultExtensionClientConfigServerName = null;
+        static readonly ExtensionClientConfigSignatureAlgorithmsCert DefaultExtensionSignatureAlgorithmsCert = null;
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -50,8 +52,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigueExtensionRecordSizeLimit(Extension_DefaultRecordSizeLimit);
             config.ConfigureExtensionALPN(DefaultExtensionALPNConfig);
             config.ConfigureExtensionServerName(DefaultExtensionClientConfigServerName);
+            config.ConfigureExtensionSignatureAlgorithmsCert(DefaultExtensionSignatureAlgorithmsCert);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures Signatuer algorithms cert extension on client side.
+        /// If value is not null, client will sent extension 'signature_schemes_cert' in client hello with values configured in object provided.
+        /// If value is null then client will not sent exension 'signature_schemes_cert'
+        /// </summary>
+        /// <param name="config"></param>
+        public void ConfigureExtensionSignatureAlgorithmsCert(ExtensionClientConfigSignatureAlgorithmsCert config)
+        {
+            
         }
 
         /// <summary>
