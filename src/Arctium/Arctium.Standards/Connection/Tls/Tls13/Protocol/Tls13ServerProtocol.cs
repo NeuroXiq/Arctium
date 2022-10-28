@@ -66,6 +66,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public PskTicket SelectedPskTicket { get; internal set; }
             public ushort? ExtensionRecordSizeLimit { get; internal set; }
+            public X509Certificate ClientCertificateOnHandshake { get; internal set; }
+
             public byte[] ExtensionResultALPN;
             public API.Extensions.ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
         }
@@ -309,7 +311,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ServerCertificateVerify()
         {
-            var signature = crypto.GenerateServerCertificateVerifySignature(hsctx, context.SelectedCertificate, context.SelectedSignatureScheme);
+            var signature = crypto.GenerateCertificateVerifySignature(hsctx, context.SelectedCertificate, context.SelectedSignatureScheme, Endpoint.Server);
 
             var certificateVerify = new CertificateVerify(context.SelectedSignatureScheme, signature);
 
@@ -328,19 +330,39 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ClientCertificateVerity()
         {
+            int dataToSignLen = hsctx.DataLength;
             var certVer = messageIO.ReadHandshakeMessage<CertificateVerify>();
 
-            // todo implement this
-            if (!crypto.VerifyClientCertificate(certVer))
-            {
-                Validation.ThrowInternal("todo implement (send fatal alert)");
-            }
+            bool signatureOk = crypto.IsClientCertificateVerifyValid(hsctx.Buffer, dataToSignLen, certVer, context.ClientCertificateOnHandshake);
+
+            validate.CertificateVerify.AlertFatal(!signatureOk, AlertDescription.DecryptError, "Invalid client certificate 'CertificateVerify' signature");
         }
 
         private void Handshake_ClientCertificate()
         {
             //messageIO.recordLayer.Read();
             var certificate = messageIO.ReadHandshakeMessage<Certificate>();
+
+            var action = serverContext.ClientCertificate(certificate);
+
+            if (certificate.CertificateList.Length > 0)
+            {
+                try
+                {
+                    X509CertificateDeserializer deserializer = new X509CertificateDeserializer();
+                    context.ClientCertificateOnHandshake = deserializer.FromBytes(certificate.CertificateList[0].CertificateEntryRawBytes);
+                }
+                catch (Exception e)
+                {
+                    validate.Certificate.AlertFatal(AlertDescription.BadCertificate,
+                        "Cannot deserialize X509 certificate received from client in handshake (after server requested)");
+                }
+            }
+
+            if (action != API.Messages.ServerConfigHandshakeClientAuthentication.Action.Success)
+            {
+                validate.Certificate.AlertFatal((AlertDescription)action, "Current configuration aborting client authentication (return action was not Success)");
+            }
 
             if (certificate.CertificateList.Length > 0)
             {
@@ -552,7 +574,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
 
-            if (config.HandshakeRequestCertificateFromClient)
+            if (config.HandshakeClientAuthentication != null)
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_CertificateRequest);
             }
@@ -561,7 +583,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificateVerify);
             CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
 
-            if (config.HandshakeRequestCertificateFromClient)
+            if (config.HandshakeClientAuthentication != null)
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientCertificate);
             }

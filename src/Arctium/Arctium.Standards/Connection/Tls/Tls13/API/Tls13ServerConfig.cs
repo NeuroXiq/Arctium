@@ -1,5 +1,6 @@
 ﻿using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
+using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Standards.Connection.Tls.Tls13.Protocol;
@@ -20,14 +21,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
         internal Func<ExtensionServerALPN, ExtensionServerALPN.Result> ExtensionALPN { get; private set; }
         internal ExtensionServerConfigServerName ExtensionServerName { get; private set; }
+        internal ServerConfigHandshakeClientAuthentication HandshakeClientAuthentication;
 
-        public bool HandshakeRequestCertificateFromClient;
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
         static readonly API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
         static readonly ushort? DefaultExtensionRecordSizeLimit = null;
         static readonly Func<ExtensionServerALPN, ExtensionServerALPN.Result> DefaultExtensionALPN = null;
         static readonly ExtensionServerConfigServerName DefaultExtensionServerName = null;
+        static readonly ServerConfigHandshakeClientAuthentication DefaultServerConfigHandshakeClientAuthentication;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -57,8 +59,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             c.CertificatesWithKeys = listOfCertsWithKeys;
             c.UseNewSessionTicketPsk = true;
-            c.HandshakeRequestCertificateFromClient = false;
-
 
             c.ConfigueCipherSuites(DefaultCipherSuites);
             c.ConfigueSupportedNamedGroupsForKeyExchange(DefaultAllGroups);
@@ -66,8 +66,21 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigureExtensionRecordSizeLimit(DefaultExtensionRecordSizeLimit);
             c.ConfigueExtensionALPN(DefaultExtensionALPN);
             c.ConfigureExtensionServerName(DefaultExtensionServerName);
+            c.ConfigureHandshakeClientAuthentication(DefaultServerConfigHandshakeClientAuthentication);
 
             return c;
+        }
+
+
+        /// <summary>
+        /// Configures client authentication on handshake.
+        /// If configuration is not nulll then server will require authentication from client (will send CertificateRequest message)
+        /// If configuration is null then server will not sent CertificateRequest and process without client authentication
+        /// </summary>
+        /// <param name="config">configuration object or null</param>
+        public void ConfigureHandshakeClientAuthentication(ServerConfigHandshakeClientAuthentication config)
+        {
+            this.HandshakeClientAuthentication = config;
         }
 
         /// <summary>

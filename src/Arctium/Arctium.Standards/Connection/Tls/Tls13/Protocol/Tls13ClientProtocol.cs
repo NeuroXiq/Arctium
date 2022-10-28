@@ -54,6 +54,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public byte[][] ServerCertificatesRawBytes { get; internal set; }
             public ushort? NegotiatedRecordSizeLimitExtension { get; internal set; }
+            public X509CertWithKey ClientCertificateHandshakeAuthentication { get; internal set; }
 
             public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
             public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
@@ -288,7 +289,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var finishedVerData = crypto.ComputeFinishedVerData(hsctx, Endpoint.Client);
             var finished = new Finished(finishedVerData);
 
-            crypto.SetupMasterSecret(hsctx);
             messageIO.WriteHandshake(finished);
             crypto.SetupResumptionMasterSecret(hsctx);
 
@@ -301,20 +301,65 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ClientCertificateVerify()
         {
-            throw new Exception(); // todo send verify
+            Validation.ThrowInternal(context.ClientCertificateHandshakeAuthentication == null);
+
+            var clientCertWithKey = context.ClientCertificateHandshakeAuthentication;
+
+            var schemeForCert = crypto.SelectSignatureSchemeForCertificate(clientCertWithKey.Certificate, config.SignatureSchemes);
+
+            if (!schemeForCert.HasValue)
+            {
+                string errortext = "Something is wrong with client certificate. " + 
+                    "This is impossible to generate signature using current configuration during client authentication. " +
+                    "Potentional reason is that current configuration for 'SignatureSchemes' does not match with current " +
+                    " X509Client Certificate configuration. Probably client certificate allows to sign data with other " +
+                    "Signature than current configuration allows. Try to change configuration of 'SignatureScheme' to " +
+                    "include client certificate public key" ;
+
+                validate.Handshake.Throw(true, errortext);
+            }
+
+
+            byte[] clientCertVerify = crypto.GenerateCertificateVerifySignature(hsctx, clientCertWithKey, schemeForCert.Value, Endpoint.Client);
+            var certVerify = new CertificateVerify(schemeForCert.Value, clientCertVerify);
+            messageIO.WriteHandshake(certVerify);
+
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientFinished);
         }
 
         private void Handshake_ClientCertificate()
         {
-            throw new Exception(); // todo 
-            commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificateVerify);
+            List<CertificateEntry> entries = new List<CertificateEntry>();
+            bool sentCertVerify = false;
+
+            if (config.HandshakeClientAuthentication != null)
+            {
+                var certs = config.HandshakeClientAuthentication.GetCertificateToSendToServer(new List<API.APIModel.Extension>());
+
+                if (certs.ClientCertificate != null)
+                {
+                    sentCertVerify = true;
+                    context.ClientCertificateHandshakeAuthentication = certs.ClientCertificate;
+
+                    entries.Add(new CertificateEntry(null, X509Util.X509CertificateToDerEncodedBytes(certs.ClientCertificate.Certificate), new Extension[0]));
+                    entries.AddRange(certs.ParentCertificates.Select(p => new CertificateEntry(null, X509Util.X509CertificateToDerEncodedBytes(p), new Extension[0])));
+                }
+            }
+
+            var certificate = new Certificate(new byte[0], entries.ToArray());
+            messageIO.WriteHandshake(certificate);
+
+            if (sentCertVerify) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificateVerify);
         }
 
         private void Handshake_ServerFinished()
         {
+            var verdata = crypto.ComputeFinishedVerData(hsctx, Endpoint.Server);
             var finished = messageIO.ReadHandshakeMessage<Finished>();
-            // todo verify finished
+
+            validate.Finished.AlertFatal(!MemOps.Memcmp(verdata, finished.VerifyData), AlertDescription.DecryptError, "server finished verify data invalid"); 
+
+            crypto.SetupMasterSecret(hsctx);
 
             if (context.ServerRequestedCertificateInHandshake) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificate);
             else commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientFinished);
@@ -370,7 +415,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_CertificateRequest()
         {
-            // var certReq = messageIO.ReadHandshakeMessage<CertificateRequest>();
+            var certReq = messageIO.ReadHandshakeMessage<CertificateRequest>();
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificate);
         }

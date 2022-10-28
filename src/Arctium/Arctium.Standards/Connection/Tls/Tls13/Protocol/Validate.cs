@@ -43,6 +43,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         const string Label_ClientHello = "ClientHello";
         const string Label_ExtensionMaxFragmentLength = "Extension_MaxFragmentLength";
         const string Label_EncryptedExtensions = "EncryptedExtensions";
+        const string Label_CertificateVerify = "CertificateVerify";
 
 
         public RecordLayerValidate RecordLayer { get; private set; }
@@ -56,6 +57,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public HelloRetryRequestValidate HelloRetryRequest { get; private set; }
         public DefaultNamedValidate Extension_MaxFragmentLength { get; private set; }
         public EncryptedExtensionsValidate EncryptedExtensions { get; private set; }
+        public DefaultNamedValidate CertificateVerify { get; private set; }
 
         public Validate()
         {
@@ -70,6 +72,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             HelloRetryRequest = new HelloRetryRequestValidate(errorHandler);
             Extension_MaxFragmentLength = new DefaultNamedValidate(errorHandler, Label_ExtensionMaxFragmentLength);
             EncryptedExtensions = new EncryptedExtensionsValidate(errorHandler);
+            CertificateVerify = new DefaultNamedValidate(errorHandler, Label_CertificateVerify);
 
             Certificate = new CertificateValidate(errorHandler);
         }

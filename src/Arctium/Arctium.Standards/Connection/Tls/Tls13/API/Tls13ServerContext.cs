@@ -9,6 +9,7 @@ using System;
 using Arctium.Standards.X509.X509Cert;
 using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
 using Arctium.Shared.Helpers.Buffers;
+using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
@@ -97,6 +98,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             var hostName = (byte[])serverNameExt.ServerNameList[0].HostName.Clone();
             
             return Config.ExtensionServerName.Handle(hostName);
+        }
+
+        internal ServerConfigHandshakeClientAuthentication.Action ClientCertificate(Certificate certificate)
+        {
+            var clientCerts = certificate.CertificateList.Select(c => ((byte[])c.CertificateEntryRawBytes.Clone())).ToArray();
+
+            return Config.HandshakeClientAuthentication.CertificateFromClientReceived(clientCerts, new List<APIModel.Extension>());
         }
     }
 }

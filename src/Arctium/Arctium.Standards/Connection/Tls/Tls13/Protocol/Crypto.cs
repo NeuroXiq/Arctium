@@ -97,7 +97,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             return null;
         }
-        
+
         // static readonly Dictionary<SignatureAlgorithmType, SignatureScheme> X509CertSignAlgoToTlsSignAlgo = new Dictionary<SignatureAlgorithmType, SignatureScheme>()
         // {
         //     { SignatureAlgorithmType.SHA384WithRSAEncryption, SignatureScheme.RsaPssRsaeSha384},
@@ -107,6 +107,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         //     { SignatureAlgorithmType.ECDSAWithSHA256, SignatureScheme.},
         //     { SignatureAlgorithmType.ECDSAWithSHA512, SignatureScheme.},
         // };
+
+        const string ClientCertificateVerifyContextString = "TLS 1.3, client CertificateVerify";
 
         public readonly IReadOnlyList<CipherSuite> SupportedCipherSuites = new List<CipherSuite>
         {
@@ -208,15 +210,40 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return true;
         }
 
-        internal byte[] GenerateServerCertificateVerifySignature(ByteBuffer handshakeContext, X509CertWithKey cert, SignatureScheme signatureScheme)
+        public SignatureScheme? SelectSignatureSchemeForCertificate(X509Certificate certificate, SignatureScheme[] supportedSignatureSchemes)
+        {
+            var supported = SignaturesInfo.Where(info => supportedSignatureSchemes.Contains(info.SignatureScheme) &&
+                info.RelatedPublicKeyType == certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm);
+
+
+            if (supported.Count() == 0) return null;
+
+            if (X509Util.IsCerSignatureRSAEncryption(certificate))
+            {
+                return supported.First().SignatureScheme;
+            }
+            else if (X509Util.IsCertSignatureECDSA(certificate))
+            {
+                var certCurve = certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Parameters.Choice_EcpkParameters().Choice_NamedCurve();
+                var schemeForCurve = supported.Where(s => s.X509Curve == certCurve).ToArray();
+
+                if (schemeForCurve.Length > 0) return schemeForCurve[0].SignatureScheme;
+                return null;
+            }
+
+            Validation.ThrowInternal();
+            return null;
+        }
+
+        public byte[] GenerateCertificateVerifySignature(ByteBuffer handshakeContext, X509CertWithKey cert, SignatureScheme signatureScheme, Endpoint endpointGeneratingVerify)
         {
             var info = SignaturesInfo.First(info => info.SignatureScheme == signatureScheme);
             var certPKAlgo = cert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
-            
+
             Validation.ThrowInternal(info.RelatedPublicKeyType != cert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm);
 
             // create data to generate signature (from handshake context and format as specification says
-            string contextStr = "TLS 1.3, server CertificateVerify";
+            string contextStr = endpointGeneratingVerify == Endpoint.Client ? ClientCertificateVerifyContextString : "TLS 1.3, server CertificateVerify";
             byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
 
             byte[] hash = TranscriptHash(handshakeContext.Buffer, 0, handshakeContext.DataLength);
@@ -241,7 +268,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 var keyFromCert = cert.PrivateKey.Choice_RSAPrivateKeyCRT();
                 var keyForPkcs1 = new PKCS1v2_2API.PrivateKey(keyFromCert);
-                
+
                 resultSignature = PKCS1v2_2API.RSASSA_PSS_SIGN(keyForPkcs1, tosign, info.SignatureHashFunctionId);
             }
             else if (certPKAlgo == PublicKeyAlgorithmIdentifierType.ECPublicKey)
@@ -259,9 +286,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return resultSignature;
         }
 
-        byte[] FormatDataForSignature(byte[] handshakeContext, int dataLength)
+        byte[] FormatDataForSignature(byte[] handshakeContext, int dataLength, bool forClient)
         {
-            string contextStr = "TLS 1.3, server CertificateVerify";
+            string contextStr = forClient ? ClientCertificateVerifyContextString :  "TLS 1.3, server CertificateVerify";
             byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
             byte[] hash = TranscriptHash(handshakeContext, 0, dataLength);
 
@@ -384,14 +411,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else throw new NotSupportedException();
         }
 
+        public bool IsClientCertificateVerifyValid(byte[] hscontext, int hscontextlen, CertificateVerify clientCertificateVerify, X509Certificate clientCertificate)
+        {
+            byte[] toSign = FormatDataForSignature(hscontext, hscontextlen, true);
+            return IsSignatureValid(toSign, clientCertificateVerify, clientCertificate);
+        }
+
         internal bool IsServerCertificateVerifyValid(byte[] hscontext,
             int hscontextlen,
             CertificateVerify certVerify,
             X509Certificate serverCertificate)
         {
-            byte[] toSign = FormatDataForSignature(hscontext, hscontextlen);
-            hscontext = null; hscontextlen = -1; // this is not needed anymore
+            byte[] toSign = FormatDataForSignature(hscontext, hscontextlen, false);
+            return IsSignatureValid(toSign, certVerify, serverCertificate);
+        }
 
+        public bool IsSignatureValid(byte[] toSign, CertificateVerify certVerify, X509Certificate certificateThatSignedData)
+        {
             HashFunctionId hashFunctionId;
             ECFpDomainParameters ecparams = null;
 
@@ -412,10 +448,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     hashFunctionId = HashFunctionId.SHA2_512;
                     ecparams = SEC2_EllipticCurves.CreateParameters(SEC2_EllipticCurves.Parameters.secp521r1);
                     break;
-                //case SignatureScheme.Ed25519:
-                //    hashFunctionId = HashFunctionId.SHA2_512
-                //    break;
-                //case SignatureScheme.Ed448:
+                    //case SignatureScheme.Ed25519:
+                    //    hashFunctionId = HashFunctionId.SHA2_512
+                    //    break;
+                    //case SignatureScheme.Ed448:
                     break;
                 default: throw new NotSupportedException("not supported signatue scheme: " + certVerify.SignatureScheme.ToString());
             }
@@ -436,11 +472,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             var rsaeAlgos = new SignatureScheme[] { SignatureScheme.RsaPssRsaeSha256, SignatureScheme.RsaPssRsaeSha384, SignatureScheme.RsaPssRsaeSha512 };
-            var ecdsaAlgos = new SignatureScheme[] {  SignatureScheme.EcdsaSecp521r1Sha512, SignatureScheme.EcdsaSecp384r1Sha384, SignatureScheme.EcdsaSecp256r1Sha256 };
+            var ecdsaAlgos = new SignatureScheme[] { SignatureScheme.EcdsaSecp521r1Sha512, SignatureScheme.EcdsaSecp384r1Sha384, SignatureScheme.EcdsaSecp256r1Sha256 };
 
             if (rsaeAlgos.Contains(certVerify.SignatureScheme))
             {
-                var defPubKey = X509Util.GetRSAPublicKeyDefault(serverCertificate);
+                var defPubKey = X509Util.GetRSAPublicKeyDefault(certificateThatSignedData);
                 var apiKey = PKCS1v2_2API.PublicKey.FromDefault(defPubKey);
 
                 return PKCS1v2_2API.RSASSA_PSS_VERIFY(apiKey, toSign, certVerify.Signature, hashFunctionId);
@@ -448,7 +484,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else if (ecdsaAlgos.Contains(certVerify.SignatureScheme))
             {
 
-                var ecpubkey = serverCertificate.SubjectPublicKeyInfo.PublicKey.Get<byte[]>();
+                var ecpubkey = certificateThatSignedData.SubjectPublicKeyInfo.PublicKey.Get<byte[]>();
                 var publicKeyPoint = SEC1_ECFpAlgorithm.OctetStringToEllipticCurvePoint(ecpubkey, ecparams);
 
                 var sigValue = X509Util.ASN1_DerDecodeEcdsaSigValue(certVerify.Signature);
@@ -460,7 +496,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 return isvalid;
             }
             else throw new NotSupportedException("certverify not supported");
-
         }
 
         internal bool VerifyClientCertificate(CertificateVerify certVer)

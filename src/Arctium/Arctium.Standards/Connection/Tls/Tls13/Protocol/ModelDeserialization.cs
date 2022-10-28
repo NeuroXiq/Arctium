@@ -59,8 +59,44 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(CertificateVerify)] = DeserializeCertificateVerify,
                 [typeof(Finished)] = DeserializeFinished,
                 [typeof(Certificate)] = DeserializeCertificate,
-                [typeof(NewSessionTicket)] = DeserializeNewSessionTicket
+                [typeof(NewSessionTicket)] = DeserializeNewSessionTicket,
+                [typeof(CertificateRequest)] = DeserializeCertificateRequest,
             };
+        }
+
+        private object DeserializeCertificateRequest(byte[] buf, int offs)
+        {
+            validate.Handshake.AlertFatalDecodeError(buf[offs] != (byte)HandshakeType.CertificateRequest, "handshakmsg.type ", "expected to be certificaterequest handshake type");
+            int msgLen = ToInt3BytesBE(buf, offs + 1);
+            RangeCursor cursor = new RangeCursor(offs, offs + msgLen + 3);
+            cursor += 4;
+
+            int certReqContextLen;
+            byte[] certReqContext;
+            int extensionsLen;
+            List<Extension> extensions = new List<Extension>();
+
+            certReqContextLen = buf[cursor];
+            cursor.ThrowIfShiftOutside(certReqContextLen);
+            cursor++;
+            certReqContext = MemCpy.CopyToNewArray(buf, cursor, certReqContextLen);
+            cursor += certReqContextLen;
+            
+            cursor.ThrowIfShiftOutside(1);
+            extensionsLen = MemMap.ToUShort2BytesBE(buf, cursor);
+            cursor.ThrowIfShiftOutside(extensionsLen + 1);
+            cursor++;
+
+            while(!cursor.OnMaxPosition)
+            {
+                cursor++;
+
+                var result = DeserializeExtension(Endpoint.Client, buf, cursor);
+                extensions.Add(result.Extension);
+                cursor += result.Length - 1;
+            }
+
+            return new CertificateRequest(certReqContext, extensions.ToArray());
         }
 
         private Extension DeserializeExtension_ServerName_Client(byte[] buf, int offs)
@@ -706,7 +742,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public T Deserialize<T>(byte[] buffer, int offset)
         {
-            if (!messageDeserialize.ContainsKey(typeof(T))) throw new Exception("internal: unrecognized object type: " + typeof(T).Name);
+            if (!messageDeserialize.ContainsKey(typeof(T))) throw new Exception("cannot deserialize, internal: unrecognized object type: " + typeof(T).Name);
             
             return (T)messageDeserialize[typeof(T)](buffer, offset);
         }

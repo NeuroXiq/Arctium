@@ -1,5 +1,6 @@
 ﻿using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
+using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using System;
@@ -18,6 +19,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ExtensionClientALPNConfig ExtensionALPNConfig { get; private set; }
         internal ExtensionClientConfigServerName ExtensionClientConfigServerName { get; private set; }
         internal ExtensionClientConfigSignatureAlgorithmsCert ExtensionSignatureAlgorithmsCert { get; private set; }
+        internal ClientConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
@@ -27,6 +29,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ExtensionClientALPNConfig DefaultExtensionALPNConfig = null;
         static readonly ExtensionClientConfigServerName DefaultExtensionClientConfigServerName = null;
         static readonly ExtensionClientConfigSignatureAlgorithmsCert DefaultExtensionSignatureAlgorithmsCert = null;
+        static readonly ClientConfigHandshakeClientAuthentication DefaultHandshakeClientAuthentication = null;
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -53,8 +56,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigureExtensionALPN(DefaultExtensionALPNConfig);
             config.ConfigureExtensionServerName(DefaultExtensionClientConfigServerName);
             config.ConfigureExtensionSignatureAlgorithmsCert(DefaultExtensionSignatureAlgorithmsCert);
+            config.ConfigureHandshakeClientAuthentication(DefaultHandshakeClientAuthentication);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures client authentication that are performed during handskake (when server sends CertificateRequest during handskake)
+        /// If config is not null then client behaviour is determined by configuration object.
+        /// If value is null then client will not authenticate in handshake, if server require authentication empty certificate will be sent
+        /// </summary>
+        /// <param name="config">Configuration object or null if no authentication supported</param>
+        public void ConfigureHandshakeClientAuthentication(ClientConfigHandshakeClientAuthentication config)
+        {
+            HandshakeClientAuthentication = config;
         }
 
         /// <summary>
@@ -65,7 +80,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// <param name="config"></param>
         public void ConfigureExtensionSignatureAlgorithmsCert(ExtensionClientConfigSignatureAlgorithmsCert config)
         {
-            
+            ExtensionSignatureAlgorithmsCert = config;
         }
 
         /// <summary>
