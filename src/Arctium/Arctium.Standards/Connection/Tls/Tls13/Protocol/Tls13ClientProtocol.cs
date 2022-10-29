@@ -33,6 +33,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ushort? NegotiatedRecordSizeLimitExtension;
             public byte[] ExtensionResultALPN;
             public bool ExtensionResultServerName;
+
+            public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
         }
 
         public byte[] ApplicationDataBuffer { get; private set; }
@@ -60,6 +62,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
             public byte[] ExtensionALPN_ProtocolSelectedByServer;
             public bool ExtensionServerNameList_ReceivedFromServer;
+            public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
         }
 
         Context context;
@@ -120,6 +123,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 NegotiatedRecordSizeLimitExtension = context.NegotiatedRecordSizeLimitExtension,
                 ExtensionResultALPN = context.ExtensionALPN_ProtocolSelectedByServer,
                 ExtensionResultServerName = context.ExtensionServerNameList_ReceivedFromServer,
+                ClientHandshakeAuthenticationCertificatesSentByClient = context.ClientHandshakeAuthenticationCertificatesSentByClient
             };
 
             return info;
@@ -331,6 +335,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             List<CertificateEntry> entries = new List<CertificateEntry>();
             bool sentCertVerify = false;
+            context.ClientHandshakeAuthenticationCertificatesSentByClient = new byte[0][];
 
             if (config.HandshakeClientAuthentication != null)
             {
@@ -343,6 +348,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                     entries.Add(new CertificateEntry(null, X509Util.X509CertificateToDerEncodedBytes(certs.ClientCertificate.Certificate), new Extension[0]));
                     entries.AddRange(certs.ParentCertificates.Select(p => new CertificateEntry(null, X509Util.X509CertificateToDerEncodedBytes(p), new Extension[0])));
+
+                    context.ClientHandshakeAuthenticationCertificatesSentByClient = entries.Select(e => e.CertificateEntryRawBytes).ToArray();
                 }
             }
 
@@ -350,6 +357,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             messageIO.WriteHandshake(certificate);
 
             if (sentCertVerify) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificateVerify);
+            else commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientFinished);
         }
 
         private void Handshake_ServerFinished()

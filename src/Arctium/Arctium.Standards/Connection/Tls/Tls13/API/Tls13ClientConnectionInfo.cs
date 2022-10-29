@@ -1,8 +1,13 @@
 ﻿using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
+using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 using Arctium.Standards.Connection.Tls.Tls13.Protocol;
+using System.Linq;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
+    /// <summary>
+    /// Represents current connection state on client side.
+    /// </summary>
     public class Tls13ClientConnectionInfo
     {
         /// <summary>
@@ -59,6 +64,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public bool ExtensionResultServerName { get; private set; }
 
         /// <summary>
+        /// Represents result of client authentication during handshake.
+        /// When this value is not null then server requested client authentication during handshake.
+        /// Object represent result of this authentication.
+        /// If value is null then server did not requested client authenticaion durign handshake.
+        /// </summary>
+        public ResultHandshakeClientAuthentication ResultHandshakeClientAuthentication { get; private set; }
+
+        /// <summary>
         /// internal constructor to create API connection info from protocol result
         /// </summary>
         /// <param name="info"></param>
@@ -78,6 +91,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                 ExtensionResultALPN = new ExtensionResultALPN(info.ExtensionResultALPN);
 
             ExtensionResultServerName = info.ExtensionResultServerName;
+
+            if (info.ClientHandshakeAuthenticationCertificatesSentByClient != null)
+            {
+                var certs = info.ClientHandshakeAuthenticationCertificatesSentByClient;
+                byte[] clientCert = certs.Length > 0 ? (byte[])certs[0].Clone() : new byte[0];
+                byte[][] parentCerts = certs.Length > 1 ? certs.Skip(1).Select(c => (byte[])c.Clone()).ToArray() : new byte[0][];
+
+                ResultHandshakeClientAuthentication = new ResultHandshakeClientAuthentication(clientCert, parentCerts);
+            }
         }
     }
 }

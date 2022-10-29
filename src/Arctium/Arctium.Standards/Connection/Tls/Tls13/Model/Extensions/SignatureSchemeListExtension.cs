@@ -4,7 +4,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
     class SignatureSchemeListExtension : Extension
     {
-        public override ExtensionType ExtensionType => ExtensionType.SignatureAlgorithms;
+        private ExtensionType extType;
+
+        public override ExtensionType ExtensionType => extType;
 
         public SignatureScheme[] Schemes { get; private set; }
 
@@ -48,6 +50,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
             Validation.IsInS(sigAlgoOrSigAlgoCertType, nameof(sigAlgoOrSigAlgoCertType), ExtensionType.SignatureAlgorithmsCert, ExtensionType.SignatureAlgorithms);
 
             this.Schemes = schemes;
+            this.extType = sigAlgoOrSigAlgoCertType;
         }
     }
 }

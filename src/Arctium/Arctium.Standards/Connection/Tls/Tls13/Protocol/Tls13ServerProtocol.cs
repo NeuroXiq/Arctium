@@ -35,6 +35,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             public byte[] ExtensionResultALPN;
             public ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
+            public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
         }
 
         class Context
@@ -42,14 +43,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ClientHello ClientHello1;
             public ClientHello ClientHello2;
             public ServerHello HelloRetryRequest;
-            //public ServerHello ServerHello;
-            //public EncryptedExtensions EncryptedExtensions;
-            //public Certificate CertificateServer;
-            //public CertificateVerify CertificateVerifyServer;
-            //public Certificate CertificateClient;
-            //public CertificateVerify CertificateVerifyClient;
-            //public Finished FinishedServer;
-            //public Finished FinishedClient;
 
             public Model.CipherSuite SelectedCipherSuite;
             public bool IsPskSessionResumption;
@@ -70,6 +63,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public byte[] ExtensionResultALPN;
             public API.Extensions.ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
+            public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
         }
 
         private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
@@ -122,6 +116,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var info = new ConnectedInfo();
             info.ExtensionResultALPN = context.ExtensionResultALPN;
             info.ExtensionResultServerName = context.ExtensionResultServerName;
+            info.ClientHandshakeAuthenticationCertificatesSentByClient = context.ClientHandshakeAuthenticationCertificatesSentByClient;
 
             return info;
         }
@@ -364,6 +359,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 validate.Certificate.AlertFatal((AlertDescription)action, "Current configuration aborting client authentication (return action was not Success)");
             }
 
+            context.ClientHandshakeAuthenticationCertificatesSentByClient = certificate.CertificateList.Select(c => c.CertificateEntryRawBytes).ToArray();
+
             if (certificate.CertificateList.Length > 0)
             {
                 CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientCertificateVerify);
@@ -383,7 +380,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var certRequest = new CertificateRequest(new byte[0], ext);
 
             messageIO.WriteHandshake(certRequest);
-            //messageIO.recordLayer.Read();
         }
 
         private void EncryptedExtensions()
