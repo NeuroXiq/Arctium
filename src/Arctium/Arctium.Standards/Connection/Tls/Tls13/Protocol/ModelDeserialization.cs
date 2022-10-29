@@ -40,6 +40,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [ExtensionType.SupportedVersions] = DeserializeExtension_SupportedVersions_Client,
                 [ExtensionType.KeyShare] = DeserializeExtension_KeyShare_Client,
                 [ExtensionType.ServerName] = DeserializeExtension_ServerName_Client,
+                [ExtensionType.OidFilters] = DeserializeExtension_OidFilters,
             };
 
             extensionsDeserializeOnServerSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
@@ -62,6 +63,51 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(NewSessionTicket)] = DeserializeNewSessionTicket,
                 [typeof(CertificateRequest)] = DeserializeCertificateRequest,
             };
+        }
+
+        private Extension DeserializeExtension_OidFilters(byte[] buf, int offs)
+        {
+            ExtensionDeserializeSetup(buf, offs, out var cursor, out var length);
+
+            validate.Extensions.AlertFatalDecodeError(length < 2, "(oidfilters) extension.length", "minimum must be 2");
+
+            cursor.ThrowIfOutside(1);
+            int filtersVectorLen = MemMap.ToUShort2BytesBE(buf, cursor);
+
+            cursor.ThrowIfShiftOutside(filtersVectorLen + 1);
+            List<OidFiltersExtension.OidFilter> filters = new List<OidFiltersExtension.OidFilter>();
+
+            cursor++;
+
+            while (!cursor.OnMaxPosition)
+            {
+                cursor++;
+
+                int oidLen = buf[cursor];
+                byte[] oidBytes = new byte[0];
+                int valuesLen;
+                byte[] valuesBytes = new byte[0];
+                
+                cursor.ThrowIfShiftOutside(oidLen);
+                cursor++;
+                
+                oidBytes = MemCpy.CopyToNewArray(buf, cursor, oidLen);
+                cursor += oidLen;
+
+                valuesLen = MemMap.ToUShort2BytesBE(buf, cursor);
+                cursor++;
+
+                if (valuesLen > 0)
+                {
+                    cursor++;
+                    valuesBytes = MemCpy.CopyToNewArray(buf, cursor, valuesLen);
+                    cursor += valuesLen - 1;
+                }
+
+                filters.Add(new OidFiltersExtension.OidFilter(oidBytes, valuesBytes));
+            }
+
+            return new OidFiltersExtension(filters.ToArray());
         }
 
         private object DeserializeCertificateRequest(byte[] buf, int offs)
@@ -95,6 +141,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 extensions.Add(result.Extension);
                 cursor += result.Length - 1;
             }
+
+            validate.CertificateRequest.AlertFatalDecodeError(!cursor.OnMaxPosition, "extensions.length or handshake.length", "cursor not on max position after deserialize");
 
             return new CertificateRequest(certReqContext, extensions.ToArray());
         }

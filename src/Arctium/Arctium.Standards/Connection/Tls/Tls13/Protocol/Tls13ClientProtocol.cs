@@ -57,12 +57,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public byte[][] ServerCertificatesRawBytes { get; internal set; }
             public ushort? NegotiatedRecordSizeLimitExtension { get; internal set; }
             public X509CertWithKey ClientCertificateHandshakeAuthentication { get; internal set; }
+            public CertificateRequest HandshakeCertificateRequest { get; internal set; }
 
             public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
             public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
             public byte[] ExtensionALPN_ProtocolSelectedByServer;
             public bool ExtensionServerNameList_ReceivedFromServer;
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
+
         }
 
         Context context;
@@ -336,11 +338,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             List<CertificateEntry> entries = new List<CertificateEntry>();
             bool sentCertVerify = false;
             context.ClientHandshakeAuthenticationCertificatesSentByClient = new byte[0][];
+            var certs = clientContext.HandshakeClientAuthenticationGetCertificate(context.HandshakeCertificateRequest);
 
-            if (config.HandshakeClientAuthentication != null)
+            if (certs != null)
             {
-                var certs = config.HandshakeClientAuthentication.GetCertificateToSendToServer(new List<API.APIModel.Extension>());
-
                 if (certs.ClientCertificate != null)
                 {
                     sentCertVerify = true;
@@ -424,6 +425,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_CertificateRequest()
         {
             var certReq = messageIO.ReadHandshakeMessage<CertificateRequest>();
+            context.HandshakeCertificateRequest = certReq;
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerCertificate);
         }
@@ -537,6 +539,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             var cookieFromServer = context.HelloRetryRequest.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
+
             if (cookieFromServer != null)
             {
                 extensions2.Add(cookieFromServer);

@@ -62,7 +62,42 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(MaximumFragmentLengthExtensionExtension)] = Serialize_Extension_MaximumFragmentLengthExtensionExtension,
                 [typeof(ServerNameListClientHelloExtension)] = Serialize_Extension_ServerNameListClientHelloExtension,
                 [typeof(ServerNameListServerHelloExtension)] = Serialize_Extension_ServerNameListServerHelloExtension,
+                [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension
             };
+        }
+
+        private void Serialize_Extension_OidFiltersExtension(object obj)
+        {
+            var ext = (OidFiltersExtension)obj;
+
+            var buf = tempSerializedExtension;
+            int filterLenghtOffs = tempSerializedExtension.MallocAppend(2);
+
+            if (ext.Filters.Length == 0)
+            {
+                MemMap.ToBytes1UShortBE(0, tempSerializedExtension.Buffer, filterLenghtOffs);
+                return;
+            }
+
+            foreach (var filter in ext.Filters)
+            {
+                Validation.ThrowInternal(
+                    filter.CertificateExtensionValues.Length > ushort.MaxValue || filter.CertificateExtensionOid.Length > 255,
+                    "something wrong with oid filters (exceed max)");
+
+                int oidLenOffs = buf.MallocAppend(1);
+                int oidBytesOffs = buf.MallocAppend(filter.CertificateExtensionOid.Length);
+                int valueLenOffs = buf.MallocAppend(2);
+                int valueOffs = buf.MallocAppend(filter.CertificateExtensionValues.Length);
+
+                buf.Buffer[oidLenOffs] = (byte)filter.CertificateExtensionOid.Length;
+                MemCpy.Copy(filter.CertificateExtensionOid, 0, buf.Buffer, oidBytesOffs, filter.CertificateExtensionOid.Length);
+                MemMap.ToBytes1UShortBE((ushort)filter.CertificateExtensionValues.Length, buf.Buffer, valueLenOffs);
+                MemCpy.Copy(filter.CertificateExtensionValues, 0, buf.Buffer, valueOffs, filter.CertificateExtensionValues.Length);
+            }
+
+            int filtersLen = buf.DataLength - filterLenghtOffs - 2;
+            MemMap.ToBytes1UShortBE((ushort)filtersLen, buf.Buffer, filterLenghtOffs);
         }
 
         private void Serialize_Extension_ServerNameListServerHelloExtension(object obj)

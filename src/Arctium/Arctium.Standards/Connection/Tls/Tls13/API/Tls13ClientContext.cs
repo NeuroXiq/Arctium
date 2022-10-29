@@ -1,4 +1,6 @@
 ﻿using Arctium.Cryptography.Utils;
+using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
+using Arctium.Standards.Connection.Tls.Tls13.Model;
 using System;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
@@ -44,6 +46,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal PskTicket[] GetPskTickets()
         {
             return pskTicketStore.GetToSendInClientHello();
+        }
+
+        internal ClientConfigHandshakeClientAuthentication.Certificates HandshakeClientAuthenticationGetCertificate(CertificateRequest handshakeCertificateRequest)
+        {
+            if (Config.HandshakeClientAuthentication == null) return null;
+
+            var certs = Config.HandshakeClientAuthentication.GetCertificateToSendToServer(APIModel.APIModelMapper.MapExtensions(handshakeCertificateRequest.Extensions));
+            
+            return certs;
         }
     }
 }

@@ -106,5 +106,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             return Config.HandshakeClientAuthentication.CertificateFromClientReceived(clientCerts, new List<APIModel.Extension>());
         }
+
+        internal OidFiltersExtension OidFiltersExtension()
+        {
+            if (Config.ExtensionServerConfigOidFilters == null) return null;
+
+            var filters = Config.ExtensionServerConfigOidFilters.Filters
+                    .Select(f => new OidFiltersExtension.OidFilter(f.CertificateExtensionOid, f.CertificateExtensionValues))
+                    .ToArray();
+
+            return new OidFiltersExtension(filters);
+        }
     }
 }

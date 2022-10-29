@@ -22,6 +22,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Messages
         /// List can be empty then no certificate will be sent
         /// </summary>
         /// <param name="extensionInCertificateRequest">Extensions received from server in extension field in CertificateRequest message</param>
-        public abstract Certificates GetCertificateToSendToServer(List<Extension> extensionInCertificateRequest);
+        public abstract Certificates GetCertificateToSendToServer(IList<Extension> extensionInCertificateRequest);
     }
 }

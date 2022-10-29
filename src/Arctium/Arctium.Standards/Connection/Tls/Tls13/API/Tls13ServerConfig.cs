@@ -21,7 +21,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
         internal Func<ExtensionServerALPN, ExtensionServerALPN.Result> ExtensionALPN { get; private set; }
         internal ExtensionServerConfigServerName ExtensionServerName { get; private set; }
-        internal ServerConfigHandshakeClientAuthentication HandshakeClientAuthentication;
+        internal ServerConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
+        internal ExtensionServerConfigOidFilters ExtensionServerConfigOidFilters { get; private set; }
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
@@ -30,6 +31,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly Func<ExtensionServerALPN, ExtensionServerALPN.Result> DefaultExtensionALPN = null;
         static readonly ExtensionServerConfigServerName DefaultExtensionServerName = null;
         static readonly ServerConfigHandshakeClientAuthentication DefaultServerConfigHandshakeClientAuthentication;
+        static readonly ExtensionServerConfigOidFilters DefaultExtensionServerConfigOidFilters = null;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -67,8 +69,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigueExtensionALPN(DefaultExtensionALPN);
             c.ConfigureExtensionServerName(DefaultExtensionServerName);
             c.ConfigureHandshakeClientAuthentication(DefaultServerConfigHandshakeClientAuthentication);
+            c.ConfigureExtensionServerConfigOidFilters(DefaultExtensionServerConfigOidFilters);
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures 'Oid filters' extension (RFC 8446).
+        /// If value is not null server will send OID filters to client in 'CertificateRequest' message
+        /// If value is null server will not send this extension CertificateRequest message
+        /// </summary>
+        /// <param name="defaultExtensionServerConfigOidFilters"></param>
+        public void ConfigureExtensionServerConfigOidFilters(ExtensionServerConfigOidFilters config)
+        {
+            ExtensionServerConfigOidFilters = config;
         }
 
 

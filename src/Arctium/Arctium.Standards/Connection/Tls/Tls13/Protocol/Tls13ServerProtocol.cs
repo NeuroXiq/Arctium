@@ -372,12 +372,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Handshake_CertificateRequest()
         {
             // extension with signature algorithms must be specified 
-            var ext = new Extension[]
+            var ext = new List<Extension>
             {
                 new SignatureSchemeListExtension(config.SignatureSchemes, ExtensionType.SignatureAlgorithms)
             };
 
-            var certRequest = new CertificateRequest(new byte[0], ext);
+            var oidFiltersExtension = serverContext.OidFiltersExtension();
+            if (oidFiltersExtension != null) ext.Add(oidFiltersExtension);
+
+            var certRequest = new CertificateRequest(new byte[0], ext.ToArray());
 
             messageIO.WriteHandshake(certRequest);
         }
