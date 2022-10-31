@@ -8,6 +8,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public abstract class Tls13Stream : Stream
     {
+        public abstract void PostHandshakeKeyUpdate(bool updateRequested);
     }
 
     class Tls13ClientStreamInternal : Tls13Stream
@@ -34,6 +35,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public override void Flush()
         {
             throw new NotImplementedException();
+        }
+
+        public override void PostHandshakeKeyUpdate(bool updateRequested)
+        {
+            protocol.PostHandshakeKeyUpdate(updateRequested);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -151,6 +157,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public override void Write(byte[] buffer, int offset, int count)
         {
             protocol.WriteApplicationData(buffer, offset, count);
+        }
+
+        public override void PostHandshakeKeyUpdate(bool updateRequested)
+        {
+            protocol.PostHandshakeKeyUpdate(true);
         }
     }
 }

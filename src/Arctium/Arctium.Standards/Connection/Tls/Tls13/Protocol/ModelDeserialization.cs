@@ -63,7 +63,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(Certificate)] = DeserializeCertificate,
                 [typeof(NewSessionTicket)] = DeserializeNewSessionTicket,
                 [typeof(CertificateRequest)] = DeserializeCertificateRequest,
+                [typeof(KeyUpdate)] = DeserializeKeyUpdate,
             };
+        }
+
+        private object DeserializeKeyUpdate(byte[] buf, int offs)
+        {
+            var type = (HandshakeType)buf[0];
+            validate.Other.Throw(type != HandshakeType.KeyUpdate, "expected key update but it is other message, received: " + type.ToString());
+
+            int len = ToInt3BytesBE(buf, offs + 1);
+
+            validate.Other.AlertFatalDecodeError(len != 1, "handshake.length (keyupdate)", "length should be 1 but its is not");
+            int kuType = buf[offs + 4];
+
+            if (kuType != 0 && kuType != 1)
+                validate.Other.AlertFatal(AlertDescription.Illegal_parameter, "keyupdate.request_update - invalid value, must be 1 or 2 but is not");
+
+
+            return new KeyUpdate((KeyUpdate.KeyUpdateRequest)(kuType));
         }
 
         private Extension DeserializeExtension_PostHandshakeAuth_Server(byte[] buf, int offs)

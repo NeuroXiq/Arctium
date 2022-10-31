@@ -41,7 +41,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(EncryptedExtensions)] = SerializeEncryptedExtensions,
                 [typeof(NewSessionTicket)] = SerializeNewSessionTicket,
                 [typeof(CertificateRequest)] = SerializeCertificateRequest,
-                [typeof(ClientHello)] = SerializeClientHello
+                [typeof(ClientHello)] = SerializeClientHello,
+                [typeof(KeyUpdate)] = SerializeKeyUpdate
             };
 
             singleExtensionSerializers = new Dictionary<Type, Action<object>>
@@ -65,6 +66,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension,
                 [typeof(PostHandshakeAuthExtension)] = Serialize_Extension_PostHandshakeAuthExtension
             };
+        }
+
+        private void SerializeKeyUpdate(object obj)
+        {
+            var keyupdate = (KeyUpdate)obj;
+            buffer.Append((byte)(HandshakeType.KeyUpdate));
+            
+            // this is Handshake.length field (hardcoding because constant and very easy)
+            // so wrigin directly as bytes (length equal to 1, represented as 3 bytes big endian)
+            buffer.Append(0, 0, 1);
+
+            buffer.Append((byte)keyupdate.RequestUpdate);
         }
 
         private void Serialize_Extension_PostHandshakeAuthExtension(object obj)

@@ -34,5 +34,8 @@
         PostHandshake_Finished,
         PostHandshake_FinishedProcessingOfPostHandshake,
         PostHandshake_CertificateRequest,
+        Connected_OutsideCommandStartPostHandshakeKeyUpdate,
+        PostHandshake_SendKeyUpdate,
+        PostHandshake_ReceivedKeyUpdate,
     }
 }

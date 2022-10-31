@@ -257,5 +257,19 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 Length = length;
             }
         }
+
+        public void ChangeWriteEncryption(AEAD newWrite, byte[] newIv)
+        {
+            writeSequenceNumber = 0;
+            this.writeIv = newIv;
+            this.aeadWrite = newWrite;
+        }
+
+        public void ChangeReadEncryption(AEAD newRead, byte[] newIv)
+        {
+            readSequenceNumber = 0;
+            this.readIv = newIv;
+            this.aeadRead = newRead;
+        }
     }
 }

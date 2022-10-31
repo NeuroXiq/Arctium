@@ -30,5 +30,8 @@
         PostHandshake_Certificate,
         PostHandshake_CertificateVerify,
         PostHandshake_Finished,
+        Connected_OutsideCommandExecutePostHandshakeKeyUpdate,
+        PostHandshake_SendKeyUpdate,
+        PostHandshake_KeyUpdateReceived,
     }
 }

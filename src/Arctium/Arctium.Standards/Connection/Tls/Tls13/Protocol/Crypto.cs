@@ -647,6 +647,84 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return hashFunction.HashFinal();
         }
 
+        public void DoKeyUpdateForWriting(RecordLayer recordLayer)
+        {
+            // var curEndpointSecret = currentEndpoint == Endpoint.Server ?
+            //     ServerApplicationTrafficSecret0 : ClientApplicationTrafficSecret0;
+
+            byte[] nextGenSecret;
+
+            if (currentEndpoint == Endpoint.Server)
+            {
+                nextGenSecret = ServerApplicationTrafficSecret0 = NextGenAppTraficSecret(ServerApplicationTrafficSecret0);
+            }
+            else
+            {
+                nextGenSecret = ClientApplicationTrafficSecret0 = NextGenAppTraficSecret(ClientApplicationTrafficSecret0);
+            }
+
+            AEADFactory(nextGenSecret, out var aead, out var iv);
+
+            recordLayer.ChangeWriteEncryption(aead, iv);
+        }
+
+        public void DoKeyUpdateForReading(RecordLayer recordLayer)
+        {
+            byte[] nextGenSecret;
+
+            if (currentEndpoint == Endpoint.Server)
+            {
+                nextGenSecret = ClientApplicationTrafficSecret0 = NextGenAppTraficSecret(ClientApplicationTrafficSecret0);
+            }
+            else
+            {
+                nextGenSecret = ServerApplicationTrafficSecret0 = NextGenAppTraficSecret(ServerApplicationTrafficSecret0);
+            }
+
+            AEADFactory(nextGenSecret, out var aead, out var iv);
+            recordLayer.ChangeReadEncryption(aead, iv);
+        }
+
+        private byte[] NextGenAppTraficSecret(byte[] currentClientOrServerSecret)
+        {
+            var next = HkdfExpandLabel(currentClientOrServerSecret, "traffic upd", new byte[0], hashFunction.HashSizeBytes);
+
+            return next;
+        }
+
+        private void AEADFactory(byte[] keySecret, out AEAD aead, out byte[] iv)
+        {
+            byte[] key;
+
+            switch (SelectedCipherSuite)
+            {
+                case CipherSuite.TLS_AES_128_GCM_SHA256:
+                    key = HkdfExpandLabel(keySecret, "key", new byte[0], 16);
+                    iv = HkdfExpandLabel(keySecret, "iv", new byte[0], 12);
+
+                    aead = new GaloisCounterMode(new AES(key), 16);
+                    break;
+                case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+                    key = HkdfExpandLabel(keySecret, "key", new byte[0], 32);
+                    iv = HkdfExpandLabel(keySecret, "iv", new byte[0], 12);
+
+                    aead = new AEAD_CHACHA20_POLY1305(key);
+                    break;
+                case CipherSuite.TLS_AES_128_CCM_SHA256:
+                    key = HkdfExpandLabel(keySecret, "key", new byte[0], 16);
+                    iv = HkdfExpandLabel(keySecret, "iv", new byte[0], 12);
+                    aead = RFC5116_AEAD_Predefined.Create_AEAD_AES_128_CCM(key);
+                    break;
+                case CipherSuite.TLS_AES_256_GCM_SHA384:
+                    key = HkdfExpandLabel(keySecret, "key", new byte[0], 32);
+                    iv = HkdfExpandLabel(keySecret, "iv", new byte[0], 12);
+                    aead = RFC5116_AEAD_Predefined.Create_AEAD_AES_256_GCM(key);
+
+                    break;
+                default: throw new NotImplementedException();
+            }
+        }
+
         public void ChangeRecordLayerCrypto(RecordLayer recordLayer, RecordLayerKeyType keyType)
         {
             byte[] clientSecret;
