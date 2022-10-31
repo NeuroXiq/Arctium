@@ -8,7 +8,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public abstract class Tls13Stream : Stream
     {
-        
     }
 
     class Tls13ClientStreamInternal : Tls13Stream
@@ -73,7 +72,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         }
     }
 
-    class Tls13ServerStreamInternal : Tls13Stream
+    public abstract class Tls13ServerStream : Tls13Stream
+    {
+        /// <summary>
+        /// Post handshake client authentication. Can throw exception if state is invalid
+        /// </summary>
+        /// <exception cref="">Throws exception if not configured or if client do not support post handshake authentication</exception>
+        public abstract void PostHandshakeClientAuthentication();
+
+        public abstract void TryWaitPostHandshake();
+    }
+
+    class Tls13ServerStreamInternal : Tls13ServerStream
     {
         private Tls13ServerProtocol protocol;
         private int applicationDataCursor;
@@ -97,6 +107,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public override void Flush()
         {
             throw new NotImplementedException();
+        }
+
+        public override void TryWaitPostHandshake()
+        {
+            protocol.TryWaitPostHandshake();
+        }
+
+        public override void PostHandshakeClientAuthentication()
+        {
+            protocol.PostHandshakeClientAuthentication();
         }
 
         public override int Read(byte[] buffer, int offset, int count)

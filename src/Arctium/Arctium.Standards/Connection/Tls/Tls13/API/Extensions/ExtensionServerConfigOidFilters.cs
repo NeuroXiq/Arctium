@@ -46,9 +46,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
         {
             foreach (var filter in oidFilters)
             {
-                string msg = "DER encoded OID must not be empty by TLS specification. Make sure that all OID byte arrays are not empty";
+                string msg = "DER encoded OID must not be empty (at least 1 byte) and max length is 255 - by TLS specification. That all oids filters meet this criterion";
+                string msg2 = "DER encoded CertificateExtensionValues length cannot exceed 2^16 -1 ";
 
-                Validation.NotEmpty(filter.CertificateExtensionOid, nameof(filter.CertificateExtensionOid), msg);
+                Validation.NumberInRange(filter.CertificateExtensionOid.Length, 1, 255, nameof(filter), msg);
+                Validation.NumberInRange(filter.CertificateExtensionValues.Length, 0, ushort.MaxValue, nameof(filter.CertificateExtensionValues), msg2);
             }
 
             Filters = oidFilters;

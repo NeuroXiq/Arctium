@@ -23,6 +23,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ExtensionServerConfigServerName ExtensionServerName { get; private set; }
         internal ServerConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
         internal ExtensionServerConfigOidFilters ExtensionServerConfigOidFilters { get; private set; }
+        internal ServerConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
+
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
@@ -32,6 +34,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ExtensionServerConfigServerName DefaultExtensionServerName = null;
         static readonly ServerConfigHandshakeClientAuthentication DefaultServerConfigHandshakeClientAuthentication;
         static readonly ExtensionServerConfigOidFilters DefaultExtensionServerConfigOidFilters = null;
+        static readonly ServerConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -69,9 +72,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigueExtensionALPN(DefaultExtensionALPN);
             c.ConfigureExtensionServerName(DefaultExtensionServerName);
             c.ConfigureHandshakeClientAuthentication(DefaultServerConfigHandshakeClientAuthentication);
-            c.ConfigureExtensionServerConfigOidFilters(DefaultExtensionServerConfigOidFilters);
+            c.ConfigureExtensionOidFilters(DefaultExtensionServerConfigOidFilters);
+            c.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures post handshake client authentication.
+        /// If config is not null then server can at any time request authentication from client. Server will validate if client 
+        /// is owner of private certificates that was sent.
+        /// If config is null then post handshake client authentication is disabled.
+        /// </summary>
+        /// <param name="config">configuration of post handshake client authentication or null if disabled</param>
+        public void ConfigurePostHandshakeClientAuthentication(ServerConfigPostHandshakeClientAuthentication config)
+        {
+            PostHandshakeClientAuthentication = config;
         }
 
         /// <summary>
@@ -80,7 +96,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// If value is null server will not send this extension CertificateRequest message
         /// </summary>
         /// <param name="defaultExtensionServerConfigOidFilters"></param>
-        public void ConfigureExtensionServerConfigOidFilters(ExtensionServerConfigOidFilters config)
+        public void ConfigureExtensionOidFilters(ExtensionServerConfigOidFilters config)
         {
             ExtensionServerConfigOidFilters = config;
         }

@@ -20,6 +20,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ExtensionClientConfigServerName ExtensionClientConfigServerName { get; private set; }
         internal ExtensionClientConfigSignatureAlgorithmsCert ExtensionSignatureAlgorithmsCert { get; private set; }
         internal ClientConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
+        internal ClientConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
@@ -30,6 +31,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ExtensionClientConfigServerName DefaultExtensionClientConfigServerName = null;
         static readonly ExtensionClientConfigSignatureAlgorithmsCert DefaultExtensionSignatureAlgorithmsCert = null;
         static readonly ClientConfigHandshakeClientAuthentication DefaultHandshakeClientAuthentication = null;
+        static readonly ClientConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -57,8 +59,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigureExtensionServerName(DefaultExtensionClientConfigServerName);
             config.ConfigureExtensionSignatureAlgorithmsCert(DefaultExtensionSignatureAlgorithmsCert);
             config.ConfigureHandshakeClientAuthentication(DefaultHandshakeClientAuthentication);
+            config.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures post handshake client authentication.
+        /// If configuration object is not null client will send 'post_handshake_auth' extension in client hello
+        /// allowing server to perform post handshake client authentication
+        /// If config object is null then client will not sent 'post_handhskake_auth' extension in client hello
+        /// and post handshake authentication attempt from server will cause exception
+        /// </summary>
+        /// <param name="config">Confiuration object to configure post handshake auth or null disable support</param>
+        public void ConfigurePostHandshakeClientAuthentication(ClientConfigPostHandshakeClientAuthentication config)
+        {
+            PostHandshakeClientAuthentication = config;
         }
 
         /// <summary>

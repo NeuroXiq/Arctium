@@ -10,6 +10,7 @@ using Arctium.Standards.X509.X509Cert;
 using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
+using Arctium.Shared.Other;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
@@ -116,6 +117,22 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                     .ToArray();
 
             return new OidFiltersExtension(filters);
+        }
+
+        internal ServerConfigPostHandshakeClientAuthentication.Action PostHandshakeClientCertificate(Certificate postHandshakeClientCert)
+        {
+            var clientCerts = postHandshakeClientCert.CertificateList.Select(c => ((byte[])c.CertificateEntryRawBytes.Clone())).ToArray();
+
+            return Config.PostHandshakeClientAuthentication.CertificateFromClientReceived(clientCerts, new List<APIModel.Extension>());
+        }
+
+        internal void Event_PostHandshakeClientAuthenticationSuccess(Certificate certMsg)
+        {
+            Validation.ThrowInternal(Config.PostHandshakeClientAuthentication == null);
+
+            var certs = certMsg.CertificateList.Select(c => (byte[])c.CertificateEntryRawBytes.Clone()).ToArray();
+
+            Config.PostHandshakeClientAuthentication.OnClientAuthSuccess(certs);
         }
     }
 }

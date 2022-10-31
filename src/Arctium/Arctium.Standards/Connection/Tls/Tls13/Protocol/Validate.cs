@@ -45,6 +45,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         const string Label_EncryptedExtensions = "EncryptedExtensions";
         const string Label_CertificateVerify = "CertificateVerify";
         const string Label_CertificateRequest = "CertificateRequest";
+        const string Label_Other = "Other";
 
 
         public RecordLayerValidate RecordLayer { get; private set; }
@@ -60,6 +61,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public EncryptedExtensionsValidate EncryptedExtensions { get; private set; }
         public DefaultNamedValidate CertificateVerify { get; private set; }
         public DefaultNamedValidate CertificateRequest { get; private set; }
+        public DefaultNamedValidate Other { get; private set; }
 
         public Validate()
         {
@@ -76,6 +78,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             EncryptedExtensions = new EncryptedExtensionsValidate(errorHandler);
             CertificateVerify = new DefaultNamedValidate(errorHandler, Label_CertificateVerify);
             CertificateRequest = new DefaultNamedValidate(errorHandler, Label_CertificateRequest);
+            Other = new DefaultNamedValidate(errorHandler, Label_Other);
 
             Certificate = new CertificateValidate(errorHandler);
         }

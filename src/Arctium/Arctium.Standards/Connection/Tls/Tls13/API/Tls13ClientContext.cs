@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.Utils;
+using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using System;
@@ -54,6 +55,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             var certs = Config.HandshakeClientAuthentication.GetCertificateToSendToServer(APIModel.APIModelMapper.MapExtensions(handshakeCertificateRequest.Extensions));
             
+            return certs;
+        }
+
+        internal ClientConfigPostHandshakeClientAuthentication.Certificates PostHandshakeClientAuthenticationGetCertificate(CertificateRequest certRequest)
+        {
+            if (Config.PostHandshakeClientAuthentication == null) Validation.ThrowInternal();
+
+            var certs = Config.PostHandshakeClientAuthentication.GetCertificateToSendToServer(APIModel.APIModelMapper.MapExtensions(certRequest.Extensions));
+
             return certs;
         }
     }

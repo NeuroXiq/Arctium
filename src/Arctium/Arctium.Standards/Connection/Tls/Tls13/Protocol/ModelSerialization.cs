@@ -62,8 +62,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(MaximumFragmentLengthExtensionExtension)] = Serialize_Extension_MaximumFragmentLengthExtensionExtension,
                 [typeof(ServerNameListClientHelloExtension)] = Serialize_Extension_ServerNameListClientHelloExtension,
                 [typeof(ServerNameListServerHelloExtension)] = Serialize_Extension_ServerNameListServerHelloExtension,
-                [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension
+                [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension,
+                [typeof(PostHandshakeAuthExtension)] = Serialize_Extension_PostHandshakeAuthExtension
             };
+        }
+
+        private void Serialize_Extension_PostHandshakeAuthExtension(object obj)
+        {
+            var ext = (PostHandshakeAuthExtension)obj;
+
+            // this is empty extension nothing to do (zero length extension content)
         }
 
         private void Serialize_Extension_OidFiltersExtension(object obj)

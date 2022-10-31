@@ -36,6 +36,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public byte[] ExtensionResultALPN;
             public ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
+            public bool ClientSupportPostHandshakeAuthentication;
+        }
+
+        class PostHandshakeAuthContext
+        {
+            public CertificateRequest CertificateRequest;
+            public ByteBuffer hsctx = new ByteBuffer();
+            public Certificate Certificate;
+            public X509Certificate ClientX509Certificate;
+
+            public PostHandshakeAuthContext(CertificateRequest certificateRequest)
+            {
+                CertificateRequest = certificateRequest;
+            }
+
+            public void AddHandshakeContext(byte[] buffer, int offset, int length)
+            {
+                hsctx.Append(buffer, offset, length);
+            }
         }
 
         class Context
@@ -60,10 +79,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public PskTicket SelectedPskTicket { get; internal set; }
             public ushort? ExtensionRecordSizeLimit { get; internal set; }
             public X509Certificate ClientCertificateOnHandshake { get; internal set; }
+            public CertificateRequest PostHandshakeCertificateRequest { get; internal set; }
+
+            public ServerProtocolCommand? CommandAfterPostHandshakeProcessingFinished = null;
+
+            public bool ClientSupportPostHandshakeAuthentication = false;
 
             public byte[] ExtensionResultALPN;
             public API.Extensions.ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
+
+            // stores all certificate requests that was sent with handshakecontext
+            // for each certificate separately
+            public List<PostHandshakeAuthContext> PostHandshakeClientAuthSended = new List<PostHandshakeAuthContext>();
+            public PostHandshakeAuthContext PostHandshakeClientAuth_CurrentProcessing = null;
         }
 
         private byte[] applicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
@@ -73,8 +102,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private long writeApplicationDataOffset;
         private long writeApplicationDataLength;
 
-        private Queue<ServerProcolCommand> CommandQueue;
-        private ServerProcolCommand Command;
+        private Queue<ServerProtocolCommand> CommandQueue;
+
+        private ServerProtocolCommand Command;
+
         private ServerProtocolState State;
         private MessageIO messageIO;
         private Crypto crypto;
@@ -98,7 +129,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto = new Crypto(Endpoint.Server, config);
             context = new Context();
             applicationDataLength = 0;
-            CommandQueue = new Queue<ServerProcolCommand>();
+            CommandQueue = new Queue<ServerProtocolCommand>();
         }
 
         private void MessageIO_OnHandshakeReadWrite(byte[] buffer, int offset, int length)
@@ -108,7 +139,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public ConnectedInfo Listen()
         {
-            CommandQueue.Enqueue(ServerProcolCommand.Start);
+            CommandQueue.Enqueue(ServerProtocolCommand.Start);
             State = ServerProtocolState.Listen;
 
             ProcessCommandLoop();
@@ -117,6 +148,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             info.ExtensionResultALPN = context.ExtensionResultALPN;
             info.ExtensionResultServerName = context.ExtensionResultServerName;
             info.ClientHandshakeAuthenticationCertificatesSentByClient = context.ClientHandshakeAuthenticationCertificatesSentByClient;
+            info.ClientSupportPostHandshakeAuthentication = context.ClientSupportPostHandshakeAuthentication;
 
             return info;
         }
@@ -125,14 +157,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
         }
 
+        public void TryWaitPostHandshake()
+        {
+            CommandQueue.Enqueue(ServerProtocolCommand.Connected_TryWaitPostHandshake);
+            ProcessCommandLoop();
+        }
+
+        public void PostHandshakeClientAuthentication()
+        {
+            CommandQueue.Enqueue(ServerProtocolCommand.Connected_StartPostHandshakeCertificateRequest);
+            ProcessCommandLoop();
+        }
+
         /// <summary>
         /// Removes all data from <see cref="ApplicationDataBuffer"/> and loads next part of application data received.
         /// Result length of data is in <see cref="ApplicationDataLength"/>.
         /// </summary>
         public void LoadNextApplicationData()
         {
-            CommandQueue.Enqueue(ServerProcolCommand.Connected_LoadApplicationData);
-
+            CommandQueue.Enqueue(ServerProtocolCommand.Connected_LoadApplicationData);
             ProcessCommandLoop();
         }
 
@@ -142,7 +185,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             writeApplicationDataOffset = offset;
             writeApplicationDataLength = length;
 
-            CommandQueue.Enqueue(ServerProcolCommand.Connected_WriteApplicationData);
+            CommandQueue.Enqueue(ServerProtocolCommand.Connected_WriteApplicationData);
 
             ProcessCommandLoop();
         }
@@ -168,27 +211,34 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             switch (Command)
             {
-                case ServerProcolCommand.PostHandshake_NewSessionTicket: PostHandshake_NewSessionTicket(); break;
+                case ServerProtocolCommand.PostHandshake_NewSessionTicket: PostHandshake_NewSessionTicket(); break;
+                case ServerProtocolCommand.PostHandshake_CertificateRequest: PostHandshake_CertificateRequest(); break;
+                case ServerProtocolCommand.PostHandshake_Certificate: PostHandshake_Certificate(); break;
+                case ServerProtocolCommand.PostHandshake_CertificateVerify: PostHandshake_CertificateVerify(); break;
+                case ServerProtocolCommand.PostHandshake_Finished: PostHandshake_Finished(); break;
+                case ServerProtocolCommand.PostHandshake_FinishedProcessingOfPostHandshake: PostHandshake_FinishedProcessingOfPostHandshake(); break;
                 default: throw new Tls13Exception("command not valid for this state");
             }
         }
 
         private void ListenState()
         {
-            if (Command != ServerProcolCommand.Start) throw new Tls13Exception("Command not valid for this state");
+            if (Command != ServerProtocolCommand.Start) throw new Tls13Exception("Command not valid for this state");
 
             State = ServerProtocolState.Handshake;
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_FirstClientHello);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_FirstClientHello);
         }
 
         private void ConnectedState()
         {
             switch (Command)
             {
-                case ServerProcolCommand.Connected_LoadApplicationData: LoadApplicationData(); break;
-                case ServerProcolCommand.LoadApplicationDataNotReceivedApplicationDataContent: LoadApplicationDataNotReceivedApplicationDataContent(); break;
-                case ServerProcolCommand.Connected_WriteApplicationData: WriteApplicationData(); break;
-                default: throw new NotImplementedException("connected");
+                case ServerProtocolCommand.Connected_LoadApplicationData: LoadApplicationData(); break;
+                case ServerProtocolCommand.Connected_WriteApplicationData: WriteApplicationData(); break;
+                case ServerProtocolCommand.Connected_StartReceivedPostHandshake: Connected_StartReceivedPostHandshake(); break;
+                case ServerProtocolCommand.Connected_StartPostHandshakeCertificateRequest: Connected_StartPostHandshakeCertificateRequest();  break;
+                case ServerProtocolCommand.Connected_TryWaitPostHandshake: Connected_TryWaitPostHandshake(); break;
+                default: throw new NotImplementedException("Operation is invalid for current state. current state: connected");
             }
         }
 
@@ -196,22 +246,147 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             switch (Command)
             {
-                case ServerProcolCommand.Handshake_FirstClientHello: FirstClientHello(); break;
-                case ServerProcolCommand.Handshake_ClientHello1: ClientHello1(); break;
-                case ServerProcolCommand.Handshake_SendHelloRetryRequestIfNeeded: Handshake_SendHelloRetryRequestIfNeeded(); break;
-                case ServerProcolCommand.Handshake_ServerHelloNotPsk: ServerHelloNotPsk();  break;
-                case ServerProcolCommand.Handshake_ServerHelloPsk_Dhe: Handshake_ServerHelloPsk_Dhe(); break;
-                case ServerProcolCommand.Handshake_EncryptedExtensions: EncryptedExtensions(); break;
-                case ServerProcolCommand.Handshake_ServerCertificate: ServerCertificate();  break;
-                case ServerProcolCommand.Handshake_ServerCertificateVerify: ServerCertificateVerify();  break;
-                case ServerProcolCommand.Handshake_ServerFinished: ServerFinished(); break;
-                case ServerProcolCommand.Handshake_ClientFinished: ClientFinished(); break;
-                case ServerProcolCommand.Handshake_HandshakeCompletedSuccessfully: Handshake_HandshakeCompletedSuccessfully(); break;
-                case ServerProcolCommand.Handshake_CertificateRequest: Handshake_CertificateRequest(); break;
-                case ServerProcolCommand.Handshake_ClientCertificate: Handshake_ClientCertificate(); break;
-                case ServerProcolCommand.Handshake_ClientCertificateVerify: Handshake_ClientCertificateVerity(); break;
+                case ServerProtocolCommand.Handshake_FirstClientHello: FirstClientHello(); break;
+                case ServerProtocolCommand.Handshake_ClientHello1: ClientHello1(); break;
+                case ServerProtocolCommand.Handshake_SendHelloRetryRequestIfNeeded: Handshake_SendHelloRetryRequestIfNeeded(); break;
+                case ServerProtocolCommand.Handshake_ServerHelloNotPsk: ServerHelloNotPsk();  break;
+                case ServerProtocolCommand.Handshake_ServerHelloPsk_Dhe: Handshake_ServerHelloPsk_Dhe(); break;
+                case ServerProtocolCommand.Handshake_EncryptedExtensions: EncryptedExtensions(); break;
+                case ServerProtocolCommand.Handshake_ServerCertificate: ServerCertificate();  break;
+                case ServerProtocolCommand.Handshake_ServerCertificateVerify: ServerCertificateVerify();  break;
+                case ServerProtocolCommand.Handshake_ServerFinished: ServerFinished(); break;
+                case ServerProtocolCommand.Handshake_ClientFinished: ClientFinished(); break;
+                case ServerProtocolCommand.Handshake_HandshakeCompletedSuccessfully: Handshake_HandshakeCompletedSuccessfully(); break;
+                case ServerProtocolCommand.Handshake_CertificateRequest: Handshake_CertificateRequest(); break;
+                case ServerProtocolCommand.Handshake_ClientCertificate: Handshake_ClientCertificate(); break;
+                case ServerProtocolCommand.Handshake_ClientCertificateVerify: Handshake_ClientCertificateVerity(); break;
                 default: throw new Tls13Exception("command not valid for this state");
             }
+        }
+
+        private void Connected_StartPostHandshakeCertificateRequest()
+        {
+            if (config.PostHandshakeClientAuthentication == null) Validation.InvalidOperation("Not configured");
+            if (!context.ClientSupportPostHandshakeAuthentication) Validation.InvalidOperation("Client do not support post handshake auth");
+
+            context.CommandAfterPostHandshakeProcessingFinished = null;
+            State = ServerProtocolState.PostHandshake;
+
+            CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_CertificateRequest);
+        }
+
+        private void PostHandshake_FinishedProcessingOfPostHandshake()
+        {
+            State = ServerProtocolState.Connected;
+            
+            if (context.CommandAfterPostHandshakeProcessingFinished.HasValue)
+            {
+                CommandQueue.Enqueue(context.CommandAfterPostHandshakeProcessingFinished.Value);
+                context.CommandAfterPostHandshakeProcessingFinished = null;
+            }
+        }
+
+        private void PostHandshake_CertificateRequest()
+        {
+            var requestCtx = Guid.NewGuid().ToByteArray();
+            List<Extension> extensions = new List<Extension>();
+
+            var oids = serverContext.OidFiltersExtension();
+
+            if (oids != null)
+            {
+                extensions.Add(oids);
+            }
+
+            var certRequest = new CertificateRequest(requestCtx, extensions.ToArray());
+            context.PostHandshakeCertificateRequest = certRequest;
+
+            var authContext = new PostHandshakeAuthContext(certRequest);
+
+            context.PostHandshakeClientAuthSended.Add(authContext);
+
+            messageIO.OnHandshakeReadWrite += authContext.AddHandshakeContext;
+            messageIO.WriteHandshake(certRequest);
+            messageIO.OnHandshakeReadWrite -= authContext.AddHandshakeContext;
+
+            CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_FinishedProcessingOfPostHandshake);
+        }
+
+        private void PostHandshake_Finished()
+        {
+            // compute before because readhandshakemesasge will update hsctx
+            var current = context.PostHandshakeClientAuth_CurrentProcessing;
+            var expectedFinished = crypto.ComputeFinishedVerData(current.hsctx, Endpoint.Client);
+            var finished = messageIO.ReadHandshakeMessage<Finished>();
+
+            bool finishedOk = MemOps.Memcmp(finished.VerifyData, expectedFinished);
+
+            validate.Finished.AlertFatal(!finishedOk, AlertDescription.DecodeError, "post handshake client auth: finished verify data invalid");
+
+            serverContext.Event_PostHandshakeClientAuthenticationSuccess(context.PostHandshakeClientAuth_CurrentProcessing.Certificate);
+
+            messageIO.OnHandshakeReadWrite -= context.PostHandshakeClientAuth_CurrentProcessing.AddHandshakeContext;
+            context.PostHandshakeClientAuthSended.Remove(context.PostHandshakeClientAuth_CurrentProcessing);
+            context.PostHandshakeClientAuth_CurrentProcessing = null;
+            
+            CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_FinishedProcessingOfPostHandshake);
+        }
+
+        private void PostHandshake_CertificateVerify()
+        {
+            var certVerify = messageIO.BufferHandshakeDeserialize<CertificateVerify>();
+            var current = context.PostHandshakeClientAuth_CurrentProcessing;
+
+            var certOk = crypto.IsClientCertificateVerifyValid(current.hsctx.Buffer, current.hsctx.DataLength, certVerify, context.PostHandshakeClientAuth_CurrentProcessing.ClientX509Certificate);
+
+            messageIO.ReadHandshakeMessage<CertificateVerify>();
+
+            validate.CertificateVerify.AlertFatal(!certOk, AlertDescription.DecryptError, "Post handshake client auth: invalid certificate verify");
+
+            CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_Finished);
+        }
+
+        private void PostHandshake_Certificate()
+        {
+            validate.Other.AlertFatal(
+                context.PostHandshakeClientAuthSended.Count == 0,
+                AlertDescription.UnexpectedMessage,
+                "client sent post handshake certificate but certificate was not expected (server did not request certificate or " + 
+                "(if multiple requests) requested less times than received certificates)");
+
+            ByteBuffer b = new ByteBuffer();
+
+            var cert = messageIO.BufferHandshakeDeserialize<Certificate>();
+
+            var authContext = context.PostHandshakeClientAuthSended.FirstOrDefault(c => MemOps.Memcmp(c.CertificateRequest.CertificateRequestContext, cert.CertificateRequestContext));
+            authContext.Certificate = cert;
+            context.PostHandshakeClientAuth_CurrentProcessing = authContext;
+
+            if (authContext == null)
+                validate.Certificate.AlertFatal(AlertDescription.Illegal_parameter, "certificate request context does not match with any that was send (client sent unknow certificaterequestcontext)");
+
+            // start tracking context (later tracking must be removed)
+            messageIO.OnHandshakeReadWrite += authContext.AddHandshakeContext;
+            messageIO.ReadHandshakeMessage<Certificate>();
+
+            var action = serverContext.PostHandshakeClientCertificate(cert);
+
+            if (action != API.Messages.ServerConfigHandshakeClientAuthentication.Action.Success)
+                validate.Certificate.AlertFatal((AlertDescription)action, "Post handshake client auth aborting by current configuration, error: " + action.ToString());
+
+            try
+            {
+                X509CertificateDeserializer deserializer = new X509CertificateDeserializer();
+                var x509Cert = deserializer.FromBytes(cert.CertificateList[0].CertificateEntryRawBytes);
+                authContext.ClientX509Certificate = x509Cert;
+            }
+            catch (Exception e)
+            {
+                validate.Certificate.AlertFatal(AlertDescription.BadCertificate, "cannot deserialize certificate, bad certificate or not supported");
+            }
+
+            if (cert.CertificateList.Length == 0) CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_Finished);
+            else CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_CertificateVerify);
         }
 
         private void PostHandshake_NewSessionTicket()
@@ -240,7 +415,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             if (config.UseNewSessionTicketPsk)
             {
-                for (int i = 0; i < 1; i++) CommandQueue.Enqueue(ServerProcolCommand.PostHandshake_NewSessionTicket);
+                for (int i = 0; i < 1; i++) CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_NewSessionTicket);
                 State = ServerProtocolState.PostHandshake;
             }
             else
@@ -252,10 +427,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
         }
 
-        private void LoadApplicationDataNotReceivedApplicationDataContent()
+        private void Connected_TryWaitPostHandshake()
         {
-            // TODO for example KeyUpdate handshake message
-            throw new NotImplementedException();
+            var recordType = messageIO.BufferAnyRecordType();
+
+            if (recordType == ContentType.Handshake) CommandQueue.Enqueue(ServerProtocolCommand.Connected_StartReceivedPostHandshake);
+        }
+
+        private void Connected_StartReceivedPostHandshake()
+        {
+            var type = messageIO.BufferHandshakeMessage();
+
+            switch (type)
+            {
+                case HandshakeType.Certificate:
+                    State = ServerProtocolState.PostHandshake;
+                    CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_Certificate);
+                    break;
+                default: validate.Other.AlertFatal(AlertDescription.UnexpectedMessage, "Not expected message received: " + type.ToString()); break;
+            }
         }
 
         private void WriteApplicationData()
@@ -270,7 +460,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             if (!messageIO.TryLoadApplicationData(applicationDataBuffer, 0, out applicationDataLength))
             {
-                CommandQueue.Enqueue(ServerProcolCommand.LoadApplicationDataNotReceivedApplicationDataContent);
+                context.CommandAfterPostHandshakeProcessingFinished = ServerProtocolCommand.Connected_LoadApplicationData;
+                CommandQueue.Enqueue(ServerProtocolCommand.Connected_StartReceivedPostHandshake);
             }
         }
 
@@ -292,7 +483,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             State = ServerProtocolState.Handshake;
             crypto.SetupResumptionMasterSecret(hsctx);
 
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_HandshakeCompletedSuccessfully);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_HandshakeCompletedSuccessfully);
         }
 
         private void ServerFinished()
@@ -363,10 +554,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             if (certificate.CertificateList.Length > 0)
             {
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientCertificateVerify);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ClientCertificateVerify);
             }
 
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientFinished);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ClientFinished);
         }
 
         private void Handshake_CertificateRequest()
@@ -476,7 +667,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 // cannot find identity (ticket) for some reason,
                 // reason not important (may delete from db, not want to select because of some security restrictions, all tickets expired etc.),
                 // go with full crypto (full handshake)
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloNotPsk);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerHelloNotPsk);
                 return;
             }
 
@@ -512,9 +703,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.SetupHandshakeSecret(hsctx);
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
 
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientFinished);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_EncryptedExtensions);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerFinished);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ClientFinished);
         }
 
         private void ServerHelloNotPsk()
@@ -571,24 +762,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
 
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_EncryptedExtensions);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_EncryptedExtensions);
 
             if (config.HandshakeClientAuthentication != null)
             {
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_CertificateRequest);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_CertificateRequest);
             }
             
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificate);
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerCertificateVerify);
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerFinished);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerCertificate);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerCertificateVerify);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerFinished);
 
             if (config.HandshakeClientAuthentication != null)
             {
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientCertificate);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ClientCertificate);
             }
             else
             {
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientFinished);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ClientFinished);
             }
         }
 
@@ -632,11 +823,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             if (hasPskExtension)
             {
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk_Dhe);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerHelloPsk_Dhe);
             }
             else
             {
-                CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloNotPsk);
+                CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerHelloNotPsk);
             }
         }
 
@@ -646,7 +837,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 compatibilityAllowRecordLayerVersionLower0x0303: true,
                 compatibilitySilentlyDropUnencryptedChangeCipherSpec: false);
 
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_ClientHello1);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ClientHello1);
         }
 
         private void ClientHello1()
@@ -660,6 +851,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             
             bool pskKeTicketExists = false, cipherSuiteOk, groupOk;
             bool hasPskExtension = clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _);
+            context.ClientSupportPostHandshakeAuthentication = clientHello.Extensions.Any(e => e.ExtensionType == ExtensionType.PostHandshakeAuth);
 
             if (hasPskExtension)
             {
@@ -667,7 +859,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 
                 if (pskKeTicketExists && modes.Contains(PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskKe))
                 {
-                    CommandQueue.Enqueue(ServerProcolCommand.Handshake_ServerHelloPsk_Ke);
+                    CommandQueue.Enqueue(ServerProtocolCommand.Handshake_ServerHelloPsk_Ke);
                     return;
                 }
             }
@@ -677,7 +869,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             validate.Handshake.AlertFatal(!(cipherSuiteOk && groupOk), AlertDescription.HandshakeFailure, "client and server ececdhe or cipher suites does not match mutually");
 
-            CommandQueue.Enqueue(ServerProcolCommand.Handshake_SendHelloRetryRequestIfNeeded);
+            CommandQueue.Enqueue(ServerProtocolCommand.Handshake_SendHelloRetryRequestIfNeeded);
 
             messageIO.SetBackwardCompatibilityMode(
                 compatibilityAllowRecordLayerVersionLower0x0303: false,

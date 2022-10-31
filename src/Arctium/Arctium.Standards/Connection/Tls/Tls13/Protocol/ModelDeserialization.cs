@@ -50,6 +50,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Server,
                 [ExtensionType.PskKeyExchangeModes] = DeserializeExtension_PskKeyExchangeModes_Server,
                 [ExtensionType.ServerName] = DeserializeExtension_ServerName_Server,
+                [ExtensionType.PostHandshakeAuth] = DeserializeExtension_PostHandshakeAuth_Server
             };
 
             messageDeserialize = new Dictionary<Type, Func<byte[], int, object>>()
@@ -63,6 +64,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(NewSessionTicket)] = DeserializeNewSessionTicket,
                 [typeof(CertificateRequest)] = DeserializeCertificateRequest,
             };
+        }
+
+        private Extension DeserializeExtension_PostHandshakeAuth_Server(byte[] buf, int offs)
+        {
+            ExtensionDeserializeSetup(buf, offs, out var cursor, out var length);
+
+            validate.Extensions.AlertFatalDecodeError(length != 0, "extension.length", "PostHandshakeAuth extension must be zero length but it is not");
+
+            return new PostHandshakeAuthExtension();
         }
 
         private Extension DeserializeExtension_OidFilters(byte[] buf, int offs)

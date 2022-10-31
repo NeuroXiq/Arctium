@@ -95,16 +95,33 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             recordLayer.Write(ContentType.Handshake, modelSerialization.SerializedData, 0, modelSerialization.SerializedDataLength);
         }
 
-        public HandshakeType LoadHandshakeMessage()
+        public ContentType BufferAnyRecordType()
+        {
+            if (byteBuffer.DataLength == 0)
+            {
+                LoadRecord();
+            }
+
+            return lastLoadedRecord.ContentType;
+        }
+
+        public HandshakeType BufferHandshakeMessage()
         {
             LoadHandshake();
 
             return (HandshakeType)buffer[0];
         }
 
+        public T BufferHandshakeDeserialize<T>()
+        {
+            LoadHandshake();
+
+            return clientModelDeserialization.Deserialize<T>(buffer, 0);
+        }
+
         public T ReadHandshakeMessage<T>()
         {
-            HandshakeType type = LoadHandshakeMessage();
+            HandshakeType type = BufferHandshakeMessage();
 
             object result = clientModelDeserialization.Deserialize<T>(buffer, 0);
 
@@ -180,6 +197,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             } 
 
             byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
+            lastLoadedRecord = recordInfo;
             return recordInfo;
         }
 

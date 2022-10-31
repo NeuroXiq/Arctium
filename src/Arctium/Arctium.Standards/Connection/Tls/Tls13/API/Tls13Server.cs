@@ -17,7 +17,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             this.serverContext = ctx;
         }
 
-        public Tls13Stream Accept(Stream networkStream, out Tls13ServerConnectionInfo connectionInfo)
+        public Tls13ServerStream Accept(Stream networkStream, out Tls13ServerConnectionInfo connectionInfo)
         {
             connectionInfo = null;
             var protocol = new Tls13ServerProtocol(networkStream, serverContext);
@@ -27,7 +27,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             return new Tls13ServerStreamInternal(protocol);
         }
 
-        public Tls13Stream Accept(Stream networkStream)
+        public Tls13ServerStream Accept(Stream networkStream)
         {
             return Accept(networkStream, out _);
         }

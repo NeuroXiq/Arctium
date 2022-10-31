@@ -25,5 +25,10 @@
 
         PostHandshake_ProcessPostHandshakeMessage,
         PostHandshake_FinishedProcessingPostHandshakeMessages,
+        PostHandshake_NewSessionTicket,
+        PostHandshake_CertificateRequest,
+        PostHandshake_Certificate,
+        PostHandshake_CertificateVerify,
+        PostHandshake_Finished,
     }
 }

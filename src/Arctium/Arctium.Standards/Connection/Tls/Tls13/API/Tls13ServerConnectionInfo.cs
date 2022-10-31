@@ -22,6 +22,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// </summary>
         public ResultHandshakeClientAuthentication ResultHandshakeClientAuthentication { get; private set; }
 
+        public bool ClientSupportPostHandshakeAuthentication { get; private set; }
+
         internal Tls13ServerConnectionInfo(Protocol.Tls13ServerProtocol.ConnectedInfo internalConnInfo)
         {
             if (internalConnInfo.ExtensionResultALPN != null)
@@ -35,6 +37,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                 var clientCert = certs.Length > 0 ? certs[0] : new byte[0];
                 var parentCerts = certs.Length > 1 ? certs.Select(c => (byte[])c.Clone()).ToArray() : new byte[0][];
                 ResultHandshakeClientAuthentication = new ResultHandshakeClientAuthentication(clientCert, parentCerts);
+
+                ClientSupportPostHandshakeAuthentication = internalConnInfo.ClientSupportPostHandshakeAuthentication;
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
-    public enum ServerProcolCommand
+    public enum ServerProtocolCommand
     {
         //BreakLoopWaitForOtherCommand,
         Start,
@@ -22,11 +22,17 @@
         Handshake_ClientFinished,
         Handshake_HandshakeCompletedSuccessfully,
 
+        Connected_TryWaitPostHandshake,
         Connected_LoadApplicationData,
         Connected_WriteApplicationData,
+        Connected_StartReceivedPostHandshake,
+        Connected_StartPostHandshakeCertificateRequest,
 
         PostHandshake_NewSessionTicket,
-
-        LoadApplicationDataNotReceivedApplicationDataContent,
+        PostHandshake_Certificate,
+        PostHandshake_CertificateVerify,
+        PostHandshake_Finished,
+        PostHandshake_FinishedProcessingOfPostHandshake,
+        PostHandshake_CertificateRequest,
     }
 }
