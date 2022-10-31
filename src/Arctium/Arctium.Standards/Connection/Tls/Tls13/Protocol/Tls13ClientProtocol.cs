@@ -41,6 +41,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public byte[] ApplicationDataBuffer { get; private set; }
         public int ApplicationDataLength { get { return applicationDataLength; } }
 
+        public class PostHandshakeAuth
+        {
+            public ByteBuffer hsctx;
+            public CertificateRequest CertificateRequest;
+            public X509CertWithKey X509ClientCertificate;
+
+
+            public PostHandshakeAuth()
+            {
+                hsctx = new ByteBuffer();
+            }
+
+            public void AppendHsContext(byte[] buf, int offs, int len)
+            {
+                hsctx.Append(buf, offs, len);
+            }
+        }
+
         class Context
         {
             public ClientHello ClientHello1;
@@ -59,15 +77,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ushort? NegotiatedRecordSizeLimitExtension { get; internal set; }
             public X509CertWithKey ClientCertificateHandshakeAuthentication { get; internal set; }
             public CertificateRequest HandshakeCertificateRequest { get; internal set; }
-            public CertificateRequest PostHandshakeCertificateRequest { get; internal set; }
-            public X509CertWithKey PostHandshakeClientCertificate { get; internal set; }
+            // public CertificateRequest PostHandshakeCertificateRequest { get; internal set; }
+            // public X509CertWithKey PostHandshakeClientCertificate { get; internal set; }
 
             public SignatureSchemeListExtension.SignatureScheme? ServerCertificateVerifySignatureScheme;
             public SupportedGroupExtension.NamedGroup? KeyExchangeNamedGroup;
             public byte[] ExtensionALPN_ProtocolSelectedByServer;
             public bool ExtensionServerNameList_ReceivedFromServer;
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
-
+            public PostHandshakeAuth PostHandshakeAuth;
         }
 
         Context context;
@@ -275,23 +293,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void PostHandshake_Finished()
         {
-            var finishedVer = crypto.ComputeFinishedVerData(hsctx, Endpoint.Client);
+            var finishedVer = crypto.ComputeFinishedVerData(context.PostHandshakeAuth.hsctx, Endpoint.Client, true);
 
             var finished = new Finished(finishedVer);
 
             messageIO.WriteHandshake(finished);
 
-            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
+            messageIO.OnHandshakeReadWrite -= context.PostHandshakeAuth.AppendHsContext;
+            context.PostHandshakeAuth = null;
+
             commandQueue.Enqueue(ClientProtocolCommand.PostHandshake_FinishedProcessingPostHandshakeMessages);
         }
 
         private void PostHandshake_CertificateVerify()
         {
-            var signatureScheme = crypto.SelectSignatureSchemeForCertificate(context.PostHandshakeClientCertificate.Certificate, config.SignatureSchemes);
+            var signatureScheme = crypto.SelectSignatureSchemeForCertificate(context.PostHandshakeAuth.X509ClientCertificate.Certificate, config.SignatureSchemes);
 
             if (!signatureScheme.HasValue) throw new Exception("Something is wrong with client certificate, signature not supported or not configured");
 
-            var signature = crypto.GenerateCertificateVerifySignature(hsctx, context.PostHandshakeClientCertificate, signatureScheme.Value, Endpoint.Client);
+            var signature = crypto.GenerateCertificateVerifySignature(context.PostHandshakeAuth.hsctx, context.PostHandshakeAuth.X509ClientCertificate, signatureScheme.Value, Endpoint.Client);
 
             var certVerify = new CertificateVerify(signatureScheme.Value, signature);
 
@@ -302,11 +322,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void PostHandshake_Certificate()
         {
-            var certificateToSend = clientContext.PostHandshakeClientAuthenticationGetCertificate(context.PostHandshakeCertificateRequest);
+            var certificateToSend = clientContext.PostHandshakeClientAuthenticationGetCertificate(context.PostHandshakeAuth.CertificateRequest);
 
             if (certificateToSend.ClientCertificate == null)
             {
-                var emptyCert = new Certificate(context.PostHandshakeCertificateRequest.CertificateRequestContext, new CertificateEntry[0]);
+                var emptyCert = new Certificate(context.PostHandshakeAuth.CertificateRequest.CertificateRequestContext, new CertificateEntry[0]);
                 messageIO.WriteHandshake(emptyCert);
 
                 commandQueue.Enqueue(ClientProtocolCommand.PostHandshake_Finished);
@@ -318,9 +338,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             entries.Add(new CertificateEntry(null, X509Util.X509CertificateToDerEncodedBytes(certificateToSend.ClientCertificate.Certificate), new Extension[0]));
             entries.AddRange(certificateToSend.ParentCertificates.Select(c => new CertificateEntry(null, X509Util.X509CertificateToDerEncodedBytes(c), new Extension[0])));
 
-            var cert = new Certificate(context.PostHandshakeCertificateRequest.CertificateRequestContext, entries.ToArray());
+            var cert = new Certificate(context.PostHandshakeAuth.CertificateRequest.CertificateRequestContext, entries.ToArray());
 
-            context.PostHandshakeClientCertificate = certificateToSend.ClientCertificate;
+            context.PostHandshakeAuth.X509ClientCertificate = certificateToSend.ClientCertificate;
 
             messageIO.WriteHandshake(cert);
 
@@ -335,11 +355,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 "Server send client authentication, this is unexpected because client authentication was not configured and not supported with current instance");
 
             // turn on handshake context to compute certificate verify
-            hsctx.Reset();
-            messageIO.OnHandshakeReadWrite += MessageIO_OnHandshakeReadWrite;
+            context.PostHandshakeAuth = new PostHandshakeAuth();
+            context.PostHandshakeAuth.AppendHsContext(hsctx.Buffer, 0, hsctx.DataLength);
+
+            messageIO.OnHandshakeReadWrite += context.PostHandshakeAuth.AppendHsContext;
 
             var certRequest = messageIO.ReadHandshakeMessage<CertificateRequest>();
-            context.PostHandshakeCertificateRequest = certRequest;
+            context.PostHandshakeAuth.CertificateRequest = certRequest;
 
             commandQueue.Enqueue(ClientProtocolCommand.PostHandshake_Certificate);
         }

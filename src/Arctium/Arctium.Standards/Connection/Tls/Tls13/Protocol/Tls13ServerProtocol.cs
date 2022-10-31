@@ -289,7 +289,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void PostHandshake_CertificateRequest()
         {
             var requestCtx = Guid.NewGuid().ToByteArray();
-            List<Extension> extensions = new List<Extension>();
+            List<Extension> extensions = new List<Extension>()
+            {
+                new SignatureSchemeListExtension(config.SignatureSchemes, ExtensionType.SignatureAlgorithms)
+            };
 
             var oids = serverContext.OidFiltersExtension();
 
@@ -305,6 +308,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             context.PostHandshakeClientAuthSended.Add(authContext);
 
+            // must be with original hs context (starting from first client hello)
+            // ClientHello1 ... ClientFinished + CertificateRequest
+            // but 'CertificateRequest' is only one in new hsctx below, this is incorrect context:
+            // [ClientHello1 ... ClientFinished] + [certrequest + clientcertificate + verify + finished] + [certrequest + cert + ver + finished] + ... + 
+            // so need to store original hsctx and always append messages that are 
+            // sent in this particular post-hs-auth
+            authContext.hsctx.Append(hsctx.Buffer, 0, hsctx.DataLength);
+
             messageIO.OnHandshakeReadWrite += authContext.AddHandshakeContext;
             messageIO.WriteHandshake(certRequest);
             messageIO.OnHandshakeReadWrite -= authContext.AddHandshakeContext;
@@ -316,7 +327,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             // compute before because readhandshakemesasge will update hsctx
             var current = context.PostHandshakeClientAuth_CurrentProcessing;
-            var expectedFinished = crypto.ComputeFinishedVerData(current.hsctx, Endpoint.Client);
+            var expectedFinished = crypto.ComputeFinishedVerData(current.hsctx, Endpoint.Client, true);
             var finished = messageIO.ReadHandshakeMessage<Finished>();
 
             bool finishedOk = MemOps.Memcmp(finished.VerifyData, expectedFinished);
@@ -337,7 +348,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var certVerify = messageIO.BufferHandshakeDeserialize<CertificateVerify>();
             var current = context.PostHandshakeClientAuth_CurrentProcessing;
 
-            var certOk = crypto.IsClientCertificateVerifyValid(current.hsctx.Buffer, current.hsctx.DataLength, certVerify, context.PostHandshakeClientAuth_CurrentProcessing.ClientX509Certificate);
+            var certOk = crypto.IsClientCertificateVerifyValid(current.hsctx.Buffer,
+                current.hsctx.DataLength,
+                certVerify,
+                context.PostHandshakeClientAuth_CurrentProcessing.ClientX509Certificate);
 
             messageIO.ReadHandshakeMessage<CertificateVerify>();
 

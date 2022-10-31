@@ -411,6 +411,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else throw new NotSupportedException();
         }
 
+        //public bool IsClientPostHandshakeCertificateVerifyValid(byte[] hscontext, int hscontextlen, CertificateVerify clientCertificateVerify, X509Certificate clientCertificate)
+        //{
+        //    return false;
+        //}
+
         public bool IsClientCertificateVerifyValid(byte[] hscontext, int hscontextlen, CertificateVerify clientCertificateVerify, X509Certificate clientCertificate)
         {
             byte[] toSign = FormatDataForSignature(hscontext, hscontextlen, true);
@@ -760,9 +765,19 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         #endregion
 
-        public byte[] ComputeFinishedVerData(ByteBuffer handshakeContext, Endpoint endpoint)
+        public byte[] ComputeFinishedVerData(ByteBuffer handshakeContext, Endpoint endpoint, bool isPostHandshake = false)
         {
-            byte[] baseKey = endpoint == Endpoint.Server ? ServerHandshakeTrafficSecret : ClientHandshakeTrafficSecret;
+            // byte[] baseKey = endpoint == Endpoint.Server ? ServerHandshakeTrafficSecret : ClientHandshakeTrafficSecret;
+
+            byte[] baseKey = null;
+
+            if (endpoint == Endpoint.Client && !isPostHandshake) baseKey = ClientHandshakeTrafficSecret;
+            else if (endpoint == Endpoint.Client && isPostHandshake) baseKey = ClientApplicationTrafficSecret0;
+            else if (endpoint == Endpoint.Server && !isPostHandshake) baseKey = ServerHandshakeTrafficSecret;
+            else if (endpoint == Endpoint.Server && isPostHandshake) baseKey = ServerApplicationTrafficSecret0;
+            else Validation.ThrowInternal();
+
+
             byte[] finishedKey = HkdfExpandLabel(baseKey, "finished", new byte[0], hashFunction.HashSizeBytes);
             byte[] result = new byte[hmac.HashFunctionHashSizeBytes];
 
