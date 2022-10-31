@@ -131,9 +131,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public ConnectedInfo Connect()
         {
-            commandQueue.Enqueue(ClientProtocolCommand.Start_Connect);
-
-            ProcessCommand();
+            RunCommandFromOutside(ClientProtocolCommand.Start_Connect);
 
             var info = new ConnectedInfo
             {
@@ -152,11 +150,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return info;
         }
 
-        private void ProcessCommand(ClientProtocolCommand command)
-        {
-            commandQueue.Enqueue(command);
-            ProcessCommand();
-        }
+        // private void ProcessCommand(ClientProtocolCommand command)
+        // {
+        //     commandQueue.Enqueue(command);
+        //     ProcessCommand();
+        // }
 
         private void ProcessCommand()
         {
@@ -250,7 +248,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             
         }
 
-        public void LoadApplicationData() => ProcessCommand(ClientProtocolCommand.Connected_ReadApplicationData);
+        public void LoadApplicationData() => RunCommandFromOutside(ClientProtocolCommand.Connected_ReadApplicationData);
 
         public void WriteApplicationData(byte[] buffer, long offset, long length)
         {
@@ -258,7 +256,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             writeApplicationDataOffset = offset;
             writeApplicationDataLength = length;
 
-            ProcessCommand(ClientProtocolCommand.Connected_WriteApplicationData);
+            RunCommandFromOutside(ClientProtocolCommand.Connected_WriteApplicationData);
 
             // free memory (do not lock buffer from external source)
             writeApplicationDataBuffer = null;
@@ -266,18 +264,24 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             writeApplicationDataLength = -1;
         }
 
+        private void RunCommandFromOutside(ClientProtocolCommand command)
+        {
+            commandQueue.Enqueue(command);
+            ProcessCommand();
+        }
+
         private void Connected_ReadApplicationData()
         {
             if (!messageIO.TryLoadApplicationData(ApplicationDataBuffer, 0, out applicationDataLength))
             {
-                ProcessCommand(ClientProtocolCommand.Connected_ReceivedPostHandshakeMessage);
+                commandQueue.Enqueue(ClientProtocolCommand.Connected_ReceivedPostHandshakeMessage);
             }
         }
 
         private void PostHandshake_FinishedProcessingPostHandshakeMessages()
         {
             state = ClientProtocolState.Connected;
-            ProcessCommand(ClientProtocolCommand.Connected_ReadApplicationData); // todo to ma byc konfigurowalne
+            commandQueue.Enqueue(ClientProtocolCommand.Connected_ReadApplicationData); // todo to ma byc konfigurowalne
         }
 
         private void PostHandshake_ProcessPostHandshakeMessage()
@@ -387,7 +391,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void Connected_ReceivedPostHandshakeMessage()
         {
             state = ClientProtocolState.PostHandshake;
-            ProcessCommand(ClientProtocolCommand.PostHandshake_ProcessPostHandshakeMessage);
+            commandQueue.Enqueue(ClientProtocolCommand.PostHandshake_ProcessPostHandshakeMessage);
         }
 
         private void Handshake_HandshakeCompletedSuccessfully()

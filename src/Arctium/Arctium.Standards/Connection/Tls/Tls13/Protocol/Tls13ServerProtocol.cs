@@ -379,7 +379,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (authContext == null)
                 validate.Certificate.AlertFatal(AlertDescription.Illegal_parameter, "certificate request context does not match with any that was send (client sent unknow certificaterequestcontext)");
 
-            // start tracking context (later tracking must be removed)
+            // start tracking context (later this tracking must be removed)
             messageIO.OnHandshakeReadWrite += authContext.AddHandshakeContext;
             messageIO.ReadHandshakeMessage<Certificate>();
 
@@ -388,19 +388,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             if (action != API.Messages.ServerConfigHandshakeClientAuthentication.Action.Success)
                 validate.Certificate.AlertFatal((AlertDescription)action, "Post handshake client auth aborting by current configuration, error: " + action.ToString());
 
-            try
+            if (cert.CertificateList.Length > 0)
             {
-                X509CertificateDeserializer deserializer = new X509CertificateDeserializer();
-                var x509Cert = deserializer.FromBytes(cert.CertificateList[0].CertificateEntryRawBytes);
-                authContext.ClientX509Certificate = x509Cert;
-            }
-            catch (Exception e)
-            {
-                validate.Certificate.AlertFatal(AlertDescription.BadCertificate, "cannot deserialize certificate, bad certificate or not supported");
-            }
+                try
+                {
+                    X509CertificateDeserializer deserializer = new X509CertificateDeserializer();
+                    var x509Cert = deserializer.FromBytes(cert.CertificateList[0].CertificateEntryRawBytes);
+                    authContext.ClientX509Certificate = x509Cert;
+                }
+                catch (Exception e)
+                {
+                    validate.Certificate.AlertFatal(AlertDescription.BadCertificate, "cannot deserialize certificate, bad certificate or not supported");
+                }
 
-            if (cert.CertificateList.Length == 0) CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_Finished);
-            else CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_CertificateVerify);
+                CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_CertificateVerify);
+            }
+            else
+            {
+                CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_Finished);
+            }
         }
 
         private void PostHandshake_NewSessionTicket()
@@ -464,10 +470,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void WriteApplicationData()
         {
-            if (applicationDataLength > 0)
-            {
-                messageIO.WriteApplicationData(writeApplicationDataBuffer, writeApplicationDataOffset, writeApplicationDataLength);
-            }
+            messageIO.WriteApplicationData(writeApplicationDataBuffer, writeApplicationDataOffset, writeApplicationDataLength);
         }
 
         private void LoadApplicationData()
