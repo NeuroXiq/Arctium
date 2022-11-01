@@ -22,6 +22,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ClientConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
         internal ClientConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
         internal ExtensionClientConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
+        internal ClientConfigPreSharedKey PreSharedKey { get; private set; }
 
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
         static readonly API.CipherSuite[] DefaultCipherSuites = Enum.GetValues<API.CipherSuite>();
@@ -64,8 +65,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigureHandshakeClientAuthentication(DefaultHandshakeClientAuthentication);
             config.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
             config.ConfigureExtensionCertificateAuthorities(DefaultExtensionCertificateAuthorities);
+            config.ConfigurePreSharedKey(DefaultPreSharedKey());
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures pre-shared key.
+        /// If config is not null then client will use RFC 8449 Pre Shared Key extension from configuration
+        /// If value is null client will not use 'Pre shared Key' extension
+        /// </summary>
+        /// <param name="config"></param>
+        public void ConfigurePreSharedKey(ClientConfigPreSharedKey config)
+        {
+            this.PreSharedKey = config;
+        }
+
+        private static ClientConfigPreSharedKey DefaultPreSharedKey()
+        {
+            return new ClientConfigPreSharedKey(new PskTicketClientStoreDefaultInMemory());
         }
 
         /// <summary>

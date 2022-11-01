@@ -37,6 +37,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public ExtensionServerConfigServerName.ResultAction? ExtensionResultServerName;
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
             public bool ClientSupportPostHandshakeAuthentication;
+            public bool IsPskSessionResumption;
         }
 
         class PostHandshakeAuthContext
@@ -118,11 +119,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public Tls13ServerProtocol(Stream networkStream, Tls13ServerContext serverContext)
         {
-            // this.config = config;
             this.serverContext = serverContext;
             validate = new Validate();
-            // handshakeContext = new List<KeyValuePair<HandshakeType, byte[]>>();
-            // handshakeContext = new HandshakeContext();
             hsctx = new ByteBuffer();
 
             messageIO = new MessageIO(networkStream, validate);
@@ -152,10 +150,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             ProcessCommandLoop();
 
             var info = new ConnectedInfo();
+
             info.ExtensionResultALPN = context.ExtensionResultALPN;
             info.ExtensionResultServerName = context.ExtensionResultServerName;
             info.ClientHandshakeAuthenticationCertificatesSentByClient = context.ClientHandshakeAuthenticationCertificatesSentByClient;
             info.ClientSupportPostHandshakeAuthentication = context.ClientSupportPostHandshakeAuthentication;
+            info.IsPskSessionResumption = context.IsPskSessionResumption;
 
             return info;
         }
@@ -476,25 +476,30 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 crypto.SelectedCipherSuiteHashFunctionId);
 
             messageIO.WriteHandshake(newSessTicket);
-
-            //Command = ServerProcolCommand.BreakLoopWaitForOtherCommand;
-            State = ServerProtocolState.Connected;
         }
 
         private void Handshake_HandshakeCompletedSuccessfully()
         {
-            if (config.UseNewSessionTicketPsk)
+            if (config.PreSharedKey != null)
             {
-                for (int i = 0; i < 1; i++) CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_NewSessionTicket);
-                State = ServerProtocolState.PostHandshake;
+                int ticketsCount = config.PreSharedKey.NewSessionTicketsCount;
+
+                if (ticketsCount > 0)
+                {
+                    for (int i = 0; i < ticketsCount; i++)
+                        CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_NewSessionTicket);
+
+                    State = ServerProtocolState.PostHandshake;
+                }
+
+                context.CommandAfterPostHandshakeProcessingFinished = null;
+                CommandQueue.Enqueue(ServerProtocolCommand.PostHandshake_FinishedProcessingOfPostHandshake);
             }
             else
             {
                 //CommandQueue.Enqueue(ServerProcolCommand.BreakLoopWaitForOtherCommand);
                 State = ServerProtocolState.Connected;
             }
-
-            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
         }
 
         private void Connected_TryWaitPostHandshake()
@@ -537,6 +542,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             // compute expected finished data before reading <finished> from client (because is not inclueded in calculations)
             var expectedClientFinished = crypto.ComputeFinishedVerData(hsctx, Endpoint.Client);
+
+            //Console.WriteLine("hsctx s1:");
+            //MemDump.HexDump(hsctx.Buffer, 0, hsctx.DataLength, 1, 64);
+            //Console.WriteLine("-----");
+            
             var finished = messageIO.ReadHandshakeMessage<Finished>();
             bool clientFinishedOk = MemOps.Memcmp(finished.VerifyData, expectedClientFinished);
 
@@ -552,6 +562,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.SetupResumptionMasterSecret(hsctx);
 
             CommandQueue.Enqueue(ServerProtocolCommand.Handshake_HandshakeCompletedSuccessfully);
+            messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
         }
 
         private void ServerFinished()

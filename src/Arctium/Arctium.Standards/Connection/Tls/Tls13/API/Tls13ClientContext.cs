@@ -11,13 +11,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     {
         public Tls13ClientConfig Config { get; private set; }
 
-        private PskTicketClientStoreBase pskTicketStore;
-
-        public Tls13ClientContext(Tls13ClientConfig config, PskTicketClientStoreBase ticketsStore)
+        public Tls13ClientContext(Tls13ClientConfig config)
         {
             config.ThrowIfInvalidState();
             Config = config;
-            pskTicketStore = ticketsStore;
         }
 
         public void ThrowIfInvalidState()
@@ -25,12 +22,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             Config.ThrowIfInvalidState();
         }
 
-        public static Tls13ClientContext DefaultUnsave()
+        public static Tls13ClientContext DefaultUnsafe()
         {
             var config = Tls13ClientConfig.DefaultUnsafe();
-            var ticketStore = new PskTicketClientStoreDefaultInMemory();
-
-            return new Tls13ClientContext(config, ticketStore);
+            return new Tls13ClientContext(config);
         }
 
         internal void SaveTicket(byte[] ticket,
@@ -40,6 +35,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             uint ticketAgeAdd,
             HashFunctionId hashFunctionId)
         {
+            var pskTicketStore = Config.PreSharedKey?.ClientStore;
+
             if (pskTicketStore == null) return;
 
             pskTicketStore.Save(new PskTicket(ticket, nonce, resumptionMasterSecret, lifetime, ticketAgeAdd, hashFunctionId));
@@ -47,6 +44,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         internal PskTicket[] GetPskTickets()
         {
+            var pskTicketStore = Config.PreSharedKey?.ClientStore;
+
             return pskTicketStore.GetToSendInClientHello();
         }
 

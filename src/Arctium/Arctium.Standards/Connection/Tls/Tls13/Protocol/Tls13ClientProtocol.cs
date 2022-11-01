@@ -467,6 +467,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var finished = new Finished(finishedVerData);
 
             messageIO.WriteHandshake(finished);
+
             crypto.SetupResumptionMasterSecret(hsctx);
 
             messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
@@ -849,7 +850,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 crypto.GeneratePrivateKeyAndKeyShareToSend(toSendInKeyShare, out keyShareToSendRawBytes, out privateKey);
                 generatedPrivateKeys[toSendInKeyShare] = privateKey;
 
-                generatedKeysToExchange.Add(new KeyShareEntry(SupportedGroupExtension.NamedGroup.X25519, keyShareToSendRawBytes));
+                generatedKeysToExchange.Add(new KeyShareEntry(toSendInKeyShare, keyShareToSendRawBytes));
             }
 
             extensions.Add(new KeyShareClientHelloExtension(generatedKeysToExchange.ToArray()));

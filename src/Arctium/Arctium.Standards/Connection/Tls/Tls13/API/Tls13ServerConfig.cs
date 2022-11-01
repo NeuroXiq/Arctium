@@ -14,7 +14,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public class Tls13ServerConfig
     {
-        public bool UseNewSessionTicketPsk { get; internal set; }
         internal Model.CipherSuite[] CipherSuites { get; private set; }
         internal ExtensionServerConfigSupportedGroups ExtensionSupportedGroups { get; private set; }
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes { get; private set; }
@@ -25,6 +24,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ExtensionServerConfigOidFilters ExtensionServerConfigOidFilters { get; private set; }
         internal ServerConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
         internal ExtensionServerConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
+        internal ServerConfigPreSharedKey PreSharedKey { get; private set; }
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
@@ -64,7 +64,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             var c = new Tls13ServerConfig();
 
             c.CertificatesWithKeys = listOfCertsWithKeys;
-            c.UseNewSessionTicketPsk = true;
 
             c.ConfigueCipherSuites(DefaultCipherSuites);
             c.ConfigueExtensionSupportedGroups(DefaultExtensionSupportedGroups);
@@ -76,8 +75,26 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigureExtensionOidFilters(DefaultExtensionServerConfigOidFilters);
             c.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
             c.ConfigureExtensionCertificateAuthorities(DefaultExtensionCertificateAuthorities);
+            c.ConfigurePreSharedKey(DefaultPreSharedKey());
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures pre shared key.
+        /// If value is not null then server will use pre-shared keys from configuration
+        /// If value is null then server will not use pre-shared keys and always perform
+        /// full handshake
+        /// </summary>
+        /// <param name="serverConfigPreSharedKey"></param>
+        private void ConfigurePreSharedKey(ServerConfigPreSharedKey config)
+        {
+            PreSharedKey = config;
+        }
+
+        private static ServerConfigPreSharedKey DefaultPreSharedKey()
+        {
+            return new ServerConfigPreSharedKey(new PskTicketServerStoreDefaultInMemory(), 1);
         }
 
 
