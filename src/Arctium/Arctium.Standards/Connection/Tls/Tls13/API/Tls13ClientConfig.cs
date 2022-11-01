@@ -21,6 +21,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ExtensionClientConfigSignatureAlgorithmsCert ExtensionSignatureAlgorithmsCert { get; private set; }
         internal ClientConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
         internal ClientConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
+        internal ExtensionClientConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
 
         static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
@@ -32,6 +33,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ExtensionClientConfigSignatureAlgorithmsCert DefaultExtensionSignatureAlgorithmsCert = null;
         static readonly ClientConfigHandshakeClientAuthentication DefaultHandshakeClientAuthentication = null;
         static readonly ClientConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
+        static readonly ExtensionClientConfigCertificateAuthorities DefaultExtensionCertificateAuthorities = null;
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -60,8 +62,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigureExtensionSignatureAlgorithmsCert(DefaultExtensionSignatureAlgorithmsCert);
             config.ConfigureHandshakeClientAuthentication(DefaultHandshakeClientAuthentication);
             config.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
+            config.ConfigureExtensionCertificateAuthorities(DefaultExtensionCertificateAuthorities);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configure 'Certificate Authorities' extension (RFC 8446)
+        /// If config is not null then client will send this extension in client hello.
+        /// If config is null then client will not send this extension in client hello
+        /// </summary>
+        /// <param name="config">Configuration object that configures extension</param>
+        public void ConfigureExtensionCertificateAuthorities(ExtensionClientConfigCertificateAuthorities config)
+        {
+            ExtensionCertificateAuthorities = config;
         }
 
         /// <summary>

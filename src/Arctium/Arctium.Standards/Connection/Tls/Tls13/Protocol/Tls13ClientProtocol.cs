@@ -808,6 +808,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };
 
+            var certAuthorities = clientContext.GetExtension_CertificateAuthorities();
+
+            if (certAuthorities != null) extensions.Add(certAuthorities);
+
             if (config.PostHandshakeClientAuthentication != null)
             {
                 extensions.Add(new PostHandshakeAuthExtension());

@@ -16,5 +16,7 @@
         /// (RFC 8446)
         /// </summary>
         SignatureAlgorithms,
+
+        CertificateAuthorities,
     }
 }

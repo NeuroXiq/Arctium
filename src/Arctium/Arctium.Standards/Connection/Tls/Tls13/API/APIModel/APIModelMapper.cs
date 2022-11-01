@@ -16,6 +16,15 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.APIModel
 
         public static APIModel.Extension MapExtension(Tls13.Model.Extensions.Extension internalExtension)
         {
+            if (internalExtension.ExtensionType == Model.ExtensionType.CertificateAuthorities)
+            {
+                var internalCertAuths = (Model.Extensions.CertificateAuthoritiesExtension)internalExtension;
+
+                var copied = internalCertAuths.Authorities.Select(byteArray => (byte[])byteArray.Clone()).ToArray();
+
+                return new ExtensionCertificateAuthorities(copied);
+            }
+
             if (internalExtension.ExtensionType == Model.ExtensionType.OidFilters)
             {
                 var oidFilters = internalExtension as Model.Extensions.OidFiltersExtension;

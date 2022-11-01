@@ -24,7 +24,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ServerConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
         internal ExtensionServerConfigOidFilters ExtensionServerConfigOidFilters { get; private set; }
         internal ServerConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
-
+        internal ExtensionServerConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
@@ -35,6 +35,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ServerConfigHandshakeClientAuthentication DefaultServerConfigHandshakeClientAuthentication;
         static readonly ExtensionServerConfigOidFilters DefaultExtensionServerConfigOidFilters = null;
         static readonly ServerConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
+        static readonly ExtensionServerConfigCertificateAuthorities DefaultExtensionCertificateAuthorities = null;
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -74,8 +75,21 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigureHandshakeClientAuthentication(DefaultServerConfigHandshakeClientAuthentication);
             c.ConfigureExtensionOidFilters(DefaultExtensionServerConfigOidFilters);
             c.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
+            c.ConfigureExtensionCertificateAuthorities(DefaultExtensionCertificateAuthorities);
 
             return c;
+        }
+
+
+        /// <summary>
+        /// Configures 'Certificate Authorities' (RFC 8446) extension.
+        /// If config is not null server will send this extension in CertificateRequest (in handshake and post-handshake client authentication)
+        /// If config is null then server will not send this extension
+        /// </summary>
+        /// <param name="config">Configuration object or null is server should not send this extension</param>
+        public void ConfigureExtensionCertificateAuthorities(ExtensionServerConfigCertificateAuthorities config)
+        {
+            ExtensionCertificateAuthorities = config;
         }
 
         /// <summary>

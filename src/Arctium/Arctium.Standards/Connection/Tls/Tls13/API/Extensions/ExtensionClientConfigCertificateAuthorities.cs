@@ -1,4 +1,6 @@
-﻿namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
+﻿using Arctium.Shared.Other;
+
+namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
 {
     /// <summary>
     /// Configuration of RFC8446 'CertificateAuthoritiesExtension' extension on client side
@@ -17,6 +19,14 @@
         /// 'DistinguishedName authorities<3..2^16-1>'</param>
         public ExtensionClientConfigCertificateAuthorities(byte[][] authorities)
         {
+            Validation.NotEmpty(authorities, nameof(authorities), "list cannot be empty by specification");
+
+            foreach (var b in authorities)
+            {
+                Validation.NotEmpty(b, nameof(authorities),
+                    "one or more byte array in authorities is empty but it cannot be empty by specification. Remove empty arrays");
+            }
+
             Authorities = authorities;
         }
     }

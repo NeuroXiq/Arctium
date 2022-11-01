@@ -134,5 +134,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             Config.PostHandshakeClientAuthentication.OnClientAuthSuccess(certs);
         }
+
+        internal CertificateAuthoritiesExtension GetExtension_CertificateAuthorities()
+        {
+            if (Config.ExtensionCertificateAuthorities == null) return null;
+
+            return new CertificateAuthoritiesExtension(Config.ExtensionCertificateAuthorities.Authorities);
+        }
     }
 }

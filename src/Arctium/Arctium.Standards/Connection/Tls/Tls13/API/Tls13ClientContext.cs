@@ -2,6 +2,7 @@
 using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
+using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using System;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
@@ -65,6 +66,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             var certs = Config.PostHandshakeClientAuthentication.GetCertificateToSendToServer(APIModel.APIModelMapper.MapExtensions(certRequest.Extensions));
 
             return certs;
+        }
+
+        internal CertificateAuthoritiesExtension GetExtension_CertificateAuthorities()
+        {
+            if (Config.ExtensionCertificateAuthorities == null) return null;
+
+            return new CertificateAuthoritiesExtension(Config.ExtensionCertificateAuthorities.Authorities);
         }
     }
 }

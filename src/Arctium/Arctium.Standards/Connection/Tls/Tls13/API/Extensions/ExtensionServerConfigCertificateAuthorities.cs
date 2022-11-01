@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arctium.Shared.Other;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
 {
@@ -21,8 +17,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
         /// In TLS 1.3 (RFC 8446) specification this array is injected into Extension 
         /// 'CertificateAuthoritiesExtension' into field 
         /// 'DistinguishedName authorities<3..2^16-1>'</param>
-        public ExtensionClientConfigCertificateAuthorities(byte[][] authorities)
+        public ExtensionServerConfigCertificateAuthorities(byte[][] authorities)
         {
+            Validation.NotEmpty(authorities, nameof(authorities));
+            foreach (var auth in authorities)
+                Validation.NotEmpty(auth, nameof(authorities), "All entries in authorities must not be empty by specificate. Remove empty entires");
+
             Authorities = authorities;
         }
     }

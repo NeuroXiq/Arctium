@@ -183,9 +183,11 @@ namespace Arctium.Shared.Other
 
             if (enumerable.Any()) return;
 
-            string msg = string.Format("Value cannot be empty. Value: '{0}'", argName);
+            string msg = string.Format("Value cannot be empty list. Value: '{0}'", argName);
 
             if (additinalInfo != null) msg = string.Format("{0}. Additional info: {1}", msg, additinalInfo);
+
+            throw new ArgumentException(msg, argName);
         }
 
         public static void NotNull(object referenceTypeToCheckIfNull, string argName, string additionalInfo = null)

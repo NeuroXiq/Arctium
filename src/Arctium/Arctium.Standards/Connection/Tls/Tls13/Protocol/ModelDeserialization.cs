@@ -33,6 +33,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Client,
                 [ExtensionType.MaxFragmentLength] = DeserializeExtension_MaxFragmentLength,
                 [ExtensionType.RecordSizeLimit] = DeserializeExtension_RecordSizeLimit,
+                [ExtensionType.CertificateAuthorities] = DeserializeExtension_CertificateAuthorities
             };
 
             extensionsDeserializeOnClientSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
@@ -65,6 +66,38 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(CertificateRequest)] = DeserializeCertificateRequest,
                 [typeof(KeyUpdate)] = DeserializeKeyUpdate,
             };
+        }
+
+        private Extension DeserializeExtension_CertificateAuthorities(byte[] buf, int offs)
+        {
+            ExtensionDeserializeSetup(buf, offs, out var cursor, out var len);
+            validate.Extensions.AlertFatalDecodeError(len < 3, "extension.len (certificate authorities)", "minimum len is 3");
+
+            List<byte[]> authorities = new List<byte[]>();
+
+            int listLen = MemMap.ToUShort2BytesBE(buf, cursor);
+            
+            validate.Extensions.AlertFatalDecodeError(cursor + listLen + 1 != cursor.MaxPosition, "certificateauthorities.authorities list len", "invalid list len");
+            
+            cursor += 1;
+
+            do
+            {
+                cursor++;
+
+                int authorityLen = MemMap.ToUShort2BytesBE(buf, cursor);
+
+                validate.Extensions.AlertFatalDecodeError(authorityLen == 0, "cert authorities.authoriesi.authority[length]", "single authority len cannot be zero");
+
+                cursor += 2;
+                authorities.Add(MemCpy.CopyToNewArray(buf, cursor, authorityLen));
+                cursor += authorityLen - 1;
+
+            } while (!cursor.OnMaxPosition);
+
+            validate.Extensions.AlertFatalDecodeError(!cursor.OnMaxPosition, "extension.length", "cursor not on max position");
+
+            return new CertificateAuthoritiesExtension(authorities.ToArray());
         }
 
         private object DeserializeKeyUpdate(byte[] buf, int offs)

@@ -64,8 +64,30 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(ServerNameListClientHelloExtension)] = Serialize_Extension_ServerNameListClientHelloExtension,
                 [typeof(ServerNameListServerHelloExtension)] = Serialize_Extension_ServerNameListServerHelloExtension,
                 [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension,
-                [typeof(PostHandshakeAuthExtension)] = Serialize_Extension_PostHandshakeAuthExtension
+                [typeof(PostHandshakeAuthExtension)] = Serialize_Extension_PostHandshakeAuthExtension,
+                [typeof(CertificateAuthoritiesExtension)] = Serialize_Extension_CertificateAuthorities
             };
+        }
+
+        private void Serialize_Extension_CertificateAuthorities(object obj)
+        {
+            var ext = (CertificateAuthoritiesExtension)obj;
+
+            int authoritiesLenOffs = tempSerializedExtension.MallocAppend(2);
+
+            foreach (var authority in ext.Authorities)
+            {
+                int lenOffs = tempSerializedExtension.MallocAppend(2);
+                int authorityOffs = tempSerializedExtension.MallocAppend(authority.Length);
+
+                MemMap.ToBytes1UShortBE((ushort)authority.Length, tempSerializedExtension.Buffer, lenOffs);
+                MemCpy.Copy(authority, 0, tempSerializedExtension.Buffer, authorityOffs, authority.Length);
+            }
+
+            int listLen = tempSerializedExtension.DataLength - authoritiesLenOffs - 2;
+            Validation.ThrowInternal(listLen > ushort.MaxValue);
+
+            MemMap.ToBytes1UShortBE((ushort)listLen, tempSerializedExtension.Buffer, authoritiesLenOffs);
         }
 
         private void SerializeKeyUpdate(object obj)
@@ -73,7 +95,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var keyupdate = (KeyUpdate)obj;
             buffer.Append((byte)(HandshakeType.KeyUpdate));
             
-            // this is Handshake.length field (hardcoding because constant and very easy)
+            // this is Handshake.length field (hardcoding because it is constant and very easy to harcode)
             // so wrigin directly as bytes (length equal to 1, represented as 3 bytes big endian)
             buffer.Append(0, 0, 1);
 

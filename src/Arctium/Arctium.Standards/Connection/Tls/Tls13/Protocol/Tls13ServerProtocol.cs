@@ -342,6 +342,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             };
 
             var oids = serverContext.OidFiltersExtension();
+            var certAuthorities = serverContext.GetExtension_CertificateAuthorities();
+
+            if (certAuthorities != null) extensions.Add(certAuthorities);
 
             if (oids != null)
             {
@@ -634,7 +637,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             };
 
             var oidFiltersExtension = serverContext.OidFiltersExtension();
+            var extensionCertAuthorities = serverContext.GetExtension_CertificateAuthorities();
+
             if (oidFiltersExtension != null) ext.Add(oidFiltersExtension);
+            if (extensionCertAuthorities != null) ext.Add(extensionCertAuthorities);
 
             var certRequest = new CertificateRequest(new byte[0], ext.ToArray());
 
@@ -912,7 +918,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             context.ClientHello1 = clientHello;
             PreSharedKeyClientHelloExtension _;
-
             
             bool pskKeTicketExists = false, cipherSuiteOk, groupOk;
             bool hasPskExtension = clientHello.TryGetExtension<PreSharedKeyClientHelloExtension>(ExtensionType.PreSharedKey, out _);
