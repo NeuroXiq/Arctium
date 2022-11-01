@@ -11,7 +11,6 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions
 {
     public class SubjectKeyIdentifierDecoder : IExtensionDecoder
     {
-        static DerDeserializer derDeserializer = new DerDeserializer();
         public CertificateExtension DecodeExtension(ExtensionModel model)
         {
             return Decode(model);
@@ -19,6 +18,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions
 
         public static CertificateExtension Decode(ExtensionModel arg)
         {
+            DerDeserializer derDeserializer = new DerDeserializer();
             var node = derDeserializer.Deserialize(arg.ExtnValue)[0];
             byte[] value = DerDecoders.DecodeWithoutTag<OctetString>(node);
 

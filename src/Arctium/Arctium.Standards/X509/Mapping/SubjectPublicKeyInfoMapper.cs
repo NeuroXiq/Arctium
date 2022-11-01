@@ -25,12 +25,11 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
             PublicKeyAlgorithmIdentifierType.RSAEncryption, 
         };
 
-
-        static PublicKeyDecoders decoders;
+        PublicKeyDecoders decoders;
 
         static SubjectPublicKeyInfoMapper()
         {
-            decoders = new PublicKeyDecoders();
+            
         }
 
         internal static SubjectPublicKeyInfo Map(PublicKeyInfoModel subjectPublicKeyInfo)
@@ -67,6 +66,7 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 
         private static object MapPublicKey(PublicKeyAlgorithmIdentifierType algorithm, byte[] keyRawValue)
         {
+            var decoders =  new PublicKeyDecoders();
             switch (algorithm)
             {
                 case PublicKeyAlgorithmIdentifierType.RSAEncryption: return decoders.RSAPublicKey(keyRawValue);
@@ -95,6 +95,8 @@ namespace Arctium.Standards.ASN1.Standards.X509.Mapping
 
                 return null;
             }
+
+            var decoders = new PublicKeyDecoders();
 
             switch (algorithm)
             {
