@@ -548,7 +548,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void SelectEcEcdheGroup(ClientHello hello, out bool groupOk)
         {
-            var supportedGroups = config.NamedGroups; // new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
+            var supportedGroups = config.ExtensionSupportedGroups.InternalNamedGroups; // new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
             var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList;
             int selectedGroupIdx = -1;
 

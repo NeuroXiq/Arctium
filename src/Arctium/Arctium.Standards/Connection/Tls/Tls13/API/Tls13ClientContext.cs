@@ -74,5 +74,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             return new CertificateAuthoritiesExtension(Config.ExtensionCertificateAuthorities.Authorities);
         }
+
+        internal SupportedGroupExtension GetExtension_SupportedGroups()
+        {
+            return new SupportedGroupExtension(Config.ExtensionSupportedGroups.InternalNamedGroups);
+        }
     }
 }

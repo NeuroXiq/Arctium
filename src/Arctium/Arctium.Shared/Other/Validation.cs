@@ -138,11 +138,13 @@ namespace Arctium.Shared.Other
             }
         }
 
-        public static void InvalidOperation(string v)
+        public static void InvalidOperation(bool shouldThrow, string v)
         {
             v = v ?? "";
             throw new InvalidOperationException("Operation is invalid: Additional info: " + v);
         }
+
+        public static void InvalidOperation(string v) => InvalidOperation(true, v);
 
         public static void LengthMax(long currentLength, long maxLength, string argName)
         {

@@ -11,8 +11,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     public class Tls13ClientConfig
     {
         internal Model.CipherSuite[] CipherSuites { get; private set; }
-        internal Model.Extensions.SupportedGroupExtension.NamedGroup[] NamedGroups { get; private set; }
-        internal Model.Extensions.SupportedGroupExtension.NamedGroup[] NamedGroupsToSendInKeyExchangeInClientHello1 { get; private set; }
+        internal ExtensionClientConfigSupportedGroups ExtensionSupportedGroups { get; private set; }
+        internal ExtensionClientConfigKeyShare ExtensionKeyShare { get; private set; }
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes { get; private set; }
         internal Func<byte[][], ServerCertificateValidionResult> X509CertificateValidationCallback;
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
@@ -23,7 +23,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ClientConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
         internal ExtensionClientConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
 
-        static readonly API.NamedGroup[] DefaultNamedGroups = Enum.GetValues<API.NamedGroup>();
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
         static readonly API.CipherSuite[] DefaultCipherSuites = Enum.GetValues<API.CipherSuite>();
         static readonly API.NamedGroup[] DefaultNamedGroupsToSendInClientHello1 = new API.NamedGroup[] { API.NamedGroup.X25519 };
@@ -34,6 +33,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ClientConfigHandshakeClientAuthentication DefaultHandshakeClientAuthentication = null;
         static readonly ClientConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
         static readonly ExtensionClientConfigCertificateAuthorities DefaultExtensionCertificateAuthorities = null;
+        static readonly ExtensionClientConfigSupportedGroups DefaultExtensionSupportedGroups = new ExtensionClientConfigSupportedGroups(Enum.GetValues<API.NamedGroup>());
+        static readonly ExtensionClientConfigKeyShare DefaultExtensionKeyShare = new ExtensionClientConfigKeyShare(new[] { NamedGroup.X25519 });
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -53,8 +54,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             var config = new Tls13ClientConfig();
 
             config.ConfigueCipherSuites(DefaultCipherSuites);
-            config.ConfigueSupportedGroups(DefaultNamedGroups);
-            config.ConfigueClientKeyShare(DefaultNamedGroupsToSendInClientHello1);
+            config.ConfigueExtensionSupportedGroups(DefaultExtensionSupportedGroups);
+            config.ConfigueExtensionKeyShare(DefaultExtensionKeyShare);
             config.ConfigueSupportedSignatureSchemes(DefaultSignatureSchemes);
             config.ConfigueExtensionRecordSizeLimit(Extension_DefaultRecordSizeLimit);
             config.ConfigureExtensionALPN(DefaultExtensionALPNConfig);
@@ -173,32 +174,19 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// Configures 'KeyShareClientHello' message
         /// </summary>
         /// <param name="groups">all allowed groups that can be used in key exchange</param>
-        public void ConfigueSupportedGroups(NamedGroup[] allAllowedGroupsToUse)
+        public void ConfigueExtensionSupportedGroups(ExtensionClientConfigSupportedGroups config)
         {
-
-            Validation.NotEmpty(allAllowedGroupsToUse, nameof(allAllowedGroupsToUse));
-
-            if (allAllowedGroupsToUse.Distinct().Count() != allAllowedGroupsToUse.Length)
-                Validation.Argument(true, nameof(allAllowedGroupsToUse), "values must be unique");
-            
-
-            NamedGroups = allAllowedGroupsToUse.Select(g => (SupportedGroupExtension.NamedGroup)g).ToArray();
+            ExtensionSupportedGroups = config;
         }
 
-        /// <param name="groupsToGenerateKeyInClientHello1">groups to generate key to send in client (KeyShareEntry.key_exchange value in tls 13 spec). this value 
-        /// can be null or empty, then always server will perform retry request because after selecting 
-        /// one of the offered group (specified by 'allAllowedGroupsToUse' parameter). 
-        /// groups defined by this param will generate private-public key pair (computational expensive) so 
-        /// should not define large amout of groups but send only few or only one e.g. X25519
-        /// </param>
-        public void ConfigueClientKeyShare(NamedGroup[] groupsToGenerateKeyInClientHello1)
+
+        /// <summary>
+        /// Configures key share client hello extension. Config must not be null (but it can have empty namedgroup list)
+        /// </summary>
+        /// <param name="config"></param>
+        public void ConfigueExtensionKeyShare(ExtensionClientConfigKeyShare config)
         {
-            groupsToGenerateKeyInClientHello1 = groupsToGenerateKeyInClientHello1 ?? new API.NamedGroup[0];
-
-            if (groupsToGenerateKeyInClientHello1.Distinct().Count() != groupsToGenerateKeyInClientHello1.Length)
-                Validation.Argument(true, nameof(groupsToGenerateKeyInClientHello1), "values must be unique");
-
-            NamedGroupsToSendInKeyExchangeInClientHello1 = groupsToGenerateKeyInClientHello1.Select(g => (SupportedGroupExtension.NamedGroup)g).ToArray();
+            ExtensionKeyShare = config;
         }
 
         public void ConfigueSupportedSignatureSchemes(SignatureScheme[] schemes)
@@ -214,22 +202,23 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public void ThrowIfInvalidState()
         {
             Validation.NotEmpty(CipherSuites, nameof(CipherSuites));
-            Validation.NotEmpty(NamedGroups, nameof(NamedGroups));
             Validation.NotEmpty(SignatureSchemes, nameof(SignatureSchemes));
 
-            var invalidGroups = NamedGroupsToSendInKeyExchangeInClientHello1
-                .Where(willSendGroup => NamedGroups.All(allowedGroup => allowedGroup != willSendGroup))
-                .ToArray();
-            
-            if (invalidGroups.Count() > 0)
-            {
-                string msg = "Invalid NamedGroupsToSendInClientHello1 configuration. One or more groups " +
-                    $"doesnt match with allowed groups. All groups specified in {nameof(ConfigueClientKeyShare)} as groups to generate key " +
-                    $"must also be specified as allowed group but they are not. Invalid values (not specified as allowed): " + 
-                    $"{string.Join(",", invalidGroups.Select(x => x.ToString()))}. " + 
-                    $"Make sure that all groups configured by a method: '{ConfigueClientKeyShare}' are also setup in method '{ConfigueSupportedGroups}' ";
 
-                Validation.Argument(true, nameof(ConfigueSupportedGroups), msg);
+            var keyShareGroups = this.ExtensionKeyShare.InternalNamedGroups;
+            var supportedGroups = this.ExtensionSupportedGroups.InternalNamedGroups;
+
+            foreach (var keyShare in keyShareGroups)
+            {
+                if (!supportedGroups.Contains(keyShare))
+                {
+                    string msg = "Invalid configuration of keyShareGroups extension. KeyShare groups contains a groups " +
+                        $"that is not included in 'SupportedGroupsExtension'. Invalid keyshare group: {keyShare.ToString()}." + 
+                        " Include this group in 'SupportedGroupsExtension'";
+
+                    Validation.Argument(true, "supported groups configuration", msg);
+                }   
+
             }
         }
     }

@@ -672,24 +672,21 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             if (clientHello.TryGetExtension<ProtocolNameListExtension>(ExtensionType.ApplicationLayerProtocolNegotiation, out var alpnExtension))
             {
-                var result = serverContext.ExtensionHandleALPN(alpnExtension);
+                serverContext.ExtensionHandleALPN(alpnExtension, out var ignore, out var alertFatal, out int? selectedIndex);
 
-                switch (result.ActionType)
+                if (alertFatal.HasValue)
                 {
-                    case API.Extensions.ExtensionServerALPN.ResultType.Success:
-                        var selectedalpn = alpnExtension.ProtocolNamesList[result.SelectedIndex];
-                        extensions.Add(new ProtocolNameListExtension(new byte[][] { selectedalpn }));
-                        context.ExtensionResultALPN = selectedalpn;
-                        break;
-                    case API.Extensions.ExtensionServerALPN.ResultType.NotSelectedFatalAlert:
-                        validate.Extensions.ALPN_AlertFatal_NoApplicationProtocol();
-                        break;
-                    case API.Extensions.ExtensionServerALPN.ResultType.NotSelectedIgnore:
-                        /* ignore, simulate that server dont know this extension */
-                        break;
-                    default:
-                        Validation.ThrowInternal("impossible, invalid implementation not all in switch handled");
-                        break;
+                    validate.Extensions.ALPN_AlertFatal_NoApplicationProtocol();
+                }
+                else if (ignore)
+                {
+                    // ignore
+                }
+                else
+                {
+                    var selectedalpn = alpnExtension.ProtocolNamesList[selectedIndex.Value];
+                    extensions.Add(new ProtocolNameListExtension(new byte[][] { selectedalpn }));
+                    context.ExtensionResultALPN = selectedalpn;
                 }
             }
 

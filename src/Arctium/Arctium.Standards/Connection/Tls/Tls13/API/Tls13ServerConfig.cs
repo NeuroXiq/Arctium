@@ -16,10 +16,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
     {
         public bool UseNewSessionTicketPsk { get; internal set; }
         internal Model.CipherSuite[] CipherSuites { get; private set; }
-        internal SupportedGroupExtension.NamedGroup[] NamedGroups { get; private set; }
+        internal ExtensionServerConfigSupportedGroups ExtensionSupportedGroups { get; private set; }
         internal SignatureSchemeListExtension.SignatureScheme[] SignatureSchemes { get; private set; }
         internal ushort? ExtensionRecordSizeLimit { get; private set; }
-        internal Func<ExtensionServerALPN, ExtensionServerALPN.Result> ExtensionALPN { get; private set; }
+        internal ExtensionServerConfigALPN ExtensionALPN { get; private set; }
         internal ExtensionServerConfigServerName ExtensionServerName { get; private set; }
         internal ServerConfigHandshakeClientAuthentication HandshakeClientAuthentication { get; private set; }
         internal ExtensionServerConfigOidFilters ExtensionServerConfigOidFilters { get; private set; }
@@ -28,14 +28,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
-        static readonly API.NamedGroup[] DefaultAllGroups = Enum.GetValues<API.NamedGroup>();
         static readonly ushort? DefaultExtensionRecordSizeLimit = null;
-        static readonly Func<ExtensionServerALPN, ExtensionServerALPN.Result> DefaultExtensionALPN = null;
+        static readonly ExtensionServerConfigALPN DefaultExtensionALPN = null;
         static readonly ExtensionServerConfigServerName DefaultExtensionServerName = null;
         static readonly ServerConfigHandshakeClientAuthentication DefaultServerConfigHandshakeClientAuthentication;
         static readonly ExtensionServerConfigOidFilters DefaultExtensionServerConfigOidFilters = null;
         static readonly ServerConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
         static readonly ExtensionServerConfigCertificateAuthorities DefaultExtensionCertificateAuthorities = null;
+        static readonly ExtensionServerConfigSupportedGroups DefaultExtensionSupportedGroups = new ExtensionServerConfigSupportedGroups(Enum.GetValues<API.NamedGroup>());
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -67,7 +67,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.UseNewSessionTicketPsk = true;
 
             c.ConfigueCipherSuites(DefaultCipherSuites);
-            c.ConfigueSupportedNamedGroupsForKeyExchange(DefaultAllGroups);
+            c.ConfigueExtensionSupportedGroups(DefaultExtensionSupportedGroups);
             c.ConfigueSupportedSignatureSchemes(DefaultAllSignateSchemes);
             c.ConfigureExtensionRecordSizeLimit(DefaultExtensionRecordSizeLimit);
             c.ConfigueExtensionALPN(DefaultExtensionALPN);
@@ -146,9 +146,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// then nothing happend and handshake continue, selector is never invoked
         /// </summary>
         /// <param name="protocolSelector">Selector function that will select protocol or do other action</param>
-        public void ConfigueExtensionALPN(Func<ExtensionServerALPN, ExtensionServerALPN.Result> protocolSelector)
+        public void ConfigueExtensionALPN(ExtensionServerConfigALPN config)
         {
-            this.ExtensionALPN = protocolSelector;
+            this.ExtensionALPN = config;
         }
 
         /// <summary>
@@ -187,17 +187,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// <summary>
         /// Configures NamedGroups that can be used by instance
         /// </summary>
-        public void ConfigueSupportedNamedGroupsForKeyExchange(API.NamedGroup[] groups)
+        public void ConfigueExtensionSupportedGroups(ExtensionServerConfigSupportedGroups config)
         {
-            foreach (var v in groups) Validation.EnumValueDefined(v, nameof(groups));
+            Validation.NotNull(config, nameof(config));
 
-            NamedGroups = groups.Select(apiGroup => (SupportedGroupExtension.NamedGroup)apiGroup).ToArray();
+            ExtensionSupportedGroups = config;
         }
 
         public void ThrowIfInvalidObjectState()
         {
             Validation.NotEmpty(SignatureSchemes, nameof(Tls13ServerConfig.SignatureSchemes));
-            Validation.NotEmpty(NamedGroups, nameof(NamedGroups));
+            Validation.NotNull(ExtensionSupportedGroups, nameof(ExtensionSupportedGroups));
             Validation.NotEmpty(CipherSuites, nameof(CipherSuites));
             Validation.NotEmpty(CertificatesWithKeys, nameof(CertificatesWithKeys), "Certificate list cannot be empty");
 

@@ -804,9 +804,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
                 new ClientSupportedVersionsExtension(new ushort[] { 0x0304 }),
                 new SignatureSchemeListExtension(config.SignatureSchemes, ExtensionType.SignatureAlgorithms),
-                new SupportedGroupExtension(config.NamedGroups),
                 new PreSharedKeyExchangeModeExtension(new PreSharedKeyExchangeModeExtension.PskKeyExchangeMode[] { PreSharedKeyExchangeModeExtension.PskKeyExchangeMode.PskDheKe })
             };
+
+            var supportedGroups = clientContext.GetExtension_SupportedGroups();
+            Validation.ThrowInternal(supportedGroups == null || supportedGroups.NamedGroupList.Length == 0);
+            extensions.Add(supportedGroups);
 
             var certAuthorities = clientContext.GetExtension_CertificateAuthorities();
 
@@ -839,7 +842,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 extensions.Add(new ServerNameListClientHelloExtension(new ServerNameListClientHelloExtension.ServerName[] { serverName }));
             }
 
-            foreach (var toSendInKeyShare in config.NamedGroupsToSendInKeyExchangeInClientHello1)
+            foreach (var toSendInKeyShare in config.ExtensionKeyShare.InternalNamedGroups)
             {
                 byte[] keyShareToSendRawBytes, privateKey;
 

@@ -74,7 +74,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
          * Extension handling wrappers
          */
 
-        internal ExtensionServerALPN.Result ExtensionHandleALPN(ProtocolNameListExtension alpnExtension)
+        internal void ExtensionHandleALPN(ProtocolNameListExtension alpnExtension, out bool ignore, out AlertDescription? alertFatal, out int? selectedIndex)
         {
             if (Config.ExtensionALPN != null)
             {
@@ -83,12 +83,33 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                     .Select(originalProtocol => (byte[])originalProtocol.Clone())
                     .ToArray();
 
-                var result = Config.ExtensionALPN.Invoke(new ExtensionServerALPN(protNamesClone));
+                var result = Config.ExtensionALPN.Handle(protNamesClone, new ExtensionServerConfigALPN.ResultSelect(protNamesClone.Length));
 
-                return result;
+                if (result.ActionType == ExtensionServerConfigALPN.ResultType.Success)
+                {
+                    selectedIndex = result.SelectedIndex;
+                    alertFatal = null;
+                    ignore = false;
+                }
+                else if (result.ActionType == ExtensionServerConfigALPN.ResultType.NotSelectedIgnore)
+                {
+                    ignore = true;
+                    selectedIndex = -1;
+                    alertFatal = null;
+                }
+                else
+                {
+                    ignore = false;
+                    selectedIndex = -1;
+                    alertFatal = AlertDescription.NoApplicationProtocol;
+                }
+
+                return;
             }
 
-            return new ExtensionServerALPN.Result(ExtensionServerALPN.ResultType.NotSelectedIgnore, -1);
+            selectedIndex = -1;
+            ignore = true;
+            alertFatal = null;
         }
 
         internal ExtensionServerConfigServerName.ResultAction HandleExtensionServerName(ServerNameListClientHelloExtension serverNameExt)
