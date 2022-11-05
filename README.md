@@ -115,8 +115,55 @@ Key and Initialization Vector Update
 [tls13-clientconfig-presharedkey]:<docs/lookup/tls13-clientconfig-presharedkey.md>
 [tls13-clientconfig-grease]:<docs/lookup/tls13-clientconfig-grease.md>
 
-## Elliptic Curves - SEC 1
-arbitrary curve
+## Elliptic Curves - SEC 2 / Verify Signature
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|secp192k1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp192r1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp224k1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp224r1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp256k1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp256r1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp384r1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+|secp521r1 - Verify Signature|[Example Code][sec2-versign]|Verify ECC signature|
+
+
+[sec2-versign]:<docs/lookup/sec2-versign.md>
+
+
+## Elliptic Curves - SEC 2 / Generate Signature
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|secp192k1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp192r1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp224k1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp224r1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp256k1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp256r1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp384r1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+|secp521r1 - Signature|[Example Code][sec2-sign]|Generate ECC signature|
+
+[sec2-sign]:<docs/lookup/sec2-sign.md>
+
+
+## Elliptic Curves - SEC 2 / Key Exchange
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|secp192k1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp192r1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp224k1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp224r1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp256k1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp256r1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp384r1|[Example Code][sec2-keyex]|Key Exchange example|
+|secp521r1|[Example Code][sec2-keyex]|Key Exchange example|
+
+[sec2-keyex]:<docs/lookup/sec2-keyex.md>
+
+Arbitrary curve (not predefined, parameters must be provided):
+[Arbitrary curve code examples][ecc-arbitrary]
+
+[ecc-arbitrary]:<docs/lookup/ecc-arbitrary.md>
 
 ## Stream Ciphers
 |Name|Link|Comment|
@@ -240,6 +287,18 @@ arbitrary curve
 
 [hashfunc-generic]:<docs/lookup/hashfunc-generic.md> 
 
+## Hash - Related functions
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|HKDF|[hashrel-hkdf]|HKDF Examples|
+|HMAC|[[hashrel-hmac]|HMAC Examples|
+|Poly1305|[[hashrel-poly1305]|Poly1305 Examples|
+
+
+[hashrel-hkdf]::<docs/lookup/hashrel-hkdf.md> 
+[hashrel-hmac]::<docs/lookup/hashrel-hmac.md> 
+[hashrel-poly1305]::<docs/lookup/hashrel-poly1305.md> 
+
 ## CRC
 |Name|Link|Comment|
 |:--:|:--:|:--:|
@@ -283,6 +342,22 @@ arbitrary curve
 
 
 [crc-examples]:<docs/lookup/crc-examples.md> 
+
+## Other
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|CryptoAlgoFactory|[Example Code][other-cryptoalgofactory]|Crypto algo factory utility|
+|X509 Certificate - Deserialize|[x509-deserialize]|Deserialize X509 Certificate From Bytes or from PEM file|
+|X509 Certificate - RSA Public Key|[x509-geteccpubkey]|X509 Certificate - Get RSA public key from certificate|
+|X509 Certificate - ECC Public Key|[x509-getrsapubkey]|X509 Certificate - Get ECC public key from certificate|
+|X509 - DER Encode 'EcdsaSigValue' structure|[x509-encodeecdsasigvalue]|How to DER-Encode ECC signature to EcdsaSigValue structure|
+
+[other-cryptoalgofactory]:<docs/lookup/other-cryptoalgofactory.md>
+[x509-deserialize]:<docs/lookup/x509-deserialize.md>
+[x509-geteccpubkey]:<docs/lookup/x509-geteccpubkey.md>
+[x509-getrsapubkey]:<docs/lookup/x509-getrsapubkey.md>
+[x509-encodeecdsasigvalue]:<docs/lookup/x509-encodeecdsasigvalue.md>
+
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
