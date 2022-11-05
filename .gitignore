@@ -6,6 +6,7 @@ IGNORE/
 src/Arctium/DEBUG_ConsoleApplicationForTests/**
 src/Arctium/DEBUG_ConsoleApplicationForTests/**
 src/Arctium/DEBUG_ConsoleApplicationForTests/
+**/DEBUG_ConsoleApplicationForTests/**
 *.user
 *.suo
 *.userprefs
@@ -13,3 +14,6 @@ src/Arctium/DEBUG_ConsoleApplicationForTests/
 src/Arctium/.vs/*
 src/Arctium/Arctium.Tests.RunTests/app.config
 src/Arctium/DEBUG_ConsoleApplicationForTests/**
+Arctium/ConsoleAppTest/**
+**/ConsoleAppTest/MainProgram.cs
+**/ConsoleAppTest/Program.cs
