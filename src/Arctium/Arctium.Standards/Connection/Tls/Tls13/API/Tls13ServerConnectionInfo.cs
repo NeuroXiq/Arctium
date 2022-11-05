@@ -1,5 +1,6 @@
 ﻿using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
 using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
+using System;
 using System.Linq;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
@@ -30,6 +31,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// </summary>
         public bool IsPskSessionResumption { get; private set; }
 
+
+        /// <summary>
+        /// Unique id for connection (each new connection has separate Id, even for same client, it is always generated on server 'Accept' method call)
+        /// </summary>
+        public ReadOnlyMemory<byte> InstanceId { get; private set; }
+
         internal Tls13ServerConnectionInfo(Protocol.Tls13ServerProtocol.ConnectedInfo internalConnInfo)
         {
             if (internalConnInfo.ExtensionResultALPN != null)
@@ -47,6 +54,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
                 var parentCerts = certs.Length > 1 ? certs.Select(c => (byte[])c.Clone()).ToArray() : new byte[0][];
                 ResultHandshakeClientAuthentication = new ResultHandshakeClientAuthentication(clientCert, parentCerts);
             }
+
+            InstanceId = internalConnInfo.InstanceId;
         }
     }
 }

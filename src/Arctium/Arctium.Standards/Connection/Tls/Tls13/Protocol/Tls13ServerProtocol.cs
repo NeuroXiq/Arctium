@@ -3,6 +3,11 @@
  *  Implemented by NeuroXiq 2022
  */
 
+
+// todo if time this (and client) should
+// be rewritted into better implementation
+// state machine like in rfc 8446 says
+
 using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
@@ -39,6 +44,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
             public bool ClientSupportPostHandshakeAuthentication;
             public bool IsPskSessionResumption;
+            public ReadOnlyMemory<byte> InstanceId;
         }
 
         class PostHandshakeAuthContext
@@ -116,9 +122,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private ByteBuffer hsctx;
         private Context context;
         private Tls13ServerConfig config { get { return serverContext.Config; } }
-        private Tls13ServerContext serverContext;
+        private Tls13ServerProtocolInstanceContext serverContext;
 
-        public Tls13ServerProtocol(Stream networkStream, Tls13ServerContext serverContext)
+        public Tls13ServerProtocol(Stream networkStream, Tls13ServerProtocolInstanceContext serverContext)
         {
             this.serverContext = serverContext;
             validate = new Validate(new Validate.ValidationErrorHandler(SendAlertFatal));
@@ -157,6 +163,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             info.ClientHandshakeAuthenticationCertificatesSentByClient = context.ClientHandshakeAuthenticationCertificatesSentByClient;
             info.ClientSupportPostHandshakeAuthentication = context.ClientSupportPostHandshakeAuthentication;
             info.IsPskSessionResumption = context.IsPskSessionResumption;
+            info.InstanceId = serverContext.InstanceId;
 
             return info;
         }
@@ -217,7 +224,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 {
                     throw e;
                 }
-
             }
             catch
             {

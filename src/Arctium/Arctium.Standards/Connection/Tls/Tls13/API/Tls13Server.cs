@@ -1,16 +1,12 @@
 ﻿using Arctium.Standards.Connection.Tls.Tls13.Protocol;
+using System;
 using System.IO;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public class Tls13Server
     {
-        private Stream stream;
         private Tls13ServerContext serverContext;
-
-        // private Tls13Protocol protocol;
-        Tls13ServerProtocol protocol;
-        // Tls13Protocol protocol;
 
         public Tls13Server(Tls13ServerContext ctx)
         {
@@ -20,7 +16,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public Tls13ServerStream Accept(Stream networkStream, out Tls13ServerConnectionInfo connectionInfo)
         {
             connectionInfo = null;
-            var protocol = new Tls13ServerProtocol(networkStream, serverContext);
+            var instanceContext = new Tls13ServerProtocolInstanceContext(Guid.NewGuid().ToByteArray(), serverContext.Config);
+            var protocol = new Tls13ServerProtocol(networkStream, instanceContext);
             var conInfo = protocol.Listen();
             connectionInfo = new Tls13ServerConnectionInfo(conInfo);
 

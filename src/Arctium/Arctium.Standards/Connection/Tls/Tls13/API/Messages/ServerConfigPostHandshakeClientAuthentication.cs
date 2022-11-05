@@ -20,10 +20,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Messages
             /// Order of other certificates may be random or next can sign previous.
             /// </summary>
             public byte[][] ClientCertificates;
+            public ReadOnlyMemory<byte> InstanceId;
 
-            internal ClientAuthSuccessEventArgs(byte[][] certs)
+            internal ClientAuthSuccessEventArgs(byte[][] certs, ReadOnlyMemory<byte> instanceId)
             {
                 ClientCertificates = certs;
+                InstanceId = instanceId;
             }
         }
 
@@ -36,9 +38,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Messages
         /// Called by internal implementation of protocol. When success
         /// then it will fire success event.
         /// </summary>
-        internal void OnClientAuthSuccess(byte[][] clientCerts)
+        internal void OnClientAuthSuccess(byte[][] clientCerts, ReadOnlyMemory<byte> instanceId)
         {
-            ClientAuthSuccess?.Invoke(this, new ClientAuthSuccessEventArgs(clientCerts));
+            ClientAuthSuccess?.Invoke(this, new ClientAuthSuccessEventArgs(clientCerts, instanceId));
         }
     }
 }
