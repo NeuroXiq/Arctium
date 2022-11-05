@@ -18,6 +18,12 @@ for more interesting parts of the documentation.
 |:--:|:--:|
 |Cipher suites|asdf|
 
+To use Arctium TLS 1.3 examples below following file with sample resources must be included. Examples base on it. If not included code will not compite and will need to be changed.
+
+[Examples - Resources][tls13-examples-resources]
+
+[tls13-examples-resources]:<docs/lookup/tls13-examples-resources.md>
+
 #### TLS 1.3 - Basic Example
 |Name|Link|Comment|
 |:--:|:--:|:--:|
@@ -27,14 +33,16 @@ for more interesting parts of the documentation.
 |Server - ConnectionInfo|[Example Code][tls13-basic-example-server-connectioninfo]|Server - Show informations about established TLS 1.3 connection|
 |Client/Server - Close Connection|[Example Code][tls13-basic-example-closeconnection]|Closing TLS 1.3 connection|
 |Setup server and connect client|[Example Code][tls13-basic-example-self-client-server]|Connect Arctium TLS 1.3 client to Arctium TLS 1.3 Server|
-
+|Client/Server - Update Traffic Secret|[Example Code][tls13-basic-example-updatetrafficsecret]|Update Traffic Secret|
+Key and Initialization Vector Update
 
 [tls13-basic-example-client]:<docs/lookup/basic-example-client.md>
 [tls13-basic-example-server]:<docs/lookup/basic-example-server.md>
 [tls13-basic-example-client-connectioninfo]:<docs/lookup/tls13-basic-example-client-connectioninfo.md>
 [tls13-basic-example-server-connectioninfo]:<docs/lookup/tls13-basic-example-server-connectioninfo.md>
 [tls13-basic-example-closeconnection]:<docs/lookup/tls13-basic-example-closeconnection.md>
-[tls13-basic-example-self-client-server]:<docs/lookup/basic-example-self-client-server.md>
+[tls13-basic-example-self-client-server]:<docs/lookup/tls13-basic-example-self-client-server.md>
+[tls13-basic-example-updatetrafficsecret]:<docs/lookup/tls13-basic-example-updatetrafficsecret.md>
 
 #### Arctium TLS 1.3 - Expected Usage Example
 |Name|Link|Comment|
@@ -90,10 +98,191 @@ for more interesting parts of the documentation.
 |Handshake Client Authentication|[Example Code][tls13-clientconfig-handshakeclientauth]|How to configure Handshake Client Authentication|
 |Post Handshake Client Authentication|[Example Code][tls13-clientconfig-posthandshakeclientauth]|How to configure Post Handshake Client Authentication (server can request at any time, multiple times supported even with different client x509 certificates for each auth request)|
 |Extension - Certificate Authorities|[Example Code][tls13-clientconfig-certauthorities]|How to configure certificate authorities|
-|Extension - Certificate Authorities|[Example Code][tls13-clientconfig-certauthorities]|How to configure certificate authorities|
 |Extension - Pre Shared Key|[Example Code][tls13-clientconfig-presharedkey]|How to configure Pre Shared Key|
 |Extension - GREASE|[Example Code][tls13-clientconfig-grease]|How to configure GREASE extension|
 
+[tls13-clientconfig-ciphersuites]:<docs/lookup/tls13-clientconfig-ciphersuites.md>
+[tls13-clientconfig-supportedgroups]:<docs/lookup/tls13-clientconfig-supportedgroups.md>
+[tls13-clientconfig-keyshare]:<docs/lookup/tls13-clientconfig-keyshare.md>
+[tls13-clientconfig-supportedsignatureschemes]:<docs/lookup/tls13-clientconfig-supportedsignatureschemes.md>
+[tls13-clientconfig-recordsizelimit]:<docs/lookup/tls13-clientconfig-recordsizelimit.md>
+[tls13-clientconfig-alpn]:<docs/lookup/tls13-clientconfig-alpn.md>
+[tls13-clientconfig-servername]:<docs/lookup/tls13-clientconfig-servername.md>
+[tls13-clientconfig-signaturealgorithmscert]:<docs/lookup/tls13-clientconfig-signaturealgorithmscert.md>
+[tls13-clientconfig-handshakeclientauth]:<docs/lookup/tls13-clientconfig-handshakeclientauth.md>
+[tls13-clientconfig-posthandshakeclientauth]:<docs/lookup/tls13-clientconfig-posthandshakeclientauth.md>
+[tls13-clientconfig-certauthorities]:<docs/lookup/tls13-clientconfig-certauthorities.md>
+[tls13-clientconfig-presharedkey]:<docs/lookup/tls13-clientconfig-presharedkey.md>
+[tls13-clientconfig-grease]:<docs/lookup/tls13-clientconfig-grease.md>
+
+## Elliptic Curves - SEC 1
+arbitrary curve
+
+## Stream Ciphers
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|CHACHA-20|[Code Example][strciph-chacha20]|ChaCha-20 Stream Cipher|
+|Rabbit|[Code Example][strciph-rabbit]|Rabbit Stream Cipher|
+|HC-256|[Code Example][strciph-hc256]|HC-256 Stream Cipher|
+
+[strciph-chacha20]:<docs/lookup/strciph-chacha20.md>
+[strciph-rabbit]:<docs/lookup/strciph-rabbit.md>
+[strciph-hc256]:<docs/lookup/strciph-hc256.md>
+
+## Block Ciphers
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|AES-128|[Code Example][blockciph-aes128]|AES 128 Block Cipher|
+|AES-192|[Code Example][blockciph-aes192]|AES 192 Block Cipher|
+|AES-512|[Code Example][blockciph-aes256]|AES 256 Block Cipher|
+|Camellia|[Code Example][blockciph-camellia]|Camellia Block cipher|
+|Threefish-256|[Code Example][blockciph-threefish256]|Threefish 256 Block cipher|
+|Threefish-512|[Code Example][blockciph-threefish512]|Threefish 512 Block cipher|
+|Threefish-1024|[Code Example][blockciph-threefish1024]|Threefish 1024 Block cipher|
+|Twofish|[Code Example][blockciph-twofish]|Twofish Block cipher|
+
+[blockciph-aes128]:<docs/lookup/blockciph-aes128.md>
+[blockciph-aes192]:<docs/lookup/blockciph-aes192.md>
+[blockciph-aes256]:<docs/lookup/blockciph-aes256.md>
+[blockciph-camellia]:<docs/lookup/blockciph-camellia.md>
+[blockciph-threefish1024]:<docs/lookup/blockciph-threefish1024.md>
+[blockciph-threefish256]:<docs/lookup/blockciph-threefish256.md>
+[blockciph-threefish512]:<docs/lookup/blockciph-threefish512.md>
+[blockciph-twofish]:<docs/lookup/blockciph-twofish.md>
+
+## AEAD
+
+## AEAD Predefined (RFC-5116)
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|AEAD AES 128 CCM|[Example Code][rfc5116-aes128ccm]|Create AEAD Algorithm AES 128 CCM|
+|AEAD AES 256 GCM|[Example Code][rfc5116-aes256gcm]|Create AEAD Algorithm AES 256 GCM|
+|AEAD AES 256 CCM|[Example Code][rfc5116-aes256ccm]|Create AEAD Algorithm AES 256 CCM|
+|AEAD AES 128 CCM 8|[Example Code][rfc5116-aes128ccm8]|Create AEAD Algorithm AES 128 CCM 8|
+
+[rfc5116-aes128ccm]:<docs/lookup/rfc5116-aes128ccm.md>
+[rfc5116-aes256gcm]:<docs/lookup/rfc5116-aes256gcm.md>
+[rfc5116-aes256ccm]:<docs/lookup/rfc5116-aes256ccm.md>
+[rfc5116-aes128ccm8]:<docs/lookup/rfc5116-aes128ccm8.md>
+
+## X25519 & X448 (RFC 7748)
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|X25519 Curve|[Example Code][rfc7748-x25519]|Key Exchange using X25519 Curve|
+|X448 Curve|[Example Code][rfc7748-x448]|Key Exchange using X448 Curve|
+
+[rfc7748-x25519]:<docs/lookup/rfc7748-x25519.md>
+[rfc7748-x448]:<docs/lookup/rfc7748-x448.md>
+
+## PKCS#8
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|PKCS#8 - Decode RSA private key from PKCS#8 file|[Example Code][pkcs8-rsa]|How to decode RSA Private key from PKCS#8 file|
+|PKCS#8 - Decode ECC private key from PKCS#8 file|[Example Code][pkcs8-ecc]|How to decode ECC Private key from PKCS#8 file|
+
+[pkcs8-rsa]:<docs/lookup/pkcs8-rsa.md>
+[pkcs8-ecc]:<docs/lookup/pkcs8-ecc.md>
+
+## FFDHE - RFC-7919
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|FFDHE2048|[Example Code][ffdherfc7919-ffdhe2048]|Key Exchange using FFDHE2048|
+|FFDHE3072|[Example Code][ffdherfc7919-ffdhe3072]|Key Exchange using FFDHE3072|
+|FFDHE4096|[Example Code][ffdherfc7919-ffdhe4096]|Key Exchange using FFDHE4096|
+|FFDHE6144|[Example Code][ffdherfc7919-ffdhe6144]|Key Exchange using FFDHE6144|
+|FFDHE8192|[Example Code][ffdherfc7919-ffdhe8192]|Key Exchange using FFDHE8192|
+
+
+[ffdherfc7919-ffdhe2048]:<docs/lookup/ffdherfc7919-ffdhe2048.md>
+[ffdherfc7919-ffdhe3072]:<docs/lookup/ffdherfc7919-ffdhe3072.md>
+[ffdherfc7919-ffdhe4096]:<docs/lookup/ffdherfc7919-ffdhe4096.md>
+[ffdherfc7919-ffdhe6144]:<docs/lookup/ffdherfc7919-ffdhe6144.md>
+[ffdherfc7919-ffdhe8192]:<docs/lookup/ffdherfc7919-ffdhe8192.md>
+
+## PEM file decoding
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|PEM - from file|[Example Code][pem-fromfile]|Decode PEM file from file on file system|
+|PEM - from string|[Example Code][pem-fromstring]|Decode PEM file from string|
+
+[pem-fromstring]:<docs/lookup/pem-fromstring.md>
+[pem-fromfile]:<docs/lookup/pem-fromfile.md>
+
+## Hash Functions
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|BLAKE2b|[Example Code][hashfunc-generic]| Example of BLAKE2b|
+|BLAKE2B_512|[Example Code][hashfunc-generic]| Example of BLAKE2B_512|
+|Blake3|[Example Code][hashfunc-generic]| Example of Blake3|
+|JH_224|[Example Code][hashfunc-generic]| Example of JH_224|
+|JH_256|[Example Code][hashfunc-generic]| Example of JH_256|
+|JH_384|[Example Code][hashfunc-generic]| Example of JH_384|
+|JH_512|[Example Code][hashfunc-generic]| Example of JH_512|
+|RadioGatun32|[Example Code][hashfunc-generic]| Example of RadioGatun32|
+|RadioGatun64|[Example Code][hashfunc-generic]| Example of RadioGatun64|
+|README_HashFunctions.md|[Example Code][hashfunc-generic]| Example of README_HashFunctions.md|
+|RIPEMD_160|[Example Code][hashfunc-generic]| Example of RIPEMD_160|
+|SHA1|[Example Code][hashfunc-generic]| Example of SHA1|
+|SHA2_224|[Example Code][hashfunc-generic]| Example of SHA2_224|
+|SHA2_256|[Example Code][hashfunc-generic]| Example of SHA2_256|
+|SHA2_384|[Example Code][hashfunc-generic]| Example of SHA2_384|
+|SHA2_512|[Example Code][hashfunc-generic]| Example of SHA2_512|
+|SHA3_224|[Example Code][hashfunc-generic]| Example of SHA3_224|
+|SHA3_256|[Example Code][hashfunc-generic]| Example of SHA3_256|
+|SHA3_384|[Example Code][hashfunc-generic]| Example of SHA3_384|
+|SHA3_512|[Example Code][hashfunc-generic]| Example of SHA3_512|
+|Skein_1024|[Example Code][hashfunc-generic]| Example of Skein_1024|
+|Skein_256|[Example Code][hashfunc-generic]| Example of Skein_256|
+|Skein_512|[Example Code][hashfunc-generic]| Example of Skein_512|
+|Skein_VAR|[Example Code][hashfunc-generic]| Example of Skein_VAR|
+|Streebog|[Example Code][hashfunc-generic]| Example of Streebog|
+|Whirlpool|[Example Code][hashfunc-generic]| Example of Whirlpool|
+
+[hashfunc-generic]:<docs/lookup/hashfunc-generic.md> 
+
+## CRC
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|CRC8_DVB_S2              |[Example Code][crc-examples]|Example of CRC8_DVB_S2              |
+|CRC8_AUTOSAR|[Example Code][crc-examples]|Example of CRC8_AUTOSAR|
+|CRC8_Bluetooth|[Example Code][crc-examples]|Example of CRC8_Bluetooth|
+|CRC8_CDMA2000|[Example Code][crc-examples]|Example of CRC8_CDMA2000|
+|CRC8_DARD|[Example Code][crc-examples]|Example of CRC8_DARD|
+|CRC8_GSMA|[Example Code][crc-examples]|Example of CRC8_GSMA|
+|CRC8_GSMB|[Example Code][crc-examples]|Example of CRC8_GSMB|
+|CRC8_HITAG|[Example Code][crc-examples]|Example of CRC8_HITAG|
+|CRC8_I_432_1|[Example Code][crc-examples]|Example of CRC8_I_432_1|
+|CRC8_I_CODE|[Example Code][crc-examples]|Example of CRC8_I_CODE|
+|CRC8_I_LTE|[Example Code][crc-examples]|Example of CRC8_I_LTE|
+|CRC8_MAXIM_DOW|[Example Code][crc-examples]|Example of CRC8_MAXIM_DOW|
+|CRC8_MIFARE_MAD|[Example Code][crc-examples]|Example of CRC8_MIFARE_MAD|
+|CRC8_NRSC_5|[Example Code][crc-examples]|Example of CRC8_NRSC_5|
+|CRC8_OPENSAFETY|[Example Code][crc-examples]|Example of CRC8_OPENSAFETY|
+|CRC8_ROHC|[Example Code][crc-examples]|Example of CRC8_ROHC|
+|CRC8SAE_J1850|[Example Code][crc-examples]|Example of CRC8SAE_J1850|
+|CRC8SAE_SMBUS|[Example Code][crc-examples]|Example of CRC8SAE_SMBUS|
+|CRC8SAE_TECH_3250|[Example Code][crc-examples]|Example of CRC8SAE_TECH_3250|
+|CRC8SAE_WCDMA|[Example Code][crc-examples]|Example of CRC8SAE_WCDMA|
+|CRC32_AIXM|[Example Code][crc-examples]|Example of CRC32_AIXM|
+|CRC32_AUTOSAR|[Example Code][crc-examples]|Example of CRC32_AUTOSAR|
+|CRC32_BASE91_D|[Example Code][crc-examples]|Example of CRC32_BASE91_D|
+|CRC32_BZIP2|[Example Code][crc-examples]|Example of CRC32_BZIP2|
+|CRC32_CD_ROM_EDC|[Example Code][crc-examples]|Example of CRC32_CD_ROM_EDC|
+|CRC32_CKSUM|[Example Code][crc-examples]|Example of CRC32_CKSUM|
+|CRC32_ISCSI|[Example Code][crc-examples]|Example of CRC32_ISCSI|
+|CRC32_ISO_HDLC|[Example Code][crc-examples]|Example of CRC32_ISO_HDLC|
+|CRC32_JAMCRC|[Example Code][crc-examples]|Example of CRC32_JAMCRC|
+|CRC32_MEF|[Example Code][crc-examples]|Example of CRC32_MEF|
+|CRC32_MPEG_2|[Example Code][crc-examples]|Example of CRC32_MPEG_2|
+|CRC32_XFER|[Example Code][crc-examples]|Example of CRC32_XFER|
+|CRC64_GO_ISO|[Example Code][crc-examples]|Example of CRC64_GO_ISO|
+|CRC64_MS|[Example Code][crc-examples]|Example of CRC64_MS|
+|CRC64_WE|[Example Code][crc-examples]|Example of CRC64_WE|
+|CRC64_XZ|[Example Code][crc-examples]|Example of CRC64_XZ|
+|CRC64_ECMA182|[Example Code][crc-examples]|Example of CRC64_ECMA182|
+
+
+[crc-examples]:<docs/lookup/crc-examples.md> 
 
 |Name                       | Link              |
 |:-------------------------:|:-----------------:|
