@@ -12,7 +12,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model
         public ushort ProtocolVersion;
         public byte[] Random;
         public byte[] LegacySessionId;
-        public CipherSuite[] CipherSuites;
+        public List<CipherSuite> CipherSuites;
         public byte[] LegacyCompressionMethods;
         public List<Extension> Extensions { get; set; }
 
@@ -23,7 +23,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model
             ProtocolVersion = ProtocolVersion0x0303;
             LegacySessionId = legacySessionId;
             Random = random;
-            CipherSuites = suites;
+            CipherSuites = new List<CipherSuite>(suites);
             Extensions = extensions;
             LegacyCompressionMethods = ConstLegacyCompressionMethods;
         }

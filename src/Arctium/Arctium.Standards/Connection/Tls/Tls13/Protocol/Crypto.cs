@@ -204,12 +204,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             selectedCipherSuite = suite;
         }
 
-        internal bool VerifyClientFinished(byte[] finishedVerifyDataFromClient, BytesRange handshakeContext)
-        {
-            // todo verify this
-            return true;
-        }
-
         public SignatureScheme? SelectSignatureSchemeForCertificate(X509Certificate certificate, SignatureScheme[] supportedSignatureSchemes)
         {
             var supported = SignaturesInfo.Where(info => supportedSignatureSchemes.Contains(info.SignatureScheme) &&
@@ -411,11 +405,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else throw new NotSupportedException();
         }
 
-        //public bool IsClientPostHandshakeCertificateVerifyValid(byte[] hscontext, int hscontextlen, CertificateVerify clientCertificateVerify, X509Certificate clientCertificate)
-        //{
-        //    return false;
-        //}
-
         public bool IsClientCertificateVerifyValid(byte[] hscontext, int hscontextlen, CertificateVerify clientCertificateVerify, X509Certificate clientCertificate)
         {
             byte[] toSign = FormatDataForSignature(hscontext, hscontextlen, true);
@@ -503,12 +492,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             else throw new NotSupportedException("certverify not supported");
         }
 
-        internal bool VerifyClientCertificate(CertificateVerify certVer)
-        {
-            //todo implement this
-            return true;
-        }
-
         internal int GetHashSizeInBytes(HashFunctionId hashFunctionId)
         {
             switch (hashFunctionId)
@@ -533,7 +516,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public void SelectCipherSuite(ClientHello hello, out bool cipherSuiteOk)
         {
             var supportedCipherSuites = config.CipherSuites;
-            var clientCiphers = hello.CipherSuites;
+            var clientCiphers = hello.CipherSuites.ToArray();
             int selectedCipherSuiteIdx = -1;
 
             for (int i = 0; i < supportedCipherSuites.Length && selectedCipherSuiteIdx == -1; i++)
@@ -549,7 +532,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public void SelectEcEcdheGroup(ClientHello hello, out bool groupOk)
         {
             var supportedGroups = config.ExtensionSupportedGroups.InternalNamedGroups; // new SupportedGroupExtension.NamedGroup[] { SupportedGroupExtension.NamedGroup.X25519 };
-            var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList;
+            var clientGroups = hello.GetExtension<SupportedGroupExtension>(ExtensionType.SupportedGroups).NamedGroupList.ToArray();
             int selectedGroupIdx = -1;
 
             for (int i = 0; i < supportedGroups.Length && selectedGroupIdx == -1; i++)
@@ -649,9 +632,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void DoKeyUpdateForWriting(RecordLayer recordLayer)
         {
-            // var curEndpointSecret = currentEndpoint == Endpoint.Server ?
-            //     ServerApplicationTrafficSecret0 : ClientApplicationTrafficSecret0;
-
             byte[] nextGenSecret;
 
             if (currentEndpoint == Endpoint.Server)
@@ -725,77 +705,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
         }
 
-        public void ChangeRecordLayerCrypto(RecordLayer recordLayer, RecordLayerKeyType keyType)
+        public void ChangeRecordLayerReadCrypto(RecordLayer recordLayer, byte[] readTrafficSecret)
         {
-            byte[] clientSecret;
-            byte[] serverSecret;
+            AEADFactory(readTrafficSecret, out var aead, out var iv);
 
-            switch (keyType)
-            {
-                case RecordLayerKeyType.Zero_RTT_Application: throw new NotImplementedException();
-                case RecordLayerKeyType.Handshake:
-                    clientSecret = ClientHandshakeTrafficSecret;
-                    serverSecret = ServerHandshakeTrafficSecret;
-                    break;
-                case RecordLayerKeyType.ApplicationData:
-                    clientSecret = ClientApplicationTrafficSecret0;
-                    serverSecret = ServerApplicationTrafficSecret0;
-                    break;
-                default: throw new ArgumentException(nameof(keyType));
-            }
+            recordLayer.ChangeReadEncryption(aead, iv);
+        }
 
-            byte[] clientWriteIv, serverWriteIv, ckey, skey;
-            AEAD serverWriteAead, clientWriteAead;
+        public void ChangeRecordLayerWriteCrypto(RecordLayer recordLayer, byte[] readTrafficSecret)
+        {
+            AEADFactory(readTrafficSecret, out var aead, out var iv);
 
-            switch (SelectedCipherSuite)
-            {
-                case CipherSuite.TLS_AES_128_GCM_SHA256:
-                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);
-                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 16);
-                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
-                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
-
-                    serverWriteAead = new GaloisCounterMode(new AES(skey), 16);
-                    clientWriteAead = new GaloisCounterMode(new AES(ckey), 16);
-                    break;
-                case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
-                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 32);
-                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 32);
-                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
-                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
-
-                    serverWriteAead = new AEAD_CHACHA20_POLY1305(skey);
-                    clientWriteAead = new AEAD_CHACHA20_POLY1305(ckey);
-                    break;
-                case CipherSuite.TLS_AES_128_CCM_SHA256:
-                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 16);
-                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 16);
-                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
-                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
-
-                    serverWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_128_CCM(skey);
-                    clientWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_128_CCM(ckey);
-                    break;
-                case CipherSuite.TLS_AES_256_GCM_SHA384:
-                    ckey = HkdfExpandLabel(clientSecret, "key", new byte[0], 32);
-                    skey = HkdfExpandLabel(serverSecret, "key", new byte[0], 32);
-                    clientWriteIv = HkdfExpandLabel(clientSecret, "iv", new byte[0], 12);
-                    serverWriteIv = HkdfExpandLabel(serverSecret, "iv", new byte[0], 12);
-
-                    serverWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_256_GCM(skey);
-                    clientWriteAead = RFC5116_AEAD_Predefined.Create_AEAD_AES_256_GCM(ckey);
-                    break;
-                default: throw new NotImplementedException();
-            }
-
-            if (currentEndpoint == Endpoint.Client)
-            {
-                recordLayer.ChangeCipher(clientWriteAead, serverWriteAead, clientWriteIv, serverWriteIv);
-            }
-            else
-            {
-                recordLayer.ChangeCipher(serverWriteAead, clientWriteAead, serverWriteIv, clientWriteIv);
-            }
+            recordLayer.ChangeWriteEncryption(aead, iv);
         }
 
         #region Secrets generation

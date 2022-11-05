@@ -526,7 +526,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             msg.ProtocolVersion = protocolVerson;
             msg.Random = random;
             msg.LegacySessionId = legacySessId;
-            msg.CipherSuites = cipherSuites;
+            msg.CipherSuites = new List<CipherSuite>(cipherSuites);
             msg.LegacyCompressionMethods = legComprMeth;
             msg.Extensions = extensions;
 
@@ -852,8 +852,21 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public T Deserialize<T>(byte[] buffer, int offset)
         {
             if (!messageDeserialize.ContainsKey(typeof(T))) throw new Exception("cannot deserialize, internal: unrecognized object type: " + typeof(T).Name);
-            
-            return (T)messageDeserialize[typeof(T)](buffer, offset);
+
+            try
+            {
+                return (T)messageDeserialize[typeof(T)](buffer, offset);
+            }
+            catch (Exception e)
+            {
+                throw new Tls13AlertException(
+                    AlertLevel.Fatal,
+                    AlertDescription.DecodeError,
+                    $"unhandled decoding message exception, trying to decode {typeof(T).Name}",
+                    "unknown",
+                    "generic decode error, see inner exception",
+                    e);
+            }
         }
 
         public ExtensionDeserializeResult DeserializeExtension(Endpoint currentEndpoint, byte[] buffer, RangeCursor cursor)
@@ -1032,7 +1045,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             SignatureSchemeListExtension ext = (SignatureSchemeListExtension)DeserializeExtension_SignatureAlgorithms(buf, offs);
 
-            return new SignatureSchemeListExtension(ext.Schemes, ExtensionType.SignatureAlgorithmsCert);
+            return new SignatureSchemeListExtension(ext.Schemes.ToArray(), ExtensionType.SignatureAlgorithmsCert);
         }
 
         private Extension DeserializeExtension_SignatureAlgorithms(byte[] buffer, int offset)
@@ -1166,7 +1179,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private void ThrowCursorOutside(int nextCursorPosition, int maxCursorPosition)
         {
             if (nextCursorPosition > maxCursorPosition)
-                throw new API.Tls13Exception("next cursor position outside of bounds");
+                throw new Tls13Exception("next cursor position outside of bounds");
         }
     }
 }

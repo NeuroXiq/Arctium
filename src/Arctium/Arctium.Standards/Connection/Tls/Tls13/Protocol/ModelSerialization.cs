@@ -65,8 +65,16 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 [typeof(ServerNameListServerHelloExtension)] = Serialize_Extension_ServerNameListServerHelloExtension,
                 [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension,
                 [typeof(PostHandshakeAuthExtension)] = Serialize_Extension_PostHandshakeAuthExtension,
-                [typeof(CertificateAuthoritiesExtension)] = Serialize_Extension_CertificateAuthorities
+                [typeof(CertificateAuthoritiesExtension)] = Serialize_Extension_CertificateAuthorities,
+                [typeof(GREASEInternalExtension)] = Serialize_Extension_GREASEInternalExtension
             };
+        }
+
+        private void Serialize_Extension_GREASEInternalExtension(object obj)
+        {
+            var ext = (GREASEInternalExtension)obj;
+
+            tempSerializedExtension.Append(ext.ExtensionContent);
         }
 
         private void Serialize_Extension_CertificateAuthorities(object obj)
@@ -233,12 +241,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             PreSharedKeyExchangeModeExtension ext = (PreSharedKeyExchangeModeExtension)obj;
 
-            Validation.ThrowInternal(ext.KeModes.Length < 1 || ext.KeModes.Length > 255);
+            Validation.ThrowInternal(ext.KeModes.Count < 1 || ext.KeModes.Count > 255);
 
-            tempSerializedExtension.Append((byte)ext.KeModes.Length);
-            int offs = tempSerializedExtension.MallocAppend(ext.KeModes.Length);
+            tempSerializedExtension.Append((byte)ext.KeModes.Count);
+            int offs = tempSerializedExtension.MallocAppend(ext.KeModes.Count);
 
-            for (int i = 0; i < ext.KeModes.Length; i++)
+            for (int i = 0; i < ext.KeModes.Count; i++)
             {
                 tempSerializedExtension.Buffer[i + offs] = (byte)ext.KeModes[i];
             }
@@ -248,14 +256,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             SupportedGroupExtension ext = (SupportedGroupExtension)obj;
 
-            int groupLen = ext.NamedGroupList.Length * 2;
+            int groupLen = ext.NamedGroupList.Count * 2;
             int namedGroupListLenOffs = tempSerializedExtension.MallocAppend(2);
 
             MemMap.ToBytes1UShortBE((ushort)groupLen,
                 tempSerializedExtension.Buffer,
                 namedGroupListLenOffs);
 
-            for (int i = 0; i < ext.NamedGroupList.Length; i++)
+            for (int i = 0; i < ext.NamedGroupList.Count; i++)
             {
                 int groupOffs = tempSerializedExtension.MallocAppend(2);
                 MemMap.ToBytes1UShortBE((ushort)ext.NamedGroupList[i], tempSerializedExtension.Buffer, groupOffs);
@@ -269,7 +277,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             int clientSharesVectorLenOffs = tempSerializedExtension.MallocAppend(2);
 
-            for (int i = 0; i < ext.ClientShares.Length; i++)
+            for (int i = 0; i < ext.ClientShares.Count; i++)
             {
                 var share = ext.ClientShares[i];
                 int groupOffs = tempSerializedExtension.MallocAppend(2);
@@ -295,10 +303,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             ClientSupportedVersionsExtension ext = (ClientSupportedVersionsExtension)obj;
 
-            int versionsVectorLen = ext.Versions.Length * 2;
+            int versionsVectorLen = ext.Versions.Count * 2;
             tempSerializedExtension.Append((byte)versionsVectorLen);
 
-            for (int i = 0; i < ext.Versions.Length; i++)
+            for (int i = 0; i < ext.Versions.Count; i++)
             {
                 int verOffs = tempSerializedExtension.MallocAppend(2);
                 MemMap.ToBytes1UShortBE(ext.Versions[i], tempSerializedExtension.Buffer, verOffs);
@@ -321,10 +329,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             AppendVector(hello.LegacySessionId, 1, Tls13Const.ClientHello_LegacySessionIdMaxLen);
 
             int cipherSuiteLenOffs = buffer.MallocAppend(2);
-            int ciphSuiteLen = 2 * hello.CipherSuites.Length;
+            int ciphSuiteLen = 2 * hello.CipherSuites.Count;
             MemMap.ToBytes1UShortBE((ushort)(ciphSuiteLen), SerializedData, cipherSuiteLenOffs);
 
-            for (int i = 0; i < hello.CipherSuites.Length; i++)
+            for (int i = 0; i < hello.CipherSuites.Count; i++)
             {
                 int ciphOffs = buffer.MallocAppend(2);
                 MemMap.ToBytes1UShortBE((ushort)hello.CipherSuites[i], SerializedData, ciphOffs);
@@ -391,17 +399,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             SignatureSchemeListExtension ext = (SignatureSchemeListExtension)obj;
 
-            Validation.ThrowInternal(ext.Schemes.Length == 0, "spec say min one scheme");
+            Validation.ThrowInternal(ext.Schemes.Count == 0, "spec say min one scheme");
 
             int lenOffs = tempSerializedExtension.MallocAppend(2);
 
-            for (int i = 0; i < ext.Schemes.Length; i++)
+            for (int i = 0; i < ext.Schemes.Count; i++)
             {
                 int schemeOffs = tempSerializedExtension.MallocAppend(2);
                 MemMap.ToBytes1UShortBE((ushort)ext.Schemes[i], tempSerializedExtension.Buffer, schemeOffs);
             }
 
-            MemMap.ToBytes1UShortBE((ushort)(ext.Schemes.Length * 2), tempSerializedExtension.Buffer, lenOffs);
+            MemMap.ToBytes1UShortBE((ushort)(ext.Schemes.Count * 2), tempSerializedExtension.Buffer, lenOffs);
         }
 
         private void Serialize_Extension_Cookie(object obj)
@@ -565,7 +573,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             int listLenOffs = tempSerializedExtension.MallocAppend(2);
 
-            for (int i = 0; i < ext.ProtocolNamesList.Length; i++)
+            for (int i = 0; i < ext.ProtocolNamesList.Count; i++)
             {
                 byte[] protName = ext.ProtocolNamesList[i];
 

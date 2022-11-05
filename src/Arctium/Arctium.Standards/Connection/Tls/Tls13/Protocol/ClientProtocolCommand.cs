@@ -33,5 +33,7 @@
         Connected_OutsideCommandExecutePostHandshakeKeyUpdate,
         PostHandshake_SendKeyUpdate,
         PostHandshake_KeyUpdateReceived,
+        Connected_OutsideCommandWaitForAnyProtocolData,
+        Connected_OutsideCommandClose,
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
+﻿using System.Collections.Generic;
+
+namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
     class PreSharedKeyExchangeModeExtension : Extension
     {
@@ -10,11 +12,11 @@
 
         public override ExtensionType ExtensionType => ExtensionType.PskKeyExchangeModes;
 
-        public PskKeyExchangeMode[] KeModes { get; private set; }
+        public List<PskKeyExchangeMode> KeModes { get; private set; }
 
         public PreSharedKeyExchangeModeExtension(PskKeyExchangeMode[] keModes)
         {
-            KeModes = keModes;
+            KeModes = new List<PskKeyExchangeMode>(keModes);
         }
     }
 }

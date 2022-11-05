@@ -59,13 +59,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         public HelloRetryRequestValidate HelloRetryRequest { get; private set; }
         public DefaultNamedValidate Extension_MaxFragmentLength { get; private set; }
         public EncryptedExtensionsValidate EncryptedExtensions { get; private set; }
-        public DefaultNamedValidate CertificateVerify { get; private set; }
+        public CertificateVerifyValidate CertificateVerify { get; private set; }
         public DefaultNamedValidate CertificateRequest { get; private set; }
         public DefaultNamedValidate Other { get; private set; }
 
-        public Validate()
+        public Validate(ValidationErrorHandler errorHandling)
         {
-            var errorHandler = new ValidationErrorHandler();
+            var errorHandler = errorHandling;
             this.RecordLayer = new RecordLayerValidate(errorHandler);
             this.Handshake = new HandshakeValidate(errorHandler);
             this.Extensions = new ExtensionsValidate(errorHandler);
@@ -76,7 +76,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             HelloRetryRequest = new HelloRetryRequestValidate(errorHandler);
             Extension_MaxFragmentLength = new DefaultNamedValidate(errorHandler, Label_ExtensionMaxFragmentLength);
             EncryptedExtensions = new EncryptedExtensionsValidate(errorHandler);
-            CertificateVerify = new DefaultNamedValidate(errorHandler, Label_CertificateVerify);
+            CertificateVerify = new CertificateVerifyValidate(errorHandler);
             CertificateRequest = new DefaultNamedValidate(errorHandler, Label_CertificateRequest);
             Other = new DefaultNamedValidate(errorHandler, Label_Other);
 
@@ -90,6 +90,34 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
         }
 
+        public class CertificateVerifyValidate : ValidateBase
+        {
+            public CertificateVerifyValidate(ValidationErrorHandler handler) : base(handler, Label_CertificateVerify)
+            {
+            }
+
+            internal void GeneralValidate(CertificateRequest request, CertificateVerify verifyFromClient)
+            {
+                var offered = request.Extensions.First(e => e.ExtensionType == ExtensionType.SignatureAlgorithms) as SignatureSchemeListExtension;
+
+                var wasOffered = offered.Schemes.Contains(verifyFromClient.SignatureScheme);
+
+                AlertFatal(!wasOffered, AlertDescription.Illegal_parameter, "client sent certificate verify with signature that was not offered in certificate request ");
+            }
+
+            /// <summary>
+            /// Client hello that was send and received certVerify from server
+            /// </summary>
+            internal void GeneralValidate(ClientHello clientHello1, CertificateVerify certVerify)
+            {
+                var offered = clientHello1.Extensions.First(e => e.ExtensionType == ExtensionType.SignatureAlgorithms) as SignatureSchemeListExtension;
+
+                bool wasOffered = offered.Schemes.Contains(certVerify.SignatureScheme);
+
+                AlertFatal(!wasOffered, AlertDescription.Illegal_parameter, "server sent certificate verify that was not offered in client hello");
+            }
+        }
+
         public class NewSessionTicketValidate : ValidateBase
         {
             public NewSessionTicketValidate(ValidationErrorHandler handler) : base(handler, "NewSessionTicket")
@@ -99,19 +127,29 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public class ValidationErrorHandler
         {
+            public delegate void ThrowAlertFatalDelegate(Tls13AlertException exception);
+
+            private ThrowAlertFatalDelegate onBeforeInvokingToThrowAlertException;
+
+            public ValidationErrorHandler(ThrowAlertFatalDelegate onBeforeInvokingToThrowAlertException)
+            {
+                this.onBeforeInvokingToThrowAlertException = onBeforeInvokingToThrowAlertException;
+            }
+
             public void Throw(string messageName, string fieldName, string error)
             {
                 Throw(FormatMessage(messageName, fieldName, error));
             }
 
-            public void ThrowAlertFatal(AlertDescription alert, string messageName, string errorText)
-            {
-                throw new Tls13AlertException(AlertLevel.Fatal, alert, messageName, null, errorText);
-            }
+            public void ThrowAlertFatal(AlertDescription alert, string messageName, string errorText) => ThrowAlertFatal(alert, messageName, null, errorText);
 
             public void ThrowAlertFatal(AlertDescription alert, string messageName, string field, string error)
             {
-                throw new Tls13AlertException(AlertLevel.Fatal, alert, messageName, field, error);
+                var exception = new Tls13AlertException(AlertLevel.Fatal, alert, messageName, field, error);
+
+                if (onBeforeInvokingToThrowAlertException != null) onBeforeInvokingToThrowAlertException(exception);
+
+                throw exception;
             }
 
             public void Throw(string error)
@@ -170,15 +208,18 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             {
             }
 
-            public void GeneralValidate(ClientHello clientHello1, ServerHello helloRetry)
+            public void GeneralValidate(
+                ClientHello clientHello1,
+                ServerHello helloRetry,
+                IList<Model.CipherSuite> supportedSuites,
+                SupportedGroupExtension.NamedGroup[] supportedGroups)
             {
-                AlertFatal(!clientHello1.CipherSuites.Contains(helloRetry.CipherSuite), AlertDescription.Illegal_parameter, "cipher suite from server not match clienthello");
+                AlertFatal(!supportedSuites.Contains(helloRetry.CipherSuite), AlertDescription.Illegal_parameter, "cipher suite from server not match clienthello");
 
                 var keyShareHrr = helloRetry.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.KeyShare) as KeyShareHelloRetryRequestExtension;
-                var clientGroups = clientHello1.Extensions.First(ext => ext.ExtensionType == ExtensionType.SupportedGroups) as SupportedGroupExtension;
 
                 AlertFatal(keyShareHrr == null, AlertDescription.Illegal_parameter, "server didnt send keysharehelloretryrequest or send keyshare with keyexchange bytes instead of retry");
-                AlertFatal(!clientGroups.NamedGroupList.Contains(keyShareHrr.SelectedGroup), AlertDescription.Illegal_parameter, "server selected group not listed in clienthello");
+                AlertFatal(!supportedGroups.Contains(keyShareHrr.SelectedGroup), AlertDescription.Illegal_parameter, "server selected group not listed in clienthello");
             }
         }
 
@@ -243,9 +284,25 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 extensionsValidate = new ExtensionsValidate(handler, Label_ServerHello);
             }
 
-            public void GeneralServerHelloValidate(ClientHello clientHelloThatWasSend, ServerHello hello)
+            public void GeneralServerHelloValidate(
+                ClientHello clientHelloThatWasSend,
+                ServerHello hello,
+                Model.CipherSuite[] supportedSuites)
             {
+                AlertFatal(!supportedSuites.Contains(hello.CipherSuite), AlertDescription.Illegal_parameter, "server selected invalid cipher suite");
+
                 extensionsValidate.GeneralValidateServerHelloExtensions(hello);
+
+                var invalidExt = hello.Extensions
+                    .Where(e => !hello.Extensions.Any(s => s.ExtensionType == e.ExtensionType))
+                    .Select(e => e.ExtensionType)
+                    .ToArray();
+
+                if (invalidExt.Any())
+                {
+                    AlertFatal(AlertDescription.UnsupportedExtension, $"server sent extension but client not offered: {string.Join("", invalidExt)}");
+                }
+
 
                 // alpn
                 var alpn = hello.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.ApplicationLayerProtocolNegotiation) as ProtocolNameListExtension;
@@ -254,10 +311,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     ProtocolNameListExtension sentByClient;
                     bool alpnWasSent = clientHelloThatWasSend.TryGetExtension<ProtocolNameListExtension>(ExtensionType.ApplicationLayerProtocolNegotiation, out var alpnThatWasSend);
 
-                    if (!alpnWasSent) AlertFatal(AlertDescription.UnsupportedExtension, "received alpn but client didn not sent this extension");
-                    if (alpn.ProtocolNamesList.Length == 0) AlertFatal(AlertDescription.Illegal_parameter, "zero length of alpn in serverhello response");
-                    if (alpn.ProtocolNamesList.Length != 1) AlertFatal(AlertDescription.Illegal_parameter, "alpn server must select one protocol but received more than one in the list");
+                    if (!alpnWasSent) AlertFatal(AlertDescription.UnsupportedExtension, "received alpn but client did not sent this extension");
+                    if (alpn.ProtocolNamesList.Count == 0) AlertFatal(AlertDescription.Illegal_parameter, "zero length of alpn in serverhello response");
+                    if (alpn.ProtocolNamesList.Count != 1) AlertFatal(AlertDescription.Illegal_parameter, "alpn server must select one protocol but received more than one in the list");
                     bool selectedWhatWasSent = alpnThatWasSend.ProtocolNamesList.Any(wasSent => MemOps.Memcmp(wasSent, alpn.ProtocolNamesList[0]));
+                    selectedWhatWasSent &= !GREASE.CS_ALPN.Any(g => MemOps.Memcmp(g, alpn.ProtocolNamesList[0])); // this is trick because supports custom names (can client sent any bytes)
 
                     AlertFatal(selectedWhatWasSent, AlertDescription.Illegal_parameter, "server alpn response does not math what was sent by client");
                 }
@@ -296,6 +354,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             internal void GeneralValidateClientHello2(ClientHello clientHello2, ClientHello clientHello1, ServerHello helloRetryRequest)
             {
                 extensionsValidate.GeneralValidateClientHelloExtensions(clientHello2);
+
+                var selectedByServer = ((KeyShareHelloRetryRequestExtension)helloRetryRequest.Extensions.First(ext => ext.ExtensionType == ExtensionType.KeyShare)).SelectedGroup;
+                var sharedFromClient = clientHello2.GetExtension<KeyShareClientHelloExtension>(ExtensionType.KeyShare).ClientShares;
+
+                AlertFatal(sharedFromClient.Count() != 1 || sharedFromClient[0].NamedGroup != selectedByServer,
+                    AlertDescription.Illegal_parameter,
+                    "Invalid share in ClientHello2 (after HelloRetry). Not single share or other that select on server");
 
                 var cookieSent = helloRetryRequest.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
                 var cookieCH2 = clientHello2.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
@@ -563,7 +628,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     AlertDescription.MissingExtension,
                     "PskKeyExchangeModes extension is required if PreSharedKey extension is present on the list");
 
-                ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions;
+                ushort[] supportedVersions = clientHello.GetExtension<ClientSupportedVersionsExtension>(ExtensionType.SupportedVersions).Versions.ToArray();
                 bool tls13NotFound = true;
 
                 for (int i = 0; tls13NotFound && i < supportedVersions.Length; i++)
@@ -599,7 +664,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 // doesnt make sens copy & paste because same validatation in multiple places
                 //
                 // This method must not perform context-specific validation
-                // (e.validate serverhello extension in context of what was sent in clienthello message)
+                // (e.g. validate serverhello extension in context of what was sent in clienthello message)
 
                 HashSet<ExtensionType> extensionsHashSet = new HashSet<ExtensionType>();
 

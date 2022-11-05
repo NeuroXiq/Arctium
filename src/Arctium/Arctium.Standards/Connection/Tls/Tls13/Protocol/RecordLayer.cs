@@ -68,12 +68,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.compatibilitySilentlyDropUnencryptedChangeCipherSpec = compatibilitySilentlyDropUnencryptedChangeCipherSpec;
         }
 
-
-        public void SetState(RecordLayerState state)
-        {
-            this.State = state;
-        }
-
         public RecordInfo Read()
         {
             int firstThreeFields = 5;
@@ -199,6 +193,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                     encryptedWriteBuffer, 5,
                     encryptedWriteBuffer, toEncryptLen + 5);
 
+
                 bufferForStream.Write(encryptedWriteBuffer, 0, toSendLength);
             }
             else
@@ -219,18 +214,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             Validation.ThrowInternal(maxRecord > Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength);
             this.configuredMaxPlaintextRecordLength = maxRecord;
-        }
-
-        public void ChangeCipher(AEAD aeadWrite, AEAD aeadRead, byte[] writeIv, byte[] readIv)
-        {
-            writeSequenceNumber = readSequenceNumber = 0;
-            this.aeadWrite = aeadWrite;
-            this.aeadRead = aeadRead;
-            this.writeIv = writeIv;
-            this.readIv = readIv;
-            this.perRecordReadNonce = new byte[writeIv.Length];
-            this.perRecordWriteNonce = new byte[writeIv.Length];
-            this.State = RecordLayerState.EncryptionOn;
         }
 
         void ComputeWriteNonce() => ComputeNonce(perRecordWriteNonce, writeSequenceNumber, writeIv);
@@ -260,6 +243,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void ChangeWriteEncryption(AEAD newWrite, byte[] newIv)
         {
+            this.perRecordWriteNonce = new byte[newIv.Length];
             writeSequenceNumber = 0;
             this.writeIv = newIv;
             this.aeadWrite = newWrite;
@@ -267,6 +251,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         public void ChangeReadEncryption(AEAD newRead, byte[] newIv)
         {
+            this.perRecordReadNonce = new byte[newIv.Length];
             readSequenceNumber = 0;
             this.readIv = newIv;
             this.aeadRead = newRead;

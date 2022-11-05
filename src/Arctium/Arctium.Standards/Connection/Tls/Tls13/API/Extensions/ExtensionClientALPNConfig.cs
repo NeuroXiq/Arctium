@@ -1,6 +1,9 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared.Helpers;
+using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
@@ -10,7 +13,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
     /// This class stores protocol names list that will be send to server in ALPN extension.
     /// Allows to specifiy raw byte values that are not defined in any specification as well as
     /// constant protocol names (like HTTP1, HTTP2/2 etc.) defined in current implementation.
-    /// Must have at least single protocol name, if list is empty exception will be thrown
+    /// Must have at least single protocol name, if list is empty exception will be thrown.
+    /// Must not add GREASE (RFC 8701) values
     /// </summary>
     public class ExtensionClientALPNConfig
     {
@@ -35,6 +39,14 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API.Extensions
             for (int i = 0; i < value.Length; i++) allzeros &= value[i] == 0;
 
             Validation.Argument(allzeros, "protocolname", "protocol name constsis of all zero bytes, this is not valid or not supported now");
+
+            byte[] grease = GREASE.CS_ALPN.FirstOrDefault(grease => MemOps.Memcmp(grease, value));
+
+            if (grease != null)
+            {
+                string greaseString = BitConverter.ToString(grease);
+                Validation.Argument(true, "protocolname", $"current value is GREASE extension and cannot be configure. Invalid value: {greaseString}");
+            }
 
             // for safty to be immutable later
             var cloned = value.Clone() as byte[];

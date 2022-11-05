@@ -1,4 +1,6 @@
-﻿namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
+﻿using System.Collections.Generic;
+
+namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
     class ServerSupportedVersionsExtension : Extension
     {
@@ -21,11 +23,11 @@
     {
         public override ExtensionType ExtensionType => ExtensionType.SupportedVersions;
 
-        public ushort[] Versions { get; private set; }
+        public List<ushort> Versions { get; private set; }
 
         public ClientSupportedVersionsExtension(ushort[] versions)
         {
-            this.Versions = versions;
+            this.Versions = new List<ushort>(versions);
         }
     }
 }

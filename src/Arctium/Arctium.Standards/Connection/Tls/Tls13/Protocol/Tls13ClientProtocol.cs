@@ -13,6 +13,7 @@ using Arctium.Standards.Connection.Tls.Tls13.API.Messages;
 // using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
+using Arctium.Standards.Connection.Tls.Tls13.Protocol.Helpers;
 using Arctium.Standards.X509.X509Cert;
 using System;
 using System.Collections.Generic;
@@ -90,11 +91,17 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public PostHandshakeAuth PostHandshakeAuth;
 
             public ClientProtocolCommand? CommandAfterFinishedProcessingPostHandshake { get; internal set; }
+            public List<ExtensionType> SupportedExtensions = new List<ExtensionType>();
+        }
+
+        internal void WaitForAnyProtocolData()
+        {
+            RunCommandFromOutside(ClientProtocolCommand.Connected_OutsideCommandWaitForAnyProtocolData);
         }
 
         Context context;
         API.Tls13ClientConfig config { get { return clientContext.Config; } }
-        ClientProtocolState state;
+        public ClientProtocolState state { get; private set; }
         Queue<ClientProtocolCommand> commandQueue;
         Crypto crypto;
         Dictionary<SupportedGroupExtension.NamedGroup, byte[]>  generatedPrivateKeys;
@@ -116,7 +123,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             this.crypto = new Crypto(Endpoint.Client, null);
             this.generatedPrivateKeys = new Dictionary<SupportedGroupExtension.NamedGroup, byte[]>();
             hsctx = new ByteBuffer();
-            validate = new Validate();
+            validate = new Validate(new Validate.ValidationErrorHandler(SendAlertFatal));
             messageIO = new MessageIO(networkRawStream, validate);
             ApplicationDataBuffer = new byte[Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength];
 
@@ -154,6 +161,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             return info;
         }
 
+        public void Close() => RunCommandFromOutside(ClientProtocolCommand.Connected_OutsideCommandClose);
+
         internal void PostHandshakeKeyUpdate(bool updateRequested)
         {
             context.PostHandshakeKeyUpdateOutsideCommandUpdateRequested = updateRequested;
@@ -168,14 +177,37 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ProcessCommand()
         {
-            //try
-            {
-                InnerProcessCommand();
-            }
-            //catch (System.Exception)
-            {
+            InnerProcessCommand();
 
-                //throw;
+            try
+            {
+                
+            }
+            catch (Tls13ReceivedAlertException e)
+            {
+                if (e.AlertDescription == AlertDescription.CloseNotify)
+                {
+                    state = ClientProtocolState.Closed;
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private void SendAlertFatal(Tls13AlertException alertException)
+        {
+            try
+            {
+                messageIO.WriteAlert(alertException.AlertLevel, alertException.AlertDescription);
+            }
+            catch
+            {
             }
         }
 
@@ -251,13 +283,34 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 case ClientProtocolCommand.Handshake_ClientCertificateVerify: Handshake_ClientCertificateVerify(); break;
                 case ClientProtocolCommand.Handshake_ClientFinished: Handshake_ClientFinished(); break;
                 case ClientProtocolCommand.Handshake_HandshakeCompletedSuccessfully: Handshake_HandshakeCompletedSuccessfully(); break;
+                case ClientProtocolCommand.Connected_OutsideCommandWaitForAnyProtocolData: Connected_OutsideCommandWaitForAnyProtocolData(); break;
+                case ClientProtocolCommand.Connected_OutsideCommandClose: Connected_OutsideCommandClose(); break;
                 default: ThrowEx("invalid command for this state"); break;
+            }
+        }
+
+        private void Connected_OutsideCommandClose()
+        {
+            if (state == ClientProtocolState.Closed) return;
+
+            messageIO.WriteAlert(AlertLevel.Warning, AlertDescription.CloseNotify);
+            state = ClientProtocolState.Closed;
+        }
+
+        private void Connected_OutsideCommandWaitForAnyProtocolData()
+        {
+            var recordType = messageIO.BufferAnyRecordType();
+
+            if (recordType == ContentType.Handshake)
+            {
+                context.CommandAfterFinishedProcessingPostHandshake = null;
+                commandQueue.Enqueue(ClientProtocolCommand.Connected_ReceivedPostHandshakeMessage);
             }
         }
 
         private void ThrowEx(string msg)
         {
-            throw new API.Tls13Exception(msg); 
+            throw new Tls13Exception(msg); 
             
         }
 
@@ -470,7 +523,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             crypto.SetupResumptionMasterSecret(hsctx);
 
-            messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.ApplicationData);
+            // messageIO.ChangeRecordLayerCrypto(crypto, this.);
+            messageIO.ChangeRecordLayerWriteCrypto(crypto, crypto.ClientApplicationTrafficSecret0);
             messageIO.OnHandshakeReadWrite -= MessageIO_OnHandshakeReadWrite;
             messageIO.SetBackwardCompatibilityMode(false, false);
 
@@ -542,6 +596,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             validate.Finished.AlertFatal(!MemOps.Memcmp(verdata, finished.VerifyData), AlertDescription.DecryptError, "server finished verify data invalid"); 
 
             crypto.SetupMasterSecret(hsctx);
+            messageIO.ChangeRecordLayerReadCrypto(crypto, crypto.ServerApplicationTrafficSecret0);
 
             if (context.ServerRequestedCertificateInHandshake) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientCertificate);
             else commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientFinished);
@@ -551,6 +606,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         {
             int dataLengthToSign = hsctx.DataLength;
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
+            validate.CertificateVerify.GeneralValidate(context.ClientHello1, certVerify);
+
             context.ServerCertificateVerifySignatureScheme = certVerify.SignatureScheme;
 
             bool isSignatureValid = crypto.IsServerCertificateVerifyValid(hsctx.Buffer, dataLengthToSign, certVerify, context.ServerCertificate);
@@ -608,28 +665,34 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             var encryptedExt = messageIO.ReadHandshakeMessage<EncryptedExtensions>();
             validate.EncryptedExtensions.General(encryptedExt, context.ClientHello1 ?? context.ClientHello1);
 
-
-            // Extension: Record Size Limit
-            var recordSizeLimitFromServer = encryptedExt.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.RecordSizeLimit) as RecordSizeLimitExtension;
-            bool didClientSendRecordSizeLimit = config.ExtensionRecordSizeLimit.HasValue;
-
-            if (didClientSendRecordSizeLimit && recordSizeLimitFromServer != null)
+            foreach (var ext in encryptedExt.Extensions)
             {
-                // todo tls13 not sure if this is correct (condition in if for this block), can server send recordsizelimit if client did not?
-                ushort min = Math.Min(config.ExtensionRecordSizeLimit.Value, recordSizeLimitFromServer.RecordSizeLimit);
-                context.NegotiatedRecordSizeLimitExtension = min;
-                messageIO.SetRecordSizeLimit(min);
-            }
+                validate.EncryptedExtensions.AlertFatal(
+                    !context.SupportedExtensions.Contains(ext.ExtensionType),
+                    AlertDescription.Illegal_parameter,
+                    "server sent not offered extension (not supported extension)");
 
-            // Extension: server name list
-            context.ExtensionServerNameList_ReceivedFromServer = encryptedExt.Extensions.Any(e => e.ExtensionType == ExtensionType.ServerName);
-
-            // Extension: alpn
-            var alpnServer = encryptedExt.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.ApplicationLayerProtocolNegotiation) as ProtocolNameListExtension;
-
-            if (alpnServer != null)
-            {
-                context.ExtensionALPN_ProtocolSelectedByServer = alpnServer.ProtocolNamesList[0];
+                switch (ext.ExtensionType)
+                {
+                    case ExtensionType.RecordSizeLimit:
+                        var recordSizeLimitFromServer = ext as RecordSizeLimitExtension;
+                        // todo tls13 not sure if this is correct (condition in 'if' for this block), can server send recordsizelimit if client did not?
+                        // answer: probably not (server must not sent extensions if not offered in cliehthello)
+                        ushort min = Math.Min(config.ExtensionRecordSizeLimit.Value, recordSizeLimitFromServer.RecordSizeLimit);
+                        context.NegotiatedRecordSizeLimitExtension = min;
+                        messageIO.SetRecordSizeLimit(min);
+                        break;
+                    case ExtensionType.ServerName:
+                        context.ExtensionServerNameList_ReceivedFromServer = true;
+                        break;
+                    case ExtensionType.ApplicationLayerProtocolNegotiation:
+                        var alpnServer = ext as ProtocolNameListExtension;
+                        context.ExtensionALPN_ProtocolSelectedByServer = alpnServer.ProtocolNamesList[0];
+                        break;
+                    default:
+                        validate.EncryptedExtensions.AlertFatal(AlertDescription.UnsupportedExtension, "Invalid extension for EncryptedExtensions message");
+                        break;
+                }
             }
 
             if (context.IsPskSessionResumption) commandQueue.Enqueue(ClientProtocolCommand.Handshake_ServerFinished);
@@ -647,20 +710,51 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void Handshake_ServerHello()
         {
-            bool onHelloRetry = context.HelloRetryRequest != null;
             var sh = context.ServerHello;
 
-            validate.ServerHello.GeneralServerHelloValidate(context.ClientHello2, sh);
+            validate.ServerHello.GeneralServerHelloValidate(context.ClientHello2, sh, config.CipherSuites);
+            ServerSupportedVersionsExtension version = null;
+            KeyShareEntry serverKeyShare = null;
+            PreSharedKeyServerHelloExtension preSharedKeySh = null;
 
-            var serverKeyShare = ((KeyShareServerHelloExtension)sh.Extensions.Find(e => e.ExtensionType == ExtensionType.KeyShare)).ServerShare;
-            var preSharedKeySh = sh.Extensions.FirstOrDefault(ext => ext.ExtensionType == ExtensionType.PreSharedKey) as PreSharedKeyServerHelloExtension;
+            foreach (var ext in sh.Extensions)
+            {
+                validate.ServerHello.AlertFatal(
+                    !context.SupportedExtensions.Contains(ext.ExtensionType),
+                    AlertDescription.UnsupportedExtension,
+                    $"not supported extension {ext.ExtensionType}");
+
+                switch (ext.ExtensionType)
+                {
+                    case ExtensionType.SupportedVersions:
+                        version = ext as ServerSupportedVersionsExtension;
+                        break;
+                    case ExtensionType.KeyShare:
+                        serverKeyShare = (ext as KeyShareServerHelloExtension).ServerShare;
+                        break;
+                    case ExtensionType.PreSharedKey:
+                        preSharedKeySh = ext as PreSharedKeyServerHelloExtension;
+                        break;
+                    default:
+                        validate.ServerHello.AlertFatal(AlertDescription.UnsupportedExtension, $"not supported extension {ext.ExtensionType}");
+                        break;
+                }
+            }
+
+            validate.ServerHello.AlertFatal(version == null, AlertDescription.MissingExtension, "missing version extension");
+            validate.ServerHello.AlertFatal(version.SelectedVersion != 0x0304, AlertDescription.Illegal_parameter, "not supported version (other than 0x0304)");
+            validate.ServerHello.AlertFatal(!config.CipherSuites.Contains(sh.CipherSuite), AlertDescription.Illegal_parameter, "server selected not supported ciphersuite");
+
             byte[] psk = null;
 
-            if (!onHelloRetry) crypto.SelectCipherSuite(sh.CipherSuite);
+            crypto.SelectCipherSuite(sh.CipherSuite);
 
             // todo check if server response is correct compared to sended CH (check if this class send keyexchangemode.psk_ke)
             // todo server could select KeyExchangeMode_ke (not dhe), need to implement this
-            if (serverKeyShare == null) throw new InvalidOperationException();
+            if (serverKeyShare == null)
+            {
+                validate.Handshake.AlertFatal(AlertDescription.Illegal_parameter, "server tries to psk_ke but this is not supported");
+            }
             else
             {
                 context.KeyExchangeNamedGroup = serverKeyShare.NamedGroup;
@@ -678,7 +772,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             crypto.SetupEarlySecret(psk);
             crypto.SetupHandshakeSecret(hsctx);
 
-            messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
+            // messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
+            messageIO.ChangeRecordLayerReadCrypto(crypto, crypto.ServerHandshakeTrafficSecret);
+            messageIO.ChangeRecordLayerWriteCrypto(crypto, crypto.ClientHandshakeTrafficSecret);
 
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_EncryptedExtensions);
         }
@@ -689,7 +785,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             // 1. send everything what was send in clienthello1 (but skip 'key share' sended in clienthello1 because server selected, this is reason of this situation here)
             // 2. get keyshareserverhelloretry from server and send key share which server wants
 
-            validate.HelloRetryRequest.GeneralValidate(context.ClientHello1, context.HelloRetryRequest);
+            validate.HelloRetryRequest.GeneralValidate(context.ClientHello1, context.HelloRetryRequest, config.CipherSuites, config.ExtensionSupportedGroups.InternalNamedGroups);
             crypto.SelectCipherSuite(context.HelloRetryRequest.CipherSuite);
             crypto.ReplaceClientHello1WithMessageHash(hsctx, context.CH1Length);
 
@@ -713,16 +809,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             var cookieFromServer = context.HelloRetryRequest.Extensions.FirstOrDefault(e => e.ExtensionType == ExtensionType.Cookie) as CookieExtension;
 
-            if (cookieFromServer != null)
-            {
-                extensions2.Add(cookieFromServer);
-            }
+            if (cookieFromServer != null) extensions2.Add(cookieFromServer);
 
             extensions2.Add(new KeyShareClientHelloExtension(new KeyShareEntry[] { new KeyShareEntry(serverKeyShare.SelectedGroup, keyShareToSendRawBytes) }));
 
             context.ClientHello2 = new ClientHello(context.ClientHello1.Random,
                 context.ClientHello1.LegacySessionId,
-                context.ClientHello1.CipherSuites,
+                context.ClientHello1.CipherSuites.ToArray(),
                 extensions2);
 
             AppendLastExtensionPreSharedKey(context.ClientHello2);
@@ -768,6 +861,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
                 preSharedKeyExtension.Binders[i] = binder;
             }
+
+            context.SupportedExtensions.Add(ExtensionType.PreSharedKey);
         }
 
         private void Handshake_ServerHelloOrHelloRetryRequest()
@@ -809,7 +904,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             };
 
             var supportedGroups = clientContext.GetExtension_SupportedGroups();
-            Validation.ThrowInternal(supportedGroups == null || supportedGroups.NamedGroupList.Length == 0);
+            Validation.ThrowInternal(supportedGroups == null || supportedGroups.NamedGroupList.Count == 0);
             extensions.Add(supportedGroups);
 
             var certAuthorities = clientContext.GetExtension_CertificateAuthorities();
@@ -854,8 +949,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             }
 
             extensions.Add(new KeyShareClientHelloExtension(generatedKeysToExchange.ToArray()));
+            context.SupportedExtensions.AddRange(extensions.Select(e => e.ExtensionType));
 
             clientHello = new ClientHello(random, sesId, suites, extensions);
+            GREASE(clientHello);
             AppendLastExtensionPreSharedKey(clientHello);
 
             messageIO.WriteHandshake(clientHello);
@@ -870,6 +967,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             commandQueue.Enqueue(ClientProtocolCommand.Handshake_ClientHello1);
 
             messageIO.SetBackwardCompatibilityMode(true, true);
+        }
+
+        private void GREASE(ClientHello message)
+        {
+            GreaseInject.ClientHello(message, config.GREASE);
         }
     }
 }

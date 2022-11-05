@@ -1,4 +1,5 @@
 ﻿using Arctium.Shared.Other;
+using System.Collections.Generic;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
@@ -8,7 +9,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 
         public override ExtensionType ExtensionType => extType;
 
-        public SignatureScheme[] Schemes { get; private set; }
+        public List<SignatureScheme> Schemes { get; private set; }
 
         public enum SignatureScheme : ushort
         {
@@ -49,7 +50,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
         {
             Validation.IsInS(sigAlgoOrSigAlgoCertType, nameof(sigAlgoOrSigAlgoCertType), ExtensionType.SignatureAlgorithmsCert, ExtensionType.SignatureAlgorithms);
 
-            this.Schemes = schemes;
+            this.Schemes = new List<SignatureScheme>(schemes);
             this.extType = sigAlgoOrSigAlgoCertType;
         }
     }

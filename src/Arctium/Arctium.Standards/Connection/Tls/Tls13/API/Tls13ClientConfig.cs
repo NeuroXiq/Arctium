@@ -23,6 +23,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ClientConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
         internal ExtensionClientConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
         internal ClientConfigPreSharedKey PreSharedKey { get; private set; }
+        internal ExtensionClientConfigGREASE GREASE { get; private set; }
 
         static readonly API.SignatureScheme[] DefaultSignatureSchemes = Enum.GetValues<API.SignatureScheme>();
         static readonly API.CipherSuite[] DefaultCipherSuites = Enum.GetValues<API.CipherSuite>();
@@ -36,6 +37,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ExtensionClientConfigCertificateAuthorities DefaultExtensionCertificateAuthorities = null;
         static readonly ExtensionClientConfigSupportedGroups DefaultExtensionSupportedGroups = new ExtensionClientConfigSupportedGroups(Enum.GetValues<API.NamedGroup>());
         static readonly ExtensionClientConfigKeyShare DefaultExtensionKeyShare = new ExtensionClientConfigKeyShare(new[] { NamedGroup.X25519 });
+        static readonly ExtensionClientConfigGREASE DefaultGREASE = new ExtensionClientConfigGREASE();
 
         /// <summary>
         /// invokes <see cref="DefaultUnsafe"/> and sets validation callback
@@ -66,8 +68,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             config.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
             config.ConfigureExtensionCertificateAuthorities(DefaultExtensionCertificateAuthorities);
             config.ConfigurePreSharedKey(DefaultPreSharedKey());
+            config.ConfigureGREASE(DefaultGREASE);
 
             return config;
+        }
+
+        /// <summary>
+        /// Configures GREASE (RFC 8701).
+        /// If config is not null then client behaviour is determined by config.
+        /// If config is null then client will not send any GREASE value in any message
+        /// </summary>
+        /// <param name="config"></param>
+        public void ConfigureGREASE(ExtensionClientConfigGREASE config)
+        {
+            this.GREASE = config;
         }
 
         /// <summary>

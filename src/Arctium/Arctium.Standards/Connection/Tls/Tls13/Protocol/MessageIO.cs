@@ -155,7 +155,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         // void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
 
-        internal void ChangeRecordLayerCrypto(Crypto crypto, Crypto.RecordLayerKeyType keyType) => crypto.ChangeRecordLayerCrypto(recordLayer, keyType);
+        internal void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret) => crypto.ChangeRecordLayerWriteCrypto(recordLayer, trafficSecret);
+        internal void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret) => crypto.ChangeRecordLayerReadCrypto(recordLayer, trafficSecret);
         internal void KeyUpdateForWriting(Crypto crypto) => crypto.DoKeyUpdateForWriting(recordLayer);
         internal void KeyUpdateForReading(Crypto crypto) => crypto.DoKeyUpdateForReading(recordLayer);
 
@@ -186,8 +187,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             RecordLayer.RecordInfo recordInfo = recordLayer.Read();
             validate.Handshake.NotZeroLengthFragmentsOfHandshake(recordInfo.Length);
 
-            // if (recordInfo.ContentType == ContentType.Alert) Console.WriteLine(((AlertDescription)recordLayer.RecordFragmentBytes[1]).ToString());
-
             if (recordInfo.ContentType == ContentType.Alert)
             {
                 AlertDescription description = (AlertDescription)recordLayer.RecordFragmentBytes[1];
@@ -196,7 +195,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
                 string alertFormat = string.Format("Received: Alert Level: {0}, Alert Description: {1} (raw values: level: {2}, description: {3})",
                     level.ToString(), description.ToString(), (int)level, (int)description);
 
-                validate.RecordLayer.Throw(true, alertFormat);
+                throw new Tls13ReceivedAlertException(level, description, alertFormat);
             } 
 
             byteBuffer.Append(recordLayer.RecordFragmentBytes, 0, recordInfo.Length);
@@ -207,6 +206,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         internal void SetRecordSizeLimit(ushort value)
         {
             recordLayer.SetRecordSizeLimit(value);
+        }
+
+        internal void WriteAlert(AlertLevel level, AlertDescription description)
+        {
+            recordLayer.Write(ContentType.Alert, new byte[] { (byte)level, (byte)description }, 0, 2);
         }
     }
 }

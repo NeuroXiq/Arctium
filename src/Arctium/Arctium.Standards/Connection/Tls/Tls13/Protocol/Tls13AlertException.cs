@@ -1,21 +1,36 @@
 ﻿using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
+using System;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 {
     internal class Tls13AlertException  : Tls13Exception
     {
-        public AlertDescription AlertDescription { get; private set; }
-        public AlertLevel AlertLevel { get; private set; }
+        internal AlertDescription AlertDescription { get; private set; }
+        internal AlertLevel AlertLevel { get; private set; }
 
-        public Tls13AlertException(AlertLevel level,
+        internal Tls13AlertException(AlertLevel level,
             AlertDescription alertDescription,
             string tlsMessageName,
             string field,
-            string error) : base(tlsMessageName, field, error)
+            string error,
+            Exception innerException) : base(tlsMessageName, field, FormatAlertError(level, alertDescription, error), innerException)
         {
             AlertDescription = alertDescription;
             AlertLevel = level;
+        }
+
+        internal Tls13AlertException(AlertLevel level,
+            AlertDescription alertDescription,
+            string tlsMessageName,
+            string field,
+            string error) : this(level, alertDescription, tlsMessageName, field, error, null)
+        {
+        }
+
+        static string FormatAlertError(AlertLevel level, AlertDescription description, string error)
+        {
+            return string.Format("AlertLevel: {0}; AlertDescription {1} ({2}), error: {3}", level, description.ToString(), (int)description, error);
         }
     }
 }

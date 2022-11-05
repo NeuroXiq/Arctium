@@ -25,6 +25,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         internal ServerConfigPostHandshakeClientAuthentication PostHandshakeClientAuthentication { get; private set; }
         internal ExtensionServerConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
         internal ServerConfigPreSharedKey PreSharedKey { get; private set; }
+        internal ExtensionServerConfigGREASE GREASE { get; private set; }
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 
@@ -36,6 +37,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         static readonly ServerConfigPostHandshakeClientAuthentication DefaultPostHandshakeClientAuthentication = null;
         static readonly ExtensionServerConfigCertificateAuthorities DefaultExtensionCertificateAuthorities = null;
         static readonly ExtensionServerConfigSupportedGroups DefaultExtensionSupportedGroups = new ExtensionServerConfigSupportedGroups(Enum.GetValues<API.NamedGroup>());
+        static readonly ExtensionServerConfigGREASE DefaultGREASE = new ExtensionServerConfigGREASE();
 
         static API.SignatureScheme[] DefaultAllSignateSchemes = new SignatureScheme[]
             {
@@ -76,8 +78,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             c.ConfigurePostHandshakeClientAuthentication(DefaultPostHandshakeClientAuthentication);
             c.ConfigureExtensionCertificateAuthorities(DefaultExtensionCertificateAuthorities);
             c.ConfigurePreSharedKey(DefaultPreSharedKey());
+            c.ConfigureGREASE(DefaultGREASE);
 
             return c;
+        }
+
+        /// <summary>
+        /// Configures GREASE (RFC 8701).
+        /// If value is not null then server behaviour determined by config.
+        /// If value is null then server will not send any GRASE value
+        /// in any field in any message (disabled everywhere)
+        /// </summary>
+        public void ConfigureGREASE(ExtensionServerConfigGREASE config)
+        {
+            GREASE = config;
         }
 
         /// <summary>

@@ -8,7 +8,21 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 {
     public abstract class Tls13Stream : Stream
     {
+        /// <summary>
+        /// if true stream was opened successfully and can read/write data otherwise tls cannot be used to exchanged data
+        /// </summary>
+        public abstract bool IsConnected { get; }
+
         public abstract void PostHandshakeKeyUpdate(bool updateRequested);
+
+        public abstract void WaitForAnyProtocolData();
+
+        /// <summary>
+        /// If protocol state is connected then close notify is sent to other party and state is moved to closed
+        /// If protocol statei is closed then do nothing.
+        /// If protocol has other state throws exception (command is valid only for 'close' and 'connected' states)
+        /// </summary>
+        public abstract void Close();
     }
 
     class Tls13ClientStreamInternal : Tls13Stream
@@ -31,6 +45,13 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         public override long Length => throw new NotImplementedException();
 
         public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public override bool IsConnected => protocol.state == ClientProtocolState.Connected;
+
+        public override void Close()
+        {
+            protocol.Close();
+        }
 
         public override void Flush()
         {
@@ -70,6 +91,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             throw new NotImplementedException();
         }
 
+        public override void WaitForAnyProtocolData()
+        {
+            protocol.WaitForAnyProtocolData();
+        }
+
         public override void Write(byte[] buffer, int offset, int count)
         {
             Validation.NotNegative(count, nameof(count));
@@ -85,8 +111,6 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// </summary>
         /// <exception cref="">Throws exception if not configured or if client do not support post handshake authentication</exception>
         public abstract void PostHandshakeClientAuthentication();
-
-        public abstract void TryWaitPostHandshake();
     }
 
     class Tls13ServerStreamInternal : Tls13ServerStream
@@ -110,14 +134,11 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
         public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+        public override bool IsConnected => protocol.State == ServerProtocolState.Connected;
+
         public override void Flush()
         {
             throw new NotImplementedException();
-        }
-
-        public override void TryWaitPostHandshake()
-        {
-            protocol.TryWaitPostHandshake();
         }
 
         public override void PostHandshakeClientAuthentication()
@@ -163,5 +184,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         {
             protocol.PostHandshakeKeyUpdate(true);
         }
+
+        public override void WaitForAnyProtocolData() => protocol.WaitForAnyProtocolData();
+
+        public override void Close() => protocol.Close();
     }
 }

@@ -80,7 +80,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
             if (Config.ExtensionALPN != null)
             {
                 // clone for safety (not modified after calling selector, maybe in selector malicious code affect array)
+                // remove grease
                 byte[][] protNamesClone = alpnExtension.ProtocolNamesList
+                    .Where(prot => !GREASE.CS_ALPN.Any(grease => MemOps.Memcmp(grease, prot)))
                     .Select(originalProtocol => (byte[])originalProtocol.Clone())
                     .ToArray();
 
@@ -88,7 +90,20 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
                 if (result.ActionType == ExtensionServerConfigALPN.ResultType.Success)
                 {
-                    selectedIndex = result.SelectedIndex;
+                    selectedIndex = -1;
+
+                    // find result in original list (before removing grease)
+                    for (int i = 0; i < alpnExtension.ProtocolNamesList.Count; i++)
+                    {
+                        if (MemOps.Memcmp(protNamesClone[result.SelectedIndex], alpnExtension.ProtocolNamesList[i]))
+                        {
+                            selectedIndex = i;
+                            break;
+                        }
+                    }
+
+                    Validation.ThrowInternal(selectedIndex == -1);
+
                     alertFatal = null;
                     ignore = false;
                 }

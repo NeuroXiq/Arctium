@@ -5,6 +5,7 @@
         Listen,
         Handshake,
         Connected,
-        PostHandshake
+        PostHandshake,
+        Closed
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared.Exceptions;
+using System.Collections.Generic;
 
 namespace Arctium.Standards.Connection.Tls.Tls13.Model
 {
@@ -9,7 +10,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model
         public uint TicketAgeAdd { get; private set; }
         public byte[] TicketNonce { get; private set; }
         public byte[] Ticket { get; private set; }
-        public Extension[] Extensions { get; private set; }
+        public List<Extension> Extensions { get; private set; }
 
         public NewSessionTicket(uint ticketLifetime, uint ticketAgeAdd, byte[] ticketNonce, byte[] ticket, Extension[] extensions)
         {
@@ -20,7 +21,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model
             TicketAgeAdd = ticketAgeAdd;
             TicketNonce = ticketNonce;
             Ticket = ticket;
-            Extensions = extensions;
+            Extensions = new List<Extension>(extensions);
         }
 
         public static bool Validate(uint ticketLifetime, uint ticketAgeAdd, byte[] ticketNonce, byte[] ticket, Extension[] extensions)

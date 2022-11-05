@@ -22,7 +22,7 @@
         Handshake_ClientFinished,
         Handshake_HandshakeCompletedSuccessfully,
 
-        Connected_TryWaitPostHandshake,
+        Connected_OutsideCommandWaitForAnyProtocolData,
         Connected_LoadApplicationData,
         Connected_WriteApplicationData,
         Connected_StartReceivedPostHandshake,
@@ -37,5 +37,6 @@
         Connected_OutsideCommandStartPostHandshakeKeyUpdate,
         PostHandshake_SendKeyUpdate,
         PostHandshake_ReceivedKeyUpdate,
+        Connected_OutsideCommandClose,
     }
 }

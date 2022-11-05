@@ -10,12 +10,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
     {
         public override ExtensionType ExtensionType => ExtensionType.ApplicationLayerProtocolNegotiation;
 
-        public byte[][] ProtocolNamesList { get; private set; }
+        public List<byte[]> ProtocolNamesList { get; private set; }
         public string[] ProtocolNameListString { get; private set; }
 
         public ProtocolNameListExtension(byte[][] protocolNameList)
         {
-            ProtocolNamesList = protocolNameList;
+            ProtocolNamesList = new List<byte[]>(protocolNameList);
             ProtocolNameListString = protocolNameList.Select(bytes => Encoding.UTF8.GetString(bytes)).ToArray();
         }
 

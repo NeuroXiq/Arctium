@@ -1,4 +1,6 @@
-﻿namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
+﻿using System.Collections.Generic;
+
+namespace Arctium.Standards.Connection.Tls.Tls13.Model.Extensions
 {
     class SupportedGroupExtension : Extension
     {
@@ -25,11 +27,11 @@
 
         public override ExtensionType ExtensionType => ExtensionType.SupportedGroups;
 
-        public NamedGroup[] NamedGroupList { get; private set; }
+        public List<NamedGroup> NamedGroupList { get; private set; }
 
         public SupportedGroupExtension(NamedGroup[] namedGroups)
         {
-            NamedGroupList = namedGroups;
+            NamedGroupList = new List<NamedGroup>(namedGroups);
         }
     }
 }
