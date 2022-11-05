@@ -1,157 +1,210 @@
-```cs
+/*
+ * Neuroxiq 2022
+ * Arctium Project / Code example
+ * 
+ * This code demonstrates how to connect and search www.github.com
+ * It uses Arctium TLS 1.3 Client for connection with following extensions:
+ *  - ALPN
+ *  - Server Name
+ */
 
-using Arctium.Cryptography.Ciphers.BlockCiphers.Shared;
-using Arctium.Cryptography.Ciphers.BlockCiphers.Twofish;
-using Arctium.Shared.Helpers.Buffers;
-using System;
 
-namespace DEBUG_ConsoleApplicationForTests
+using Arctium.Standards.Connection.Tls.Tls13.API;
+using Arctium.Standards.Connection.Tls.Tls13.API.Extensions;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Web;
+
+namespace ConsoleAppTest
 {
-    unsafe class Program
+    class SearchResult
     {
-        static void Main()
+        public string PageName;
+        public string PageUrl;
+
+        public SearchResult(string url, string description)
         {
-            // Twofish example
-            // input block size: 16 bytes
-            // key length: 128, 192 or 256 bits
-            // supported modes: ECB
-
-            // this example use 192 bit key
-
-            byte[] key = new byte[24];
-            byte[] input = new byte[32];
-            byte[] output = new byte[32];
-
-            Twofish twofish = new Twofish(key, BlockCipherMode.ECB);
-
-            twofish.Encrypt(input, 0, output, 0, 32);
-            
-            // Write to console encryption result
-            MemDump.HexDump(output, 4, 4);
-
-            // Decrypt to get again zero bytes
-            twofish.Decrypt(output, 0, input, 0, 32);
-
-            // Write to console decryption result
-            MemDump.HexDump(input, 4, 4);
-
-            /*
-             * Console output:
-             * EFA71F78 8965BD44 53F86017 8FC19101
-             * EFA71F78 8965BD44 53F86017 8FC19101
-             * 
-             * 00000000 00000000 00000000 00000000
-             * 00000000 00000000 00000000 00000000
-             * 
-             */
-			 
-			 // Value above can be compared with test vectors for Twofish
-			 // https://www.schneier.com/code/ecb_ival.txt
+            this.Description = description;
+            PageUrl = url;
         }
 
-		// [ Implementation of test vectors functions ]
+        public string Description { get; }
+    }
 
-        // this function generates exactly same 
-        // output as in the test vectors on schneier.com website,
-        // where iteratively each key is replaced with input,
-        // and each input is replaced with output
+    internal class MainProgram
+    {
+        static Tls13ClientContext tlsClientContext;
+        static Tls13Client githubTlsClient;
+        static IPAddress GithubIP;
+        const string GithubHostName = "github.com";
 
 
-        static void TestVector256()
+        static MainProgram()
         {
-            byte[] key = new byte[32];
-            byte[] input = new byte[16];
-            byte[] output = new byte[16];
+            /* Configure TLS 1.3 client */
 
-            for (int i = 0; i < 49; i++)
+            tlsClientContext = Tls13ClientContext.DefaultUnsafe();
+
+            var hostNameExtension = new ExtensionClientConfigServerName(GithubHostName);
+            var alpnExtension = new ExtensionClientALPNConfig();
+            alpnExtension.Add(ALPNProtocol.HTTP_1_1);
+
+            tlsClientContext.Config.ConfigureExtensionServerName(hostNameExtension);
+            tlsClientContext.Config.ConfigureExtensionALPN(alpnExtension);
+
+            githubTlsClient = new Tls13Client(tlsClientContext);
+
+            GithubIP = Dns.GetHostAddresses("www.github.com")[0];
+        }   
+
+
+        static void HelloText()
+        {
+            Console.WriteLine("Arctium TLS 1.3 example github browser. Connects To github, shows search results, shows specific result");
+            Console.WriteLine("Usage, type text and click enter to search github by Arctium TLS 1.3 Client Connection");
+            Console.WriteLine("For example type 'Arctium'");
+        }
+
+        public static void Main()
+        {
+            HelloText();
+
+            while (true)
             {
-                // key size exceed input block size,
-                // set first 16 bytes as last key bytes
-                // and copy input to key
+                Console.Write(">> ");
+                string input = Console.ReadLine();
 
-                MemCpy.Copy(key, 0, key, 16, 16);
-                MemCpy.Copy(input, 0, key, 0, 16);
-                MemCpy.Copy(output, input);
-
-                Twofish twofish = new Twofish(key, BlockCipherMode.ECB);
-                twofish.Encrypt(input, 0, output, 0, 16);
-                Console.WriteLine("I={0}", i + 1);
-                Console.Write("KEY=");
-                MemDump.HexDump(key, 32, 32);
-                Console.Write("PT=");
-                MemDump.HexDump(input, 16, 16);
-                Console.Write("CT=");
-                MemDump.HexDump(output, 16, 16);
+                var htmlContent = SearchGithub(input);
+                var results = ParseSerchResults(htmlContent);
+                ShowResults(results);
+                Console.WriteLine("================ End of results ================");
             }
         }
 
-      
-
-        static void TestVector192()
+        private static void ShowResults(List<SearchResult> results)
         {
-            byte[] key = new byte[24];
-            byte[] input = new byte[16];
-            byte[] output = new byte[16];
-
-            for (int i = 0; i < 49; i++)
+            foreach (var result in results)
             {
-                // key size exceed input block size,
-                // set first 8 bytes as last key bytes
-                // and copy input to key
-
-                MemCpy.Copy(key, 0, key, 16, 8);
-                MemCpy.Copy(input, 0, key, 0, 16);
-                MemCpy.Copy(output, input);
-
-                Twofish twofish = new Twofish(key, BlockCipherMode.ECB);
-                twofish.Encrypt(input, 0, output, 0, 16);
-                Console.WriteLine("I={0}", i + 1);
-                Console.Write("KEY=");
-                MemDump.HexDump(key, 24, 24);
-                Console.Write("PT=");
-                MemDump.HexDump(input, 16, 16);
-                Console.Write("CT=");
-                MemDump.HexDump(output, 16, 16);
+                Console.WriteLine("href: {0}", result.PageUrl);
+                Console.WriteLine("description: {0}", result.Description);
             }
         }
 
-
-        static void TestVector128()
+        private static List<SearchResult> ParseSerchResults(string htmlContent)
         {
-            
-            byte[] key = new byte[16];
-            byte[] input = new byte[16];
-            byte[] output = new byte[16];
+            List<SearchResult> results = new List<SearchResult>();
 
-            for (int i = 0; i < 49; i++)
+            string repoListItem = "repo-list-item";
+            int start = htmlContent.IndexOf(repoListItem);
+            while (start > -1)
             {
-                // move input to key
-                // and output to input
-                MemCpy.Copy(input, key);
-                MemCpy.Copy(output, input);
+                int hrefStart = htmlContent.IndexOf("href=\"");
+                int hrefEnd = htmlContent.IndexOf("\"", hrefStart + 6);
+                string href = htmlContent.Substring(hrefStart + 6, hrefEnd - hrefStart - 6);
 
-                // initialize cipher
+                string descriptionTag = "class=\"mb-1\">";
+                int descriptionStart = htmlContent.IndexOf(descriptionTag, start);
+                int descriptionEnd = htmlContent.IndexOf("</p>", descriptionStart);
+                string description = htmlContent.Substring(descriptionStart + descriptionTag.Length, descriptionEnd - (descriptionStart + descriptionTag.Length));
 
-                Twofish twofish = new Twofish(key, BlockCipherMode.ECB);
+                start = htmlContent.IndexOf(repoListItem, start + repoListItem.Length);
 
-                // encrypt
-                twofish.Encrypt(input, 0, output, 0, 16);
-
-                //hexDump is utility class which writes to console formatted hex values
-
-                Console.WriteLine("I={0}", i + 1);
-
-                Console.Write("KEY=");
-                MemDump.HexDump(key, 16, 16);
-
-                Console.Write("PT=");
-                MemDump.HexDump(input, 16, 16);
-
-                Console.Write("CT=");
-                MemDump.HexDump(output, 16, 16);
+                results.Add(new SearchResult(href, description));
             }
+
+            return results;
+        }
+
+        public static string SearchGithub(string searchText)
+        {
+            // prepare HTTP GET request
+            string encodedSearchText = HttpUtility.UrlEncode(searchText);
+            string searchUrl = $"/search?q={encodedSearchText}";
+
+            // Open TLS 1.3 connection to github
+            var tlsStream = ConnectToGithub();
+
+            var reqBuilder = new StringBuilder();
+            reqBuilder.AppendLine($"GET {searchUrl} HTTP/1.1");
+            reqBuilder.AppendLine("Host: github.com");
+            reqBuilder.AppendLine("Accept: */*");
+            reqBuilder.AppendLine("");
+
+            var getRequest = reqBuilder.ToString();
+            var getRequestBytes = Encoding.ASCII.GetBytes(getRequest);
+
+            // Send HTTP Get request by TLS 1.3
+            tlsStream.Write(getRequestBytes);
+
+            string result = string.Empty;
+            byte[] readBuffer = new byte[1024];
+            bool headerLoaded = false;
+            int alreadyLoaded = 0;
+
+            // load github chunked GET response
+            // if not chunked then fails because I implemented this when 
+            // response was chunked
+            while (true)
+            {
+                // Read data by TLS 1.3
+                int count = tlsStream.Read(readBuffer);
+                alreadyLoaded += count;
+
+                string partOfResponse = Encoding.ASCII.GetString(readBuffer, 0, count);
+                result += partOfResponse;
+
+                if (headerLoaded)
+                {
+                    // all chunks loaded?
+                    if (result.IndexOf("\r\n\r\n") != result.LastIndexOf("\r\n\r\n"))
+                    {
+                        break;
+                    }
+                }
+
+                if (!headerLoaded)
+                {
+                    bool isHeaderLoaded = result.Contains("\r\n\r\n");
+
+                    if (isHeaderLoaded)
+                    {
+                        headerLoaded = true;
+                        if (!result.ToLower().Contains("transfer-encoding: chunked"))
+                        {
+                            throw new InvalidCastException(
+                                "This may be deprecated code. When implemented, github respond was chunked. " +
+                                "Code need to be updated");
+                        }
+                    }
+                }
+            }
+
+            // everything is loaded
+            // parse chunked response
+            string htmlContent = "";
+            int chunkLenStart  = result.IndexOf("\r\n\r\n") + 4;
+            var chunkedResponse = result.Substring(chunkLenStart).Split("\r\n");
+
+            for (int i = 1; i < chunkedResponse.Length; i += 2)
+            {
+                // in this example I do not even care abote chunk length,
+                // just take each second line skipping chunk length
+                htmlContent += chunkedResponse[i];
+            }
+
+            return htmlContent;
+        }
+
+        private static Tls13Stream ConnectToGithub()
+        {
+            var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(GithubIP, 443);
+            var networkStream = new NetworkStream(socket);
+
+            var tlsStream = githubTlsClient.Connect(networkStream);
+
+            return tlsStream;
         }
     }
 }
-
-```
