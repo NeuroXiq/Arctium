@@ -1,4 +1,8 @@
 # Arctium - .NET Core Crypto Library
+- - -
+Download binaries archive: [Release-Link](https://github.com/NeuroXiq/Arctium/releases/tag/v0.0.0.9)
+- - -
+
 Arctium is a simple crypto library, created and maintained for learning purpose. 
 It provides various cryptographic functions, ciphers, connection protocols etc. implemented for better or worse but probably they should works.
 
