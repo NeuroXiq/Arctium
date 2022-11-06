@@ -31,6 +31,12 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// </summary>
         public bool IsPskSessionResumption { get; private set; }
 
+        /// <summary>
+        /// Cipher suite used in connection
+        /// </summary>
+        public CipherSuite CipherSuite { get; private set; }
+
+        public NamedGroup KeyExchangeNamedGroup { get; private set; }
 
         /// <summary>
         /// Unique id for connection (each new connection has separate Id, even for same client, it is always generated on server 'Accept' method call)
@@ -46,6 +52,9 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
 
             ClientSupportPostHandshakeAuthentication = internalConnInfo.ClientSupportPostHandshakeAuthentication;
             IsPskSessionResumption = internalConnInfo.IsPskSessionResumption;
+            CipherSuite = (API.CipherSuite)internalConnInfo.CipherSuite;
+
+
 
             if (internalConnInfo.ClientHandshakeAuthenticationCertificatesSentByClient != null)
             {

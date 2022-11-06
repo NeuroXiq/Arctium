@@ -8,7 +8,7 @@
 // be rewritted into better implementation
 // state machine like in rfc 8446 says
 
-using Arctium.Standards.Connection.Tls.Tls13.API;
+// using Arctium.Standards.Connection.Tls.Tls13.API;
 using Arctium.Standards.Connection.Tls.Tls13.Model;
 using Arctium.Standards.Connection.Tls.Tls13.Model.Extensions;
 using Arctium.Shared;
@@ -44,6 +44,8 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             public byte[][] ClientHandshakeAuthenticationCertificatesSentByClient;
             public bool ClientSupportPostHandshakeAuthentication;
             public bool IsPskSessionResumption;
+            public CipherSuite CipherSuite;
+            
             public ReadOnlyMemory<byte> InstanceId;
         }
 
@@ -84,7 +86,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
             public SignatureSchemeListExtension.SignatureScheme? selectedSignatureScheme;
 
-            public PskTicket SelectedPskTicket { get; internal set; }
+            public API.PskTicket SelectedPskTicket { get; internal set; }
             public ushort? ExtensionRecordSizeLimit { get; internal set; }
             public X509Certificate ClientCertificateOnHandshake { get; internal set; }
             public CertificateRequest PostHandshakeCertificateRequest { get; internal set; }
@@ -121,10 +123,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
         private Validate validate;
         private ByteBuffer hsctx;
         private Context context;
-        private Tls13ServerConfig config { get { return serverContext.Config; } }
-        private Tls13ServerProtocolInstanceContext serverContext;
+        private API.Tls13ServerConfig config { get { return serverContext.Config; } }
+        private API.Tls13ServerProtocolInstanceContext serverContext;
 
-        public Tls13ServerProtocol(Stream networkStream, Tls13ServerProtocolInstanceContext serverContext)
+        public Tls13ServerProtocol(Stream networkStream, API.Tls13ServerProtocolInstanceContext serverContext)
         {
             this.serverContext = serverContext;
             validate = new Validate(new Validate.ValidationErrorHandler(SendAlertFatal));
@@ -164,6 +166,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
             info.ClientSupportPostHandshakeAuthentication = context.ClientSupportPostHandshakeAuthentication;
             info.IsPskSessionResumption = context.IsPskSessionResumption;
             info.InstanceId = serverContext.InstanceId;
+            info.CipherSuite = crypto.SelectedCipherSuite;
 
             return info;
         }
