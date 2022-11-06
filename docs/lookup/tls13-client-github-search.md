@@ -1,3 +1,4 @@
+```cs
 /*
  * Neuroxiq 2022
  * Arctium Project / Code example
@@ -208,3 +209,4 @@ namespace ConsoleAppTest
         }
     }
 }
+```

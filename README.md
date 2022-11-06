@@ -318,14 +318,14 @@ Arbitrary curve (not predefined, parameters must be provided):
 ## Hash - Related functions
 |Name|Link|Comment|
 |:--:|:--:|:--:|
-|HKDF|[hashrel-hkdf]|HKDF Examples|
-|HMAC|[[hashrel-hmac]|HMAC Examples|
-|Poly1305|[[hashrel-poly1305]|Poly1305 Examples|
+|HKDF|[Example Code][hashrel-hkdf]|HKDF Examples|
+|HMAC|[Example Code][hashrel-hmac]|HMAC Examples|
+|Poly1305|[Example Code][hashrel-poly1305]|Poly1305 Examples|
 
 
-[hashrel-hkdf]::<docs/lookup/hashrel-hkdf.md> 
-[hashrel-hmac]::<docs/lookup/hashrel-hmac.md> 
-[hashrel-poly1305]::<docs/lookup/hashrel-poly1305.md> 
+[hashrel-hkdf]:<docs/lookup/hashrel-hkdf.md> 
+[hashrel-hmac]:<docs/lookup/hashrel-hmac.md> 
+[hashrel-poly1305]:<docs/lookup/hashrel-poly1305.md> 
 
 ## CRC
 |Name|Link|Comment|
