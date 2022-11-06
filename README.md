@@ -221,8 +221,8 @@ Arbitrary curve (not predefined, parameters must be provided):
 |Name|Link|Comment|
 |:--:|:--:|:--:|
 |Poly1305-Chacha20|[Example Code][aead-poly1305chacha20]||
-|Galois Counter Mode|[Example Code][aead-gcm]||
-|CCM Mode|[Example Code][aead-ccm]||
+|Galois Counter Mode|[Example Code][aead-gcm]|GCM mode with custom tag length|
+|CCM Mode|[Example Code][aead-ccm]|Dont use not work / TODO|
 
 [aead-gcm]:<docs/lookup/aead-gcm.md>
 [aead-ccm]:<docs/lookup/aead-ccm.md>
@@ -231,9 +231,9 @@ Arbitrary curve (not predefined, parameters must be provided):
 ## AEAD Predefined (RFC-5116)
 |Name|Link|Comment|
 |:--:|:--:|:--:|
-|AEAD AES 128 CCM|[Example Code][rfc5116-aes128ccm]|Create AEAD Algorithm AES 128 CCM|
+|AEAD AES 128 CCM|[Example Code][rfc5116-aes128ccm]|Dont Use - Not working TODO/ Create AEAD Algorithm AES 128 CCM|
 |AEAD AES 256 GCM|[Example Code][rfc5116-aes256gcm]|Create AEAD Algorithm AES 256 GCM|
-|AEAD AES 256 CCM|[Example Code][rfc5116-aes256ccm]|Create AEAD Algorithm AES 256 CCM|
+|AEAD AES 256 CCM|[Example Code][rfc5116-aes256ccm]|Dont Use - Not working TODO / Create AEAD Algorithm AES 256 CCM|
 |AEAD AES 128 CCM 8|[Example Code][rfc5116-aes128ccm8]|Create AEAD Algorithm AES 128 CCM 8|
 
 [rfc5116-aes128ccm]:<docs/lookup/rfc5116-aes128ccm.md>
