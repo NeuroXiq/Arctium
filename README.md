@@ -14,9 +14,29 @@ for more interesting parts of the documentation.
 
 ## TLS 1.3
 #### TLS 1.3 - Supported Features
-|Name|Comment|
-|:--:|:--:|
-|Cipher suites|asdf|
+|Name|Supported|Comment|
+|:--:|:--:|:----:|
+|Cipher suites (RFC 8446)| TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256|Supported Cipher suites|
+|Named Groups (RFC 8446)|Secp256r1, Secp384r1, Secp521r1, X25519, X448, Ffdhe2048, Ffdhe3072, Ffdhe4096, Ffdhe6144, Ffdhe8192|Supported Groups - Configurable on Client/Server (e.g. can only use X25519 and not any other)|
+|NewSessionTicket (RFC 8446)|Yes|Client & Server (Client accept ticket and can use it, server generates ticket and send to client, both configurable)|
+|Signature Schemes (RFC 8446)| EcdsaSecp256r1Sha256, EcdsaSecp384r1Sha384, EcdsaSecp521r1Sha512, RsaPssRsaeSha256, RsaPssRsaeSha384, RsaPssRsaeSha512|Signature generation & validation|
+|Key Update (RFC 8446)|Yes|On Client & Server. At any time server or client can send key update any number of time. Keys are updated|
+|Handshake Client Authentication|Yes|Client & Server - client can authenticate and server can request (configurable)|
+|Post handhsake client authentication|Yes|Client & Server configurable. Client can authenticate multiple times server can request authentication at any time after handshake|
+|Multiple server certificates|Yes|Server can have multiple certificates and select them based on client hello supported features|
+|Extension - Server Name (RFC 6066)|Yes| |
+|Extension - PskKeyExchangeMode (RFC 8446)|Yes|Must support because TLS 1.3 specs require it|
+|Extension - Application Layer Protocol Negotiation (RFC-7301)|Yes|On client & server. Client can send any bytes (defined by IANA or arbitrary bytes) and server can accept/reject any ALPN or ignore this extension|
+|Extension - Supported Version (RFC 8446)|Yes|Must be required by TLS 1.3 spec|
+|Extension - Cookie (RFC 8446))|Yes|Required by TLS 1.3 spec|
+|Extension - Signature Algorithms (RFC 8446)|Yes|Client & Server, configurable|
+|Extension - KeyShare (RFC 8446)|Yes|Required by TLS 1.3 spec|
+|Extension - SupportedGroups|Yes||
+|Extension - MaxFragmentLength (RFC 6066)|Yes|Configurable on client & server|
+|Extension - OidFilters|Yes|Can send this extension but only as raw bytes (so DER encoded from external source, Arctium lib can't encode to DER bytes for now)|
+|Extension - Signature Algorithms Cert|Yes|Client & server can sent this extension|
+|Extension - Certificate Authorities|Yes|Configurable|
+|Extension - GREASE (RFC 9701)|Yes|Client & Server Configurable - can be enabled or disabled|
 
 To use Arctium TLS 1.3 examples below following file with sample resources must be included. Examples base on it. If not included code will not compite and will need to be changed.
 
@@ -198,6 +218,15 @@ Arbitrary curve (not predefined, parameters must be provided):
 [blockciph-twofish]:<docs/lookup/blockciph-twofish.md>
 
 ## AEAD
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|Poly1305-Chacha20|[Example Code][aead-poly1305chacha20]||
+|Galois Counter Mode|[Example Code][aead-gcm]||
+|CCM Mode|[Example Code][aead-ccm]||
+
+[aead-gcm]:<docs/lookup/aead-gcm.md>
+[aead-ccm]:<docs/lookup/aead-ccm.md>
+[aead-poly1305chacha20]:<docs/lookup/aead-poly1305.md>
 
 ## AEAD Predefined (RFC-5116)
 |Name|Link|Comment|
@@ -233,18 +262,18 @@ Arbitrary curve (not predefined, parameters must be provided):
 ## FFDHE - RFC-7919
 |Name|Link|Comment|
 |:--:|:--:|:--:|
-|FFDHE2048|[Example Code][ffdherfc7919-ffdhe2048]|Key Exchange using FFDHE2048|
-|FFDHE3072|[Example Code][ffdherfc7919-ffdhe3072]|Key Exchange using FFDHE3072|
-|FFDHE4096|[Example Code][ffdherfc7919-ffdhe4096]|Key Exchange using FFDHE4096|
-|FFDHE6144|[Example Code][ffdherfc7919-ffdhe6144]|Key Exchange using FFDHE6144|
-|FFDHE8192|[Example Code][ffdherfc7919-ffdhe8192]|Key Exchange using FFDHE8192|
+|FFDHE2048|[Example Code][ffdherfc7919]|Key Exchange using FFDHE2048|
+|FFDHE3072|[Example Code][ffdherfc7919]|Key Exchange using FFDHE3072|
+|FFDHE4096|[Example Code][ffdherfc7919]|Key Exchange using FFDHE4096|
+|FFDHE6144|[Example Code][ffdherfc7919]|Key Exchange using FFDHE6144|
+|FFDHE8192|[Example Code][ffdherfc7919]|Key Exchange using FFDHE8192|
 
 
-[ffdherfc7919-ffdhe2048]:<docs/lookup/ffdherfc7919-ffdhe2048.md>
-[ffdherfc7919-ffdhe3072]:<docs/lookup/ffdherfc7919-ffdhe3072.md>
-[ffdherfc7919-ffdhe4096]:<docs/lookup/ffdherfc7919-ffdhe4096.md>
-[ffdherfc7919-ffdhe6144]:<docs/lookup/ffdherfc7919-ffdhe6144.md>
-[ffdherfc7919-ffdhe8192]:<docs/lookup/ffdherfc7919-ffdhe8192.md>
+[ffdherfc7919]:<docs/lookup/ffdherfc7919.md>
+[ffdherfc7919]:<docs/lookup/ffdherfc7919.md>
+[ffdherfc7919]:<docs/lookup/ffdherfc7919.md>
+[ffdherfc7919]:<docs/lookup/ffdherfc7919.md>
+[ffdherfc7919]:<docs/lookup/ffdherfc7919.md>
 
 ## PEM file decoding
 |Name|Link|Comment|
