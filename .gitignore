@@ -17,3 +17,4 @@ src/Arctium/DEBUG_ConsoleApplicationForTests/**
 Arctium/ConsoleAppTest/**
 **/ConsoleAppTest/MainProgram.cs
 **/ConsoleAppTest/Program.cs
+**/ConsoleAppTest/Tls13Resources.cs
