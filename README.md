@@ -380,6 +380,7 @@ Arbitrary curve (not predefined, parameters must be provided):
 |X509 Certificate - RSA Public Key|[x509-geteccpubkey]|X509 Certificate - Get RSA public key from certificate|
 |X509 Certificate - ECC Public Key|[x509-getrsapubkey]|X509 Certificate - Get ECC public key from certificate|
 |X509 - DER Encode 'EcdsaSigValue' structure|[x509-encodeecdsasigvalue]|How to DER-Encode ECC signature to EcdsaSigValue structure|
+|PKCS#1|[PKCS1v2_2]|Using PKCS#1 v2.2 API (RSASSA PSS) generate signature / verify signature etc.|
 
 [other-cryptoalgofactory]:<docs/lookup/other-cryptoalgofactory.md>
 [x509-deserialize]:<docs/lookup/x509-deserialize.md>
