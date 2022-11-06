@@ -8,7 +8,7 @@ namespace Program
     {
         static void Main2()
         {
-           
+
         }
     }
 }

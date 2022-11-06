@@ -5,10 +5,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsPublishable>False</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arctium.Connection\Arctium.Connection.csproj" />
     <ProjectReference Include="..\Arctium.Cryptography\Arctium.Cryptography.csproj" />
     <ProjectReference Include="..\Arctium.Standards\Arctium.Standards.csproj" />
   </ItemGroup>

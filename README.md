@@ -296,7 +296,6 @@ Arbitrary curve (not predefined, parameters must be provided):
 |JH_512|[Example Code][hashfunc-generic]| Example of JH_512|
 |RadioGatun32|[Example Code][hashfunc-generic]| Example of RadioGatun32|
 |RadioGatun64|[Example Code][hashfunc-generic]| Example of RadioGatun64|
-|README_HashFunctions.md|[Example Code][hashfunc-generic]| Example of README_HashFunctions.md|
 |RIPEMD_160|[Example Code][hashfunc-generic]| Example of RIPEMD_160|
 |SHA1|[Example Code][hashfunc-generic]| Example of SHA1|
 |SHA2_224|[Example Code][hashfunc-generic]| Example of SHA2_224|
