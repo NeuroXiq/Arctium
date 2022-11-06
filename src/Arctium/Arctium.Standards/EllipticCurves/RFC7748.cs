@@ -1,4 +1,5 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
+using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Numerics;
 
@@ -29,8 +30,34 @@ namespace Arctium.Standards.EllipticCurves
             00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
         };
 
+        public static void X25519_GeneratePrivateAndPublicKey(out byte[] privateKey, out byte[] publicKey)
+        {
+            privateKey = new byte[RFC7748.X25519_PrivateKeyLengthBytes];
+            GlobalConfig.RandomGeneratorCryptSecure(privateKey, 0, X25519_PrivateKeyLengthBytes);
+
+            publicKey = X25519_UCoord_9(privateKey);
+        }
+
+        public static void X448_GeneratePrivateAndPublicKey(out byte[] privateKey, out byte[] publicKey)
+        {
+            privateKey = new byte[RFC7748.X448_PrivateKeyLengthBytes];
+            GlobalConfig.RandomGeneratorCryptSecure(privateKey, 0, X25519_PrivateKeyLengthBytes);
+
+            publicKey = X448_UCoord_5(privateKey);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="k">Private key</param>
+        /// <returns>Encrypted private key (means public key, can be sent to other party)</returns>
         public static byte[] X25519_UCoord_9(byte[] k) => X25519(k, X25519_UCoord9);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="k">Private key</param>
+        /// <returns>Encrypted private key (means public key, can be sent to other party)</returns>
         public static byte[] X448_UCoord_5(byte[] k) => X448(k, X448_UCoord5);
 
         /// <summary>
@@ -62,7 +89,12 @@ namespace Arctium.Standards.EllipticCurves
 
             return result;
         }
-
+        /// <summary>
+        /// Returns encrypted secret key k as multiplication of u
+        /// </summary>
+        /// <param name="k">Secret key to encrypt</param>
+        /// <param name="u">U Coordinate of elliptic curve (or secret received from other party)</param>
+        /// <returns></returns>
         public static byte[] X448(byte[] k, byte[] u)
         {
             BigInteger uAsInt = DecodeUCoordinate(u, BITS_X448);
