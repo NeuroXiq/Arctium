@@ -101,7 +101,7 @@ namespace Arctium.Standards.Connection.Tls.Tls13.API
         /// full handshake
         /// </summary>
         /// <param name="serverConfigPreSharedKey"></param>
-        private void ConfigurePreSharedKey(ServerConfigPreSharedKey config)
+        public void ConfigurePreSharedKey(ServerConfigPreSharedKey config)
         {
             PreSharedKey = config;
         }
