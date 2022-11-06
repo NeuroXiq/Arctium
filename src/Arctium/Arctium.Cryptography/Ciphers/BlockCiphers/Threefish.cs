@@ -1,5 +1,6 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
 using Arctium.Cryptography.Ciphers.Exceptions;
+using Arctium.Shared.Other;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
@@ -14,7 +15,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
             if (blockSize != 256 && blockSize != 512 && blockSize != 1024)
             {
-                throw new InvalidBlockLengthException("Invalid block length for Threefish Block cipher. Allowed values: 256, 512, 1024");
+                throw new InvalidBlockLengthException("Invalid block length for Threefish Block cipher. Allowed values: 256, 512, 1024 (this means key size)");
             }
 
             Initialise(key);

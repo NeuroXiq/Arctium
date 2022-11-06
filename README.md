@@ -183,7 +183,7 @@ Key and Initialization Vector Update
 Arbitrary curve (not predefined, parameters must be provided):
 [Arbitrary curve code examples][ecc-arbitrary]
 
-[ecc-arbitrary]:<docs/lookup/ecc-arbitrary.md>
+[ecc-arbitrary]:<docs/lookup/sec2-keyex.md>
 
 ## Stream Ciphers
 |Name|Link|Comment|
