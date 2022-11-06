@@ -21,5 +21,8 @@ namespace Arctium.Standards.X509.X509Cert
         {
             base.Set(id, publicKey);
         }
+
+        public RSAPublicKey Choice_RSAEncryption() => Get<RSAPublicKey>();
+        public byte[] Choice_ECPublicKey() => Get<byte[]>();
     }
 }
