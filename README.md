@@ -56,8 +56,8 @@ To use Arctium TLS 1.3 examples below following file with sample resources must 
 |Client/Server - Update Traffic Secret|[Example Code][tls13-basic-example-updatetrafficsecret]|Update Traffic Secret|
 Key and Initialization Vector Update
 
-[tls13-basic-example-client]:<docs/lookup/basic-example-client.md>
-[tls13-basic-example-server]:<docs/lookup/basic-example-server.md>
+[tls13-basic-example-client]:<docs/lookup/tls13-basic-example-client.md>
+[tls13-basic-example-server]:<docs/lookup/tls13-basic-example-server.md>
 [tls13-basic-example-client-connectioninfo]:<docs/lookup/tls13-basic-example-client-connectioninfo.md>
 [tls13-basic-example-server-connectioninfo]:<docs/lookup/tls13-basic-example-server-connectioninfo.md>
 [tls13-basic-example-closeconnection]:<docs/lookup/tls13-basic-example-closeconnection.md>
