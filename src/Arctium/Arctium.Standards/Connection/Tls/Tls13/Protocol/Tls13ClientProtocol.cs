@@ -177,11 +177,10 @@ namespace Arctium.Standards.Connection.Tls.Tls13.Protocol
 
         private void ProcessCommand()
         {
-            InnerProcessCommand();
-
             try
             {
-                
+                InnerProcessCommand();
+
             }
             catch (Tls13ReceivedAlertException e)
             {
