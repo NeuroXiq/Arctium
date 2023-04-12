@@ -5,6 +5,7 @@
 
 $arctiumSlnFilePath = '../src/Arctium/Arctium.sln' | convert-path;
 $buildBinArtifactsDir = join-path $(pwd) -childpath '/build-bin-artifacts';
+$nuget_output_directory = './build-nuget-artifacts';
 
 function util_zipFiles( $zipfilename, $sourcedir )
 {
