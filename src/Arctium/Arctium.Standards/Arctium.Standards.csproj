@@ -9,6 +9,7 @@
     <Description>Arctium is a simple crypto library</Description>
     <PackageReadmeFile>README_nupkg.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
