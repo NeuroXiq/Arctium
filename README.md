@@ -10,8 +10,8 @@ Install-Package Arctium.Standards
 ```
 - - -
 
-#### [RobiniaDocs - Arctium API Explorer](https://www.robiniadocs.com/arctium/d/api/index.html)
-#### [RobiniaDocs - Code Examples](https://www.robiniadocs.com/arctium/d/articles/lookup/aead-gcm.html)
+#### [RobiniaDocs - Arctium API Explorer](https://www.robiniadocs.com/d/arctium/api/index.html)\
+#### [RobiniaDocs - Code Examples](https://www.robiniadocs.com/d/arctium/articles/lookup/aead-gcm.html)
 
 Arctium is a simple crypto library, created and maintained for learning purpose. 
 It provides various cryptographic functions, ciphers, connection protocols etc. implemented for better or worse but probably they should works.
