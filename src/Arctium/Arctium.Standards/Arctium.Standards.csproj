@@ -18,6 +18,7 @@
     <Folder Include="ASN1\Serialization\X690\BER\BuildInDecoders\Constructed\" />
     <Folder Include="ASN1\Serialization\X690\DER\BuildInDecoders\Primitive\" />
     <Folder Include="Connection\OCSP\" />
+    <Folder Include="Connection\Tls\Tls13\API\" />
     <Folder Include="Crypto\" />
     <Folder Include="X400\Decoders\X690Decoders\" />
   </ItemGroup>
