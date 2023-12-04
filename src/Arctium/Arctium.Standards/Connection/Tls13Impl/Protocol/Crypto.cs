@@ -890,7 +890,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             throw new Exception();
         }
 
-        byte[] HkdfExpandLabel(HKDF hkdf, byte[] secret, string labelText, byte[] context, int length)
+        public static byte[] HkdfExpandLabel(HKDF hkdf, byte[] secret, string labelText, byte[] context, int length)
         {
             byte[] label = Encoding.ASCII.GetBytes(labelText);
             byte[] result = new byte[length];

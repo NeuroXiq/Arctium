@@ -1,4 +1,5 @@
 ﻿using Arctium.Shared.Helpers.Buffers;
+using Arctium.Standards.Connection.QUICv1Impl;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -102,16 +103,19 @@ namespace Arctium.Standards.Connection.QUICv1
         {
             return null;
         }
+        QuicServerProtocol quicSrvProtocol;
 
-        public async Task<object> AcceptAsync(CancellationToken cancellationToken = default)
+
+        public async Task<object> ListenForConnectionAsync(CancellationToken cancellationToken = default)
         {
             while (true)
             {
                 var sender = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
 
-                // todo do this in objectpool (avoid multiple allocs)
+                // todo do this in objectpool (avoid multiple allocs), or maybe Span<byte>
                 Memory<byte> buffer = new Memory<byte>(new byte[16 * 1024]);
                 var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, sender, cancellationToken);
+                
                 var clientId = result.RemoteEndPoint.ToString();
                 UdpSocketClient client = null;
                 bool exists = connectedClients.TryGetValue(clientId, out client);
@@ -128,14 +132,14 @@ namespace Arctium.Standards.Connection.QUICv1
                 client.ThreadSafeWriteDgram(buffer.ToArray(), 0, result.ReceivedBytes);
 
                 // if client already exists do nothing and wait for other
-                // in meantime if client already exists just appent received bytes to 
+                // in meantime if client already exists just append received bytes to 
                 // existing client
                 if (!exists)
                 {
-                    var stream = new QuicSrvStream(client);
-                    stream.AcceptClientAsync();
+                    quicSrvProtocol = new QuicServerProtocol(client);
+                    await quicSrvProtocol.ListenForConnectionAsync();
 
-                    return stream;
+                    throw new NotImplementedException();
                 }
             }
         }

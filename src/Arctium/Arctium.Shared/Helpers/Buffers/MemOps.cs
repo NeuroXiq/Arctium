@@ -7,6 +7,18 @@ namespace Arctium.Shared.Helpers
 {
     public static class MemOps
     {
+        public static bool Memcmp(Span<byte> mem1, Span<byte> mem2)
+        {
+            if (mem1.Length != mem2.Length) return false;
+
+            for (int i = 0; i < mem1.Length; i++)
+            {
+                if (mem1[i] != mem2[i]) return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Compares two byte arrays
         /// </summary>
@@ -30,6 +42,7 @@ namespace Arctium.Shared.Helpers
 
             return false;
         }
+
 
         public static void MemsetZero(byte[] buffer) => MemsetZero(buffer, 0, buffer.Length);
 

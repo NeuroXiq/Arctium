@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Arctium.Standards.Connection.QUICv1Impl.Model
 {
-    internal enum LongHeaderPacketType: byte
+    internal enum LongPacketType: byte
     {
         Initial = 0x00,
         ZeroRTT = 0x01,

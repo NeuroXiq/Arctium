@@ -29,6 +29,15 @@ namespace Program
             Console.ReadLine();
         }
 
+        private static void ListenUDP3()
+        {
+            while (true)
+            {
+                // await processudpdgram()
+                // 
+            }
+        }
+
         private static void TestSendUDP()
         {
             Thread.Sleep(1000);
@@ -41,7 +50,7 @@ namespace Program
         private static async void ListenUDP2()
         {
             QuicSocketServer srv = new QuicSocketServer(IPAddress.Any, 443);
-            var result = await srv.AcceptAsync();
+            var result = await srv.ListenForConnectionAsync();
             Console.Read();
         }
 
@@ -71,12 +80,9 @@ namespace Program
             s.Bind(new IPEndPoint(IPAddress.Loopback, 443));
             s.Listen(1234);
 
-
-
             while (true)
             {
                 var client = s.Accept();
-
 
                 Task.Factory.StartNew((socket) =>
                 {

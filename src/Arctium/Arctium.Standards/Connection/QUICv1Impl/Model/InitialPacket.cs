@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace Arctium.Standards.Connection.QUICv1Impl.Model
 {
-    internal class InitialPacket
+    internal struct InitialPacket
     {
+        const byte MaskReservedBits = 0x0C;
+        const byte MaskPacketNumberLength = 0x3;
+
         /*
          * Header Form (1) = 1,
          * Fixed Bit (1) = 1,
@@ -15,15 +18,23 @@ namespace Arctium.Standards.Connection.QUICv1Impl.Model
          * Reserved Bits (2),
          * Packet Number Length (2
          */
-        public byte HF_FB_LPT_RB_PNL;
+
+        public bool HeaderForm { get { return (FirstByte & LongHeaderPacket.MaskFixedBit) != 0; } }
+        public bool FixedBit { get { return (FirstByte & LongHeaderPacket.MaskFixedBit) != 0; } }
+        public LongPacketType LongPacketType { get { return LongHeaderPacket.LongPacketType(FirstByte); } }
+        public byte ReservedBits { get { return (byte)((FirstByte & MaskReservedBits) >> 2); } }
+        public int PacketNumberLength { get { return (FirstByte & MaskPacketNumberLength) >> 0; } }
+
+        public byte FirstByte;
         public uint Version;
         public byte DestConnIdLen;
-        public byte[] DestConnId;
-        public byte SrcConnIdLen;
-        public byte[] SrcCOnnId;
+        public Memory<byte> DestConId;
+        public byte SrcConIdLen;
+        public Memory<byte> SrcConId;
         public ulong TokenLen;
-        public byte[] Token;
-        public ushort PacketNumber;
-        public byte[] Payload;
+        public Memory<byte> Token;
+        public ulong Length;
+        public uint PacketNumber;
+        public Memory<byte> Payload;
     }
 }
