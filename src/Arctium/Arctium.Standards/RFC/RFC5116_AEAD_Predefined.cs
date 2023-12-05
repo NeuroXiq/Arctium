@@ -31,6 +31,8 @@ namespace Arctium.Standards.RFC
             return new CCMMode(new AES(aesKey), 16);
         }
 
+
+
         /// <summary>
         ///  This algorithm is identical to AEAD_AES_128_GCM, but with the
         /// following differences:

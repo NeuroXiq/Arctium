@@ -62,6 +62,25 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             return result;
         }
 
+        public static void DecodeVerDestIDSrcID(byte[] buffer, int offset, out uint ver, out Memory<byte> destId, out Memory<byte> srcId)
+        {
+            int o = offset;
+
+            // version
+            o += 1;
+            ver = MemMap.ToUInt4BytesBE(buffer, o);
+
+            // dest
+            o += 4;
+            int destLen = buffer[o];
+            destId = new Memory<byte>(buffer, o + 1, destLen);
+
+            // src 
+            o += 1 + destLen;
+            int srcLen = buffer[o];
+            srcId = new Memory<byte>(buffer, o + 1, srcLen);
+        }
+
         public static int GetOffsetLHPPacketNumberField(byte[] buffer, int offset)
         {
             var buf = buffer;
@@ -69,9 +88,62 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             o += 1 + 4;
             o += buf[o] + 1; // dest connection id
             o += buf[o] + 1; // src connection id
-            o += (int)DecodeIntegerVLE(buf, offset, out int lenEncCount) + 1;
+            o += (int)DecodeIntegerVLE(buf, o, out int lenEncCount) + 1;
 
             return o;
+        }
+
+        public static LongHeaderPacket DecodeLHP(byte[] buffer, int offset, bool isEncrypted)
+        {
+            LongHeaderPacket p = new LongHeaderPacket();
+            int o = offset;
+
+            p.FirstByte = buffer[o];
+            p.Version = MemMap.ToUInt4BytesBE(buffer, offset);
+            QuicModelCoding.DecodeVerDestIDSrcID(buffer, offset, out p.Version, out p.DestConId, out p.SrcConId);
+            o += 1 + 4 + 1 + p.DestConId.Length + 1 + p.SrcConId.Length;
+
+            if (p.LongPacketType == LongPacketType.Initial)
+            {
+                p.TokenLen = DecodeIntegerVLE(buffer, o, out var tokenLenBytesCount);
+
+                if (p.TokenLen > (128 * ushort.MaxValue))
+                {
+                    throw new QuicException("implementation error: max token len > 128 * ushort");
+                }
+
+                o += tokenLenBytesCount;
+                p.Token = new Memory<byte>(buffer, o, (int)p.TokenLen);
+
+                o += (int)p.TokenLen;
+
+                p.Length = DecodeIntegerVLE(buffer, o, out var lengthEncCount);
+                o += lengthEncCount;
+
+                p.OffsetPacketNumber = o;
+
+                if (!isEncrypted)
+                {
+                    switch (p.PacketNumberLength)
+                    {
+                        case 0: p.PacketNumber = buffer[o]; break;
+                        case 1: p.PacketNumber = (uint)((buffer[o] << 8) | (buffer[o + 1] << 0)); break;
+                        case 2: p.PacketNumber = (uint)((buffer[o] << 16) | (buffer[o + 1] << 8) | (buffer[o + 2] << 0)); break;
+                        case 3: p.PacketNumber = MemMap.ToUInt4BytesBE(buffer, o); break;
+                    }
+
+                    o += p.PacketNumberLength + 1;
+                    int payloadLen = ((int)p.Length - p.PacketNumberLength - 1);
+                    p.Payload = new Memory<byte>(buffer, o, payloadLen);
+
+                    p.HeaderLength = o - offset;
+                }
+            }
+            else throw new NotImplementedException();
+            
+            
+
+            return p;
         }
 
         public static InitialPacket DecodeInitialPacket(byte[] buffer, int offset)
@@ -81,7 +153,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             p.FirstByte = buffer[o];
             p.Version = MemMap.ToUInt4BytesBE(buffer, offset);
-            LongHeaderPacket.DecodeVerDestIDSrcID(buffer, offset, out p.Version, out p.DestConId, out p.SrcConId);
+            QuicModelCoding.DecodeVerDestIDSrcID(buffer, offset, out p.Version, out p.DestConId, out p.SrcConId);
             o += 1 + 4 + 1 + p.DestConId.Length + 1 + p.SrcConId.Length;
             p.TokenLen = DecodeIntegerVLE(buffer, o, out var tokenLenBytesCount);
 

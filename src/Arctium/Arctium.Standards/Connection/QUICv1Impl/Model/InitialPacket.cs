@@ -21,7 +21,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl.Model
 
         public bool HeaderForm { get { return (FirstByte & LongHeaderPacket.MaskFixedBit) != 0; } }
         public bool FixedBit { get { return (FirstByte & LongHeaderPacket.MaskFixedBit) != 0; } }
-        public LongPacketType LongPacketType { get { return LongHeaderPacket.LongPacketType(FirstByte); } }
+        public LongPacketType LongPacketType { get { return LongHeaderPacket.GetLongPacketType(FirstByte); } }
         public byte ReservedBits { get { return (byte)((FirstByte & MaskReservedBits) >> 2); } }
         public int PacketNumberLength { get { return (FirstByte & MaskPacketNumberLength) >> 0; } }
 
