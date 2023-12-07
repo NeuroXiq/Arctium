@@ -11,6 +11,20 @@ namespace Arctium.Shared.Helpers.Buffers
         //
 
 
+        public static long Copy(Span<byte> src, int srcOffset, byte[] dest, int destOffset, int len)
+        {
+            for (int i = 0;  i < len; i++, srcOffset++, destOffset++)
+            {
+                dest[destOffset] = src[srcOffset];
+            }
+
+            return len;
+        }
+
+        public static long Copy(byte[] inputBuffer, int offset, byte[] outputBuffer, int outputOffset, int length)
+        {
+            return Copy(inputBuffer, (long)offset, outputBuffer, (long)outputOffset, (long)length);
+        }
 
         /// <summary>
         /// Copy bytes from one buffer to another.

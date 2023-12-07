@@ -1,5 +1,7 @@
 ﻿using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.Connection.QUICv1Impl.Model;
+using Arctium.Standards.Connection.Tls13Impl.Model;
+using Arctium.Standards.Connection.Tls13Impl.Protocol;
 using Arctium.Standards.RFC;
 using System;
 using System.Collections.Generic;
@@ -10,6 +12,12 @@ using System.Threading.Tasks;
 
 namespace Arctium.Standards.Connection.QUICv1Impl
 {
+    class QuicPNS
+    {
+        public ulong PacketNumber;
+
+    }
+
     internal class QuicConnection
     {
         private QuicServerProtocol quicServer;
@@ -52,12 +60,14 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             crypto.DecryptPacket(packets.Buffer, 0, tempDecryptedPkt, 0);
             lhp = QuicModelCoding.DecodeLHP(tempDecryptedPkt, 0, false);
 
+            byte[] cframes = new byte[12345];
+
             int i = 0;
             while (true)
             {
                 if (i >= lhp.Payload.Length)
                 {
-                    Debugger.Break();
+                    break;
                 }
 
                 FrameType ft = (FrameType)lhp.Payload.Span[i];
@@ -71,6 +81,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                     case FrameType.Crypto:
                         var cf = QuicModelCoding.DecodeFrame_Crypto(lhp.Payload, i);
                         i += cf.A_TotalLength;
+                        MemCpy.Copy(cf.Data.Span, 0, cframes, (int)cf.Offset, (int)cf.Length);
                         break;
                     case FrameType.Ack2:
                         
@@ -119,6 +130,11 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                 }
 
             }
+
+            var md = new ModelDeserialization(new Validate(new Validate.ValidationErrorHandler(null)));
+            var d = md.Deserialize<ClientHello>(cframes, 0);
+
+            Debugger.Break();
         }
 
         public void ReadDataAsync()

@@ -35,5 +35,7 @@
         PostHandshakeAuth = 49, /* RFC 8446 */
         SignatureAlgorithmsCert = 50, /* RFC 8446 */
         KeyShare = 51, /* RFC 8446 */
+
+        QuicTransportParameters = 57, /* RFC 9001 */
     }
 }

@@ -7,6 +7,10 @@ using System.Collections.Generic;
 using static Arctium.Standards.Connection.Tls13Impl.Model.Extensions.SupportedGroupExtension;
 using Arctium.Standards.Connection.Tls13Impl.Model;
 using Arctium.Standards.Connection.Tls13Impl.Model.Extensions;
+using Arctium.Standards.Connection.QUICv1Impl;
+using System.Threading;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 {
@@ -34,7 +38,8 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
                 [ExtensionType.PreSharedKey] = DeserializeExtension_PreSharedKey_Client,
                 [ExtensionType.MaxFragmentLength] = DeserializeExtension_MaxFragmentLength,
                 [ExtensionType.RecordSizeLimit] = DeserializeExtension_RecordSizeLimit,
-                [ExtensionType.CertificateAuthorities] = DeserializeExtension_CertificateAuthorities
+                [ExtensionType.CertificateAuthorities] = DeserializeExtension_CertificateAuthorities,
+                [ExtensionType.QuicTransportParameters] = DeserializeExtension_QuicTransportParameters
             };
 
             extensionsDeserializeOnClientSide = new Dictionary<ExtensionType, Func<byte[], int, Extension>>()
@@ -67,6 +72,121 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
                 [typeof(CertificateRequest)] = DeserializeCertificateRequest,
                 [typeof(KeyUpdate)] = DeserializeKeyUpdate,
             };
+        }
+
+        private Extension DeserializeExtension_QuicTransportParameters(byte[] b, int offs)
+        {
+            ExtensionDeserializeSetup(b, offs, out var cursor, out var len);
+            List<QuicTransportParametersExtension.TransportParameter> result = new List<QuicTransportParametersExtension.TransportParameter>();
+
+            if (!cursor.OnMaxPosition)
+            {
+                int decoded = 0;
+                while (cursor.CurrentPosition + decoded < cursor.MaxPosition)
+                {
+                    cursor += decoded;
+                    var decodedParameter = DeserializeSingleQuicTransportParameter(b, cursor, out decoded);
+                    result.Add(decodedParameter);
+                }
+
+                validate.Extensions.AlertFatalDecodeError(
+                    cursor.CurrentPosition + decoded - 1 != cursor.MaxPosition,
+                    "extensions.quic_transport_parameters",
+                    "quic extension - problem with decoding cursor on at the end");
+            }
+
+            return new QuicTransportParametersExtension(result.ToArray());
+        }
+
+        private QuicTransportParametersExtension.TransportParameter DeserializeSingleQuicTransportParameter(byte[] buf, RangeCursor c, out int decodedLength)
+        {
+            ulong idInt = QuicModelCoding.DecodeIntegerVLE(buf, c.CurrentPosition, out int encid);
+            var id = (QuicTransportParametersExtension.TransportParameterId)idInt;
+            c += encid;
+
+            var length = QuicModelCoding.DecodeIntegerVLE(buf, c.CurrentPosition, out int enclength);
+            c += enclength;
+
+            QuicTransportParametersExtension.TransportParameter result = null;
+
+            var valueIsInteger = new[]
+            {
+                QuicTransportParametersExtension.TransportParameterId.MaxIdleTimeout,
+                QuicTransportParametersExtension.TransportParameterId.MaxUdpPayloadSize,
+                QuicTransportParametersExtension.TransportParameterId.InitialMaxData,
+                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamDataBidiRemote,
+                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamDataBidiLocal,
+                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamDataUni,
+                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamsBidi,
+                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamsUni,
+                QuicTransportParametersExtension.TransportParameterId.AckDelayExponent,
+                QuicTransportParametersExtension.TransportParameterId.MaxAckDelay,
+                QuicTransportParametersExtension.TransportParameterId.ActiveConnectionIdLimit,
+            };
+
+            var byteArrays = new[]
+            {
+                QuicTransportParametersExtension.TransportParameterId.InitialSourceConnectionId,
+                QuicTransportParametersExtension.TransportParameterId.OriginalDestinationConnectionId,
+                QuicTransportParametersExtension.TransportParameterId.StatelessResetToken,
+                QuicTransportParametersExtension.TransportParameterId.RetrySourceConnectionId,
+            };
+
+            if (valueIsInteger.Any(t => t == id))
+            {
+                var integer = QuicModelCoding.DecodeIntegerVLE(buf, c.CurrentPosition, out var encvalue);
+                result = new QuicTransportParametersExtension.IntegerTransportParameter(id, integer);
+
+                validate.Extensions.AlertFatalDecodeError(
+                    encvalue != (int)length,
+                    "quictransportparameter.length",
+                    "invalid length of transportparameter or encoded integer in 'value' field");
+            }
+            else if (byteArrays.Any(t => t == id))
+            {
+                c.ThrowIfShiftOutside((int)length);
+                var bytearr = MemCpy.CopyToNewArray(buf, c, (int)length);
+
+                result = new QuicTransportParametersExtension.ByteArrayTransportParameter(id, bytearr);
+            }
+            else if (id == QuicTransportParametersExtension.TransportParameterId.DisableActiveMigration)
+            {
+                validate.Extensions.AlertFatalDecodeError(
+                    length != 0,
+                    "QuicTransportParametersExtension.disable_active_migration",
+                    "length must be zero but it is not zero");
+
+                result = new QuicTransportParametersExtension.TransportParameter(QuicTransportParametersExtension.TransportParameterId.DisableActiveMigration);
+            }
+            else if (id == QuicTransportParametersExtension.TransportParameterId.PreferredAddress)
+            {
+                result = new QuicTransportParametersExtension.PreferredAddress();
+                var p = result as QuicTransportParametersExtension.PreferredAddress;
+
+                p.IPv4Address = MemMap.ToUInt4BytesBE(buf, c);
+                c += 4;
+                p.IPv4Port = MemMap.ToUShort2BytesBE(buf, c);
+                c += 2;
+                p.IPv6Address = MemCpy.CopyToNewArray(buf, c, 16);
+                c += 16;
+                p.IPv6Port = MemMap.ToUShort2BytesBE(buf, c);
+                c += 2;
+
+                int connIdLen = buf[c];
+                c += 1;
+                p.ConnectionId = MemCpy.CopyToNewArray(buf, c, connIdLen);
+                c += connIdLen;
+                p.StatelessResetToken = MemCpy.CopyToNewArray(buf, c, 16);
+                c += 15;
+            }
+            else
+            {
+                result = new QuicTransportParametersExtension.UnknownTransportParameter(idInt);
+            }
+
+            decodedLength = encid + enclength + (int)length;
+
+            return result;
         }
 
         private Extension DeserializeExtension_CertificateAuthorities(byte[] buf, int offs)
