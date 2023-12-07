@@ -12,6 +12,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.Http.Headers;
 using Arctium.Standards.ASN1.Serialization.X690;
 using Arctium.Standards.Connection.QUICv1;
+using System.Xml.Serialization;
 
 namespace Program
 {
@@ -23,7 +24,7 @@ namespace Program
             // Main2().Wait();
             // Console.ReadLine();
             Task.Factory.StartNew(() => { ListenTCP(); });
-            Task.Factory.StartNew(() => { ListenUDP2(); });
+            Task.Factory.StartNew(() => { ListenUDP2().Wait(); });
             
             // Task.Factory.StartNew(() => { TestSendUDP(); });
             Console.ReadLine();
@@ -47,10 +48,17 @@ namespace Program
             listener.Send(new byte[] { 1 });
         }
 
-        private static async void ListenUDP2()
+        private static async Task ListenUDP2()
         {
             QuicSocketServer srv = new QuicSocketServer(IPAddress.Any, 443);
-            var result = await srv.ListenForConnectionAsync();
+
+            while (true)
+            {
+                await srv.ProcessNextUdp();
+            }
+
+            // var result = await srv.ListenForConnectionAsync();
+
             Console.Read();
         }
 

@@ -24,6 +24,118 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             return (LongPacketType)(data[0] & 0x30);
         }
 
+        #region Encoding
+
+        public static void Encode_ACKFrame(
+            ByteBuffer output,
+            FrameType type,
+            ulong largestAcknowledge,
+            ulong ackDelay,
+            ulong ackRangeCount,
+            ulong firstAckRange,
+            Span<AckRange> range,
+            ECNCounts? encCount)
+        {
+            if (type != FrameType.Ack2 && type != FrameType.Ack3)
+                throw new QuicException("internal: invalid ACK frametype");
+
+            if (encCount.HasValue && type != FrameType.Ack3)
+            {
+                throw new QuicException("internal: encoding ECNCount only 0x03 frame type supports it");
+            }
+
+            output.Append((byte)type);
+            Encode_IntegerVLE(output, largestAcknowledge);
+            Encode_IntegerVLE(output, ackDelay);
+            Encode_IntegerVLE(output, ackRangeCount);
+            Encode_IntegerVLE(output, firstAckRange);
+            
+            for (int i = 0; i < range.Length; i++)
+            {
+                var r = range[i];
+                Encode_IntegerVLE(output, r.Gap);
+                Encode_IntegerVLE(output, r.ACKRangeLength);
+            }
+
+            if (encCount.HasValue)
+            {
+                var ec = encCount.Value;
+                Encode_IntegerVLE(output, ec.ECT0Count);
+                Encode_IntegerVLE(output, ec.ECT1Count);
+                Encode_IntegerVLE(output, ec.ECNCECount);
+            }
+        }
+
+        public static int Encode_IntegerVLE(ByteBuffer output, ulong value)
+        {
+            if ((value & ((ulong)0x03 << 62)) != 0)
+            {
+                throw new QuicException("value too large to encode (invalid value)");
+            }
+
+            // rfc9000.pdf - 16. Variable-Length Integer Encoding 
+            // first two MSB encode length in bytes, rest is integer,
+            // this special values are just byte.max, ushort.max, int.max, ulong.max
+            // without first two bits
+            int enclen;
+
+            if (value <= 63) enclen = 0;
+            else if (value <= 16383) enclen = 1;
+            else if (value <= 1073741823) enclen = 2;
+            else enclen = 3;
+
+            int o = output.MallocAppend(enclen);
+            byte[] b = output.Buffer;
+
+            switch (enclen)
+            {
+                case 0:
+                    output.Append((byte)value);
+                    break;
+                case 1:
+                    MemMap.ToBytes1UShortBE((ushort)value, output.Buffer, o);
+                    break;
+                case 2:
+                    MemMap.ToBytes1UIntBE((uint)value, output.Buffer, o);
+                    break;
+                case 3:
+                    MemMap.ToBytes1ULongBE(value, output.Buffer, o);
+                    break;
+            }
+
+            b[o] |= (byte)(enclen << 6);
+
+            int bytesCount = (1 << enclen);
+
+            return bytesCount;
+        }
+
+        #endregion
+
+
+        public static CryptoFrame DecodeFrame_Crypto(Memory<byte> buf, int offset)
+        {
+            var f = new CryptoFrame();
+            var b = buf.Span;
+            int o = offset;
+            f.Type = (FrameType)b[o];
+            o += 1;
+
+            if (f.Type != FrameType.Crypto) throw new QuicException("implementatino: expected crypto frame");
+
+
+            f.Offset = DecodeIntegerVLE(b, o, out int encoffs);
+            o += encoffs;
+
+            f.Length = DecodeIntegerVLE(b, o, out int enclen);
+            o += enclen;
+
+            f.Data = buf.Slice(o, (int)f.Length);
+            f.A_TotalLength = 1 + encoffs + enclen + (int)f.Length;
+
+            return f;
+        }
+
         internal static void DecodeLHPConnIds(byte[] readDgramBuf, out Memory<byte> srcId, out Memory<byte> destId)
         {
             // todo error max 20 bytes
@@ -32,14 +144,15 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             int srcIdLen = readDgramBuf[srcIdOffs];
 
             destId = new Memory<byte>(readDgramBuf, 6, destIdLen);
-            srcId = new Memory<byte> (readDgramBuf, srcIdOffs, srcIdLen);
+            srcId = new Memory<byte>(readDgramBuf, srcIdOffs, srcIdLen);
         }
 
         /// <summary>
         /// variable-length integer decoding
         /// </summary>
-        public static ulong DecodeIntegerVLE(byte[] buffer, int offset, out int decodedBytesCount)
+        public static ulong DecodeIntegerVLE(Span<byte> memBuffer, int offset, out int decodedBytesCount)
         {
+            var buffer = memBuffer;
             ulong result = 0;
             int type = (buffer[offset] & 0xC0) >> 6;
             decodedBytesCount = (1 << type);
@@ -47,9 +160,9 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             switch (type)
             {
                 case 0: result = buffer[offset]; break;
-                case 1: result = MemMap.ToUShort2BytesBE(buffer, offset); break;
-                case 2: result = MemMap.ToUInt4BytesBE(buffer, offset); break;
-                case 3: result = MemMap.ToULong8BytesBE(buffer, offset); break;
+                case 1: result = MemMap.ToUShort2BytesBE(memBuffer, offset); break;
+                case 2: result = MemMap.ToUInt4BytesBE(memBuffer, offset); break;
+                case 3: result = MemMap.ToULong8BytesBE(memBuffer, offset); break;
             }
 
             // first two bits - its a type from above, clear this not part of intege
@@ -120,7 +233,9 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                 p.Length = DecodeIntegerVLE(buffer, o, out var lengthEncCount);
                 o += lengthEncCount;
 
-                p.OffsetPacketNumber = o;
+                p.A_TotalPacketLength = o - offset + (int)p.Length;
+
+                p.A_OffsetPacketNumber = o;
 
                 if (!isEncrypted)
                 {
@@ -136,12 +251,12 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                     int payloadLen = ((int)p.Length - p.PacketNumberLength - 1);
                     p.Payload = new Memory<byte>(buffer, o, payloadLen);
 
-                    p.HeaderLength = o - offset;
+                    p.A_HeaderLength = o - offset;
                 }
             }
             else throw new NotImplementedException();
-            
-            
+
+
 
             return p;
         }

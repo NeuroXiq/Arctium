@@ -17,16 +17,17 @@ namespace Arctium.Standards.Connection.QUICv1Impl.Model
 
         public static LongPacketType GetLongPacketType(byte firstByte) => (LongPacketType)((firstByte & MaskLongPacketType) >> 4);
 
-
-
         public bool HeaderForm { get { return (FirstByte & LongHeaderPacket.MaskFixedBit) != 0; } }
         public bool FixedBit { get { return (FirstByte & LongHeaderPacket.MaskFixedBit) != 0; } }
         public LongPacketType LongPacketType { get { return GetLongPacketType(FirstByte); } }
         public byte ReservedBits { get { return (byte)((FirstByte & MaskReservedBits) >> 2); } }
         public int PacketNumberLength { get { return (FirstByte & MaskPacketNumberLength) >> 0; } }
 
-        public int OffsetPacketNumber;
-        public int HeaderLength;
+        public int A_OffsetPacketNumber;
+        
+        // length of all bytes to first payload byte (only decrypted packet)
+        public int A_HeaderLength;
+        public int A_TotalPacketLength;
 
         public byte FirstByte;
         public uint Version;

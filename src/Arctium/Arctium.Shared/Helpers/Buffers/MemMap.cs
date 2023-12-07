@@ -706,10 +706,22 @@ namespace Arctium.Shared.Helpers.Buffers
         #region managed
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToUShort2BytesBE(byte[] buffer, int offset)
+        {
+            return (ushort)((ushort)buffer[0 + offset] << 8 | (ushort)buffer[1 + offset] << 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ToUShort2BytesBE(byte[] buffer, long offset)
         {
             return (ushort)((ushort)buffer[0 + offset] << 8 | (ushort)buffer[1 + offset] << 0);
-        }   
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ToUShort2BytesBE(Span<byte> buffer, int offset)
+        {
+            return (ushort)((ushort)buffer[0 + offset] << 8 | (ushort)buffer[1 + offset] << 0);
+        }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -834,6 +846,26 @@ namespace Arctium.Shared.Helpers.Buffers
                     (ulong)input[inputOffset + 2] << 16 |
                     (ulong)input[inputOffset + 1] << 8 |
                     (ulong)input[inputOffset + 0] << 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULong8BytesBE(byte[] input, int inputOffset)
+        {
+            return ToULong8BytesBE(input, (long)inputOffset);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ToULong8BytesBE(Span<byte> input, int inputOffset)
+        {
+            return (ulong)(
+                    (ulong)input[inputOffset + 0] << 56 |
+                    (ulong)input[inputOffset + 1] << 48 |
+                    (ulong)input[inputOffset + 2] << 40 |
+                    (ulong)input[inputOffset + 3] << 32 |
+                    (ulong)input[inputOffset + 4] << 24 |
+                    (ulong)input[inputOffset + 5] << 16 |
+                    (ulong)input[inputOffset + 6] << 8 |
+                    (ulong)input[inputOffset + 7] << 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1400,13 +1432,21 @@ namespace Arctium.Shared.Helpers.Buffers
             output[outputOffset + 1] = (byte)(v >> 0);
         }
 
-        public static uint ToUInt4BytesBE(byte[] buf, long offset)
+        public static uint ToUInt4BytesBE(Span<byte> buf, int offset)
         {
             return (uint)((buf[offset + 0] << 24) |
                    (buf[offset + 1] << 16) |
                    (buf[offset + 2] << 08) |
                   (buf[offset + 3] << 00));
         }
+
+        //public static uint ToUInt4BytesBE(Span<byte> buf, int offset)
+        //{
+        //    return (uint)((buf[offset + 0] << 24) |
+        //           (buf[offset + 1] << 16) |
+        //           (buf[offset + 2] << 08) |
+        //          (buf[offset + 3] << 00));
+        //}
 
         #endregion
     }

@@ -16,25 +16,15 @@ namespace Arctium.Standards.Connection.QUICv1Impl
     internal class QuicServerProtocol
     {
         private DgramIO dgramio;
-        private ByteBuffer buffer;
-        
+        private ByteBuffer packets = new ByteBuffer();
+        private byte[] updReadBuffer = new byte[16 * 1024];
+
         QuicModelCoding coding = new QuicModelCoding();
-
-        class BufferedPacket
-        {
-            public int Offset;
-        }
-
-        struct BufPkt
-        {
-            public int Offset;
-        }
 
         List<QuicConnection> connections = new List<QuicConnection>();
 
         public QuicServerProtocol(DgramIO dgramio)
         {
-            this.buffer = new ByteBuffer();
             this.dgramio = dgramio;
         }
 
@@ -47,29 +37,31 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         public async Task LoadPacket()
         {
-            byte[] readDgramBuf = new byte[16 * 1024];
-
-            // todo timeout somewhere (how long wait to receive data?)
-            int datalen = 0;
-            for (int i = 0; i < 50 && datalen == 0; i++)
+            if (packets.DataLength == 0)
             {
-                datalen = await dgramio.ReadDgramAsync(readDgramBuf, 0);
-                Thread.Sleep(100);
+                int datalen = 0;
+
+                for (int i = 0; i < 50 && datalen == 0; i++)
+                {
+                    datalen = await dgramio.ReadDgramAsync(updReadBuffer, 0);
+                    Thread.Sleep(100);
+                }
+                packets.Append(updReadBuffer, 0, datalen);
             }
 
-            if (datalen == 0) throw new Exception("protocol error: timeout read");
+            if (packets.DataLength == 0) throw new Exception("protocol error: timeout read");
+            byte[] drams = packets.Buffer;
 
-            if (QuicModelCoding.IsLongHeaderPacket(readDgramBuf))
+            if (QuicModelCoding.IsLongHeaderPacket(drams))
             {
-                var type = QuicModelCoding.DecodeLHPType(readDgramBuf);
-                Memory<byte> srcId, destId;
-                QuicModelCoding.DecodeLHPConnIds(readDgramBuf, out srcId, out destId);
+                var lhp = QuicModelCoding.DecodeLHP(drams, 0, true);
+
                 QuicConnection connection = null;
 
                 for (int i = 0; i < connections.Count; i++)
                 {
                     var current = connections[i].ServerConnectionId;
-                    if (MemOps.Memcmp(destId.Span, new Span<byte>(current, 0, current.Length)))
+                    if (MemOps.Memcmp(lhp.DestConId.Span, new Span<byte>(current, 0, current.Length)))
                     {
                         connection = connections[i];
                         break;
@@ -81,9 +73,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                     connection = new QuicConnection(this);
                 }
 
-                connection.BufferPacket(readDgramBuf, 0, datalen);
-                await connection.AcceptClient();
+                connection.BufferPacket(drams, 0, lhp.A_TotalPacketLength);
+                packets.TrimStart(lhp.A_TotalPacketLength);
 
+                await connection.AcceptClient();
             }
             else throw new NotImplementedException();
 

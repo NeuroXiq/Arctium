@@ -14,6 +14,12 @@ namespace Arctium.Shared.Helpers.Buffers
             Buffer = new byte[1024];
         }
 
+        /// <summary>
+        /// Asserts buffer size (extends if neeed) that allow append 'length' bytes to if
+        /// returns index where data must be appended
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public int MallocAppend(int length)
         {
             int offset = DataLength;

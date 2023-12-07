@@ -78,6 +78,7 @@ namespace Arctium.Standards.Connection.QUICv1
     {
         private Socket socket;
         private Dictionary<string, UdpSocketClient> connectedClients = new Dictionary<string, UdpSocketClient>();
+        private EndPoint endpointAny = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
 
         public QuicSocketServer(IPAddress bindSocketIPAddr, int socketBindPort)
         {
@@ -103,45 +104,50 @@ namespace Arctium.Standards.Connection.QUICv1
         {
             return null;
         }
+
         QuicServerProtocol quicSrvProtocol;
 
-
-        public async Task<object> ListenForConnectionAsync(CancellationToken cancellationToken = default)
+        public struct ProcessNextUdpResult
         {
-            while (true)
+            public object Connection;
+        }
+
+        public async Task<object> ProcessNextUdp(CancellationToken cancellationToken = default)
+        {
+            var sender = endpointAny;
+
+            // todo do this in objectpool (avoid multiple allocs), or maybe Span<byte>
+            Memory<byte> buffer = new Memory<byte>(new byte[65535]);
+            var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, sender, cancellationToken);
+
+            var clientId = result.RemoteEndPoint.ToString();
+
+            UdpSocketClient client = null;
+            bool exists = connectedClients.TryGetValue(clientId, out client);
+
+            if (!exists)
             {
-                var sender = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
-
-                // todo do this in objectpool (avoid multiple allocs), or maybe Span<byte>
-                Memory<byte> buffer = new Memory<byte>(new byte[16 * 1024]);
-                var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, sender, cancellationToken);
-                
-                var clientId = result.RemoteEndPoint.ToString();
-                UdpSocketClient client = null;
-                bool exists = connectedClients.TryGetValue(clientId, out client);
-                
-                if (!exists)
+                client = new UdpSocketClient(this)
                 {
-                    client = new UdpSocketClient(this)
-                    {
-                        byteBuffer = new ByteBuffer(),
-                        ClientEndpoint = result.RemoteEndPoint
-                    };
-                }
-
-                client.ThreadSafeWriteDgram(buffer.ToArray(), 0, result.ReceivedBytes);
-
-                // if client already exists do nothing and wait for other
-                // in meantime if client already exists just append received bytes to 
-                // existing client
-                if (!exists)
-                {
-                    quicSrvProtocol = new QuicServerProtocol(client);
-                    await quicSrvProtocol.ListenForConnectionAsync();
-
-                    throw new NotImplementedException();
-                }
+                    byteBuffer = new ByteBuffer(),
+                    ClientEndpoint = result.RemoteEndPoint
+                };
             }
+
+            client.ThreadSafeWriteDgram(buffer.ToArray(), 0, result.ReceivedBytes);
+
+            // if client already exists do nothing and wait for other
+            // in meantime if client already exists just append received bytes to 
+            // existing client
+            if (!exists)
+            {
+                quicSrvProtocol = new QuicServerProtocol(client);
+                await quicSrvProtocol.ListenForConnectionAsync();
+
+                throw new NotImplementedException();
+            }
+
+            return null;
         }
     }
 }
