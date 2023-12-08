@@ -25,19 +25,54 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
     internal class QuicStream
     {
+        class FrameLen
+        {
+            public long Offset;
+            public long Length;
+        }
+
         QuickStreamState state;
 
+        private List<FrameLen> readyFramentsToRead = new List<FrameLen>();
+
         public byte[] Data { get; private set; }
-        public ulong Length { get; private set; }
+        public long Length { get; private set; }
+
+        public long Cursor { get; private set; }
+        public bool HasData { get { return GetFrameCursorPoints() != null; } }
 
         internal void RecvStreamFrame(CryptoFrame cf)
         {
-            ExtendIfNeeded(cf.Offset + (ulong)cf.Data.Length);
+            ExtendIfNeeded((long)cf.Offset + (long)cf.Data.Length);
+            readyFramentsToRead.Add(new FrameLen() { Length = (long)cf.Length, Offset = (long)cf.Offset });
         }
 
-        void ExtendIfNeeded(ulong minSize)
+        internal int Read(byte[] buffer, int offset, int length)
         {
-            if (minSize <= (ulong)Data.Length) return;
+            if (length > Length) throw new InvalidOperationException("internal - length > stream.Length (try read more than loaded)");
+            if (length == 0 || !HasData) return 0;
+
+            var toRead = GetFrameCursorPoints();
+            var maxRead = length > toRead.Length ? toRead.Length : length;
+
+            MemCpy.Copy(Data, toRead.Offset, buffer, offset, maxRead);
+
+            toRead.Offset += maxRead;
+            toRead.Length -= maxRead;
+
+            if (toRead.Length == 0) readyFramentsToRead.Remove(toRead);
+
+            return (int)maxRead;
+        }
+
+        FrameLen GetFrameCursorPoints()
+        {
+            return readyFramentsToRead.FirstOrDefault(n => n.Offset == Cursor);
+        }
+
+        void ExtendIfNeeded(long minSize)
+        {
+            if (minSize <= (long)Data.Length) return;
 
             byte[] newBuf = new byte[minSize];
             checked

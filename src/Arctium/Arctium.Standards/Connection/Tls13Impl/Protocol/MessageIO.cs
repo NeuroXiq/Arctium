@@ -4,6 +4,7 @@ using System.IO;
 using System;
 using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls13Impl.Model;
+using Arctium.Standards.Connection.QUICv1Impl;
 
 namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 {
@@ -12,7 +13,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
         public delegate void ReadWriteCallback(byte[] buffer, int offset, int length);
         public event ReadWriteCallback OnHandshakeReadWrite;
 
-        public RecordLayer recordLayer;
+        public RecordLayerBase recordLayer;
         private ByteBuffer byteBuffer;
         private Validate validate;
         private ModelDeserialization clientModelDeserialization;
@@ -21,17 +22,18 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
         private byte[] buffer { get { return byteBuffer.Buffer; } }
         private int currentMessageLength;
-        private RecordLayer.RecordInfo lastLoadedRecord;
+        private RecordInfo lastLoadedRecord;
 
 
         public MessageIO(Stream networkStream,
             Validate validate)
         {
-            recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
+            if (networkStream is QuicIntegrationTlsNetworkStream) recordLayer = new QuicIntegrationRecordLayer(networkStream as QuicIntegrationTlsNetworkStream);
+            else recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
 
             modelSerialization = new ModelSerialization();
 
-            lastLoadedRecord = new RecordLayer.RecordInfo(ContentType.Invalid, 0, -1);
+            lastLoadedRecord = new RecordInfo(ContentType.Invalid, 0, -1);
 
             byteBuffer = new ByteBuffer();
             this.validate = validate;
@@ -49,7 +51,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
         public bool TryLoadApplicationData(byte[] outBuffer, long outOffs, out int applicationDataLength)
         {
-            RecordLayer.RecordInfo info;
+            RecordInfo info;
             applicationDataLength = -1;
 
             if (byteBuffer.DataLength == 0)
@@ -182,9 +184,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             currentMessageLength = msgLength;
         }
 
-        private RecordLayer.RecordInfo LoadRecord()
+        private RecordInfo LoadRecord()
         {
-            RecordLayer.RecordInfo recordInfo = recordLayer.Read();
+            RecordInfo recordInfo = recordLayer.Read();
             validate.Handshake.NotZeroLengthFragmentsOfHandshake(recordInfo.Length);
 
             if (recordInfo.ContentType == ContentType.Alert)

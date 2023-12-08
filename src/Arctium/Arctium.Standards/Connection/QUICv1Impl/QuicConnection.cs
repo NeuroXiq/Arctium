@@ -1,4 +1,5 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Cryptography.Ciphers.BlockCiphers;
+using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.Connection.QUICv1Impl.Model;
 using Arctium.Standards.Connection.Tls13;
 using Arctium.Standards.Connection.Tls13Impl.Model;
@@ -59,13 +60,27 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             // Debugger.Break();
         }
 
+        bool isinit = true;
+
         async Task ProcessPackets()
         {
             if (packets.DataLength == 0) await quicServer.LoadPacket();
             // MemCpy.Copy(testpacketprotected, 0, packets.Buffer, 0, testpacketprotected.Length);
 
-            var lhp = QuicModelCoding.DecodeLHP(packets.Buffer, 0, true);
-            crypto.SetupInitCrypto(lhp.DestConId);
+            LongHeaderPacket lhp;
+
+            if (isinit)
+            {
+                isinit = false;
+                lhp = QuicModelCoding.DecodeLHP(packets.Buffer, 0, true);
+                crypto.SetupInitCrypto(lhp.DestConId);
+                this.ServerConnectionId = lhp.DestConId.ToArray();
+
+                if (lhp.SrcConId.Length == 0)
+                {
+                    this.ClientConnectionId = lhp.DestConId.ToArray();
+                }
+            }
 
             crypto.DecryptPacket(packets.Buffer, 0, tempDecryptedPkt, 0);
             lhp = QuicModelCoding.DecodeLHP(tempDecryptedPkt, 0, false);
@@ -73,13 +88,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             byte[] cframes = new byte[12345];
 
             int i = 0;
-            while (true)
+            while (i < lhp.Payload.Length)
             {
-                if (i >= lhp.Payload.Length)
-                {
-                    break;
-                }
-
                 FrameType ft = (FrameType)lhp.Payload.Span[i];
 
                 switch (ft)
@@ -163,22 +173,44 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             throw new NotImplementedException();
         }
 
-        #region TLS13 Integration
-
-        internal int TlsReadBytes(byte[] buffer, long offset, int length)
+        void WritePacket(LongHeaderPacket lhp)
         {
-            
+
         }
 
-        internal int TlsWriteBytes(byte[] buffer, long offset, int length)
+        #region TLS13 Integration
+
+        internal int TlsReadBytes(byte[] buffer, int offset, int length)
         {
-            
+            if (length == 0) return 0;
+
+            while (cryptoFramesStream.Length == 0)
+            {
+                ProcessPackets().Wait();
+            }
+
+            long max = length < (long)cryptoFramesStream.Length ? length : (long)cryptoFramesStream.Length;
+
+            checked
+            {
+                return cryptoFramesStream.Read(buffer, offset, length);
+            }
+        }
+
+        internal void TlsWriteBytes(byte[] buffer, long offset, int length)
+        {
+            var lhp = new LongHeaderPacket
+            {
+                a
+            };
+
+            return;
         }
 
         #endregion
     }
 
-    class TlsStreamQuicIntegration : Stream
+    class QuicIntegrationTlsNetworkStream : Stream
     {
         public override bool CanRead => throw new NotImplementedException();
 
@@ -192,7 +224,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         QuicConnection connection;
 
-        public TlsStreamQuicIntegration(QuicConnection connection)
+        public QuicIntegrationTlsNetworkStream(QuicConnection connection)
         {
             this.connection = connection;
         }
@@ -211,6 +243,16 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         }
 
         public override void SetLength(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void ChangeReadEncryption(AEAD newRead, byte[] newIv)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void ChangeWriteEncryption(AEAD newRead, byte[] newIv)
         {
             throw new NotImplementedException();
         }

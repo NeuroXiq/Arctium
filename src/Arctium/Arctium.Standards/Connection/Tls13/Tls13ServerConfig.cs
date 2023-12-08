@@ -26,6 +26,7 @@ namespace Arctium.Standards.Connection.Tls13
         internal ExtensionServerConfigCertificateAuthorities ExtensionCertificateAuthorities { get; private set; }
         internal ServerConfigPreSharedKey PreSharedKey { get; private set; }
         internal ExtensionServerConfigGREASE GREASE { get; private set; }
+        internal bool QuicIntegration { get; private set; }
 
         public X509CertWithKey[] CertificatesWithKeys { get; private set; }
 

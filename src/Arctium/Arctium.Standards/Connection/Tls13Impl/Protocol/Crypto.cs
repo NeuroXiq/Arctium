@@ -630,7 +630,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             return hashFunction.HashFinal();
         }
 
-        public void DoKeyUpdateForWriting(RecordLayer recordLayer)
+        public void DoKeyUpdateForWriting(RecordLayerBase recordLayer)
         {
             byte[] nextGenSecret;
 
@@ -648,7 +648,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             recordLayer.ChangeWriteEncryption(aead, iv);
         }
 
-        public void DoKeyUpdateForReading(RecordLayer recordLayer)
+        public void DoKeyUpdateForReading(RecordLayerBase recordLayer)
         {
             byte[] nextGenSecret;
 
@@ -705,14 +705,14 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             }
         }
 
-        public void ChangeRecordLayerReadCrypto(RecordLayer recordLayer, byte[] readTrafficSecret)
+        public void ChangeRecordLayerReadCrypto(RecordLayerBase recordLayer, byte[] readTrafficSecret)
         {
             AEADFactory(readTrafficSecret, out var aead, out var iv);
 
             recordLayer.ChangeReadEncryption(aead, iv);
         }
 
-        public void ChangeRecordLayerWriteCrypto(RecordLayer recordLayer, byte[] readTrafficSecret)
+        public void ChangeRecordLayerWriteCrypto(RecordLayerBase recordLayer, byte[] readTrafficSecret)
         {
             AEADFactory(readTrafficSecret, out var aead, out var iv);
 

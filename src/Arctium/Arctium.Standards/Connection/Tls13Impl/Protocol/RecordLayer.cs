@@ -6,10 +6,40 @@ using System.Net.Sockets;
 using System;
 using Arctium.Shared.Other;
 using Arctium.Standards.Connection.Tls13Impl.Model;
+using Arctium.Standards.Connection.QUICv1Impl;
 
 namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 {
-    class RecordLayer
+    internal abstract class RecordLayerBase
+    {
+        public byte[] RecordFragmentBytes { get; protected set; }
+
+        public abstract void SetBackwardCompatibilityMode(
+            bool compatibilityAllowRecordLayerVersionLower0x0303 = false,
+            bool compatibilitySilentlyDropUnencryptedChangeCipherSpec = false);
+
+        public abstract RecordInfo Read();
+        public abstract void Write(ContentType contentType, byte[] buffer, long offset, long length);
+        public abstract void SetRecordSizeLimit(ushort maxRecord);
+        public abstract void ChangeWriteEncryption(AEAD newWrite, byte[] newIv);
+        public abstract void ChangeReadEncryption(AEAD newRead, byte[] newIv);
+    }
+
+    internal struct RecordInfo
+    {
+        public ContentType ContentType;
+        ushort ProtocolVersion;
+        public int Length;
+
+        public RecordInfo(ContentType contentType, ushort protocolVersion, int length)
+        {
+            ContentType = contentType;
+            ProtocolVersion = protocolVersion;
+            Length = length;
+        }
+    }
+
+    class RecordLayer : RecordLayerBase
     {
         const int RecordHeaderBytesCount = 5;
         const int MaxTlsPlaintextLength = 1 << 14;
@@ -25,7 +55,6 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
         private RecordLayerState State;
 
         private byte[] buffer { get { return bufferForStream.Buffer; } }
-        public byte[] RecordFragmentBytes { get; private set; }
         private byte[] plaintextReadBuffer;
         private byte[] plaintextWriteBuffer;
         private byte[] encryptedWriteBuffer;
@@ -60,7 +89,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             SetBackwardCompatibilityMode(false, false);
         }
 
-        public void SetBackwardCompatibilityMode(
+        public override void SetBackwardCompatibilityMode(
             bool compatibilityAllowRecordLayerVersionLower0x0303 = false,
             bool compatibilitySilentlyDropUnencryptedChangeCipherSpec = false)
         {
@@ -68,7 +97,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             this.compatibilitySilentlyDropUnencryptedChangeCipherSpec = compatibilitySilentlyDropUnencryptedChangeCipherSpec;
         }
 
-        public RecordInfo Read()
+        public override RecordInfo Read()
         {
             int firstThreeFields = 5;
             ContentType contentType;
@@ -148,7 +177,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             return recordInfo;
         }
 
-        public void Write(ContentType contentType, byte[] buffer, long offset, long length)
+        public override void Write(ContentType contentType, byte[] buffer, long offset, long length)
         {
             int chunkLen = configuredMaxPlaintextRecordLength;
             long remToWrite = length;
@@ -210,7 +239,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             writeSequenceNumber++;
         }
 
-        internal void SetRecordSizeLimit(ushort maxRecord)
+        public override void SetRecordSizeLimit(ushort maxRecord)
         {
             Validation.ThrowInternal(maxRecord > Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength);
             configuredMaxPlaintextRecordLength = maxRecord;
@@ -226,22 +255,8 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
             for (int i = 0; i < iv.Length; i++) resultNonce[i] = (byte)(resultNonce[i] ^ iv[i]);
         }
-
-        public struct RecordInfo
-        {
-            public ContentType ContentType;
-            ushort ProtocolVersion;
-            public int Length;
-
-            public RecordInfo(ContentType contentType, ushort protocolVersion, int length)
-            {
-                ContentType = contentType;
-                ProtocolVersion = protocolVersion;
-                Length = length;
-            }
-        }
-
-        public void ChangeWriteEncryption(AEAD newWrite, byte[] newIv)
+        
+        public override void ChangeWriteEncryption(AEAD newWrite, byte[] newIv)
         {
             perRecordWriteNonce = new byte[newIv.Length];
             writeSequenceNumber = 0;
@@ -249,12 +264,52 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             aeadWrite = newWrite;
         }
 
-        public void ChangeReadEncryption(AEAD newRead, byte[] newIv)
+        public override void ChangeReadEncryption(AEAD newRead, byte[] newIv)
         {
             perRecordReadNonce = new byte[newIv.Length];
             readSequenceNumber = 0;
             readIv = newIv;
             aeadRead = newRead;
         }
+    }
+
+    class QuicIntegrationRecordLayer : RecordLayerBase
+    {
+        private QuicIntegrationTlsNetworkStream stream;
+        private BufferForStream streamBuffer;
+
+        // dont need to encrypt/decrypt anything because quic do it.
+        // Just read and return data directly from stream
+
+        public QuicIntegrationRecordLayer(QuicIntegrationTlsNetworkStream stream)
+        {
+            this.stream = stream;
+            this.streamBuffer = new BufferForStream(stream);
+            
+            // todo how to implement this? what is max size?
+            base.RecordFragmentBytes = new byte[12345];
+        }
+
+        public override void ChangeReadEncryption(AEAD newRead, byte[] newIv) => stream.ChangeReadEncryption(newRead, newIv);
+        public override void ChangeWriteEncryption(AEAD newWrite, byte[] newIv) => stream.ChangeWriteEncryption(newWrite, newIv);
+
+        public override RecordInfo Read()
+        {
+            int readLen = stream.Read(RecordFragmentBytes, 0, 12345);
+            var ri = new RecordInfo(ContentType.Handshake, 0x0304, readLen);
+
+            return ri;
+        }
+
+        public override void Write(ContentType contentType, byte[] buffer, long offset, long length)
+        {
+            checked
+            {
+                stream.Write(buffer, (int)offset, (int)length);
+            }
+        }
+
+        public override void SetBackwardCompatibilityMode(bool compatibilityAllowRecordLayerVersionLower0x0303 = false, bool compatibilitySilentlyDropUnencryptedChangeCipherSpec = false) { }
+        public override void SetRecordSizeLimit(ushort maxRecord) { }
     }
 }
