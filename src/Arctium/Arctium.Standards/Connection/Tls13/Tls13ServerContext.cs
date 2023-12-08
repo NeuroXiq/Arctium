@@ -19,5 +19,14 @@ namespace Arctium.Standards.Connection.Tls13
 
             return context;
         }
+
+        internal static Tls13ServerContext QuicIntegrationDefault(X509CertWithKey[] certificates)
+        {
+            var config = Tls13ServerConfig.Default(certificates);
+            config.ConfigureQuicIntegration(true);
+            var context = new Tls13ServerContext(config);
+
+            return context;
+        }
     }
 }

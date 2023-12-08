@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +45,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             UnknownNotImplemented = 0xFF
         }
 
+        [DebuggerDisplay("Id = {System.Enum.GetName(typeof(Arctium.Standards.Connection.Tls13Impl.Model.Extensions.QuicTransportParametersExtension.TransportParameterId), Id)}, Length = {Length}")]
         public class TransportParameter
         {
             public TransportParameterId Id { get; set; }

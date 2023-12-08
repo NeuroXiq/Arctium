@@ -184,6 +184,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
                 result = new QuicTransportParametersExtension.UnknownTransportParameter(idInt);
             }
 
+            result.Length = length;
             decodedLength = encid + enclength + (int)length;
 
             return result;
