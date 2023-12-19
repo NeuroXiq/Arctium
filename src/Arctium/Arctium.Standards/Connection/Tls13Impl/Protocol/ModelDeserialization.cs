@@ -1034,8 +1034,6 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             return result;
         }
 
-
-
         private Extension DeserializeExtension_ServerName_Server(byte[] buffer, int offset)
         {
             ushort contentLength = MemMap.ToUShort2BytesBE(buffer, offset + 2);

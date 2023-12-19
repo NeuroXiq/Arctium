@@ -26,6 +26,14 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         #region Encoding
 
+        public static void Encode_CryptoFrame(ByteBuffer output, CryptoFrame frame)
+        {
+            output.Append((byte)FrameType.Crypto);
+            Encode_IntegerVLE(output, frame.Offset);
+            Encode_IntegerVLE(output, frame.Length);
+            output.Append(frame.Data.Span);
+        }
+
         public static void Encode_ACKFrame(
             ByteBuffer output,
             FrameType type,
@@ -66,7 +74,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             }
         }
 
-        public static int Encode_IntegerVLE(ByteBuffer output, ulong value)
+        public static int Encode_IntegerVLE_EncodeLength(ulong value)
         {
             if ((value & ((ulong)0x03 << 62)) != 0)
             {
@@ -83,6 +91,13 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             else if (value <= 16383) enclen = 1;
             else if (value <= 1073741823) enclen = 2;
             else enclen = 3;
+
+            return enclen;
+        }
+
+        public static int Encode_IntegerVLE(ByteBuffer output, ulong value)
+        {
+            int enclen = Encode_IntegerVLE_EncodeLength(value);
 
             int o = output.MallocAppend(enclen);
             byte[] b = output.Buffer;
@@ -113,10 +128,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         #endregion
 
 
-        public static CryptoFrame DecodeFrame_Crypto(Memory<byte> buf, int offset)
+        public static CryptoFrame DecodeFrame_Crypto(byte[] buf, int offset)
         {
             var f = new CryptoFrame();
-            var b = buf.Span;
+            var b = buf;
             int o = offset;
             f.Type = (FrameType)b[o];
             o += 1;
@@ -130,7 +145,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             f.Length = DecodeIntegerVLE(b, o, out int enclen);
             o += enclen;
 
-            f.Data = buf.Slice(o, (int)f.Length);
+            f.Data = new Memory<byte>(buf, o, (int)f.Length);
             f.A_TotalLength = 1 + encoffs + enclen + (int)f.Length;
 
             return f;
@@ -298,6 +313,152 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             p.Payload = new Memory<byte>(buffer, o, payloadLen);
 
             return p;
+        }
+
+        /// <summary>
+        /// encodes all fields in initial packet, payload is skipped
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
+        internal static void Encode_InitialPacketSkipPayload(ByteBuffer output, InitialPacket p)
+        {
+            byte[] buf = output.Buffer;
+
+            output.Append(p.FirstByte);
+            int oversion = output.MallocAppend(4);
+            MemMap.ToBytes1UIntBE(p.Version, output.Buffer, oversion);
+            
+            // dest con id len
+            output.Append((byte)p.DestConnIdLen);
+            output.Append(p.DestConId);
+
+            //src con id
+            output.Append((byte)p.SrcConIdLen);
+            output.Append(p.SrcConId);
+
+            // token
+            Encode_IntegerVLE(output, p.TokenLen);
+            output.Append(p.Token);
+
+            // length
+            Encode_IntegerVLE(output, p.Length);
+
+            // packet number
+            Encode_LHP_PacketNumber(output, p.PacketNumber);
+            
+            // payload ignore
+            // p.payload
+        }
+
+        static int Encode_LHP_PacketNumber(ByteBuffer output, uint packetNumber)
+        {
+            int o = -1;
+            int l = 0;
+
+            if ((packetNumber >> 24) != 0)
+            {
+                o = output.MallocAppend(4);
+                MemMap.ToBytes1UIntBE(packetNumber, output.Buffer, o);
+                l = 4;
+            }
+            else if ((packetNumber >> 16) != 0)
+            {
+                o = output.MallocAppend(3);
+                output.Buffer[o + 0] = (byte)(packetNumber >> 16);
+                output.Buffer[o + 1] = (byte)(packetNumber >> 8);
+                output.Buffer[o + 2] = (byte)(packetNumber >> 0);
+                l = 3;
+            }
+            else if ((packetNumber >> 8) != 0)
+            {
+                o = output.MallocAppend(2);
+                MemMap.ToUShort2BytesBE(output.Buffer, o);
+                l = 2;
+            }
+            else
+            {
+                output.Append((byte)packetNumber);
+                l = 1;
+            }
+
+            return l;
+        }
+
+        internal static ConnectionCloseFrame DecodeFrame_Close(byte[] payload, int o)
+        {
+            var c = new ConnectionCloseFrame();
+            int initialOffset = o;
+
+            c.Type = (FrameType)payload[o];
+            o += 1;
+            c.ErrorCode = DecodeIntegerVLE(payload, o, out var eclen);
+            o += eclen;
+
+            if (c.Type == FrameType.ConnectionCloseC)
+            {
+                c.FrameType = DecodeIntegerVLE(payload, o, out var ftlen);
+                o += ftlen;
+            }
+
+            c.ReasonPhraseLength = DecodeIntegerVLE(payload, o, out var rpllen);
+            o += rpllen;
+            checked
+            {
+                c.ReasonPhrase = new Memory<byte>(payload, o, (int)c.ReasonPhraseLength);
+                o += (int)c.ReasonPhraseLength;
+            }
+
+            c.A_TotalLength = o - initialOffset + 1;
+
+            return c;
+        }
+
+        public static void EncodePacketNumber(long full_pn, long largest_acked, out uint encoded_result, out int num_bytes)
+        {
+            long num_unacked = 0;
+
+            if (largest_acked < 0)
+                num_unacked = full_pn + 1;
+            else num_unacked = full_pn - largest_acked;
+
+            int min_bits = (int)Math.Log2((double)num_unacked) + 1;
+            num_bytes = (int)Math.Ceiling((decimal)min_bits / 8);
+
+            switch (num_bytes)
+            {
+                case 1: encoded_result = (byte)full_pn; break;
+                case 2: encoded_result = (ushort)full_pn;  break;
+                case 3: encoded_result = (uint)(full_pn & 0x00FFFFFF); break;
+                case 4: encoded_result = (uint)full_pn; break;
+                default: throw new QuicException("coding error"); break;
+            }
+        }
+
+        public static long DecodePacketNumber(uint largest_pn, uint truncated_pn, int pn_nbits)
+        {
+            long expected_pn = largest_pn + 1;
+            long pn_win = (long)1 << (int)pn_nbits;
+            long pn_hwin = pn_win / 2;
+            long pn_mask = pn_win - 1;
+
+            long candidate_pn = (expected_pn & ~pn_mask) | truncated_pn;
+
+            if (
+                (candidate_pn <= expected_pn - pn_hwin) &&
+                (candidate_pn < ((1 << 62) - pn_win))
+                )
+            {
+                return candidate_pn + pn_win;
+            }
+
+            if (
+                (candidate_pn > (expected_pn + pn_hwin)) &&
+                candidate_pn >= pn_win
+                )
+            {
+                return candidate_pn - pn_win;
+            }
+
+            return candidate_pn;
         }
     }
 }

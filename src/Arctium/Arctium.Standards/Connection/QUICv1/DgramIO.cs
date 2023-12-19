@@ -27,7 +27,8 @@ namespace Arctium.Standards.Connection.QUICv1
     class UdpSocketClient : DgramIO
     {
         public EndPoint ClientEndpoint;
-        public ByteBuffer byteBuffer;
+        // public ByteBuffer byteBuffer;
+        Queue<byte[]> dgrams = new Queue<byte[]>();
         private QuicSocketServer parentServer;
         private object _lock = new object();
 
@@ -44,27 +45,28 @@ namespace Arctium.Standards.Connection.QUICv1
 
         public override async Task<int> ReadDgramAsync(byte[] buffer, int offset)
         {
-            if (byteBuffer.DataLength == 0)
+            if (dgrams.Count == 0)
             {
                 await parentServer.ReadDgram(this);
             }
 
-            int dataLen = byteBuffer.DataLength;
+            if (dgrams.Count == 0) throw new Exception("timeout read waiting");
 
-            if (dataLen > 0)
+            lock (_lock)
             {
-                MemCpy.Copy(byteBuffer.Buffer, 0, buffer, offset, dataLen);
-                byteBuffer.TrimStart(dataLen);
-            }
+                var d = dgrams.Dequeue();
+                MemCpy.Copy(d, 0, buffer, offset, d.Length);
 
-            return dataLen;
+                return d.Length;
+            }
         }
 
         public void ThreadSafeWriteDgram(byte[] buffer, int offset, int length)
         {
             lock (_lock)
             {
-                byteBuffer.Append(buffer, offset, length);
+                var dgramToPush = MemCpy.CopyToNewArray(buffer, offset, length);
+                dgrams.Enqueue(dgramToPush);
             }
         }
 
@@ -129,7 +131,6 @@ namespace Arctium.Standards.Connection.QUICv1
             {
                 client = new UdpSocketClient(this)
                 {
-                    byteBuffer = new ByteBuffer(),
                     ClientEndpoint = result.RemoteEndPoint
                 };
             }

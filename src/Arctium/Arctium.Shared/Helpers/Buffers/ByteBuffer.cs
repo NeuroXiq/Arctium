@@ -44,16 +44,21 @@ namespace Arctium.Shared.Helpers.Buffers
             DataLength -= count;
         }
 
-        public void Append(params byte[] buffer) => Append(buffer, 0, buffer.Length);
+        public void Append(Memory<byte> buffer) => Append(buffer.Span, 0, buffer.Length);
 
-        public void Append(byte[] buffer, int offset, int length)
+        public void Append(Span<byte> buffer, int offset, int length)
         {
             ExtendIfNeededBuffer(length);
-
             MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
 
             DataLength += length;
         }
+
+        public void Append(params byte[] items) => Append(new Span<byte>(items), 0, items.Length);
+
+        public void Append(Span<byte> buffer) => Append(buffer, 0, buffer.Length);
+
+        public void Append(byte[] buffer, int offset, int length) => Append(new Span<byte>(buffer), offset, length);
 
         public void Reset()
         {

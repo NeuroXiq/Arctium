@@ -263,10 +263,5 @@ namespace Arctium.Standards.Connection.Tls13
 
             SignatureSchemes = internalList;
         }
-
-        internal void ConfigureQuicIntegration(bool isQuicIntegration)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

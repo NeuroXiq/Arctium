@@ -34,16 +34,104 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         byte[] headerMask;
         byte[] clientNonce;
         byte[] serverNonce;
+        byte[] nonce;
+
         AES clientHpAES;
         AES serverHpAES;
+        private GaloisCounterMode clientAead;
+        private GaloisCounterMode serverAead;
 
-        public QuicCrypto()
+        AES readHtpAes { get { return endpoint == EndpointType.Server ? clientHpAES : serverHpAES; } }
+        AES writeHtpAes { get { return endpoint == EndpointType.Server ? serverHpAES : clientHpAES; } }
+        AEAD readAead { get { return endpoint == EndpointType.Server ? clientAead : serverAead; } }
+        AEAD writeAead { get { return endpoint == EndpointType.Server ? serverAead : clientAead; } }
+        byte[] writeIv { get { return endpoint == EndpointType.Server ? serverIv : clientIv; } }
+        byte[] readIv { get { return endpoint == EndpointType.Server ? clientIv : serverIv; } }
+
+
+        public QuicCrypto(EndpointType endpoint)
         {
+            this.endpoint = endpoint;
             // SetupInitCrypto();
         }
 
         byte[] plainPacket = new byte[]
             { 0xc3,0x00,0x00,0x00,0x01,0x08,0x83,0x94,0xc8,0xf0,0x3e,0x51,0x57,0x08,0x00,0x00,0x44,0x9e,0x00,0x00,0x00,0x02,0x06,0x00,0x40,0xf1,0x01,0x00,0x00,0xed,0x03,0x03,0xeb,0xf8,0xfa,0x56,0xf1,0x29,0x39,0xb9,0x58,0x4a,0x38,0x96,0x47,0x2e,0xc4,0x0b,0xb8,0x63,0xcf,0xd3,0xe8,0x68,0x04,0xfe,0x3a,0x47,0xf0,0x6a,0x2b,0x69,0x48,0x4c,0x00,0x00,0x04,0x13,0x01,0x13,0x02,0x01,0x00,0x00,0xc0,0x00,0x00,0x00,0x10,0x00,0x0e,0x00,0x00,0x0b,0x65,0x78,0x61,0x6d,0x70,0x6c,0x65,0x2e,0x63,0x6f,0x6d,0xff,0x01,0x00,0x01,0x00,0x00,0x0a,0x00,0x08,0x00,0x06,0x00,0x1d,0x00,0x17,0x00,0x18,0x00,0x10,0x00,0x07,0x00,0x05,0x04,0x61,0x6c,0x70,0x6e,0x00,0x05,0x00,0x05,0x01,0x00,0x00,0x00,0x00,0x00,0x33,0x00,0x26,0x00,0x24,0x00,0x1d,0x00,0x20,0x93,0x70,0xb2,0xc9,0xca,0xa4,0x7f,0xba,0xba,0xf4,0x55,0x9f,0xed,0xba,0x75,0x3d,0xe1,0x71,0xfa,0x71,0xf5,0x0f,0x1c,0xe1,0x5d,0x43,0xe9,0x94,0xec,0x74,0xd7,0x48,0x00,0x2b,0x00,0x03,0x02,0x03,0x04,0x00,0x0d,0x00,0x10,0x00,0x0e,0x04,0x03,0x05,0x03,0x06,0x03,0x02,0x03,0x08,0x04,0x08,0x05,0x08,0x06,0x00,0x2d,0x00,0x02,0x01,0x01,0x00,0x1c,0x00,0x02,0x40,0x01,0x00,0x39,0x00,0x32,0x04,0x08,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x05,0x04,0x80,0x00,0xff,0xff,0x07,0x04,0x80,0x00,0xff,0xff,0x08,0x01,0x10,0x01,0x04,0x80,0x00,0x75,0x30,0x09,0x01,0x10,0x0f,0x08,0x83,0x94,0xc8,0xf0,0x3e,0x51,0x57,0x08,0x06,0x04,0x80,0x00,0xff,0xff};
+        private EndpointType endpoint;
+
+        public int EncryptPacket(
+            byte[] header,
+            int headerOffset,
+            int headerLen,
+            byte[] payload,
+            int payloadOffset,
+            int payloadLen,
+            byte[] output,
+            int outOffset)
+        {
+            uint packetNumber = 0;
+            int pnlength = -1;
+            int oPacketNumber = -1;
+            
+            if ((header[headerOffset] & 0x80) != 0)
+            {
+                var lhp = QuicModelCoding.DecodeLHP(header, headerOffset, false);
+                packetNumber = lhp.PacketNumber;
+                pnlength = lhp.PacketNumberLength;
+                oPacketNumber = lhp.A_OffsetPacketNumber;
+            }
+            else throw new NotImplementedException();
+
+            ComputeWriteNonce(packetNumber);
+
+            int oPayload = outOffset + headerLen;
+            int oAuthTag = oPayload + payloadLen;
+
+            writeAead.AuthenticatedEncryption(
+                nonce, 0, nonce.Length,
+                payload, payloadOffset, payloadLen,
+                header, headerOffset, headerLen,
+                output, oPayload,
+                output, oAuthTag);
+
+            // header protection
+            MemCpy.Copy(header, headerOffset, output, outOffset, headerLen);
+            int sampleOffset = oPacketNumber + outOffset + 4;
+
+            writeHtpAes.Encrypt(output, sampleOffset, headerMask, 0, headerMask.Length);
+            int o = outOffset;
+            byte[] buffer = output;
+            byte[] mask = headerMask;
+
+            if ((buffer[o] & 0x80) != 0)
+            {
+                buffer[o] ^= (byte)(mask[0] & 0x0f);
+            }
+            else
+            {
+                throw new NotImplementedException(); // todo offsets;
+                buffer[o] ^= (byte)(mask[0] & 0x1f);
+            }
+
+            for (int i = 0; i < pnlength; i++)
+                buffer[oPacketNumber + i] ^= mask[i + 1];
+
+            return writeAead.AuthenticationTagLengthBytes + headerLen + payloadLen;
+        }
+
+        void ComputeWriteNonce(uint packetNumber)
+        {
+            MemCpy.Copy(writeIv, 0, nonce, 0, writeIv.Length);
+            for (int i = 0; i < 4; i++)
+                nonce[nonce.Length - 1 - i] ^= (byte)(packetNumber >> (8 * i));
+        }
+
+        void ComputeReadNonce(uint packetNumber)
+        {
+            MemCpy.Copy(readIv, 0, nonce, 0, readIv.Length);
+            for (int i = 0; i < 4; i++)
+                nonce[nonce.Length - 1 - i] ^= (byte)(packetNumber >> (8 * i));
+        }
 
         public void DecryptPacket(byte[] buffer, int offset, byte[] output, int outOffs)
         {
@@ -52,14 +140,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             // 3. copy decrypted header to output (at start)
 
             HeaderProtectionDecrypt(buffer, offset);
-
-            var aead = new GaloisCounterMode(new AES(clientKey), 16);
+            
             var lhp = QuicModelCoding.DecodeLHP(buffer, offset, false);
 
-            clientNonce = new byte[clientIv.Length];
-            MemCpy.Copy(clientIv, 0, clientNonce, 0, clientNonce.Length);
-            for (int i = 0; i < 4; i++)
-                clientNonce[clientIv.Length - 1 - i] ^= (byte)(lhp.PacketNumber >> (8 * i));
+            ComputeReadNonce(lhp.PacketNumber);
 
             int decryptedPayloadOffs = lhp.A_HeaderLength;
             int encryptedPayloadOffs = offset + lhp.A_HeaderLength;
@@ -67,8 +151,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             int atagOffs = offset + lhp.A_HeaderLength + lhp.Payload.Length - 16;
             byte[] decryptedPayload = output;
             
-            aead.AuthenticatedDecryption(
-                clientNonce, 0, clientNonce.Length,
+            readAead.AuthenticatedDecryption(
+                nonce, 0, nonce.Length,
                 buffer, encryptedPayloadOffs, encryptedPayloadLen,
                 buffer, offset, lhp.A_HeaderLength,
                 decryptedPayload, decryptedPayloadOffs,
@@ -88,11 +172,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             int offsetPacketNumber = lhp.A_OffsetPacketNumber;
             int sampleOffset = lhp.A_OffsetPacketNumber + 4;
 
-            var mask = new byte[16];
-            
-            clientHpAES.Encrypt(buffer, sampleOffset, mask, 0, 16);
+            byte[] mask = headerMask;
+            readHtpAes.Encrypt(buffer, sampleOffset, mask, 0, 16);
 
-             if ((buffer[o] & 0x80) != 0)
+            if ((buffer[o] & 0x80) != 0)
             {
                 buffer[o] ^= (byte)(mask[0] & 0x0f);
             }
@@ -132,6 +215,12 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             clientHpAES = new AES(clientHp);
             serverHpAES = new AES(serverHp);
+
+            clientAead = new GaloisCounterMode(new AES(clientKey), 16);
+            serverAead = new GaloisCounterMode(new AES(serverKey), 16);
+
+            nonce = new byte[clientIv.Length];
+            headerMask = new byte[16];
         }
     }
 }

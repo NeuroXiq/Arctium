@@ -23,9 +23,21 @@ namespace Program
         {
             // Main2().Wait();
             // Console.ReadLine();
-            Task.Factory.StartNew(() => { ListenTCP(); });
-            Task.Factory.StartNew(() => { ListenUDP2().Wait(); });
-            
+            //Task.Factory.StartNew(() => { ListenTCP(); });
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+
+                    ListenUDP2().Wait();
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                    // throw e.InnerException;
+                }
+            });
+
             // Task.Factory.StartNew(() => { TestSendUDP(); });
             Console.ReadLine();
         }
@@ -70,7 +82,7 @@ namespace Program
             // byte[] a= listener.Receive(ref groupEP);
 
             Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            
+
             s.Bind(new IPEndPoint(IPAddress.Any, 443));
             var endpoint = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
             // s.Receive(new byte[443]);
@@ -130,24 +142,24 @@ alt-svc: h3="":443""; ma=93600
                         catch (Exception e)
                         {
                             break;
-                            
+
                         }
                     }
                 }, client);
             }
 
-            
 
-            
 
-           
+
+
+
 
             /*
              HTTP/2 200 
              ...
              alt-svc: h3-27=":443"; ma=86400, h3-28=":443"; ma=86400, h3-29=":443"; ma=86400
              */
-            
+
         }
 
         static async Task Main2()

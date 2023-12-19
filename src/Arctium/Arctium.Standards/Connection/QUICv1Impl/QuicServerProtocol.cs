@@ -35,6 +35,11 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         bool isLongPacket = true;
 
+        public async Task WritePacket(byte[] buffer, long offset, long length)
+        {
+
+        }
+
         public async Task LoadPacket()
         {
             if (packets.DataLength == 0)
@@ -68,15 +73,22 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                     }
                 }
 
+                bool isnew = false;
+
                 if (connection == null)
                 {
-                    connection = new QuicConnection(this);
+                    connection = new QuicConnection(this, EndpointType.Server);
+                    isnew = true;
                 }
 
                 connection.BufferPacket(drams, 0, lhp.A_TotalPacketLength);
                 packets.TrimStart(lhp.A_TotalPacketLength);
 
-                await connection.AcceptClient();
+                if (isnew)
+                {
+                    connections.Add(connection);
+                    await connection.AcceptClient();
+                }
             }
             else throw new NotImplementedException();
 

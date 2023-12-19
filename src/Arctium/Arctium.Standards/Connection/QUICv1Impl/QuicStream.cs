@@ -36,20 +36,28 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         private List<FrameLen> readyFramentsToRead = new List<FrameLen>();
 
         public byte[] Data { get; private set; }
-        public long Length { get; private set; }
+        // public long Length { get; private set; }
 
         public long Cursor { get; private set; }
         public bool HasData { get { return GetFrameCursorPoints() != null; } }
 
+        public QuicStream()
+        {
+            Data = new byte[1024];
+        }
+
         internal void RecvStreamFrame(CryptoFrame cf)
         {
+            // todo this cannot work like this (very large buffers if ExtensIfNeede every time on append packet)
+            // implement cyclic buffer?
+
             ExtendIfNeeded((long)cf.Offset + (long)cf.Data.Length);
             readyFramentsToRead.Add(new FrameLen() { Length = (long)cf.Length, Offset = (long)cf.Offset });
+            MemCpy.Copy(cf.Data.Span, 0, Data, (int)cf.Offset, cf.Data.Length);
         }
 
         internal int Read(byte[] buffer, int offset, int length)
         {
-            if (length > Length) throw new InvalidOperationException("internal - length > stream.Length (try read more than loaded)");
             if (length == 0 || !HasData) return 0;
 
             var toRead = GetFrameCursorPoints();
@@ -57,6 +65,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             MemCpy.Copy(Data, toRead.Offset, buffer, offset, maxRead);
 
+            Cursor += maxRead;
             toRead.Offset += maxRead;
             toRead.Length -= maxRead;
 
@@ -78,7 +87,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             checked
             {
                 // todo should cast (int)?
-                MemCpy.Copy(Data, 0, newBuf, 0, (int)Length);
+                MemCpy.Copy(Data, 0, newBuf, 0, Data.Length);
             }
 
             Data = newBuf;

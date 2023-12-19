@@ -58,7 +58,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             }
         }
 
-        public class OriginalDestinationConnectionId 
+        public class OriginalDestinationConnectionId : ByteArrayTransportParameter
         {
             /// <summary>
             /// This parameter is the value of the Destination
@@ -66,6 +66,11 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             /// transport parameter is only sent by a server.
             /// </summary>
             public byte[] Value;
+
+            public OriginalDestinationConnectionId(byte[] value) : base(TransportParameterId.OriginalDestinationConnectionId, value)
+            {
+                
+            }
         }
 
         /// <summary>
@@ -104,9 +109,16 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             }
         }
 
-        public class MaxIdleTimeout 
+        public class MaxIdleTimeout : IntegerTransportParameter
         {
+            /// <summary>
+            /// max idle in miliseconds. Zero if no idle
+            /// </summary>
             public ulong Value;
+
+            public MaxIdleTimeout(ulong value) : base(TransportParameterId.MaxIdleTimeout, value)
+            {
+            }
         }
 
         public class StatelessResetToken 
@@ -117,51 +129,74 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             public byte[] Value;
         }
 
-        //public class MaxUdpPayloadSize : IntegerTransportParameter
-        //{
-        //}
-
-        public class InitialMaxData 
+        public class MaxUdpPayloadSize : IntegerTransportParameter
         {
-
+            /// <summary>
+            /// Max UDP payload size in bytes, max is 65527 and lower than 1200 are invalid
+            /// </summary>
+            /// <param name="value"></param>
+            public MaxUdpPayloadSize(ulong value) : base(TransportParameterId.MaxUdpPayloadSize, value)
+            {
+            }
         }
 
-        public class InitialMaxStreamDataBidiLocal 
+        public class InitialMaxData : IntegerTransportParameter
         {
-        
+            public InitialMaxData(ulong value) : base(TransportParameterId.InitialMaxData, value)
+            {
+            }
         }
 
-        public class InitialMaxStreamDataBidiRemote 
+        public class InitialMaxStreamDataBidiLocal : IntegerTransportParameter
         {
-        
+            public InitialMaxStreamDataBidiLocal(ulong value) : base(TransportParameterId.InitialMaxStreamDataBidiLocal, value)
+            {
+            }
         }
 
-        public class InitialMaxStreamDataUni 
+        public class InitialMaxStreamDataBidiRemote : IntegerTransportParameter
         {
-        
+            public InitialMaxStreamDataBidiRemote(ulong value) : base(TransportParameterId.InitialMaxStreamDataBidiRemote, value)
+            {
+            }
         }
 
-        public class InitialMaxStreamsBidi 
+        public class InitialMaxStreamDataUni : IntegerTransportParameter
         {
-        
+            public InitialMaxStreamDataUni(ulong value) : base(TransportParameterId.InitialMaxStreamDataUni, value)
+            {
+            }
         }
 
-        public class InitialMaxStreamsUni 
+        public class InitialMaxStreamsBidi : IntegerTransportParameter
         {
-        
+            public InitialMaxStreamsBidi(ulong value) : base(TransportParameterId.InitialMaxStreamsBidi, value)
+            {
+            }
         }
 
-        public class AckDelayExponent 
+        public class InitialMaxStreamsUni : IntegerTransportParameter
         {
-        
+            public InitialMaxStreamsUni(ulong value) : base(TransportParameterId.InitialMaxStreamsUni, value)
+            {
+            }
         }
 
-        public class MaxAckDelay 
+        public class AckDelayExponent : IntegerTransportParameter
         {
-        
+            public AckDelayExponent(ulong value) : base(TransportParameterId.AckDelayExponent, value)
+            {
+            }
         }
 
-        public class DisableActiveMigration 
+        public class MaxAckDelay : IntegerTransportParameter
+        {
+            public MaxAckDelay(ulong value) : base(TransportParameterId.MaxAckDelay, value)
+            {
+            }
+        }
+
+        public class DisableActiveMigration
         {
         
         }
@@ -186,9 +221,11 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
         
         }
 
-        public class InitialSourceConnectionId 
+        public class InitialSourceConnectionId : ByteArrayTransportParameter
         {
-        
+            public InitialSourceConnectionId(byte[] value) : base(TransportParameterId.InitialSourceConnectionId, value)
+            {
+            }
         }
 
         public class RetrySourceConnectionId 
