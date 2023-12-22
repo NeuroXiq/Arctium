@@ -643,9 +643,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
                 nextGenSecret = ClientApplicationTrafficSecret0 = NextGenAppTraficSecret(ClientApplicationTrafficSecret0);
             }
 
-            AEADFactory(nextGenSecret, out var aead, out var iv);
-
-            recordLayer.ChangeWriteEncryption(aead, iv);
+            // AEADFactory(nextGenSecret, out var aead, out var iv);
+            // recordLayer.ChangeRecordLayerWriteCrypto(aead, iv);
+            recordLayer.ChangeRecordLayerWriteCrypto(this, nextGenSecret);
         }
 
         public void DoKeyUpdateForReading(RecordLayerBase recordLayer)
@@ -661,8 +661,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
                 nextGenSecret = ServerApplicationTrafficSecret0 = NextGenAppTraficSecret(ServerApplicationTrafficSecret0);
             }
 
-            AEADFactory(nextGenSecret, out var aead, out var iv);
-            recordLayer.ChangeReadEncryption(aead, iv);
+            // AEADFactory(nextGenSecret, out var aead, out var iv);
+            // recordLayer.ChangeReadEncryption(aead, iv);
+            recordLayer.ChangeRecordLayerReadCrypto(this, nextGenSecret);
         }
 
         private byte[] NextGenAppTraficSecret(byte[] currentClientOrServerSecret)
@@ -672,7 +673,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             return next;
         }
 
-        private void AEADFactory(byte[] keySecret, out AEAD aead, out byte[] iv)
+        public void AEADFactory(byte[] keySecret, out AEAD aead, out byte[] iv)
         {
             byte[] key;
 
@@ -705,19 +706,62 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             }
         }
 
-        public void ChangeRecordLayerReadCrypto(RecordLayerBase recordLayer, byte[] readTrafficSecret)
+        public void AEADFactory_QUIC(byte[] keySecret, out AEAD aead, out byte[] iv, out AES hpAes, out ChaCha20 hpChacha)
         {
-            AEADFactory(readTrafficSecret, out var aead, out var iv);
+            byte[] key;
+            string keyLabel = "quic key";
+            string ivLabel = "quic iv";
+            string hpLabel = "quic hp";
 
-            recordLayer.ChangeReadEncryption(aead, iv);
+            hpAes = null;
+            hpChacha = null;
+
+            switch (SelectedCipherSuite)
+            {
+                case CipherSuite.TLS_AES_128_GCM_SHA256:
+                    key = HkdfExpandLabel(keySecret, keyLabel, new byte[0], 16);
+                    iv = HkdfExpandLabel(keySecret, ivLabel, new byte[0], 12);
+                    aead = new GaloisCounterMode(new AES(key), 16);
+                    hpAes = new AES(HkdfExpandLabel(hkdf, keySecret, hpLabel, new byte[0], 16));
+
+                    break;
+                case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+                    throw new NotSupportedException(); // todo fix this
+                    key = HkdfExpandLabel(keySecret, keyLabel, new byte[0], 32);
+                    iv = HkdfExpandLabel(keySecret, ivLabel, new byte[0], 12);
+                    aead = new AEAD_CHACHA20_POLY1305(key);
+                    throw new NotImplementedException(); // todo;
+                    // hpChacha = new ChaCha20(
+
+                    break;
+                case CipherSuite.TLS_AES_128_CCM_SHA256:
+                    throw new NotSupportedException("internal: this should never happen (quic tls cannot negotiate this)"); // not supported by quic by spec
+
+                    break;
+                case CipherSuite.TLS_AES_256_GCM_SHA384:
+                    key = HkdfExpandLabel(keySecret, keyLabel, new byte[0], 32);
+                    iv = HkdfExpandLabel(keySecret, ivLabel, new byte[0], 12);
+                    aead = RFC5116_AEAD_Predefined.Create_AEAD_AES_256_GCM(key);
+                    hpAes = new AES(HkdfExpandLabel(hkdf, keySecret, hpLabel, new byte[0], 32));
+
+                    break;
+                default: throw new NotImplementedException();
+            }
         }
 
-        public void ChangeRecordLayerWriteCrypto(RecordLayerBase recordLayer, byte[] readTrafficSecret)
-        {
-            AEADFactory(readTrafficSecret, out var aead, out var iv);
+        //public void ChangeRecordLayerReadCrypto(RecordLayerBase recordLayer, byte[] readTrafficSecret)
+        //{
+        //    AEADFactory(readTrafficSecret, out var aead, out var iv);
 
-            recordLayer.ChangeWriteEncryption(aead, iv);
-        }
+        //    recordLayer.ChangeReadEncryption(aead, iv);
+        //}
+
+        //public void ChangeRecordLayerWriteCrypto(RecordLayerBase recordLayer, byte[] writeTrafficSecret)
+        //{
+        //    AEADFactory(writeTrafficSecret, out var aead, out var iv);
+
+        //    recordLayer.ChangeWriteEncryption(aead, iv);
+        //}
 
         #region Secrets generation
 

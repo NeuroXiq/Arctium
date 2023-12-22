@@ -157,8 +157,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
         // void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
 
-        internal void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret) => crypto.ChangeRecordLayerWriteCrypto(recordLayer, trafficSecret);
-        internal void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret) => crypto.ChangeRecordLayerReadCrypto(recordLayer, trafficSecret);
+        internal void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret) => recordLayer.ChangeRecordLayerWriteCrypto(crypto, trafficSecret);
+        internal void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret) => recordLayer.ChangeRecordLayerReadCrypto(crypto, trafficSecret);
+
         internal void KeyUpdateForWriting(Crypto crypto) => crypto.DoKeyUpdateForWriting(recordLayer);
         internal void KeyUpdateForReading(Crypto crypto) => crypto.DoKeyUpdateForReading(recordLayer);
 

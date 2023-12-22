@@ -82,10 +82,22 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             if (!cursor.OnMaxPosition)
             {
                 int decoded = 0;
+                object prev = null;
                 while (cursor.CurrentPosition + decoded < cursor.MaxPosition)
                 {
                     cursor += decoded;
-                    var decodedParameter = DeserializeSingleQuicTransportParameter(b, cursor, out decoded);
+                    QuicTransportParametersExtension.TransportParameter decodedParameter;
+                    try
+                    {
+                        decodedParameter = DeserializeSingleQuicTransportParameter(b, cursor, out decoded);
+                    }
+                    catch (Exception e)
+                    {
+                        Debugger.Break();
+                        throw;
+                    }
+                    
+                    prev = decodedParameter;
                     result.Add(decodedParameter);
                 }
 
@@ -105,32 +117,13 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             c += encid;
 
             var length = QuicModelCoding.DecodeIntegerVLE(buf, c.CurrentPosition, out int enclength);
-            c += enclength;
+            
+            // if zero-length avoid cursor throw
+            c += (c.CurrentPosition + enclength - 1 == c.MaxPosition) ? enclength - 1 : enclength;
 
             QuicTransportParametersExtension.TransportParameter result = null;
-
-            var valueIsInteger = new[]
-            {
-                QuicTransportParametersExtension.TransportParameterId.MaxIdleTimeout,
-                QuicTransportParametersExtension.TransportParameterId.MaxUdpPayloadSize,
-                QuicTransportParametersExtension.TransportParameterId.InitialMaxData,
-                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamDataBidiRemote,
-                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamDataBidiLocal,
-                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamDataUni,
-                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamsBidi,
-                QuicTransportParametersExtension.TransportParameterId.InitialMaxStreamsUni,
-                QuicTransportParametersExtension.TransportParameterId.AckDelayExponent,
-                QuicTransportParametersExtension.TransportParameterId.MaxAckDelay,
-                QuicTransportParametersExtension.TransportParameterId.ActiveConnectionIdLimit,
-            };
-
-            var byteArrays = new[]
-            {
-                QuicTransportParametersExtension.TransportParameterId.InitialSourceConnectionId,
-                QuicTransportParametersExtension.TransportParameterId.OriginalDestinationConnectionId,
-                QuicTransportParametersExtension.TransportParameterId.StatelessResetToken,
-                QuicTransportParametersExtension.TransportParameterId.RetrySourceConnectionId,
-            };
+            var valueIsInteger = QuicTransportParametersExtension.SerializationInfoValueIsInteger;
+            var byteArrays = QuicTransportParametersExtension.SerializationInfoValueIsByteArray;
 
             if (valueIsInteger.Any(t => t == id))
             {
@@ -576,9 +569,6 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             byte[] legComprMeth = null;
 
             int minMsgLen = 2 + 32 + 1 + 2 + 1 + 2;
-
-
-
 
             //AppendMinimum(minMsgLen, true);
 

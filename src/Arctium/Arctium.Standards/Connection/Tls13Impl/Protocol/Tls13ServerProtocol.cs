@@ -856,6 +856,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
             crypto.SetupHandshakeSecret(hsctx);
             // messageIO.ChangeRecordLayerCrypto(crypto, Crypto.RecordLayerKeyType.Handshake);
+            
             messageIO.ChangeRecordLayerReadCrypto(crypto, crypto.ClientHandshakeTrafficSecret);
             messageIO.ChangeRecordLayerWriteCrypto(crypto, crypto.ServerHandshakeTrafficSecret);
 

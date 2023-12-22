@@ -15,6 +15,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl.Model
         public Memory<byte> ReasonPhrase;
 
         public int A_TotalLength;
+        public QuicError A_ErrorCode => (QuicError)ErrorCode;
 
         public string GetReasonPhraseString()
         {

@@ -1,4 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers;
+using Arctium.Cryptography.Ciphers.StreamCiphers;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Cryptography.HashFunctions.KDF;
 using Arctium.Cryptography.HashFunctions.MAC;
@@ -8,6 +9,7 @@ using Arctium.Standards.Connection.QUICv1;
 using Arctium.Standards.Connection.QUICv1Impl.Model;
 using Arctium.Standards.Connection.Tls.Configuration.TlsExtensions;
 using Arctium.Standards.Connection.Tls13Impl.Model;
+using Arctium.Standards.Connection.Tls13Impl.Protocol;
 using Arctium.Standards.RFC;
 using System;
 using System.Collections.Generic;
@@ -20,6 +22,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 {
     internal class QuicCrypto
     {
+        public int WriteAuthTagLen { get { return writeAead.AuthenticationTagLengthBytes; } }
+
         static readonly ReadOnlyMemory<byte> InitialSaltHKDFExtract = new byte[] { 0x38, 0x76, 0x2c, 0xf7, 0xf5, 0x59, 0x34, 0xb3, 0x4d, 0x17, 0x9a, 0xe6, 0xa4, 0xc8, 0x0c, 0xad, 0xcc, 0xbb, 0x7f, 0x0a };
 
         CipherSuite cipherSuite;
@@ -38,16 +42,20 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         AES clientHpAES;
         AES serverHpAES;
-        private GaloisCounterMode clientAead;
-        private GaloisCounterMode serverAead;
+        ChaCha20 clientHpChacha;
+        ChaCha20 serverHpChacha;
+
+        private AEAD clientAead;
+        private AEAD serverAead;
 
         AES readHtpAes { get { return endpoint == EndpointType.Server ? clientHpAES : serverHpAES; } }
         AES writeHtpAes { get { return endpoint == EndpointType.Server ? serverHpAES : clientHpAES; } }
+        ChaCha20 readHtpChacha { get { return endpoint == EndpointType.Server ? clientHpChacha : serverHpChacha; } }
+        ChaCha20 writeHtpChacha { get { return endpoint == EndpointType.Server ? serverHpChacha : clientHpChacha; } }
         AEAD readAead { get { return endpoint == EndpointType.Server ? clientAead : serverAead; } }
         AEAD writeAead { get { return endpoint == EndpointType.Server ? serverAead : clientAead; } }
         byte[] writeIv { get { return endpoint == EndpointType.Server ? serverIv : clientIv; } }
         byte[] readIv { get { return endpoint == EndpointType.Server ? clientIv : serverIv; } }
-
 
         public QuicCrypto(EndpointType endpoint)
         {
@@ -57,7 +65,27 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         byte[] plainPacket = new byte[]
             { 0xc3,0x00,0x00,0x00,0x01,0x08,0x83,0x94,0xc8,0xf0,0x3e,0x51,0x57,0x08,0x00,0x00,0x44,0x9e,0x00,0x00,0x00,0x02,0x06,0x00,0x40,0xf1,0x01,0x00,0x00,0xed,0x03,0x03,0xeb,0xf8,0xfa,0x56,0xf1,0x29,0x39,0xb9,0x58,0x4a,0x38,0x96,0x47,0x2e,0xc4,0x0b,0xb8,0x63,0xcf,0xd3,0xe8,0x68,0x04,0xfe,0x3a,0x47,0xf0,0x6a,0x2b,0x69,0x48,0x4c,0x00,0x00,0x04,0x13,0x01,0x13,0x02,0x01,0x00,0x00,0xc0,0x00,0x00,0x00,0x10,0x00,0x0e,0x00,0x00,0x0b,0x65,0x78,0x61,0x6d,0x70,0x6c,0x65,0x2e,0x63,0x6f,0x6d,0xff,0x01,0x00,0x01,0x00,0x00,0x0a,0x00,0x08,0x00,0x06,0x00,0x1d,0x00,0x17,0x00,0x18,0x00,0x10,0x00,0x07,0x00,0x05,0x04,0x61,0x6c,0x70,0x6e,0x00,0x05,0x00,0x05,0x01,0x00,0x00,0x00,0x00,0x00,0x33,0x00,0x26,0x00,0x24,0x00,0x1d,0x00,0x20,0x93,0x70,0xb2,0xc9,0xca,0xa4,0x7f,0xba,0xba,0xf4,0x55,0x9f,0xed,0xba,0x75,0x3d,0xe1,0x71,0xfa,0x71,0xf5,0x0f,0x1c,0xe1,0x5d,0x43,0xe9,0x94,0xec,0x74,0xd7,0x48,0x00,0x2b,0x00,0x03,0x02,0x03,0x04,0x00,0x0d,0x00,0x10,0x00,0x0e,0x04,0x03,0x05,0x03,0x06,0x03,0x02,0x03,0x08,0x04,0x08,0x05,0x08,0x06,0x00,0x2d,0x00,0x02,0x01,0x01,0x00,0x1c,0x00,0x02,0x40,0x01,0x00,0x39,0x00,0x32,0x04,0x08,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x05,0x04,0x80,0x00,0xff,0xff,0x07,0x04,0x80,0x00,0xff,0xff,0x08,0x01,0x10,0x01,0x04,0x80,0x00,0x75,0x30,0x09,0x01,0x10,0x0f,0x08,0x83,0x94,0xc8,0xf0,0x3e,0x51,0x57,0x08,0x06,0x04,0x80,0x00,0xff,0xff};
+        
         private EndpointType endpoint;
+
+        void GetPacketDataForCrypto(
+            byte[] p,
+            int o,
+            out uint packetNumber,
+            out int pnBytesCount,
+            out int oPacketNumber)
+        {
+            if ((p[o] & 0x80) != 0)
+            {
+                // lhp
+                var r = QuicModelCoding.DecodeLHP(p, o, false, true);
+
+                packetNumber = r.PacketNumber;
+                pnBytesCount = r.PacketNumberLength + 1;
+                oPacketNumber = r.A_OffsetPacketNumber;
+            }
+            else throw new NotImplementedException();
+        }
 
         public int EncryptPacket(
             byte[] header,
@@ -69,18 +97,12 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             byte[] output,
             int outOffset)
         {
-            uint packetNumber = 0;
-            int pnlength = -1;
-            int oPacketNumber = -1;
-            
-            if ((header[headerOffset] & 0x80) != 0)
-            {
-                var lhp = QuicModelCoding.DecodeLHP(header, headerOffset, false);
-                packetNumber = lhp.PacketNumber;
-                pnlength = lhp.PacketNumberLength;
-                oPacketNumber = lhp.A_OffsetPacketNumber;
-            }
-            else throw new NotImplementedException();
+            GetPacketDataForCrypto(
+                header,
+                headerOffset,
+                out var packetNumber,
+                out var pnBytesCount,
+                out var oPacketNumber);
 
             ComputeWriteNonce(packetNumber);
 
@@ -97,8 +119,9 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             // header protection
             MemCpy.Copy(header, headerOffset, output, outOffset, headerLen);
             int sampleOffset = oPacketNumber + outOffset + 4;
+            ComputeWriteMask(output, sampleOffset);
 
-            writeHtpAes.Encrypt(output, sampleOffset, headerMask, 0, headerMask.Length);
+            // writeHtpAes.Encrypt(output, sampleOffset, headerMask, 0, headerMask.Length);
             int o = outOffset;
             byte[] buffer = output;
             byte[] mask = headerMask;
@@ -113,7 +136,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                 buffer[o] ^= (byte)(mask[0] & 0x1f);
             }
 
-            for (int i = 0; i < pnlength; i++)
+            for (int i = 0; i < pnBytesCount; i++)
                 buffer[oPacketNumber + i] ^= mask[i + 1];
 
             return writeAead.AuthenticationTagLengthBytes + headerLen + payloadLen;
@@ -164,6 +187,36 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             if (!ok) throw new QuicException("AEAD auth tag not ok");
         }
 
+        private void ComputeReadMask(byte[] buffer, int sampleOffset)
+        {
+            byte[] mask = this.headerMask;
+
+            if (readHtpAes != null)
+            {
+                readHtpAes.Encrypt(buffer, sampleOffset, mask, 0, 16);
+            }
+            else if (readHtpChacha != null)
+            {
+                throw new NotImplementedException();
+            }
+            else throw new Exception("internal");
+        }
+
+        private void ComputeWriteMask(byte[] buffer, int sampleOffset)
+        {
+            byte[] mask = this.headerMask;
+
+            if (writeHtpAes != null)
+            {
+                writeHtpAes.Encrypt(buffer, sampleOffset, mask, 0, 16);
+            }
+            else if (writeHtpAes != null)
+            {
+                throw new Exception("internal");
+            }
+            else throw new Exception("internal");
+        }
+
         private void HeaderProtectionDecrypt(byte[] buffer, int offset)
         {
             // todo must work with short header packet
@@ -172,8 +225,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             int offsetPacketNumber = lhp.A_OffsetPacketNumber;
             int sampleOffset = lhp.A_OffsetPacketNumber + 4;
 
+            ComputeReadMask(buffer, sampleOffset);
             byte[] mask = headerMask;
-            readHtpAes.Encrypt(buffer, sampleOffset, mask, 0, 16);
 
             if ((buffer[o] & 0x80) != 0)
             {
@@ -220,6 +273,54 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             serverAead = new GaloisCounterMode(new AES(serverKey), 16);
 
             nonce = new byte[clientIv.Length];
+            headerMask = new byte[16];
+        }
+
+        internal void ChangeReadEncryption(Crypto crypto, byte[] trafficSecret)
+        {
+            crypto.AEADFactory_QUIC(trafficSecret, out var newRead, out var newIv, out var newHpAes, out var newHpChaCha);
+
+            if (endpoint == EndpointType.Server)
+            {
+                clientAead = newRead;
+                clientIv = newIv;
+                clientHpAES = newHpAes;
+                clientHpChacha = newHpChaCha;
+            }
+            else
+            {
+                serverAead = newRead;
+                serverIv = newIv;
+                serverHpAES = newHpAes;
+                serverHpChacha = newHpChaCha;
+            }
+
+            // todo what len of mask?
+            nonce = new byte[newIv.Length];
+            headerMask = new byte[16];
+        }
+
+        internal void ChangeWriteEncryption(Crypto crypto, byte[] trafficSecret)
+        {
+            crypto.AEADFactory_QUIC(trafficSecret, out var newWrite, out var newIv, out var newHpAes, out var newHpChaCha);
+
+            if (endpoint == EndpointType.Server)
+            {
+                serverAead = newWrite;
+                serverIv = newIv;
+                serverHpAES = newHpAes;
+                serverHpChacha = newHpChaCha;
+            }
+            else
+            {
+                clientAead = newWrite;
+                clientIv = newIv;
+                clientHpAES = newHpAes;
+                clientHpChacha = newHpChaCha;
+            }
+
+            // todo what len of mask?
+            nonce = new byte[newIv.Length];
             headerMask = new byte[16];
         }
     }

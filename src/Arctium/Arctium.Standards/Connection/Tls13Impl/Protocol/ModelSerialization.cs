@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using Arctium.Shared.Helpers;
 using Arctium.Standards.Connection.Tls13Impl.Model;
 using Arctium.Standards.Connection.Tls13Impl.Model.Extensions;
+using System.Linq;
+using Arctium.Standards.Connection.QUICv1Impl;
 
 namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 {
@@ -65,8 +67,37 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
                 [typeof(OidFiltersExtension)] = Serialize_Extension_OidFiltersExtension,
                 [typeof(PostHandshakeAuthExtension)] = Serialize_Extension_PostHandshakeAuthExtension,
                 [typeof(CertificateAuthoritiesExtension)] = Serialize_Extension_CertificateAuthorities,
-                [typeof(GREASEInternalExtension)] = Serialize_Extension_GREASEInternalExtension
+                [typeof(GREASEInternalExtension)] = Serialize_Extension_GREASEInternalExtension,
+                [typeof(QuicTransportParametersExtension)] = Serialize_Extension_QuicTransportParametersExtension
             };
+        }
+
+        private void Serialize_Extension_QuicTransportParametersExtension(object ext)
+        {
+            var e = (QuicTransportParametersExtension)ext;
+
+            foreach (var pe in e.TransportParameters)
+            {
+                QuicModelCoding.Encode_IntegerVLE(tempSerializedExtension, (ulong)pe.Id);
+
+                if (QuicTransportParametersExtension.SerializationInfoValueIsInteger.Any(t => t == pe.Id))
+                {
+                    var intParameter = (QuicTransportParametersExtension.IntegerTransportParameter)pe;
+                    ulong encodedLen = (ulong)QuicModelCoding.Encode_IntegerVLE_EncodeLength(intParameter.Value);
+
+                    QuicModelCoding.Encode_IntegerVLE(tempSerializedExtension, encodedLen);
+                    QuicModelCoding.Encode_IntegerVLE(tempSerializedExtension, intParameter.Value);
+                }
+                else if (QuicTransportParametersExtension.SerializationInfoValueIsByteArray.Any(t => t == pe.Id))
+                {
+                    var byteArrParameter = (QuicTransportParametersExtension.ByteArrayTransportParameter)pe;
+                    QuicModelCoding.Encode_IntegerVLE(tempSerializedExtension, (ulong)byteArrParameter.Value.Length);
+                    
+                    int valueOffset = tempSerializedExtension.MallocAppend(byteArrParameter.Value.Length);
+                    MemCpy.Copy(byteArrParameter.Value, 0, tempSerializedExtension.Buffer, valueOffset, byteArrParameter.Value.Length);
+                }
+                else throw new NotImplementedException($"not implement serialization for QUIC parameter extension ({pe.GetType().FullName}). If needed this need to be implemented");
+            }
         }
 
         private void Serialize_Extension_GREASEInternalExtension(object obj)

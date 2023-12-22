@@ -21,8 +21,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
         public abstract RecordInfo Read();
         public abstract void Write(ContentType contentType, byte[] buffer, long offset, long length);
         public abstract void SetRecordSizeLimit(ushort maxRecord);
-        public abstract void ChangeWriteEncryption(AEAD newWrite, byte[] newIv);
-        public abstract void ChangeReadEncryption(AEAD newRead, byte[] newIv);
+
+        public abstract void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret);
+        public abstract void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret);
     }
 
     internal struct RecordInfo
@@ -255,17 +256,21 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
             for (int i = 0; i < iv.Length; i++) resultNonce[i] = (byte)(resultNonce[i] ^ iv[i]);
         }
-        
-        public override void ChangeWriteEncryption(AEAD newWrite, byte[] newIv)
+
+        public override void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret)
         {
+            crypto.AEADFactory(trafficSecret, out var newWrite, out byte[] newIv);
+
             perRecordWriteNonce = new byte[newIv.Length];
             writeSequenceNumber = 0;
             writeIv = newIv;
             aeadWrite = newWrite;
         }
 
-        public override void ChangeReadEncryption(AEAD newRead, byte[] newIv)
+        public override void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret)
         {
+            crypto.AEADFactory(trafficSecret, out var newRead, out byte[] newIv);
+
             perRecordReadNonce = new byte[newIv.Length];
             readSequenceNumber = 0;
             readIv = newIv;
@@ -290,8 +295,8 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
             base.RecordFragmentBytes = new byte[12345];
         }
 
-        public override void ChangeReadEncryption(AEAD newRead, byte[] newIv) => stream.ChangeReadEncryption(newRead, newIv);
-        public override void ChangeWriteEncryption(AEAD newWrite, byte[] newIv) => stream.ChangeWriteEncryption(newWrite, newIv);
+        //public override void ChangeReadEncryption(AEAD newRead, byte[] newIv) => stream.ChangeReadEncryption(newRead, newIv);
+        //public override void ChangeWriteEncryption(AEAD newWrite, byte[] newIv) => stream.ChangeWriteEncryption(newWrite, newIv);
 
         public override RecordInfo Read()
         {
@@ -311,5 +316,15 @@ namespace Arctium.Standards.Connection.Tls13Impl.Protocol
 
         public override void SetBackwardCompatibilityMode(bool compatibilityAllowRecordLayerVersionLower0x0303 = false, bool compatibilitySilentlyDropUnencryptedChangeCipherSpec = false) { }
         public override void SetRecordSizeLimit(ushort maxRecord) { }
+
+        public override void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret)
+        {
+            stream.ChangeWriteEncryption(crypto, trafficSecret);
+        }
+
+        public override void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret)
+        {
+            stream.ChangeReadEncryption(crypto, trafficSecret);
+        }
     }
 }

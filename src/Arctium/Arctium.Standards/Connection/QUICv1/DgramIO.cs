@@ -15,8 +15,8 @@ namespace Arctium.Standards.Connection.QUICv1
 {
     public abstract class DgramIO
     {
-        public virtual int ReadDgram(byte[] outBuf, int offset) { return ReadDgramAsync(outBuf, offset).Result; }
-        public virtual void WriteDgram(byte[] buffer, int offset, int length) { WriteDgram(buffer, offset, length); }
+        // public virtual int ReadDgram(byte[] outBuf, int offset) { return ReadDgramAsync(outBuf, offset).Result; }
+        // public virtual void WriteDgram(byte[] buffer, int offset, int length) { WriteDgram(buffer, offset, length); }
 
         public abstract void Close();
 
@@ -99,7 +99,8 @@ namespace Arctium.Standards.Connection.QUICv1
 
         public async Task WriteDgram(byte[] buf, int offs, int len, EndPoint endpoint)
         {
-            
+            socket.SendTo(new ArraySegment<byte>(buf, offs, len), SocketFlags.None, endpoint);
+            // socket.SendTo(new ArraySegment<byte>(buf, offs, len), SocketFlags.None, (new IPEndPoint(IPAddress.Loopback, 12345)) as EndPoint);
         }
 
         public object Accept()
@@ -116,11 +117,9 @@ namespace Arctium.Standards.Connection.QUICv1
 
         public async Task<object> ProcessNextUdp(CancellationToken cancellationToken = default)
         {
-            var sender = endpointAny;
-
             // todo do this in objectpool (avoid multiple allocs), or maybe Span<byte>
             Memory<byte> buffer = new Memory<byte>(new byte[65535]);
-            var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, sender, cancellationToken);
+            var result = await socket.ReceiveFromAsync(buffer, SocketFlags.None, endpointAny, cancellationToken);
 
             var clientId = result.RemoteEndPoint.ToString();
 

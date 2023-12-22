@@ -28,8 +28,9 @@ namespace Program
             {
                 try
                 {
-
                     ListenUDP2().Wait();
+                    // ListenUDP();
+                    //TestUDPRecv();
                 }
                 catch (Exception e)
                 {
@@ -38,17 +39,39 @@ namespace Program
                 }
             });
 
+            // Task.Factory.StartNew(TestUDPRecv);
             // Task.Factory.StartNew(() => { TestSendUDP(); });
+           // Task.Factory.StartNew(() => MsQuicClient().Wait());
+
             Console.ReadLine();
         }
 
-        private static void ListenUDP3()
+        private static void TestUDPRecv()
         {
+            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            s.Bind(new IPEndPoint(IPAddress.Any, 443));
+
+            // var endpoint = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
+            // // s.Receive(new byte[443]);
+            // // s.ReceiveFrom(new byte[1024], 0, 1024, SocketFlags.None, ref endpoint);
+
+            var sender = new IPEndPoint(IPAddress.Any, 443) as EndPoint;
+            byte[] buf = new byte[2 * 1024];
+
             while (true)
             {
-                // await processudpdgram()
-                // 
+                var len = s.ReceiveFrom(buf, ref sender);
+                Console.WriteLine("LEN"  + len);
+                if (len == 0) { Thread.Sleep(1000); continue; }
+                s.SendTo(buf, sender);
+                Console.WriteLine(len);
+                Console.WriteLine("RECV TEST: ");
+                MemDump.HexDump(buf, 0, len);
             }
+            
+            // s.ReceiveFromAsync(
+            Debugger.Break();
         }
 
         private static void TestSendUDP()
@@ -56,13 +79,20 @@ namespace Program
             Thread.Sleep(1000);
             UdpClient listener = new UdpClient(12324);
             IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, 0);
-            listener.Connect(new IPEndPoint(IPAddress.Loopback, 1234));
-            listener.Send(new byte[] { 1 });
+            listener.Connect(new IPEndPoint(IPAddress.Loopback, 443));
+            
+            while (true)
+            {
+                Console.WriteLine(  "sending");
+                listener.Send(new byte[] { 1 });
+                Thread.Sleep(100);
+            }
+            
         }
 
         private static async Task ListenUDP2()
         {
-            QuicSocketServer srv = new QuicSocketServer(IPAddress.Any, 443);
+            QuicSocketServer srv = new QuicSocketServer(IPAddress.Parse("127.0.0.1"), 443);
 
             while (true)
             {
@@ -76,22 +106,15 @@ namespace Program
 
         private static void ListenUDP()
         {
-            // UdpClient listener = new UdpClient(1234);
-            // IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, 0);
-            // 
-            // byte[] a= listener.Receive(ref groupEP);
-
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            s.Bind(new IPEndPoint(IPAddress.Any, 443));
-            var endpoint = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
-            // s.Receive(new byte[443]);
-            // s.ReceiveFrom(new byte[1024], 0, 1024, SocketFlags.None, ref endpoint);
-            var sender = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
-            byte[] buf = new byte[16 * 1024];
-            var len = s.ReceiveFrom(buf, ref sender);
-            // s.ReceiveFromAsync(
-            Debugger.Break();
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.Bind(new IPEndPoint(IPAddress.Loopback, 443));
+            byte[] b = new byte[16 * 1024];
+            var client = new IPEndPoint(IPAddress.Any, 0) as EndPoint;
+            while (true)
+            {
+                socket.ReceiveFrom(b, SocketFlags.None, ref client);
+                socket.SendTo(b, client);
+            }
         }
 
         static void ListenTCP()
@@ -208,6 +231,74 @@ alt-svc: h3="":443""; ma=93600
             }
 
         }
+
+
+        static async Task MsQuicServer()
+        {
+            
+        }
+
+        static async Task MsQuicClient()
+        {
+            // First, check if QUIC is supported.
+            if (!QuicConnection.IsSupported)
+            {
+                Console.WriteLine("QUIC is not supported, check for presence of libmsquic and support of TLS 1.3.");
+                return;
+            }
+
+            // This represents the minimal configuration necessary to open a connection.
+            var clientConnectionOptions = new QuicClientConnectionOptions
+            {
+                // End point of the server to connect to.
+                RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, 443),
+
+                // Used to abort stream if it's not properly closed by the user.
+                // See https://www.rfc-editor.org/rfc/rfc9000#section-20.2
+                DefaultStreamErrorCode = 0x0A, // Protocol-dependent error code.
+
+                // Used to close the connection if it's not do ne by the user.
+                // See https://www.rfc-editor.org/rfc/rfc9000#section-20.2
+                DefaultCloseErrorCode = 0x0B, // Protocol-dependent error code.
+
+                // Optionally set limits for inbound streams.
+                MaxInboundUnidirectionalStreams = 10,
+                MaxInboundBidirectionalStreams = 100,
+
+                // Same options as for client side SslStream.
+                ClientAuthenticationOptions = new SslClientAuthenticationOptions
+                {
+                    // List of supported application protocols.
+                    ApplicationProtocols = new List<SslApplicationProtocol>() { SslApplicationProtocol.Http3 }
+                }
+            };
+
+            // Initialize, configure and connect to the server.
+            var connection = await QuicConnection.ConnectAsync(clientConnectionOptions);
+
+            Console.WriteLine($"Connected {connection.LocalEndPoint} --> {connection.RemoteEndPoint}");
+
+            // Open a bidirectional (can both read and write) outbound stream.
+            var outgoingStream = await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional);
+
+            // Work with the outgoing stream ...
+
+            // To accept any stream on a client connection, at least one of MaxInboundBidirectionalStreams or MaxInboundUnidirectionalStreams of QuicConnectionOptions must be set.
+            while (true)
+            {
+                // Accept an inbound stream.
+                var incomingStream = await connection.AcceptInboundStreamAsync();
+
+                // Work with the incoming stream ...
+            }
+
+            // Close the connection with the custom code.
+            await connection.CloseAsync(0x0C);
+
+            // Dispose the connection.
+            await connection.DisposeAsync();
+        }   
+
 
         private static X509Certificate2 GetCertificateFromStore(string certName)
         {

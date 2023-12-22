@@ -4,6 +4,7 @@ using Arctium.Standards.Connection.QUICv1;
 using Arctium.Standards.Connection.QUICv1Impl.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,38 +37,31 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         public static void Encode_ACKFrame(
             ByteBuffer output,
-            FrameType type,
-            ulong largestAcknowledge,
-            ulong ackDelay,
-            ulong ackRangeCount,
-            ulong firstAckRange,
-            Span<AckRange> range,
-            ECNCounts? encCount)
+            AckFrame frame)
         {
+            var type = frame.Type;
+            var ecnCount = frame.EcnCounts;
+
             if (type != FrameType.Ack2 && type != FrameType.Ack3)
                 throw new QuicException("internal: invalid ACK frametype");
 
-            if (encCount.HasValue && type != FrameType.Ack3)
-            {
-                throw new QuicException("internal: encoding ECNCount only 0x03 frame type supports it");
-            }
-
             output.Append((byte)type);
-            Encode_IntegerVLE(output, largestAcknowledge);
-            Encode_IntegerVLE(output, ackDelay);
-            Encode_IntegerVLE(output, ackRangeCount);
-            Encode_IntegerVLE(output, firstAckRange);
-            
-            for (int i = 0; i < range.Length; i++)
+            Encode_IntegerVLE(output, frame.LargestAcknowledged);
+            Encode_IntegerVLE(output, frame.AckDelay);
+            Encode_IntegerVLE(output, frame.AckRangeCount);
+            Encode_IntegerVLE(output, frame.FirstAckRange);
+
+            var ranges = frame.AckRange.Span;
+            for (int i = 0; i < ranges.Length; i++)
             {
-                var r = range[i];
+                var r = ranges[i];
                 Encode_IntegerVLE(output, r.Gap);
                 Encode_IntegerVLE(output, r.ACKRangeLength);
             }
 
-            if (encCount.HasValue)
+            if (type == FrameType.Ack3)
             {
-                var ec = encCount.Value;
+                var ec = frame.EcnCounts;
                 Encode_IntegerVLE(output, ec.ECT0Count);
                 Encode_IntegerVLE(output, ec.ECT1Count);
                 Encode_IntegerVLE(output, ec.ECNCECount);
@@ -83,14 +77,14 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             // rfc9000.pdf - 16. Variable-Length Integer Encoding 
             // first two MSB encode length in bytes, rest is integer,
-            // this special values are just byte.max, ushort.max, int.max, ulong.max
+            // this special values are in 'ifs' are just byte.max, ushort.max, int.max, ulong.max
             // without first two bits
             int enclen;
 
-            if (value <= 63) enclen = 0;
-            else if (value <= 16383) enclen = 1;
-            else if (value <= 1073741823) enclen = 2;
-            else enclen = 3;
+            if (value <= 63) enclen = 1;
+            else if (value <= 16383) enclen = 2;
+            else if (value <= 1073741823) enclen = 4;
+            else enclen = 8;
 
             return enclen;
         }
@@ -104,25 +98,25 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             switch (enclen)
             {
-                case 0:
-                    output.Append((byte)value);
-                    break;
                 case 1:
-                    MemMap.ToBytes1UShortBE((ushort)value, output.Buffer, o);
+                    b[o] = (byte)value;
+                    b[o] |= (byte)(0x00 << 6);
                     break;
                 case 2:
-                    MemMap.ToBytes1UIntBE((uint)value, output.Buffer, o);
+                    MemMap.ToBytes1UShortBE((ushort)value, output.Buffer, o);
+                    b[o] |= (byte)(0x01 << 6);
                     break;
-                case 3:
+                case 4:
+                    MemMap.ToBytes1UIntBE((uint)value, output.Buffer, o);
+                    b[o] |= (byte)(0x02 << 6);
+                    break;
+                case 8:
                     MemMap.ToBytes1ULongBE(value, output.Buffer, o);
+                    b[o] |= (byte)(0x03 << 6);
                     break;
             }
 
-            b[o] |= (byte)(enclen << 6);
-
-            int bytesCount = (1 << enclen);
-
-            return bytesCount;
+            return enclen;
         }
 
         #endregion
@@ -221,9 +215,56 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             return o;
         }
 
-        public static LongHeaderPacket DecodeLHP(byte[] buffer, int offset, bool isEncrypted)
+        public static LongHeaderPacket DecodeLHP(byte[] buffer, int offset, bool isEncrypted, bool skipPayload = false)
         {
             LongHeaderPacket p = new LongHeaderPacket();
+            LongPacketType type = LongHeaderPacket.GetLongPacketType(buffer[offset]);
+
+            if (type == LongPacketType.Initial)
+            {
+                var ip = DecodeInitialPacket(buffer, offset, isEncrypted, skipPayload);
+
+                p.FirstByte = ip.FirstByte;
+                p.Version = ip.Version;
+                p.DestConnIdLen = ip.DestConnIdLen;
+                p.DestConId = ip.DestConId;
+                p.SrcConIdLen = ip.SrcConIdLen;
+                p.SrcConId = ip.SrcConId;
+                p.Length = ip.Length;
+                p.PacketNumber = ip.PacketNumber;
+                p.Payload = ip.Payload;
+
+                p.A_OffsetPacketNumber = ip.A_OffsetPacketNumber;
+                p.A_HeaderLength = ip.A_HeaderLength;
+                p.A_TotalPacketLength =ip.A_TotalPacketLength;
+            }
+            else if (type == LongPacketType.Handshake)
+            {
+                var hp = DecodeHandshakePacket(buffer, offset, isEncrypted, skipPayload);
+
+                p.FirstByte = hp.FirstByte;
+                p.Version = hp.Version;
+                p.DestConnIdLen = hp.DestConnIdLen;
+                p.DestConId = hp.DestConId;
+                p.SrcConIdLen = hp.SrcConIdLen;
+                p.SrcConId = hp.SrcConId;
+                p.Length = hp.Length;
+                p.PacketNumber = hp.PacketNumber;
+                p.Payload = hp.Payload;
+
+                p.A_OffsetPacketNumber = hp.A_OffsetPacketNumber;
+                p.A_HeaderLength = hp.A_HeaderLength;
+                p.A_TotalPacketLength = hp.A_TotalPacketLength;
+            }
+            else throw new NotImplementedException();
+
+            return p;
+        }
+
+        public static HandshakePacket DecodeHandshakePacket(byte[] buffer, int offset, bool isencrypted, bool skipPayload)
+        {
+            var p = new HandshakePacket();
+
             int o = offset;
 
             p.FirstByte = buffer[o];
@@ -231,52 +272,44 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             QuicModelCoding.DecodeVerDestIDSrcID(buffer, offset, out p.Version, out p.DestConId, out p.SrcConId);
             o += 1 + 4 + 1 + p.DestConId.Length + 1 + p.SrcConId.Length;
 
-            if (p.LongPacketType == LongPacketType.Initial)
+            p.Length = DecodeIntegerVLE(buffer, o, out var encLength);
+            o += encLength;
+
+            p.A_TotalPacketLength = (int)p.Length + (o - offset);
+            p.A_OffsetPacketNumber = o;
+
+            if (!isencrypted)
             {
-                p.TokenLen = DecodeIntegerVLE(buffer, o, out var tokenLenBytesCount);
+                p.PacketNumber = Decode_LHP_RawPacketNumber(buffer, o, p.PacketNumberLength);
+                o += p.PacketNumberLength + 1;
 
-                if (p.TokenLen > (128 * ushort.MaxValue))
-                {
-                    throw new QuicException("implementation error: max token len > 128 * ushort");
-                }
+                int payloadLen = (int)((int)p.Length - p.PacketNumberLength - 1);
+                
+                if (!skipPayload) p.Payload = new Memory<byte>(buffer, o, payloadLen);
 
-                o += tokenLenBytesCount;
-                p.Token = new Memory<byte>(buffer, o, (int)p.TokenLen);
-
-                o += (int)p.TokenLen;
-
-                p.Length = DecodeIntegerVLE(buffer, o, out var lengthEncCount);
-                o += lengthEncCount;
-
-                p.A_TotalPacketLength = o - offset + (int)p.Length;
-
-                p.A_OffsetPacketNumber = o;
-
-                if (!isEncrypted)
-                {
-                    switch (p.PacketNumberLength)
-                    {
-                        case 0: p.PacketNumber = buffer[o]; break;
-                        case 1: p.PacketNumber = (uint)((buffer[o] << 8) | (buffer[o + 1] << 0)); break;
-                        case 2: p.PacketNumber = (uint)((buffer[o] << 16) | (buffer[o + 1] << 8) | (buffer[o + 2] << 0)); break;
-                        case 3: p.PacketNumber = MemMap.ToUInt4BytesBE(buffer, o); break;
-                    }
-
-                    o += p.PacketNumberLength + 1;
-                    int payloadLen = ((int)p.Length - p.PacketNumberLength - 1);
-                    p.Payload = new Memory<byte>(buffer, o, payloadLen);
-
-                    p.A_HeaderLength = o - offset;
-                }
+                p.A_HeaderLength = o - offset;
             }
-            else throw new NotImplementedException();
-
-
 
             return p;
         }
 
-        public static InitialPacket DecodeInitialPacket(byte[] buffer, int offset)
+        static uint Decode_LHP_RawPacketNumber(byte[] buffer, int o, int packetNumberLength)
+        {
+            uint r = 0;
+
+            switch (packetNumberLength)
+            {
+                case 0: r = buffer[o]; break;
+                case 1: r = (uint)((buffer[o] << 8) | (buffer[o + 1] << 0)); break;
+                case 2: r = (uint)((buffer[o] << 16) | (buffer[o + 1] << 8) | (buffer[o + 2] << 0)); break;
+                case 3: r = MemMap.ToUInt4BytesBE(buffer, o); break;
+                default: QuicValidation.ThrowDecodeEx("packetNumberLength"); break;
+            }
+
+            return r;
+        }
+
+        public static InitialPacket DecodeInitialPacket(byte[] buffer, int offset, bool isEncrypted, bool skipPayload)
         {
             InitialPacket p = new InitialPacket();
             int o = offset;
@@ -285,6 +318,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             p.Version = MemMap.ToUInt4BytesBE(buffer, offset);
             QuicModelCoding.DecodeVerDestIDSrcID(buffer, offset, out p.Version, out p.DestConId, out p.SrcConId);
             o += 1 + 4 + 1 + p.DestConId.Length + 1 + p.SrcConId.Length;
+
             p.TokenLen = DecodeIntegerVLE(buffer, o, out var tokenLenBytesCount);
 
             if (p.TokenLen > (128 * ushort.MaxValue))
@@ -296,21 +330,26 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             p.Token = new Memory<byte>(buffer, o, (int)p.TokenLen);
 
             o += (int)p.TokenLen;
+
             p.Length = DecodeIntegerVLE(buffer, o, out var lengthEncCount);
-            o += lengthEncCount + 1;
+            o += lengthEncCount;
 
-            // todo this is encrypted
-            switch (p.PacketNumberLength)
+            p.A_TotalPacketLength = o - offset + (int)p.Length;
+            p.A_OffsetPacketNumber = o;
+
+            if (!isEncrypted)
             {
-                case 0: p.PacketNumber = buffer[o]; break;
-                case 1: p.PacketNumber = (uint)((buffer[o] << 8) | (buffer[o + 1] << 0)); break;
-                case 2: p.PacketNumber = (uint)((buffer[o] << 16) | (buffer[o + 1] << 8) | (buffer[o + 2] << 0)); break;
-                case 3: p.PacketNumber = MemMap.ToUInt4BytesBE(buffer, o); break;
-            }
+                p.PacketNumber = Decode_LHP_RawPacketNumber(buffer, o, p.PacketNumberLength);
 
-            o += p.PacketNumberLength + 1;
-            int payloadLen = ((int)p.Length - p.PacketNumberLength - 1);
-            p.Payload = new Memory<byte>(buffer, o, payloadLen);
+                p.A_DecodedPacketNumber = 0; //todo QuicModelCoding.DecodePacketNumber(0, lhp.PacketNumber, (lhp.PacketNumberLength * 8) + 8)
+
+                o += p.PacketNumberLength + 1;
+                int payloadLen = ((int)p.Length - p.PacketNumberLength - 1);
+
+                if (!skipPayload) p.Payload = new Memory<byte>(buffer, o, payloadLen);
+
+                p.A_HeaderLength = o - offset;
+            }
 
             return p;
         }
@@ -343,24 +382,24 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             Encode_IntegerVLE(output, p.Length);
 
             // packet number
-            Encode_LHP_PacketNumber(output, p.PacketNumber);
+            Encode_LHP_PacketNumber(output, p.PacketNumber, p.PacketNumberLength);
             
             // payload ignore
             // p.payload
         }
 
-        static int Encode_LHP_PacketNumber(ByteBuffer output, uint packetNumber)
+        static int Encode_LHP_PacketNumber(ByteBuffer output, uint packetNumber, int packetNumberLength)
         {
             int o = -1;
             int l = 0;
 
-            if ((packetNumber >> 24) != 0)
+            if (packetNumberLength == 3)
             {
                 o = output.MallocAppend(4);
                 MemMap.ToBytes1UIntBE(packetNumber, output.Buffer, o);
                 l = 4;
             }
-            else if ((packetNumber >> 16) != 0)
+            else if (packetNumberLength == 2)
             {
                 o = output.MallocAppend(3);
                 output.Buffer[o + 0] = (byte)(packetNumber >> 16);
@@ -368,17 +407,18 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                 output.Buffer[o + 2] = (byte)(packetNumber >> 0);
                 l = 3;
             }
-            else if ((packetNumber >> 8) != 0)
+            else if (packetNumberLength == 1)
             {
                 o = output.MallocAppend(2);
                 MemMap.ToUShort2BytesBE(output.Buffer, o);
                 l = 2;
             }
-            else
+            else if (packetNumberLength == 0)
             {
                 output.Append((byte)packetNumber);
                 l = 1;
             }
+            else throw new InvalidOperationException("packetnumberlength invalid value");
 
             return l;
         }
@@ -420,6 +460,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                 num_unacked = full_pn + 1;
             else num_unacked = full_pn - largest_acked;
 
+            num_unacked = num_unacked < 1 ? 1 : num_unacked;
+
             int min_bits = (int)Math.Log2((double)num_unacked) + 1;
             num_bytes = (int)Math.Ceiling((decimal)min_bits / 8);
 
@@ -459,6 +501,32 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             }
 
             return candidate_pn;
+        }
+
+        internal static void Encode_HandshakePacketSkipPayload(ByteBuffer output, HandshakePacket p)
+        {
+            byte[] buf = output.Buffer;
+
+            output.Append(p.FirstByte);
+            int oversion = output.MallocAppend(4);
+            MemMap.ToBytes1UIntBE(p.Version, output.Buffer, oversion);
+
+            // dest con id len
+            output.Append((byte)p.DestConnIdLen);
+            output.Append(p.DestConId);
+
+            //src con id
+            output.Append((byte)p.SrcConIdLen);
+            output.Append(p.SrcConId);
+
+            // length
+            Encode_IntegerVLE(output, p.Length);
+
+            // packet number
+            Encode_LHP_PacketNumber(output, p.PacketNumber, p.PacketNumberLength);
+
+            // payload ignore
+            // p.payload
         }
     }
 }

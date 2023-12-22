@@ -35,9 +35,9 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         bool isLongPacket = true;
 
-        public async Task WritePacket(byte[] buffer, long offset, long length)
+        public async Task WritePacket(byte[] buffer, int offset, int length)
         {
-
+            await dgramio.WriteDgramAsync(buffer, offset, length);
         }
 
         public async Task LoadPacket()

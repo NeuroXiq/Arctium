@@ -13,10 +13,13 @@ using Arctium.Standards.RFC;
 using Arctium.Standards.X509.X509Cert;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Arctium.Standards.Connection.QUICv1Impl
@@ -28,10 +31,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         public uint PacketNumber = 0;
         public long LargestAck = -1;
+        public List<ulong> NeedAckPkts = new List<ulong>();
 
         public QuicPNS()
         {
-            PacketNumber = 1;
         }
     }
 
@@ -66,12 +69,16 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         private byte[] encryptedToSend = new byte[65535];
 
         private QuicPNS initialPns;
+        private QuicPNS handshakePns;
+        private QuicPNS appDataPns;
+
+        private int tlsState = 0;
 
         public byte[] ServerConnectionId { get; set; }
         public byte[] ClientConnectionId { get; set; }
 
-        private byte[] onSendingSrcConnId { get { return endpoint == EndpointType.Client ? ServerConnectionId : ClientConnectionId; } }
-        private byte[] onSendingDestConnId { get { return endpoint == EndpointType.Client ? ClientConnectionId : ServerConnectionId; } }
+        private byte[] onSendingSrcConnId { get { return endpoint == EndpointType.Server ? ServerConnectionId : ClientConnectionId; } }
+        private byte[] onSendingDestConnId { get { return endpoint == EndpointType.Server ? ClientConnectionId : ServerConnectionId; } }
 
         bool isFirstPkg = true;
         int maxUpdDataLength = 1250;
@@ -108,36 +115,137 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         bool isinit = true;
 
+        async Task EncryptAndSend(QuicPNS pns)
+        {
+            int toSendLen = pns.crypto.EncryptPacket(
+                toSendPacketHeader.Buffer, 0, toSendPacketHeader.DataLength,
+                toSendPacketFrames.Buffer, 0, toSendPacketFrames.DataLength,
+                encryptedToSend, 0);
+        
+            await this.quicServer.WritePacket(encryptedToSend, 0, toSendLen);
+
+            var a = QuicModelCoding.DecodeLHP(toSendPacketHeader.Buffer, 0, true, false);
+
+            // toSendPacketFrames.Reset();
+            // toSendPacketHeader.Reset();
+        }
+
+        void PacketPaddingIfNeeded()
+        {
+            if (toSendPacketFrames.DataLength > 1250) return;
+
+            int paddinglen = 1250 - (toSendPacketFrames.DataLength % 1250);
+            int opadding = toSendPacketFrames.MallocAppend(paddinglen);
+            MemOps.MemsetZero(toSendPacketFrames.Buffer, opadding, paddinglen);
+        }
+
+        async Task WritePacketInitial()
+        {
+            PacketPaddingIfNeeded();
+
+            int pnlength = toSendPacketFrames.DataLength + initialPns.crypto.WriteAuthTagLen;
+
+            var p = InitialPacket.Create(
+                        onSendingDestConnId,
+                        onSendingSrcConnId,
+                        new Memory<byte>(),
+                        initialPns.PacketNumber,
+                        initialPns.LargestAck,
+                        (ulong)pnlength);
+
+            QuicModelCoding.Encode_InitialPacketSkipPayload(toSendPacketHeader, p);
+
+            await EncryptAndSend(initialPns);
+
+            initialPns.PacketNumber++;
+        }
+
+        async Task SendPacketHandshake()
+        {
+            return;
+            PacketPaddingIfNeeded();
+
+            ulong pnlength = (ulong)toSendPacketFrames.DataLength + (ulong)initialPns.crypto.WriteAuthTagLen;
+            
+
+            var p = HandshakePacket.Create(
+                        onSendingDestConnId,
+                        onSendingSrcConnId,
+                        handshakePns.PacketNumber,
+                        handshakePns.LargestAck,
+                        pnlength
+                        );
+
+            QuicModelCoding.Encode_HandshakePacketSkipPayload(toSendPacketHeader, p);
+
+            // var a = QuicModelCoding.DecodeHandshakePacket(toSendPacketHeader.Buffer, 0, false, true);
+
+            handshakePns.PacketNumber++;
+
+            await EncryptAndSend(handshakePns);
+        }
+
+        void AppendACKFrame(ulong pktsnum)
+        {
+            var f = new AckFrame();
+            f.AckDelay = 10;
+            f.AckRangeCount = 0;
+            f.FirstAckRange = 0;
+            f.LargestAcknowledged = (ulong)pktsnum;
+            f.Type = FrameType.Ack2;
+
+            QuicModelCoding.Encode_ACKFrame(toSendPacketFrames, f);
+        }
+
+
         async Task ProcessPackets()
         {
             if (packets.DataLength == 0) await quicServer.LoadPacket();
             // MemCpy.Copy(testpacketprotected, 0, packets.Buffer, 0, testpacketprotected.Length);
 
-            LongHeaderPacket lhp;
+            LongHeaderPacket lhp = QuicModelCoding.DecodeLHP(packets.Buffer, 0, true);
 
             if (isinit)
             {
                 isinit = false;
-                lhp = QuicModelCoding.DecodeLHP(packets.Buffer, 0, true);
                 this.initialPns.crypto.SetupInitCrypto(lhp.DestConId);
                 this.originalDestinationConnectionId = lhp.DestConId.ToArray();
 
                 this.ServerConnectionId = lhp.DestConId.ToArray();
+                this.ClientConnectionId = lhp.SrcConId.ToArray();
 
                 if (lhp.SrcConId.Length == 0)
                 {
-                    this.ClientConnectionId = lhp.DestConId.ToArray();
+                    // this.ClientConnectionId = lhp.DestConId.ToArray();
+                    // ClientConnectionId[0] = ClientConnectionId[1] = 1;
                 }
             }
 
-            this.initialPns.crypto.DecryptPacket(packets.Buffer, 0, tempDecryptedPkt, 0);
+            QuicPNS pns;
+
+            if (lhp.LongPacketType == LongPacketType.Initial)
+            {
+                pns = initialPns;
+            }
+            else if (lhp.LongPacketType == LongPacketType.Handshake)
+            {
+                pns = handshakePns;
+            }
+            else throw new NotImplementedException();
+
+            pns.crypto.DecryptPacket(packets.Buffer, 0, tempDecryptedPkt, 0);
+
             lhp = QuicModelCoding.DecodeLHP(tempDecryptedPkt, 0, false);
-            
             packets.TrimStart(lhp.A_TotalPacketLength);
+            pns.LargestAck = lhp.PacketNumber;
+            pns.NeedAckPkts.Add(lhp.PacketNumber);
 
             byte[] p = tempDecryptedPkt;
 
             int i = lhp.A_HeaderLength;
+
+            List<string> errs = new List<string>();
+
             while (i < lhp.A_TotalPacketLength)
             {
                 FrameType ft = (FrameType)p[i];
@@ -147,7 +255,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                     case FrameType.Padding: i++; continue;
                     case FrameType.Ping:
                         i++; continue;
-                    
+
                     case FrameType.Crypto:
                         var cf = QuicModelCoding.DecodeFrame_Crypto(p, i);
                         cryptoFramesStream.RecvStreamFrame(cf);
@@ -155,55 +263,68 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                         // MemCpy.Copy(cf.Data.Span, 0, p, (int)cf.Offset, (int)cf.Length);
                         break;
                     case FrameType.Ack2:
-                        
+
                     case FrameType.Ack3:
-                        
+
                     case FrameType.ResetStream:
-                        
+
                     case FrameType.StopSending:
-                        
+
                     case FrameType.NewToken:
-                        
+
                     case FrameType.Stream:
-                        
+
                     case FrameType.MaxData:
-                        
+
                     case FrameType.MaxStreamData:
-                        
+
                     case FrameType.MaxStreams2:
-                        
+
                     case FrameType.MaxStreams3:
-                        
+
                     case FrameType.DataBlocked:
-                        
+
                     case FrameType.StreamDataBlocked:
-                        
+
                     case FrameType.StreamsBlocked6:
-                        
+
                     case FrameType.StreamsBlocked7:
-                        
+
                     case FrameType.NewConnectionId:
-                        
+
                     case FrameType.RetireConnectionId:
-                        
+
                     case FrameType.PathChallenge:
-                        
+
                     case FrameType.PathResponse:
-                        
+
                     case FrameType.ConnectionCloseC:
                         var closec = QuicModelCoding.DecodeFrame_Close(p, i);
-                        throw new QuicException("connection close");
+                        string msg = $"connection close, error: {closec.ErrorCode} ({Enum.GetName(closec.A_ErrorCode)}) received reason error phrase (in CLOSE FRAME): '{closec.GetReasonPhraseString()}'";
+
+                        if (closec.ErrorCode >= 0x0100 && closec.ErrorCode <= 0x01ff)
+                        {
+                            msg = $"The cryptographic handshake failed. Error code (from CLOSE FRAME): {closec.ErrorCode}";
+                        }
+
+                        // throw new QuicException(msg);
+                        errs.Add(msg);
+                        i += closec.A_TotalLength;
                         break;
-                        
+
                     case FrameType.ConnectionCloseD:
-                        
+
                     case FrameType.HandshakeDone:
-                        
-                    default: throw new Exception("unknown");
+
+                    default:
+                        Debugger.Break();
+                        throw new Exception("unknown");
                         break;
                 }
 
             }
+
+            if (errs.Count > 0) throw new QuicException(string.Join("\n", errs.ToArray()));
 
             //var md = new ModelDeserialization(new Validate(new Validate.ValidationErrorHandler(null)));
             //var d = md.Deserialize<ClientHello>(cframes, 0);
@@ -225,39 +346,38 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         {
             int count = (length + chunkLength - 1) / chunkLength;
             Memory<byte>[] r = new Memory<byte>[count];
-            
+
             // full length chunks
             for (int i = 0; i < count; i++)
             {
                 int nextOffs = (i * chunkLength) + offset;
                 int windowLen = length >= chunkLength ? chunkLength : length;
-                
-                r[i] = new Memory<byte>(buffer, nextOffs, chunkLength);
+
+                r[i] = new Memory<byte>(buffer, nextOffs, windowLen);
                 length -= windowLen;
             }
 
             // last chunk (maybe not full length)
             // int rem = length - (count * chunkLength);
-            
+
             // r[count - 1] = new Memory<byte>(buffer, offset + ((count - 1) * chunkLength), rem);
 
             return r;
         }
 
-        async Task SendPacket(QuicPNS pns)
-        {
-            throw new NotImplementedException();
-        }
-
-        async Task WriteInitialPacket(byte[] buffer, int offset, int length)
+        async Task WriteCryptoPackets(byte[] buffer, int offset, int length)
         {
             // todo what lenght to split?
-            int maxFrameDataLen = 1024;
+            int maxFrameDataLen = 1024 * 2;
             var frames = Split(buffer, offset, length, maxFrameDataLen);
             int stoffs = 0;
+            QuicPNS pns = this.tlsState == 0 ? initialPns : handshakePns;
 
             foreach (var chunk in frames)
             {
+                toSendPacketFrames.Reset();
+                toSendPacketHeader.Reset();
+
                 var f = new CryptoFrame
                 {
                     Data = chunk,
@@ -267,37 +387,27 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
                 stoffs += chunk.Length;
 
-                // clear (so will by default have padding packets)
-                MemOps.MemsetZero(toSendPacketFrames.Buffer);
                 QuicModelCoding.Encode_CryptoFrame(toSendPacketFrames, f);
+
+                foreach (var n in pns.NeedAckPkts) AppendACKFrame(n);
+                pns.NeedAckPkts.Clear();
 
                 // length including padding
                 // throw new Exception("implement padding");
                 // int lengthWithPadding = toSendPacketFrames.
+                // TODO must include auth tag in payload length
 
+                if (tlsState == 0)
+                {
+                    await WritePacketInitial();
 
-                initialPns.PacketNumber++;
-                var p = InitialPacket.Create(
-                    onSendingDestConnId,
-                    onSendingSrcConnId,
-                    new Memory<byte>(),
-                    initialPns.PacketNumber,
-                    initialPns.LargestAck,
-                    (ulong)toSendPacketFrames.DataLength);
-
-                QuicModelCoding.Encode_InitialPacketSkipPayload(toSendPacketHeader, p);
-
-                int toSendLen = initialPns.crypto.EncryptPacket(
-                toSendPacketHeader.Buffer,
-                0,
-                toSendPacketHeader.DataLength,
-                toSendPacketFrames.Buffer,
-                0,
-                toSendPacketFrames.DataLength,
-                encryptedToSend,
-                0);
-
-                await this.quicServer.WritePacket(encryptedToSend, 0, toSendLen);
+                    //var test = QuicModelCoding.DecodeInitialPacket(toSendPacketHeader.Buffer, 0);
+                }
+                else if (tlsState == 1)
+                {
+                    await SendPacketHandshake();
+                }
+                else throw new NotImplementedException();
             }
         }
 
@@ -322,7 +432,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         {
             checked
             {
-                (WriteInitialPacket(buffer, (int)offset, length)).Wait();
+                (WriteCryptoPackets(buffer, (int)offset, length)).Wait();
             }
         }
 
@@ -330,7 +440,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         {
             // only by server
             QuicTransportParametersExtension.OriginalDestinationConnectionId e1 = new QuicTransportParametersExtension.OriginalDestinationConnectionId(this.originalDestinationConnectionId);
-            
+
             QuicTransportParametersExtension.MaxIdleTimeout maxIdle = new QuicTransportParametersExtension.MaxIdleTimeout(0);
             QuicTransportParametersExtension.MaxUdpPayloadSize maxUdp = new QuicTransportParametersExtension.MaxUdpPayloadSize(65527);
             QuicTransportParametersExtension.InitialMaxData imd = new QuicTransportParametersExtension.InitialMaxData(1024 * 1024 * 50);
@@ -370,6 +480,19 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             // only by server if change address
             //preferred_address
+        }
+
+        internal void ChangeReadEncryption(Crypto crypto, byte[] trafficSecret)
+        {
+            handshakePns.crypto.ChangeReadEncryption(crypto, trafficSecret);
+        }
+
+        internal void ChangeWriteEncryption(Crypto crypto, byte[] trafficSecret)
+        {
+            tlsState = 1;
+            handshakePns = new QuicPNS();
+            handshakePns.crypto = new QuicCrypto(this.endpoint);
+            handshakePns.crypto.ChangeWriteEncryption(crypto, trafficSecret);
         }
 
         #endregion
@@ -412,15 +535,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             throw new NotImplementedException();
         }
 
-        internal void ChangeReadEncryption(AEAD newRead, byte[] newIv)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal void ChangeWriteEncryption(AEAD newRead, byte[] newIv)
-        {
-            throw new NotImplementedException();
-        }
+        internal void ChangeReadEncryption(Crypto crypto, byte[] trafficSecret) => connection.ChangeReadEncryption(crypto, trafficSecret);
+        internal void ChangeWriteEncryption(Crypto crypto, byte[] trafficSecret) => connection.ChangeWriteEncryption(crypto, trafficSecret);
 
         internal QuicTransportParametersExtension GetQuicTransportParametersServer(QuicTransportParametersExtension clientHelloQuicTransportParams)
         {

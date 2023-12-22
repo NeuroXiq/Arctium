@@ -9,6 +9,31 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
 {
     internal class QuicTransportParametersExtension : Extension
     {
+        public static readonly TransportParameterId[] SerializationInfoValueIsInteger =
+        {
+            TransportParameterId.MaxIdleTimeout,
+            TransportParameterId.MaxUdpPayloadSize,
+            TransportParameterId.InitialMaxData,
+            TransportParameterId.InitialMaxStreamDataBidiRemote,
+            TransportParameterId.InitialMaxStreamDataBidiLocal,
+            TransportParameterId.InitialMaxStreamDataUni,
+            TransportParameterId.InitialMaxStreamsBidi,
+            TransportParameterId.InitialMaxStreamsUni,
+            TransportParameterId.AckDelayExponent,
+            TransportParameterId.MaxAckDelay,
+            TransportParameterId.ActiveConnectionIdLimit,
+        };
+
+        public static readonly TransportParameterId[] SerializationInfoValueIsByteArray =
+        {
+            TransportParameterId.InitialSourceConnectionId,
+            TransportParameterId.OriginalDestinationConnectionId,
+            TransportParameterId.StatelessResetToken,
+            TransportParameterId.RetrySourceConnectionId,
+        };
+
+
+
         public override ExtensionType ExtensionType => ExtensionType.QuicTransportParameters;
 
         public TransportParameter[] TransportParameters { get; private set; }
@@ -18,7 +43,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             TransportParameters = parameters;
         }
 
-        public enum TransportParameterId
+        public enum TransportParameterId : ulong
         {
             OriginalDestinationConnectionId = 0x00,
             MaxIdleTimeout = 0x01,
@@ -34,7 +59,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             MaxAckDelay = 0x0b,
             DisableActiveMigration = 0x0c,
             PreferredAddress = 0x0d,
-            ActiveConnectionIdLimit = 0x0,
+            ActiveConnectionIdLimit = 0x0e,
             InitialSourceConnectionId = 0x0f,
             RetrySourceConnectionId = 0x10,
 
@@ -50,7 +75,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
         {
             public TransportParameterId Id { get; set; }
             public ulong Length { get; set; }
-            public object Value { get; set; }
+            // public object Value { get; set; }
 
             public TransportParameter(TransportParameterId id)
             {
@@ -65,11 +90,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             /// Connection ID field from the first Initial packet sent by the client; see Section 7.3. This
             /// transport parameter is only sent by a server.
             /// </summary>
-            public byte[] Value;
-
             public OriginalDestinationConnectionId(byte[] value) : base(TransportParameterId.OriginalDestinationConnectionId, value)
             {
-                
+
             }
         }
 
@@ -114,19 +137,19 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             /// <summary>
             /// max idle in miliseconds. Zero if no idle
             /// </summary>
-            public ulong Value;
-
             public MaxIdleTimeout(ulong value) : base(TransportParameterId.MaxIdleTimeout, value)
             {
             }
         }
 
-        public class StatelessResetToken 
+        public class StatelessResetToken : ByteArrayTransportParameter
         {
             /// <summary>
             /// Sequence of 16 bytes
             /// </summary>
-            public byte[] Value;
+            public StatelessResetToken(byte[] value) : base(TransportParameterId.StatelessResetToken, value)
+            {
+            }
         }
 
         public class MaxUdpPayloadSize : IntegerTransportParameter
@@ -198,7 +221,7 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
 
         public class DisableActiveMigration
         {
-        
+
         }
 
         public class PreferredAddress : TransportParameter
@@ -216,9 +239,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             }
         }
 
-        public class ActiveConnectionIdLimit 
+        public class ActiveConnectionIdLimit
         {
-        
+
         }
 
         public class InitialSourceConnectionId : ByteArrayTransportParameter
@@ -228,9 +251,9 @@ namespace Arctium.Standards.Connection.Tls13Impl.Model.Extensions
             }
         }
 
-        public class RetrySourceConnectionId 
+        public class RetrySourceConnectionId
         {
-        
+
         }
 
     }
