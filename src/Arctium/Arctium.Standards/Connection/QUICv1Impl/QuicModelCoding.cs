@@ -528,5 +528,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             // payload ignore
             // p.payload
         }
+
+        internal static object DecodeFrame_ACK(byte[] p, int i)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

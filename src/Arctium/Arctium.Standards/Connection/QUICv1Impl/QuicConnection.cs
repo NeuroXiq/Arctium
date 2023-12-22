@@ -124,7 +124,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         
             await this.quicServer.WritePacket(encryptedToSend, 0, toSendLen);
 
-            var a = QuicModelCoding.DecodeLHP(toSendPacketHeader.Buffer, 0, true, false);
+            var a = QuicModelCoding.DecodeLHP(toSendPacketHeader.Buffer, 0, false, true);
+            var b = QuicModelCoding.DecodeLHP(encryptedToSend, 0, true, false);
 
             // toSendPacketFrames.Reset();
             // toSendPacketHeader.Reset();
@@ -132,9 +133,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         void PacketPaddingIfNeeded()
         {
-            if (toSendPacketFrames.DataLength > 1250) return;
-
-            int paddinglen = 1250 - (toSendPacketFrames.DataLength % 1250);
+            int paddinglen = 1250;
             int opadding = toSendPacketFrames.MallocAppend(paddinglen);
             MemOps.MemsetZero(toSendPacketFrames.Buffer, opadding, paddinglen);
         }
@@ -142,8 +141,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         async Task WritePacketInitial()
         {
             PacketPaddingIfNeeded();
-
             int pnlength = toSendPacketFrames.DataLength + initialPns.crypto.WriteAuthTagLen;
+            await Console.Out.WriteLineAsync("wrtie initial:, " + pnlength);
 
             var p = InitialPacket.Create(
                         onSendingDestConnId,
@@ -162,11 +161,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
         async Task SendPacketHandshake()
         {
-            return;
             PacketPaddingIfNeeded();
 
             ulong pnlength = (ulong)toSendPacketFrames.DataLength + (ulong)initialPns.crypto.WriteAuthTagLen;
-            
+            await Console.Out.WriteLineAsync("wrtie handshake:, " + pnlength);
 
             var p = HandshakePacket.Create(
                         onSendingDestConnId,
@@ -192,6 +190,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             f.AckRangeCount = 0;
             f.FirstAckRange = 0;
             f.LargestAcknowledged = (ulong)pktsnum;
+            // f.LargestAcknowledged = 0;
             f.Type = FrameType.Ack2;
 
             QuicModelCoding.Encode_ACKFrame(toSendPacketFrames, f);
@@ -233,9 +232,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             }
             else throw new NotImplementedException();
 
-            pns.crypto.DecryptPacket(packets.Buffer, 0, tempDecryptedPkt, 0);
+            int totalPacketLenAfterDecrypt = pns.crypto.DecryptPacket(packets.Buffer, 0, tempDecryptedPkt, 0);
 
             lhp = QuicModelCoding.DecodeLHP(tempDecryptedPkt, 0, false);
+            Console.WriteLine($"RECV: {lhp.LongPacketType}, pn: {lhp.PacketNumber}") ;
             packets.TrimStart(lhp.A_TotalPacketLength);
             pns.LargestAck = lhp.PacketNumber;
             pns.NeedAckPkts.Add(lhp.PacketNumber);
@@ -246,7 +246,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
             List<string> errs = new List<string>();
 
-            while (i < lhp.A_TotalPacketLength)
+            while (i < totalPacketLenAfterDecrypt)
             {
                 FrameType ft = (FrameType)p[i];
 
@@ -262,8 +262,26 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                         i += cf.A_TotalLength;
                         // MemCpy.Copy(cf.Data.Span, 0, p, (int)cf.Offset, (int)cf.Length);
                         break;
-                    case FrameType.Ack2:
+                    
 
+                    case FrameType.ConnectionCloseC:
+                        var closec = QuicModelCoding.DecodeFrame_Close(p, i);
+                        string msg = $"connection close, error: {closec.ErrorCode} ({Enum.GetName(closec.A_ErrorCode)}) received reason error phrase (in CLOSE FRAME): '{closec.GetReasonPhraseString()}'";
+
+                        if (closec.ErrorCode >= 0x0100 && closec.ErrorCode <= 0x01ff)
+                        {
+                            msg = $"The cryptographic handshake failed. Error code (from CLOSE FRAME): {closec.ErrorCode}";
+                        }
+
+                        // throw new QuicException(msg);
+                        errs.Add(msg);
+                        i += closec.A_TotalLength;
+                        break;
+
+                    case FrameType.Ack2:
+                        var ackf = QuicModelCoding.DecodeFrame_ACK(p, i);
+                        i += ackf.A_TotalLength;
+                        break;
                     case FrameType.Ack3:
 
                     case FrameType.ResetStream:
@@ -297,20 +315,6 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                     case FrameType.PathChallenge:
 
                     case FrameType.PathResponse:
-
-                    case FrameType.ConnectionCloseC:
-                        var closec = QuicModelCoding.DecodeFrame_Close(p, i);
-                        string msg = $"connection close, error: {closec.ErrorCode} ({Enum.GetName(closec.A_ErrorCode)}) received reason error phrase (in CLOSE FRAME): '{closec.GetReasonPhraseString()}'";
-
-                        if (closec.ErrorCode >= 0x0100 && closec.ErrorCode <= 0x01ff)
-                        {
-                            msg = $"The cryptographic handshake failed. Error code (from CLOSE FRAME): {closec.ErrorCode}";
-                        }
-
-                        // throw new QuicException(msg);
-                        errs.Add(msg);
-                        i += closec.A_TotalLength;
-                        break;
 
                     case FrameType.ConnectionCloseD:
 
@@ -389,7 +393,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
 
                 QuicModelCoding.Encode_CryptoFrame(toSendPacketFrames, f);
 
-                foreach (var n in pns.NeedAckPkts) AppendACKFrame(n);
+                if (pns.NeedAckPkts.Count > 0) AppendACKFrame((ulong)pns.NeedAckPkts.Max());
                 pns.NeedAckPkts.Clear();
 
                 // length including padding

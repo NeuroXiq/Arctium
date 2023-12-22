@@ -156,7 +156,7 @@ namespace Arctium.Standards.Connection.QUICv1Impl
                 nonce[nonce.Length - 1 - i] ^= (byte)(packetNumber >> (8 * i));
         }
 
-        public void DecryptPacket(byte[] buffer, int offset, byte[] output, int outOffs)
+        public int DecryptPacket(byte[] buffer, int offset, byte[] output, int outOffs)
         {
             // 1. decrypt packet header
             // 2. decrypt packet payload
@@ -185,6 +185,8 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             MemCpy.Copy(buffer, offset, output, outOffs, lhp.A_HeaderLength);
 
             if (!ok) throw new QuicException("AEAD auth tag not ok");
+
+            return lhp.A_TotalPacketLength - readAead.AuthenticationTagLengthBytes;
         }
 
         private void ComputeReadMask(byte[] buffer, int sampleOffset)
