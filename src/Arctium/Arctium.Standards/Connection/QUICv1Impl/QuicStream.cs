@@ -1,4 +1,5 @@
 ﻿using Arctium.Shared.Helpers.Buffers;
+using Arctium.Standards.Connection.QUICv1;
 using Arctium.Standards.Connection.QUICv1Impl.Model;
 using System;
 using System.Collections.Generic;
@@ -50,6 +51,11 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         {
             // todo this cannot work like this (very large buffers if ExtensIfNeede every time on append packet)
             // implement cyclic buffer?
+
+            if ((ulong)Cursor > cf.Offset)
+            {
+               throw new QuicException("something wrong");
+            }
 
             ExtendIfNeeded((long)cf.Offset + (long)cf.Data.Length);
             readyFramentsToRead.Add(new FrameLen() { Length = (long)cf.Length, Offset = (long)cf.Offset });

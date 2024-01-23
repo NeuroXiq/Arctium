@@ -5,6 +5,7 @@ using Arctium.Standards.Connection.QUICv1Impl.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -529,9 +530,67 @@ namespace Arctium.Standards.Connection.QUICv1Impl
             // p.payload
         }
 
-        internal static object DecodeFrame_ACK(byte[] p, int i)
+        internal static AckFrame DecodeFrame_ACK(byte[] p, int o)
         {
-            throw new NotImplementedException();
+            int start = o;
+
+            AckFrame f = new AckFrame();
+            f.Type = (FrameType)p[o];
+
+            QuicValidation.ThrowDecodeEx(
+                f.Type != FrameType.Ack2 && f.Type != FrameType.Ack3, "Not ACK frame type - cannot decode");
+
+            o++;
+            f.LargestAcknowledged = DecodeIntegerVLE(p, o, out var laLen);
+
+            o += laLen;
+            f.AckDelay = DecodeIntegerVLE(p, o, out var adLen);
+            // if (f.AckDelay > 500) Debugger.Break();
+
+            o += adLen;
+            f.AckRangeCount = DecodeIntegerVLE(p, o, out var arcLen);
+
+            o += arcLen;
+            f.FirstAckRange = DecodeIntegerVLE(p, o, out var farLen);
+
+            o += farLen;
+
+            if (f.AckRangeCount > int.MaxValue)
+                QuicValidation.ThrowDecodeEx("ACK Frame: too big ackrangecount (not supported)");
+
+            AckRange[] ranges = new AckRange[f.AckRangeCount];
+            f.AckRange = ranges;
+            for (int i = 0; i < (int)f.AckRangeCount; i++)
+            {
+                ulong gap = DecodeIntegerVLE(p, o, out var glen);
+                o += glen;
+                
+                ulong ackRangeLen = DecodeIntegerVLE(p, o, out var arlen);
+                o += arlen;
+
+                AckRange r = new AckRange();
+                r.Gap = gap;
+                r.ACKRangeLength = ackRangeLen;
+                ranges[i] = r;
+            }
+
+            if (f.Type == FrameType.Ack3)
+            {
+                f.EcnCounts = new ECNCounts();
+
+                f.EcnCounts.ECT0Count = DecodeIntegerVLE(p, o, out var etc0len);
+                o += etc0len;
+
+                f.EcnCounts.ECT1Count = DecodeIntegerVLE(p, o, out var etc1len);
+                o += etc1len;
+
+                f.EcnCounts.ECNCECount = DecodeIntegerVLE(p, o, out var etccelen);
+                o += etccelen;
+            }
+
+            f.A_TotalLength = o - start;
+
+            return f;
         }
     }
 }

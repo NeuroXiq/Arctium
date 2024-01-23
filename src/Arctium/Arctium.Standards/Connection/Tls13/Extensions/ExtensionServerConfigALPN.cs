@@ -21,48 +21,6 @@ namespace Arctium.Standards.Connection.Tls13.Extensions
             NotSelectedIgnore
         }
 
-        /// <summary>
-        /// ALPN extension result selector, can select protocol or fail with alert
-        /// </summary>
-        public struct ResultSelect
-        {
-            int maxIndex;
-
-            public ResultSelect(int maxIndex)
-            {
-                this.maxIndex = maxIndex;
-            }
-
-            /// <summary>
-            /// Will reject connection with no_application_protocol alert fatal.
-            /// This result will reject client attempt to connect
-            /// </summary>
-            public Result NotSelectedFatalAlert()
-            {
-                return new Result(ResultType.NotSelectedFatalAlert, -1);
-            }
-
-            /// <summary>
-            /// Server will not send response to this extension and it will be ignored.
-            /// Handshake will continue like without ALPN extension from client
-            /// </summary>
-            public Result NotSelectedIgnore()
-            {
-                return new Result(ResultType.NotSelectedIgnore, -1);
-            }
-
-            /// <summary>
-            /// Server will send ALPN extension response with selected protocol.
-            /// </summary>
-            /// <param name="index"></param>
-            public Result Success(int index)
-            {
-                Validation.NumberInRange(index, 0, maxIndex, nameof(index), "index out of range of possible protocol list");
-
-                return new Result(ResultType.Success, index);
-            }
-        }
-
         public struct Result
         {
             internal ResultType ActionType;
@@ -75,10 +33,35 @@ namespace Arctium.Standards.Connection.Tls13.Extensions
                 ActionType = type;
                 SelectedIndex = index;
             }
+
+            /// <summary>
+            /// Will reject connection with no_application_protocol alert fatal.
+            /// This result will reject client attempt to connect
+            /// </summary>
+            public static Result NotSelectedFatalAlert()
+            {
+                return new Result(ResultType.NotSelectedFatalAlert, -1);
+            }
+
+            /// <summary>
+            /// Server will not send response to this extension and it will be ignored.
+            /// Handshake will continue like without ALPN extension from client
+            /// </summary>
+            public static Result NotSelectedIgnore()
+            {
+                return new Result(ResultType.NotSelectedIgnore, -1);
+            }
+
+            /// <summary>
+            /// Server will send ALPN extension response with selected protocol.
+            /// </summary>
+            /// <param name="index"></param>
+            public static Result Success(int index)
+            {
+                return new Result(ResultType.Success, index);
+            }
         }
 
-        public Result SelectorResult { get; private set; }
-
-        public abstract Result Handle(byte[][] protocolNameListFromClient, ResultSelect resultSelector);
+        public abstract Result Handle(byte[][] protocolNameListFromClient);
     }
 }

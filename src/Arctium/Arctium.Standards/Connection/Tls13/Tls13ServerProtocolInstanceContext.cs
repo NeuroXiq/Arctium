@@ -78,10 +78,11 @@ namespace Arctium.Standards.Connection.Tls13
                     .Select(originalProtocol => (byte[])originalProtocol.Clone())
                     .ToArray();
 
-                var result = Config.ExtensionALPN.Handle(protNamesClone, new ExtensionServerConfigALPN.ResultSelect(protNamesClone.Length));
+                var result = Config.ExtensionALPN.Handle(protNamesClone);
 
                 if (result.ActionType == ExtensionServerConfigALPN.ResultType.Success)
                 {
+                    Validation.NumberInRange(result.SelectedIndex, 0, protNamesClone.Length - 1, nameof(result.SelectedIndex), "index out of range of possible protocol list");
                     selectedIndex = -1;
 
                     // find result in original list (before removing grease)

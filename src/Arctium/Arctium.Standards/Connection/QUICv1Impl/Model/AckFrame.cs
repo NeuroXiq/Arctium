@@ -15,5 +15,6 @@ namespace Arctium.Standards.Connection.QUICv1Impl.Model
         public ulong FirstAckRange;
         public Memory<AckRange> AckRange;
         public ECNCounts EcnCounts;
+        public int A_TotalLength;
     }
 }

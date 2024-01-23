@@ -12,5 +12,10 @@ namespace Arctium.Standards.Connection.QUICv1Impl
         {
             throw new QuicDecodeException(msg);
         }
+
+        public static void ThrowDecodeEx(bool condition, string msg)
+        {
+            if (condition) ThrowDecodeEx(msg);
+        }
     }
 }
