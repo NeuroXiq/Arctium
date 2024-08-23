@@ -9,7 +9,7 @@ Install-Package Arctium.Cryptography
 Install-Package Arctium.Standards
 ```
 - - -
-API Docs:
+API Docs: \
 https://dndocs.com/?packageName=Arctium.Shared&packageVersion=1.0.0.1 \
 https://dndocs.com/?packageName=Arctium.Standards&packageVersion=1.0.0.1 \
 https://dndocs.com/?packageName=Arctium.Cryptography&packageVersion=1.0.0.1 \
