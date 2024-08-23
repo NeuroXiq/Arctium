@@ -9,10 +9,10 @@ Install-Package Arctium.Cryptography
 Install-Package Arctium.Standards
 ```
 - - -
-
-https://dndocs.com/?packageName=Arctium.Shared&packageVersion=1.0.0.1
-https://dndocs.com/?packageName=Arctium.Standards&packageVersion=1.0.0.1
-https://dndocs.com/?packageName=Arctium.Cryptography&packageVersion=1.0.0.1
+API Docs:
+https://dndocs.com/?packageName=Arctium.Shared&packageVersion=1.0.0.1 \
+https://dndocs.com/?packageName=Arctium.Standards&packageVersion=1.0.0.1 \
+https://dndocs.com/?packageName=Arctium.Cryptography&packageVersion=1.0.0.1 \
 
 
 Arctium is a simple crypto library, created and maintained for learning purpose. 
