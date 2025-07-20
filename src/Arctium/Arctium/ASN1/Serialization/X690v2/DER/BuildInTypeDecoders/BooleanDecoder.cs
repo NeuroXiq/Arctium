@@ -1,5 +1,6 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Serialization.Exceptions;
+using Boolean = Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes.Boolean;
 
 namespace Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders
 {
