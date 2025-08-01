@@ -16,7 +16,6 @@
     <Folder Include="HashFunctions\Checksums\" />
     <Folder Include="Protocol\DNSImpl\Protocol\" />
     <Folder Include="Protocol\DNSImpl\Model\" />
-    <Folder Include="Utils\" />
   </ItemGroup>
 
   <ItemGroup>
