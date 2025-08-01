@@ -3,7 +3,7 @@ using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Numerics;
 
-namespace Arctium.Standards.DiffieHellman
+namespace Arctium.RFC
 {
     /// <summary>
     /// Internet Engineering Task Force (IETF) D. Gillmor

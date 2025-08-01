@@ -1,6 +1,4 @@
-﻿using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
-using Arctium.Protocol.Tls.Protocol;
-using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 
 namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration

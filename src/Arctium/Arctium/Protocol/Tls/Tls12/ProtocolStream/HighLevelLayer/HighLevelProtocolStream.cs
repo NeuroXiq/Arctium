@@ -2,18 +2,20 @@
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Builder;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
-using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 using Arctium.Protocol.Tls.Tls12.Buffers;
 using System;
 using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Protocol.Tls.Protocol.AlertProtocol;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
 using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders;
+using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer11;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.HighLevelLayer
 {
     class HighLevelProtocolStream
     {
@@ -72,7 +74,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer
 
         private void LoadFromCache()
         {
-            
+
             switch (currentContentInCache)
             {
                 case ContentType.ChangeCipherSpec:
@@ -97,7 +99,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer
 
         private void LoadAlertFromCache()
         {
-            
+
             AlertBuilder ab = new AlertBuilder();
 
             var a = new Alert((AlertLevel)bufferCache.Buffer[0], (AlertDescription)bufferCache.Buffer[1]);
@@ -121,7 +123,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer
 
                     bufferCache.TrimStart(1);
 
-                    
+
                 }
                 else throw new Exception("chagne cipher spec invalid type");
             }
@@ -178,7 +180,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer
             byte[] bytes = handshakeFormatter.GetBytes(handshakeMessage);
             recordLayer.Write(bytes, 0, bytes.Length, ContentType.Handshake);
         }
-     
+
         public void Write(ChangeCipherSpec ccs)
         {
             byte[] changeCsBytes = new byte[1];

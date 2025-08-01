@@ -2,8 +2,9 @@
 using Arctium.Protocol.Tls.Protocol;
 using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
-using Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.HighLevelLayer;
 using System.Collections.Generic;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Tls12.Operator.Tls11Operator
 {

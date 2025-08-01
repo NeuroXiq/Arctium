@@ -1,4 +1,6 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.AlertProtocol
+﻿using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
+
+namespace Arctium.Protocol.Tls.Protocol.AlertProtocol
 {
     class Alert
     {

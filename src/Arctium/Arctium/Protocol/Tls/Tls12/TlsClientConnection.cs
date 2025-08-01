@@ -3,7 +3,7 @@ using Arctium.Protocol.Tls.Tls12.Configuration.TlsExtensions;
 using Arctium.Protocol.Tls.Tls12.Operator.Tls12Operator;
 using System.IO;
 
-namespace Arctium.Protocol.Tls
+namespace Arctium.Protocol.Tls.Tls12
 {
     public class TlsClientConnection
     {

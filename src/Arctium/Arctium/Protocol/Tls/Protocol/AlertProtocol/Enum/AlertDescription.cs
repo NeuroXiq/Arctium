@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.AlertProtocol
+﻿namespace Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum
 {
     public enum AlertDescription : byte
     {
@@ -19,8 +19,8 @@
         UnknowCa = 48,
         AccessDenied = 49,
         DecodeError = 50,
-        DecryptError=51,
-        ExoirtRestriction_RESERVED=60,
+        DecryptError = 51,
+        ExoirtRestriction_RESERVED = 60,
         ProtocolVersion = 70,
         InternalError = 80,
         UserCanceled = 90,

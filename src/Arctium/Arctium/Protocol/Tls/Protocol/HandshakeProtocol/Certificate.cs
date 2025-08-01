@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography.X509Certificates;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol
 {

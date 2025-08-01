@@ -7,7 +7,7 @@ using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Protocol.QUICv1;
 using Arctium.Protocol.QUICv1Impl.Model;
-using Arctium.Protocol.Tls.Configuration.TlsExtensions;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer;
 using Arctium.Protocol.Tls13Impl.Model;
 using Arctium.Protocol.Tls13Impl.Protocol;
 using Arctium.Standards.RFC;

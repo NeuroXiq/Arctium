@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol
+namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum
 {
     ///<summary>Cipher suited used by TLS v1.1</summary>
     public enum CipherSuite : ushort
     {
-        
+
         TLS_NULL_WITH_NULL_NULL = 0x0000,
         TLS_RSA_WITH_NULL_MD5 = 0x0001,
         TLS_RSA_WITH_NULL_SHA = 0x0002,

@@ -1,5 +1,6 @@
 ﻿using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Protocol.RecordProtocol;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps
 {

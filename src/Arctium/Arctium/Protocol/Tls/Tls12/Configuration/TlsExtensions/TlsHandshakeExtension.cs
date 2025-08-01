@@ -1,9 +1,9 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 using System;
 
 namespace Arctium.Protocol.Tls.Tls12.Configuration.TlsExtensions
 {
-     
+
     public abstract class TlsHandshakeExtension
     {
         public enum ExtensionType

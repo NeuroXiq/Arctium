@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Tls12.Configuration
 {

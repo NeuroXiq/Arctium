@@ -4,7 +4,7 @@ using System;
 using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     // Optimized record reader
     //
@@ -39,7 +39,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             ReachDataLength(fragmentLength + RecordConst.HeaderLength);
 
             int currentHeaderOffset = dataOffset;
-            
+
             dataOffset += fragmentLength + RecordConst.HeaderLength;
             dataLength -= fragmentLength + RecordConst.HeaderLength;
 
@@ -52,17 +52,17 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
         private void ReachDataLength(int minDataLength)
         {
             //already contains, nothing to do
-            if(minDataLength <= dataLength) return;
+            if (minDataLength <= dataLength) return;
 
-            int totalFreeSpace = DataBuffer.Length  - dataLength;
+            int totalFreeSpace = DataBuffer.Length - dataLength;
             int appendFreeSpace = DataBuffer.Length - dataOffset - dataLength;
             int toReadLength = minDataLength - dataLength;
 
             //can append bytes without shifting anything ?
-            if(appendFreeSpace < minDataLength)
+            if (appendFreeSpace < minDataLength)
             {
                 //not enough space to append bytes/
-                
+
                 //need to extend buffer ? 
                 if (totalFreeSpace >= minDataLength)
                 {
@@ -75,7 +75,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
                     ExpandBuffer(DataBuffer.Length + toExpandLength - totalFreeSpace);
                     ShiftDataToLeft();
                 }
-                
+
             }
             AppendBytes(toReadLength);
         }

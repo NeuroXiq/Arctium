@@ -5,13 +5,13 @@ using System;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Arctium.Protocol.Tls
+namespace Arctium.Protocol.Tls.Tls12
 {
     public class TlsServerConnection
     {
         Tls12ServerConfig tls12Serverconfig;
         TlsProtocolVersion version;
-        
+
 
         public TlsServerConnection(X509Certificate2 cert) : this(cert, TlsProtocolVersion.Tls12, null)
         {
@@ -53,6 +53,6 @@ namespace Arctium.Protocol.Tls
 
         }
 
-      
+
     }
 }

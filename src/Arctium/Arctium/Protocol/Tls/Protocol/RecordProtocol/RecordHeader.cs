@@ -1,4 +1,6 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.RecordProtocol
+﻿using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
+
+namespace Arctium.Protocol.Tls.Protocol.RecordProtocol
 {
     struct RecordHeader
     {

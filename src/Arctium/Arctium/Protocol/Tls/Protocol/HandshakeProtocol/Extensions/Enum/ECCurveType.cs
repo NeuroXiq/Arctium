@@ -1,12 +1,12 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions
+﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum
 {
     ///<summary>Type of curve used in key exchange messages</summary>
-    enum ECCurveType :byte
+    enum ECCurveType : byte
     {
         ///<summary>Deprecated</summary>
-        ExplicitPrime= 1,
+        ExplicitPrime = 1,
         ///<summary>Deprecated</summary>
-        ExplicitChar2= 2,
+        ExplicitChar2 = 2,
         ///<summary>Indicates that curve will be taken from SEC 2 curves list</summary>
         NamedCurve = 3,
     }

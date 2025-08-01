@@ -1,6 +1,6 @@
 ﻿using Arctium.Protocol.Tls.Tls12.CryptoFunctions;
-using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
 using System.Security.Cryptography.X509Certificates;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Tls12.Configuration
 {

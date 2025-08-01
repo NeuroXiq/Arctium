@@ -5,8 +5,9 @@ using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 using System.IO;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Protocol.Tls.Protocol.Consts;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class StreamFragmentCrypto : IRecordCryptoFilter
     {
@@ -59,7 +60,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             RecordHeader header = FixedRecordInfo.GetHeader(recordReader.DataBuffer, recordOffset);
 
             var decryptor = cipher.CreateDecryptor();
-            int decryptedCount = 
+            int decryptedCount =
                 decryptor.TransformBlock(recordReader.DataBuffer, recordOffset + RecordConst.HeaderLength, header.FragmentLength - macSize, buffer, offset);
 
             contentType = header.ContentType;
@@ -93,7 +94,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
             writeStream.Write(recordWriteBuffer, 0, totalRecordLength);
 
-            writeSeqNum++;   
+            writeSeqNum++;
         }
 
         private byte[] ComputeHmac(ulong seqNum, ContentType contentType, byte[] buffer, int offset, int length)

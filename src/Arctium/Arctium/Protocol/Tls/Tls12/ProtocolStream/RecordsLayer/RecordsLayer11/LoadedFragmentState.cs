@@ -1,6 +1,6 @@
-﻿using Arctium.Protocol.Tls.Protocol.RecordProtocol;
+﻿using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     class LoadedFragmentState
     {
@@ -31,7 +31,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
         public static LoadedFragmentState InitializeUnloaded()
         {
             LoadedFragmentState state = new LoadedFragmentState();
-            
+
             state.ResetToUnloaded();
 
             return state;

@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace Arctium.Protocol.Tls
+namespace Arctium.Protocol.Tls.Tls12
 {
     public class TlsStream : Stream
     {

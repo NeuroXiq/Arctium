@@ -1,9 +1,9 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
 using System;
 using Arctium.Protocol.Tls.Exceptions;
 using Arctium.Protocol.Tls.Protocol.AlertProtocol;
 using System.Collections.Generic;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 
 namespace Arctium.Protocol.Tls.Tls12.Configuration.TlsExtensions
 {

@@ -14,7 +14,6 @@ using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
 using Arctium.Standards.RFC;
-using Arctium.Standards.DiffieHellman;
 using Arctium.Standards.EllipticCurves;
 using Arctium.Standards.EllipticCurves.SEC2;
 using Arctium.Standards.PKCS1.v2_2;
@@ -29,6 +28,7 @@ using System.Numerics;
 // using Arctium.Protocol.Tls13;
 using Arctium.Protocol.Tls13Impl.Model;
 using Arctium.Protocol.Tls13Impl.Model.Extensions;
+using Arctium.RFC;
 
 namespace Arctium.Protocol.Tls13Impl.Protocol
 {

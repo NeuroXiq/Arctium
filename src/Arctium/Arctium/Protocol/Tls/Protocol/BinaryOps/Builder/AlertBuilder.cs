@@ -1,4 +1,5 @@
 ﻿using Arctium.Protocol.Tls.Protocol.AlertProtocol;
+using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
 using System;
 
 namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Builder

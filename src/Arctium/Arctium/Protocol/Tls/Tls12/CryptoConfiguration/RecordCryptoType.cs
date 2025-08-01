@@ -1,7 +1,7 @@
-﻿using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
-using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
+using Arctium.Protocol.Tls.Tls12.CryptoConfiguration.Enum;
 
-namespace Arctium.Protocol.Tls.Protocol
+namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration
 {
     class RecordCryptoType
     {

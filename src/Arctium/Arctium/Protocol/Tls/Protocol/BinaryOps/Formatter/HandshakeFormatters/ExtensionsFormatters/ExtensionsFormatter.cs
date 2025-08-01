@@ -2,6 +2,7 @@
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
 using System.Text;
 using System.Collections.Generic;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 
 namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters.ExtensionsFormatters
 {

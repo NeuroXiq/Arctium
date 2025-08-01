@@ -1,7 +1,7 @@
 ﻿using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12;
 
 namespace Arctium.Protocol.Tls.Tls12.Operator.Tls12Operator
 {

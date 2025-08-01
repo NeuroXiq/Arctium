@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol
+﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum
 {
     public enum CompressionMethod : byte
     {

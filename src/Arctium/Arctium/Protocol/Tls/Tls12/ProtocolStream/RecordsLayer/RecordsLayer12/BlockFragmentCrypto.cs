@@ -7,9 +7,10 @@ using System.IO;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Exceptions;
-using Arctium.Protocol.Tls.Protocol.AlertProtocol;
+using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class BlockFragmentCrypto : IRecordCryptoFilter
     {
@@ -39,11 +40,11 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
             //padding include 
             int minFragmentLen = macSize + blockSize;
-            minimumFragmentLength = minFragmentLen + blockSize - (minFragmentLen % blockSize);
+            minimumFragmentLength = minFragmentLen + blockSize - minFragmentLen % blockSize;
 
             //max padding length included
             int maxFragmLen = RecordConst.MaxTlsPlaintextFramentLength + macSize + blockSize;
-            maximumFragmentLength = maxFragmLen + blockSize - (maxFragmLen % blockSize);
+            maximumFragmentLength = maxFragmLen + blockSize - maxFragmLen % blockSize;
 
             internalDecryptBuffer = new byte[0];
             internalEncryptBuffer = new byte[0];
@@ -92,7 +93,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public byte[] CreatePadding(int baseLength)
         {
-            int paddingLength = blockSize - ((baseLength) % blockSize);
+            int paddingLength = blockSize - baseLength % blockSize;
 
             byte[] padding = new byte[paddingLength];
             for (int i = 0; i < paddingLength; i++)
@@ -116,7 +117,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public void SetReadSequenceNumber(ulong seqNum)
         {
-            this.readSeqNum = seqNum;
+            readSeqNum = seqNum;
         }
 
         public int ReadFragment(byte[] buffer, int offset, out ContentType contentType)
@@ -181,9 +182,9 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
                 if (receivedHmac[i] != computedMac[i])
                     throw new Exception("Invalid hmac value, computed value are different in comparison to presented in record fragment");
             }
-            
 
-            
+
+
 
         }
 
@@ -233,7 +234,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public void SetWriteSequenceNumber(ulong seqNum)
         {
-            this.writeSeqNum = seqNum;
+            writeSeqNum = seqNum;
         }
     }
 }

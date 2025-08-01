@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class NullStreamCipherAlgorithmTransform : ICryptoTransform
     {
@@ -39,7 +39,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public void Dispose()
         {
-            
+
         }
 
         public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
@@ -62,15 +62,15 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
     {
         public NullStreamCipherAlgorithm()
         {
-            base.BlockSizeValue = 1;
-            base.FeedbackSizeValue = 1;
-            base.IVValue = new byte[0];
-            base.KeySizeValue = 0;
-            base.KeyValue = new byte[0];
-            base.LegalBlockSizesValue = new KeySizes[] { new KeySizes(0, int.MaxValue, 1) };
-            base.LegalKeySizesValue = new KeySizes[] { new KeySizes(0, int.MaxValue, 1) };
-            base.ModeValue = CipherMode.CBC;
-            base.PaddingValue = PaddingMode.None;
+            BlockSizeValue = 1;
+            FeedbackSizeValue = 1;
+            IVValue = new byte[0];
+            KeySizeValue = 0;
+            KeyValue = new byte[0];
+            LegalBlockSizesValue = new KeySizes[] { new KeySizes(0, int.MaxValue, 1) };
+            LegalKeySizesValue = new KeySizes[] { new KeySizes(0, int.MaxValue, 1) };
+            ModeValue = CipherMode.CBC;
+            PaddingValue = PaddingMode.None;
         }
 
         public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[] rgbIV)
@@ -85,12 +85,12 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public override void GenerateIV()
         {
-            
+
         }
 
         public override void GenerateKey()
         {
-            
+
         }
     }
 }

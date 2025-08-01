@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration
+﻿namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration.Enum
 {
     public enum BulkCipherAlgorithm
     {

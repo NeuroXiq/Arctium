@@ -1,18 +1,19 @@
 ﻿using Arctium.Protocol.Tls.Tls12.Buffers;
 using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
 using Arctium.Protocol.Tls.Tls12.CryptoFunctions;
-using Arctium.Protocol.Tls.Protocol;
 using Arctium.Protocol.Tls.Protocol.AlertProtocol;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter;
 using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
-using Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11;
-using Arctium.CryptoFunctions;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.HighLevelLayer;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer11;
 
 namespace Arctium.Protocol.Tls.Tls12.Operator.Tls11Operator
 {
@@ -238,7 +239,7 @@ namespace Arctium.Protocol.Tls.Tls12.Operator.Tls11Operator
 
             seed.ClientRandom = allMessages.ClientHello.Random;
             seed.CompressionMethod = allMessages.ServerHello.CompressionMethod;
-            seed.HostType = Protocol.RecordProtocol.ConnectionEnd.Client;
+            seed.HostType = ConnectionEnd.Client;
             seed.Premaster = premaster;
             seed.RecordCryptoType = CryptoSuites.Get(allMessages.ServerHello.CipherSuite).RecordCryptoType;
             seed.ServerRandom = allMessages.ServerHello.Random;

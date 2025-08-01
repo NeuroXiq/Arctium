@@ -7,8 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
+using Arctium.Protocol.Tls.Tls12.CryptoConfiguration.Enum;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     static class RecordLayer11CryptoFactory
     {
@@ -91,6 +92,6 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
             }
         }
 
-       
+
     }
 }

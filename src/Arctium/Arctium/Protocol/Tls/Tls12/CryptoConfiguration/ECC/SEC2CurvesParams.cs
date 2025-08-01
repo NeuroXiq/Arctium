@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 using System.Collections.Generic;
 
 namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration.ECC

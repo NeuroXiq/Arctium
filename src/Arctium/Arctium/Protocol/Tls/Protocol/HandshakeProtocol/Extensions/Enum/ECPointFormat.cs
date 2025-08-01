@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions
+﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum
 {
     enum ECPointFormat : byte
     {

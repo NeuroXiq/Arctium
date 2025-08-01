@@ -1,7 +1,7 @@
 ﻿using Arctium.Protocol.Tls.Tls12.Configuration;
 using Arctium.Protocol.Tls.Tls12.Configuration.TlsExtensions;
 
-namespace Arctium.Protocol.Tls
+namespace Arctium.Protocol.Tls.Tls12
 {
     public class TlsConnectionResult
     {

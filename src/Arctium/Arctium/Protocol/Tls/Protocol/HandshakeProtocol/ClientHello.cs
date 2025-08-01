@@ -1,4 +1,5 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
 
 namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol
 {

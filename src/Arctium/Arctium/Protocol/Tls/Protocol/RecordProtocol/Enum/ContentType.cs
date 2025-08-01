@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.RecordProtocol
+﻿namespace Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum
 {
     public enum ContentType : byte
     {

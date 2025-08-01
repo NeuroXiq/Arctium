@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Builder
+namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Builder.Exceptions
 {
     class MessageFromatException : Exception
     {

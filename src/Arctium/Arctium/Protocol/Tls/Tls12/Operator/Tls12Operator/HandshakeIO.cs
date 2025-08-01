@@ -1,5 +1,4 @@
 ﻿using System;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
 using Arctium.Protocol.Tls.Tls12.Buffers;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
@@ -7,10 +6,13 @@ using Arctium.Protocol.Tls.Protocol.BinaryOps.Builder;
 using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter;
 using System.Collections.Generic;
-using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 using Arctium.Protocol.Tls.Protocol.AlertProtocol;
 using Arctium.Protocol.Tls.Exceptions;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders;
+using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12;
 
 namespace Arctium.Protocol.Tls.Tls12.Operator.Tls12Operator
 {

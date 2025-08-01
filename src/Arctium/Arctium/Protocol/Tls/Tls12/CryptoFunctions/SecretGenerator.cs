@@ -1,9 +1,8 @@
 ﻿using Arctium.Protocol.Tls.Tls12.Buffers;
 using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
-using Arctium.Protocol.Tls.Protocol;
-using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
-using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 using System;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Tls12.CryptoFunctions
 {

@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 using System;
 
 namespace Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps

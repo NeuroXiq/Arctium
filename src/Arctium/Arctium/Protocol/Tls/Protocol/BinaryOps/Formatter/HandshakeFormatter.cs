@@ -3,6 +3,7 @@ using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
 using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter.HandshakeFormatters;
 using System.Collections.Generic;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter
 {

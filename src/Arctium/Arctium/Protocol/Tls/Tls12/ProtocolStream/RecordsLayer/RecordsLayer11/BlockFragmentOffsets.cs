@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
+﻿namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     struct BlockFragmentOffsets
     {

@@ -1,4 +1,6 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+
+namespace Arctium.Protocol.Tls.Protocol.HandshakeProtocol
 {
     class Finished : Handshake
     {

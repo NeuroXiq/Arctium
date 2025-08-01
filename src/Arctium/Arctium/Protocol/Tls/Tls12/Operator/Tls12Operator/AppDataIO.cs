@@ -1,5 +1,5 @@
-﻿using Arctium.Protocol.Tls.Protocol.RecordProtocol;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
+﻿using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12;
 using System;
 
 namespace Arctium.Protocol.Tls.Tls12.Operator.Tls12Operator

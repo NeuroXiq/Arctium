@@ -1,14 +1,10 @@
-﻿using Arctium.Shared.Security;
-
+﻿
 namespace Arctium.Shared
 {
     public static class GlobalConfig
     {
-        static RandomGenerator randomGenerator;
-
         static GlobalConfig()
         {
-            randomGenerator = new DefaultUnsafePRNG();
         }
 
 
@@ -24,9 +20,9 @@ namespace Arctium.Shared
             return array;
         }
 
-        public static void RandomGeneratorCryptSecure(byte[] buffer, long offset, long length)
+        public static void RandomGeneratorCryptSecure(byte[] buffer, int offset, int length)
         {
-            randomGenerator.Generate(buffer, offset, length);
+            (new Random()).NextBytes(new Span<byte>(buffer, offset, length));
         }
     }
 }

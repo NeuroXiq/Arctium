@@ -3,12 +3,15 @@ using Arctium.Protocol.Tls.Protocol;
 using System;
 using System.Security.Cryptography;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
+using Arctium.Protocol.Tls.Tls12.CryptoConfiguration.Enum;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class RecordCryptoFactory
     {
-        public static RecordLayer12Params InitReadSecParams { get
+        public static RecordLayer12Params InitReadSecParams
+        {
+            get
             {
                 return new RecordLayer12Params()
                 {
@@ -16,7 +19,8 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
                     BulkKey = new byte[0],
                     MacKey = new byte[0]
                 };
-            } }
+            }
+        }
 
         public static RecordLayer12Params InitWriteSecParams { get { return InitReadSecParams; } }
 
@@ -53,7 +57,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             switch (secParams.RecordCryptoType.BlockCipherMode)
             {
                 case BlockCipherMode.ECB: return CipherMode.ECB;
-                case BlockCipherMode.CBC:  return CipherMode.CBC;
+                case BlockCipherMode.CBC: return CipherMode.CBC;
                 case BlockCipherMode.OFB: return CipherMode.OFB;
                 default: throw new Exception("internal error, cipher mode not currently defined in cryptofactory");
             }

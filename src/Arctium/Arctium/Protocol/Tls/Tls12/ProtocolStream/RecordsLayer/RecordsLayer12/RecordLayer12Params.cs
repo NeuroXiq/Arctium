@@ -1,6 +1,6 @@
-﻿using Arctium.Protocol.Tls.Protocol;
+﻿using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class RecordLayer12Params
     {

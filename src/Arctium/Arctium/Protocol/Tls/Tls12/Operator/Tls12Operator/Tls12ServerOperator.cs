@@ -1,5 +1,4 @@
 ﻿using Arctium.Protocol.Tls.Tls12.Configuration;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12;
 using System.IO;
 using System;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
@@ -7,16 +6,20 @@ using System.Security.Cryptography.X509Certificates;
 using Arctium.Protocol.Tls.Protocol;
 using Arctium.Protocol.Tls.Tls12.CryptoFunctions;
 using System.Security.Cryptography;
-using Arctium.Protocol.Tls.Protocol.AlertProtocol;
-using Arctium.Protocol.Tls.Protocol.RecordProtocol;
-using Arctium.Protocol.Tls.ProtocolStream.RecordsLayer;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Formatter;
-using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol;
 using System.Collections.Generic;
 using Arctium.Protocol.Tls.Exceptions;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
 using Arctium.Protocol.Tls.Tls12.Configuration.TlsExtensions;
 using Arctium.Protocol.Tls.Tls12.Operator.Tls12Operator.ExtensionsHandlers;
+using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
+using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
+using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12;
 
 namespace Arctium.Protocol.Tls.Tls12.Operator.Tls12Operator
 {

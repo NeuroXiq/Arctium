@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer11
 {
     class NullCryptoTransform : ICryptoTransform
     {
@@ -43,7 +43,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         public void Dispose()
         {
-            
+
         }
 
         public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
@@ -87,12 +87,12 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer11
 
         public override void GenerateIV()
         {
-            
+
         }
 
         public override void GenerateKey()
         {
-            
+
         }
     }
 }

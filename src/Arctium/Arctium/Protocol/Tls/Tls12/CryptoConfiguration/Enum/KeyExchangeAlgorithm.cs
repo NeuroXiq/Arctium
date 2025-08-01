@@ -1,11 +1,11 @@
-﻿namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration
+﻿namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration.Enum
 {
     public enum KeyExchangeAlgorithm
     {
         RSA,
         DHE,
         DH,
-        ECDH ,
+        ECDH,
         ECDHE,
         PSK,
         SRP,

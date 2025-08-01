@@ -1,15 +1,16 @@
 ﻿using Arctium.Protocol.Tls.Tls12.Buffers;
 using Arctium.Protocol.Tls.Exceptions;
 using Arctium.Protocol.Tls.Protocol;
-using Arctium.Protocol.Tls.Protocol.AlertProtocol;
 using Arctium.Protocol.Tls.Protocol.BinaryOps;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Protocol.Tls.Protocol.Consts;
 using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 using System;
 using System.IO;
+using Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer
 {
     class RecordIO
     {
@@ -58,8 +59,8 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer
             LoadRecordHeader();
             int contentLength = FixedRecordInfo.FragmentLength(bufferCache.Buffer, 0);
 
-            
-            if (contentLength > MaxFragmentLength) new FatalAlertException("RecordLayer12","On reading record", (int)AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
+
+            if (contentLength > MaxFragmentLength) new FatalAlertException("RecordLayer12", "On reading record", (int)AlertDescription.RecordOverflow, "Record fragment length exceed 'MaxFragmentLength'");
             if (contentLength < 1) throw new FatalAlertException("Record Layer 12", "On reading record", (int)AlertDescription.BadRecordMac, "Record length is 0");
 
             LoadRemainingFragmentBytes(contentLength);
@@ -115,13 +116,13 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer
             }
 
             byte[] bytes = BuildRecordBytes(buffer, offset, length, contentType);
-            
+
             innerStream.Write(bytes, 0, bytes.Length);
         }
 
         private byte[] BuildRecordBytes(byte[] buffer, int offset, int length, ContentType contentType)
         {
-            
+
 
             byte[] temp = new byte[length + 2 + 1 + 2];
 

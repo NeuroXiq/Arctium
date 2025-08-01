@@ -1,7 +1,7 @@
 ﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
 
-namespace Arctium.Protocol.Tls.Protocol.BinarOps.HandshakeBuilders.ExtensionsBuilders
+namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.ExtensionsBuilders
 {
     //TODO TLS12 Simplify this by assignment of this const value to the enum values
     static class ExtensionsBuildConsts

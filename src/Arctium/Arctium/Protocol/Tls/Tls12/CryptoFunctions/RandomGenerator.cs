@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.CryptoFunctions
+namespace Arctium.Protocol.Tls.Tls12.CryptoFunctions
 {
     class RandomGenerator
     {

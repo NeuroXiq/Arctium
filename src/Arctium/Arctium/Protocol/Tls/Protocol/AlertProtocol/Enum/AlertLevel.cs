@@ -1,4 +1,4 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.AlertProtocol
+﻿namespace Arctium.Protocol.Tls.Protocol.AlertProtocol.Enum
 {
     public enum AlertLevel : byte
     {

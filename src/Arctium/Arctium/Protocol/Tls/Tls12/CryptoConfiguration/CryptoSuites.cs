@@ -1,11 +1,11 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
-using Arctium.Protocol.Tls.Tls12.CryptoConfiguration;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using Arctium.Protocol.Tls.Protocol.RecordProtocol;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Extensions.Enum;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
+using Arctium.Protocol.Tls.Tls12.CryptoConfiguration.Enum;
 
-namespace Arctium.Protocol.Tls.Protocol
+namespace Arctium.Protocol.Tls.Tls12.CryptoConfiguration
 {
     //
     // hardcoded object oriented definitons of CipherSuite enum
@@ -37,7 +37,7 @@ namespace Arctium.Protocol.Tls.Protocol
             Add_TLS_NULL_WITH_NULL_NULL();
 
             Add_TLS_RSA_WITH_AES_128_CBC_SHA();
-            
+
             Add_TLS_RSA_WITH_3DES_EDE_CBC_SHA();
 
             Add_TLS_RSA_WITH_AES_128_CBC_SHA();
@@ -192,7 +192,7 @@ namespace Arctium.Protocol.Tls.Protocol
                 128,
                 HashAlgorithmType.SHA1);
 
-            
+
 
             CryptoSuite suiteDefinition = new CryptoSuite(baseSuite, KeyExchangeAlgorithm.RSA, SignatureAlgorithm.NULL, recordCryptoType);
 

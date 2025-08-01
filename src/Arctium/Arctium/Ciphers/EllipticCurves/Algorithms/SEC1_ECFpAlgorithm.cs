@@ -13,7 +13,6 @@ using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared.Other;
-using Arctium.Shared.Security;
 using System;
 using System.Numerics;
 
@@ -122,7 +121,7 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
 
             do
             {
-                GlobalConfig.RandomGeneratorCryptSecure(rand, 0, bytelen);
+                GlobalConfig.RandomGeneratorCryptSecure(rand, 0, (int)bytelen);
                 result = new BigInteger(rand, true, true);
             } while (result >= ecparams.n);
 

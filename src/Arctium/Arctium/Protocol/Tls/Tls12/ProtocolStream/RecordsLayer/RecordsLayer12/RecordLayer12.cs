@@ -1,11 +1,11 @@
 ﻿using Arctium.Protocol.Tls.Protocol.BinaryOps;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.FixedOps;
 using Arctium.Protocol.Tls.Protocol.Consts;
-using Arctium.Protocol.Tls.Protocol.RecordProtocol;
+using Arctium.Protocol.Tls.Protocol.RecordProtocol.Enum;
 using System;
 using System.IO;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer.RecordsLayer12
 {
     class RecordLayer12
     {
@@ -29,7 +29,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
 
         public static RecordLayer12 Initialize(Stream innerStream)
         {
-            RecordLayer12 recordLayer =  new RecordLayer12(innerStream);
+            RecordLayer12 recordLayer = new RecordLayer12(innerStream);
 
             recordLayer.ChangeReadCipherSpec(RecordCryptoFactory.InitReadSecParams);
             recordLayer.ChangeWriteCipherSpec(RecordCryptoFactory.InitWriteSecParams);
@@ -37,7 +37,7 @@ namespace Arctium.Protocol.Tls.ProtocolStream.RecordsLayer.RecordsLayer12
             return recordLayer;
         }
 
-        
+
         public int ReadFragment(byte[] buffer, int offset, out ContentType type)
         {
             return readCryptoFilter.ReadFragment(buffer, offset, out type);

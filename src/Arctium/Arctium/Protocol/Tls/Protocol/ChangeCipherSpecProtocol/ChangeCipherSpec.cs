@@ -1,4 +1,6 @@
-﻿namespace Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol
+﻿using Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol.Enum;
+
+namespace Arctium.Protocol.Tls.Protocol.ChangeCipherSpecProtocol
 {
     class ChangeCipherSpec
     {

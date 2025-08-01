@@ -1,6 +1,7 @@
 ﻿using System;
 using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
 using Arctium.Protocol.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders.ExtensionsBuilders;
+using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 
 namespace Arctium.Protocol.Tls.Protocol.BinaryOps.Builder.HandshakeBuilders
 {

@@ -1,11 +1,11 @@
-﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol;
+﻿using Arctium.Protocol.Tls.Protocol.HandshakeProtocol.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium.Protocol.Tls.ProtocolStream.HighLevelLayer
+namespace Arctium.Protocol.Tls.Tls12.ProtocolStream.HighLevelLayer
 {
     ///<summary>
     ///Holds *all* handshake messages bytes (include handshake header bytes with length etc.)
