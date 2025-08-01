@@ -12,9 +12,12 @@
     <Folder Include="ASN1\Serialization\X690\BER\BuildInDecoders\Constructed\" />
     <Folder Include="Ciphers\Asymmetric\" />
     <Folder Include="Ciphers\StreamCiphers\Exceptions\" />
-    <Folder Include="Connection\OCSP\" />
+    <Folder Include="Connection\" />
+    <Folder Include="Protocol\OCSP\" />
     <Folder Include="Crypto\" />
     <Folder Include="HashFunctions\Checksums\" />
+    <Folder Include="Protocol\DNSImpl\Protocol\" />
+    <Folder Include="Protocol\DNSImpl\Model\" />
   </ItemGroup>
 
   <ItemGroup>
