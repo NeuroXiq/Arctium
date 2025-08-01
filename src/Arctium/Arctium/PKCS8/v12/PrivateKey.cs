@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 using Arctium.Standards.ArctiumLibShared;
 using Arctium.Standards.ASN1.Shared;
 using Arctium.Standards.PKCS1.v2_2;

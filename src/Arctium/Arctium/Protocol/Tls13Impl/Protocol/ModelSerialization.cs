@@ -1,6 +1,6 @@
 ﻿using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System;
 using System.Collections.Generic;
 using Arctium.Shared.Helpers;

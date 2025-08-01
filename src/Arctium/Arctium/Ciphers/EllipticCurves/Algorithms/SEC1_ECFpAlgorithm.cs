@@ -7,12 +7,12 @@
  * 
  */
 
-using Arctium.Cryptography.Utils;
+using Arctium.Shared;
 using Arctium.Shared;
 using Arctium.Shared.Exceptions;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System;
 using System.Numerics;
 

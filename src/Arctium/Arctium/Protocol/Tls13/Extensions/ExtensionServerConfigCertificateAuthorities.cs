@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 
 namespace Arctium.Protocol.Tls13.Extensions
 {

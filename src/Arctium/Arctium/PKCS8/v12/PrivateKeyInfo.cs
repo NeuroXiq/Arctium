@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 using Arctium.Standards.X509.X509Cert.Algorithms;
 
 namespace Arctium.Standards.PKCS8.v12

@@ -1,6 +1,6 @@
 ﻿using Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms;
 using Arctium.Shared.Helpers;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System;
 
 namespace Arctium.Cryptography.Ciphers.StreamCiphers

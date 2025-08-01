@@ -1,6 +1,6 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 
 namespace Arctium.Standards.RFC
 {

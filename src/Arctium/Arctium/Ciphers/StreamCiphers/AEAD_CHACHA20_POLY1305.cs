@@ -2,7 +2,7 @@
 using Arctium.Cryptography.HashFunctions.MAC;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System;
 
 namespace Arctium.Cryptography.Ciphers.StreamCiphers

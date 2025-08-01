@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.ASN1.Shared;
 

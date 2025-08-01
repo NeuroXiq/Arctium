@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Arctium.Shared.Other
+namespace Arctium.Shared
 {
     public static class Validation
     {

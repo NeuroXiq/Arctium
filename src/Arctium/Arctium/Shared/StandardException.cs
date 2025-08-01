@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Standards.Shared
+namespace Arctium.Shared
 {
     public class StandardException : Exception
     {

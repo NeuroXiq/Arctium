@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 using System.Linq;
 
 namespace Arctium.Protocol.Tls13.APIModel

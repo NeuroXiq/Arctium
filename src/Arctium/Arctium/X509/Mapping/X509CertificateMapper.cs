@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Arctium.Cryptography.Utils;
+using Arctium.Shared;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER;
 using Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders.Extensions;
 using Arctium.Standards.ASN1.Standards.X509.Model;

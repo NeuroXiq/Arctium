@@ -10,7 +10,7 @@
 
 // using Arctium.Protocol.Tls13.
 using Arctium.Shared;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;

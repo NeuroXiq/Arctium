@@ -1,7 +1,7 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes;
 using System;
 
-namespace Arctium.Cryptography.Utils
+namespace Arctium.Shared
 {
     /// <summary>
     /// Helper class to create cryptographic algorithms

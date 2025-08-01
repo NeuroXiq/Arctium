@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 
 namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
 {

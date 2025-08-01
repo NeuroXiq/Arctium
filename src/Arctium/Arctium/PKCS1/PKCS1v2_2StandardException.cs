@@ -1,4 +1,4 @@
-﻿using Arctium.Standards.Shared;
+﻿using Arctium.Shared;
 
 namespace Arctium.Standards.PKCS1
 {

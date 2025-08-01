@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 using Arctium.Protocol.Tls13;
 using System.Linq;
 using Arctium.Protocol.Tls13Impl.Model.Extensions;

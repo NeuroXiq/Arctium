@@ -1,4 +1,4 @@
-﻿using Arctium.Cryptography.Utils;
+﻿using Arctium.Shared;
 
 namespace Arctium.Protocol.Tls13
 {

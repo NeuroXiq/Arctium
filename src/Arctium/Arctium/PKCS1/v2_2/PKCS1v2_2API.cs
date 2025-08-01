@@ -8,7 +8,7 @@
  * 
  */
 
-using Arctium.Cryptography.Utils;
+using Arctium.Shared;
 using Arctium.Shared.Helpers;
 using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.PKCS1.v2_2.ASN1;
@@ -17,7 +17,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Standards.ArctiumLibShared;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 
 namespace Arctium.Standards.PKCS1.v2_2
 {

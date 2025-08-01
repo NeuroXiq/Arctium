@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arctium.Cryptography.Utils
+namespace Arctium.Shared
 {
     public class RandomGenerator
     {

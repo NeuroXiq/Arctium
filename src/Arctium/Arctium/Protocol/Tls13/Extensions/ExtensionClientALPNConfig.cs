@@ -1,5 +1,5 @@
 ﻿using Arctium.Shared.Helpers;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using Arctium.Protocol.Tls13Impl.Model.Extensions;
 using System;
 using System.Collections.Generic;

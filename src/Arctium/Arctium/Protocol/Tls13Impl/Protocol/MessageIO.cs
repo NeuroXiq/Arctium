@@ -2,7 +2,7 @@
 using Arctium.Shared.Helpers.Buffers;
 using System.IO;
 using System;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using Arctium.Protocol.Tls13Impl.Model;
 using Arctium.Protocol.QUICv1Impl;
 

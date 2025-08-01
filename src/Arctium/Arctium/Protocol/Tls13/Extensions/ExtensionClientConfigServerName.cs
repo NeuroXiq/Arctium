@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Other;
+﻿using Arctium.Shared;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

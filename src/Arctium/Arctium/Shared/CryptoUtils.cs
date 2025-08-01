@@ -1,4 +1,4 @@
-﻿namespace Arctium.Cryptography.Utils
+﻿namespace Arctium.Shared
 {
     public class CryptoUtils
     {

@@ -1,6 +1,6 @@
 ﻿using Arctium.Shared;
 using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System.Numerics;
 
 namespace Arctium.Cryptography.Ciphers.DiffieHellman.Algorithms

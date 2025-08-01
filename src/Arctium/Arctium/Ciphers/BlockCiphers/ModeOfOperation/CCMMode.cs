@@ -1,5 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
-using Arctium.Shared.Other;
+using Arctium.Shared;
 using System;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.ModeOfOperation
