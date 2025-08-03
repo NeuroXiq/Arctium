@@ -22,6 +22,8 @@ namespace Arctium.Protocol.DNS
         public static readonly DnsRootServer L;
         public static readonly DnsRootServer M;
 
+        public static readonly IReadOnlyList<DnsRootServer> All;
+
         static DnsRootServers()
         {
             
@@ -204,6 +206,8 @@ namespace Arctium.Protocol.DNS
                 "4/1",
                 "BIND"
                 );
+
+            All = new DnsRootServer[] { A, B, C, D, E, F, G, H, I, J, K, L, M };
         }
     }
 }
