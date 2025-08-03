@@ -8,12 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="HashFunctions\Checksums\**" />
+    <EmbeddedResource Remove="HashFunctions\Checksums\**" />
+    <None Remove="HashFunctions\Checksums\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="ASN1\Serialization\X690v2\DER\BuildInTypeEncoders\" />
     <Folder Include="ASN1\Serialization\X690\BER\BuildInDecoders\Constructed\" />
     <Folder Include="Ciphers\Asymmetric\" />
     <Folder Include="Ciphers\StreamCiphers\Exceptions\" />
     <Folder Include="Protocol\OCSP\" />
-    <Folder Include="HashFunctions\Checksums\" />
     <Folder Include="Protocol\DNSImpl\Protocol\" />
     <Folder Include="Protocol\DNSImpl\Model\" />
   </ItemGroup>

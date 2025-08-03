@@ -6,7 +6,7 @@ namespace Program
     {
         static void Main(string[] args)
         {
-            DNSClient c = new DNSClient();
+            DnsResolver c = new DnsResolver();
         }
     }
 }
