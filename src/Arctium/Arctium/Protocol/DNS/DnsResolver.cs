@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.Protocol.DNSImpl.Protocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,27 +11,35 @@ namespace Arctium.Protocol.DNS
     public class DnsResolver
     {
         private DnsResolverOptions options;
+        private DnsResolverImpl dnsResolverImpl;
 
         public DnsResolver() : this (DnsResolverOptions.CreateDefault()) { }
 
         public DnsResolver(DnsResolverOptions options)
         {
             this.options = options;
+            dnsResolverImpl = new DnsResolverImpl(options);
         }
 
         public IPAddress ResolveHostNameToHostAddress(string hostName)
         {
-            throw new NotImplementedException();
+            dnsResolverImpl.ResolveHostNameToHostAddress(hostName);
+
+            return null;
         }
 
         public string ResolveHostAddressToHostName(IPAddress ipAddress)
         {
-            throw new NotImplementedException();
+            dnsResolverImpl.ResolveHostAddressToHostName(ipAddress);
+
+            return null;
         }
 
         public object ResolveGeneralLookupFunction()
         {
-            throw new NotImplementedException();
+            dnsResolverImpl.ResolveGeneralLookupFunction();
+
+            return null;
         }
     }
 }

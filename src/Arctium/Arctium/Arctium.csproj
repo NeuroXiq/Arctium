@@ -19,7 +19,6 @@
     <Folder Include="Ciphers\Asymmetric\" />
     <Folder Include="Ciphers\StreamCiphers\Exceptions\" />
     <Folder Include="Protocol\OCSP\" />
-    <Folder Include="Protocol\DNSImpl\Protocol\" />
     <Folder Include="Protocol\DNSImpl\Model\" />
   </ItemGroup>
 

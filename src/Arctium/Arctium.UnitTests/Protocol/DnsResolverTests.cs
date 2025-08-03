@@ -1,4 +1,5 @@
 ﻿using Arctium.Protocol.DNS;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,5 +50,42 @@ namespace Arctium.UnitTests.Protocol
             // assert
             Assert.IsTrue(false);
         }
+
+        /// <summary>
+        ///  RFC-1034 5.2.2. Aliases
+        /// </summary>
+        [Test]
+        public void WillResolveAliasName()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void WillUseCache()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void WillAskFirstDnsServersFromOptions()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+        
     }
 }
