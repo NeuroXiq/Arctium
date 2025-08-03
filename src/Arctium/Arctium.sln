@@ -5,7 +5,13 @@ VisualStudioVersion = 17.0.32126.317
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleAppTest", "ConsoleAppTest\ConsoleAppTest.csproj", "{4F420B82-40C9-46C5-928C-8B91AE6E667D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium", "Arctium\Arctium.csproj", "{0BEF5F13-976C-4A9E-B305-56EC8839FDA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arctium", "Arctium\Arctium.csproj", "{0BEF5F13-976C-4A9E-B305-56EC8839FDA5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{C01C4342-9B8C-4550-8AEE-24D220663E3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.UnitTests", "Arctium.UnitTests\Arctium.UnitTests.csproj", "{62471B73-BF5F-47F7-B79F-A3B796A60688}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arctium.IntegrationTests", "Arctium.IntegrationTests\Arctium.IntegrationTests.csproj", "{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,9 +37,29 @@ Global
 		{0BEF5F13-976C-4A9E-B305-56EC8839FDA5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0BEF5F13-976C-4A9E-B305-56EC8839FDA5}.Release|x86.ActiveCfg = Release|Any CPU
 		{0BEF5F13-976C-4A9E-B305-56EC8839FDA5}.Release|x86.Build.0 = Release|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Debug|x86.Build.0 = Debug|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Release|x86.ActiveCfg = Release|Any CPU
+		{62471B73-BF5F-47F7-B79F-A3B796A60688}.Release|x86.Build.0 = Release|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Debug|x86.Build.0 = Debug|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Release|x86.ActiveCfg = Release|Any CPU
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{62471B73-BF5F-47F7-B79F-A3B796A60688} = {C01C4342-9B8C-4550-8AEE-24D220663E3B}
+		{8FA5576B-CF66-45BA-9F48-C9D3C6B0FFEE} = {C01C4342-9B8C-4550-8AEE-24D220663E3B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84BC876F-085F-432A-8A53-53C7B55C0D4A}

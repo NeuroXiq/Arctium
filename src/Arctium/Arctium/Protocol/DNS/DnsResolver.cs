@@ -18,16 +18,19 @@ namespace Arctium.Protocol.DNS
             this.options = options;
         }
 
-        public IPAddress HostNameToHostAddress(string hostName)
+        public IPAddress ResolveHostNameToHostAddress(string hostName)
         {
-            return null;
+            throw new NotImplementedException();
         }
 
-        public string HostAddressToHostName(IPAddress ipAddress)
+        public string ResolveHostAddressToHostName(IPAddress ipAddress)
         {
-            return null;
+            throw new NotImplementedException();
         }
 
-
+        public object ResolveGeneralLookupFunction()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
