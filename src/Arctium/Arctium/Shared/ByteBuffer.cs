@@ -5,7 +5,7 @@ namespace Arctium.Shared
     public class ByteBuffer
     {
         public byte[] Buffer { get; private set; }
-        public int DataLength { get; set; }
+        public int DataLength { get; private set; }
 
         int freeSpace { get { return Buffer.Length - DataLength; } }
 

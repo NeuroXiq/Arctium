@@ -20,10 +20,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             
         }
 
-        public void Encode(Message message, Span<byte> buffer)
-        {
-        }
-
 
         // decoding
 
