@@ -25,12 +25,10 @@ Abstract
  */
 
 
-using Arctium.Shared.Helpers.Binary;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Arctium.Shared;
-using Arctium.Shared.Helpers;
 using Arctium.Protocol.Tls13;
 using Arctium.Protocol.Tls13Impl.Model;
 using Arctium.Protocol.Tls13Impl.Model.Extensions;

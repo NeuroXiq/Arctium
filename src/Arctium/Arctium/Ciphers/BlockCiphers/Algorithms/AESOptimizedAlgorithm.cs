@@ -1,5 +1,4 @@
-﻿using Arctium.Shared.Helpers.Buffers;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {

@@ -1,11 +1,9 @@
 ﻿
 using System.IO;
 using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
+using Arctium.Shared;
 
-using Arctium.Shared.Helpers.Binary;
-using Arctium.Shared.Helpers.Buffers;
-
-namespace  Arctium.Cryptography.HashFunctions.Hashes
+namespace Arctium.Cryptography.HashFunctions.Hashes
 {
     public unsafe class SHA2_512 : HashFunction
     {

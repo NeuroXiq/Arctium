@@ -1,7 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers;
 using Arctium.Cryptography.HashFunctions.MAC;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared;
 using System;
 

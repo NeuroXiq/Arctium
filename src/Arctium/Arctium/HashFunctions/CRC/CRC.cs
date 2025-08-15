@@ -1,5 +1,4 @@
-﻿using Arctium.Shared.Helpers.Binary;
-using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
 using Arctium.Shared.Interfaces;
 using System.IO;
 

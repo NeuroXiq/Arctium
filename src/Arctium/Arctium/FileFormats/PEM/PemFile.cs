@@ -1,5 +1,5 @@
 ﻿using Arctium.Cryptography.FileFormats.Exceptions;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System;
 using System.IO;
 using System.Linq;

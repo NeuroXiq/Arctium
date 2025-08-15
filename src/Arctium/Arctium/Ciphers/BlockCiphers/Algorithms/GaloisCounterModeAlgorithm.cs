@@ -1,5 +1,4 @@
-﻿using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
 using System.Diagnostics;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms

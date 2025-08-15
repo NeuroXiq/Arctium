@@ -12,10 +12,9 @@
  */
 
 using System;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Helpers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {

@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.HashHelpers
 {

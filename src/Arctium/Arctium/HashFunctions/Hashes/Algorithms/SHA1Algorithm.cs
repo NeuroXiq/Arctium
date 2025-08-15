@@ -8,8 +8,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Helpers.Binary;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {

@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using Arctium.Cryptography.HashFunctions.Hashes.Algorithms;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes
 {

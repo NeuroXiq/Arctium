@@ -1,5 +1,5 @@
-﻿using Arctium.Cryptography.HashFunctions.Hashes;
-using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
+using Arctium.Shared;
 using Arctium.Shared.Interfaces;
 using System;
 using System.IO;

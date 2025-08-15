@@ -1,5 +1,4 @@
 ﻿using Arctium.Cryptography.Ciphers.StreamCiphers.Algorithms;
-using Arctium.Shared.Helpers;
 using Arctium.Shared;
 using System;
 

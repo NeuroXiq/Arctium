@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
-using Arctium.Shared.Helpers.DataStructures;
+using Arctium.Shared;
 
 namespace Arctium.Standards.ASN1.Shared.Mappings.OID
 {

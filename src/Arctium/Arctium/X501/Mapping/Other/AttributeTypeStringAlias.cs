@@ -1,6 +1,6 @@
 ﻿using System;
 using Arctium.Standards.X501.Types;
-using Arctium.Shared.Helpers.DataStructures;
+using Arctium.Shared;
 
 namespace Arctium.Standards.X501.Mapping.Other
 {

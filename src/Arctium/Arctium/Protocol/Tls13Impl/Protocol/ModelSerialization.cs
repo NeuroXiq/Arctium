@@ -1,9 +1,7 @@
 ﻿using Arctium.Shared.Exceptions;
-using Arctium.Shared.Helpers.Buffers;
 using Arctium.Shared;
 using System;
 using System.Collections.Generic;
-using Arctium.Shared.Helpers;
 using Arctium.Protocol.Tls13Impl.Model;
 using Arctium.Protocol.Tls13Impl.Model.Extensions;
 using System.Linq;

@@ -1,8 +1,8 @@
 ﻿using System;
-using  Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
-using Arctium.Shared.Helpers.Binary;
+using Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
+using Arctium.Shared;
 
-namespace  Arctium.Cryptography.HashFunctions.Hashes.Algorithms
+namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
     static unsafe class SHA2_384_512_Shared
     {

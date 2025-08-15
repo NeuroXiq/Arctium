@@ -5,7 +5,7 @@ using Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
 using Arctium.Standards.FileFormat.PEM;
 using System.IO;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Standards.X509.X509Cert
 {

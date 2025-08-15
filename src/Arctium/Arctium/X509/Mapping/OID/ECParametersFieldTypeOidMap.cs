@@ -1,7 +1,7 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.X509.X509Cert.Algorithms;
-using Arctium.Shared.Helpers.DataStructures;
 using System.Collections.Generic;
+using Arctium.Shared;
 
 
 namespace Arctium.Standards.ASN1.Standards.X509.Mapping.OID

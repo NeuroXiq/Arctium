@@ -1,4 +1,4 @@
-﻿using Arctium.Cryptography.HashFunctions.Hashes;
+﻿using Arctium.Shared;
 using System;
 using System.IO;
 

@@ -1,7 +1,5 @@
 ﻿// using Arctium.Protocol.Tls13.
 using Arctium.Protocol.Tls13Impl.Model.Extensions;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
 using System;
 using System.Collections.Generic;
 using static Arctium.Protocol.Tls13Impl.Model.Extensions.SupportedGroupExtension;
@@ -11,6 +9,7 @@ using Arctium.Protocol.QUICv1Impl;
 using System.Threading;
 using System.Diagnostics;
 using System.Linq;
+using Arctium.Shared;
 
 namespace Arctium.Protocol.Tls13Impl.Protocol
 {

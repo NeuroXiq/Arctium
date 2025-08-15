@@ -1,6 +1,6 @@
 ﻿using Arctium.Cryptography.Ciphers.BlockCiphers.Shared;
 using Arctium.Cryptography.Ciphers.Helpers;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers

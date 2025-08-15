@@ -14,6 +14,12 @@ namespace Arctium.Protocol.DNS
         public IDnsResolverCache Cache { get; private set; }
 
         /// <summary>
+        /// Max TTL. If TTL from received packet exceed this limit it is dropped.
+        /// Value in seconds. Default to one week <see cref="DnsConsts.DefaultMaxResponseTTLSeconds"/>
+        /// </summary>
+        public int MaxResponseTTL { get; private set; }
+
+        /// <summary>
         /// Dns servers to as first
         /// </summary>
         public IPAddress[] DnsServers { get; private set; }
@@ -29,7 +35,8 @@ namespace Arctium.Protocol.DNS
             bool useCache = true,
             DnsCacheShareMode cacheShareMode = DnsCacheShareMode.SingleOSProcess,
             IDnsResolverCache cache = null,
-            IPAddress[] dnsServers = null)
+            IPAddress[] dnsServers = null,
+            int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds)
         {
             UseCache = useCache;
             CacheShareMode = cacheShareMode;

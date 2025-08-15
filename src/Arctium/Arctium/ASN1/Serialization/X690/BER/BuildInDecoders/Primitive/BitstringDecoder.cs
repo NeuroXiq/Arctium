@@ -1,5 +1,5 @@
 ﻿using System;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using Arctium.Standards.ASN1.Exceptions;
 using Arctium.Standards.ASN1.ObjectSyntax.Types;
 using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;

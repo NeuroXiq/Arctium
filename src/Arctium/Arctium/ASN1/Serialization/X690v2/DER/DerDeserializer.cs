@@ -1,9 +1,10 @@
 ﻿using Arctium.Standards.ASN1.ObjectSyntax.Types;
 using Arctium.Standards.ASN1.Serialization.X690v2.Exceptions;
-using Arctium.Shared.Helpers.DataStructures;
+using Arctium;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Arctium.Shared;
 
 namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
 {

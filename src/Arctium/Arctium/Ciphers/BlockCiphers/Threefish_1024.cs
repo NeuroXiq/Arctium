@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Arctium.Shared.Helpers.Buffers;
 using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
 using Arctium.Shared;
 

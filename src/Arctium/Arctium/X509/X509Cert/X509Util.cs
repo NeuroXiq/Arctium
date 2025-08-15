@@ -1,6 +1,4 @@
 ﻿using Arctium.Shared;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER;
 using Arctium.Standards.X509.X509Cert.Algorithms;
 using System;

@@ -1,6 +1,5 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.MAC
 {

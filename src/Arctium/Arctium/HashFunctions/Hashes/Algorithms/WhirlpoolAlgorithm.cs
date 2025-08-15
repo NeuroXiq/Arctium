@@ -18,7 +18,7 @@
  * Implemented by NeuroXiq 2022
  */
 
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {

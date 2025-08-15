@@ -3,8 +3,6 @@ using Arctium.Cryptography.Ciphers.StreamCiphers;
 using Arctium.Cryptography.HashFunctions.Hashes;
 using Arctium.Cryptography.HashFunctions.KDF;
 using Arctium.Cryptography.HashFunctions.MAC;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
 using Arctium.Protocol.QUICv1;
 using Arctium.Protocol.QUICv1Impl.Model;
 using Arctium.Protocol.Tls.Tls12.ProtocolStream.RecordsLayer;
@@ -17,6 +15,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Arctium.Shared;
 
 namespace Arctium.Protocol.QUICv1Impl
 {

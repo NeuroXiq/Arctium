@@ -1,8 +1,8 @@
 ﻿using Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using static Arctium.Shared.Helpers.Binary.BinOps;
+using static Arctium.Shared.BinOps;
 
 //
 // This is an implementation of the BLAKE3 algorithm, basing on BLAKE2 hash function. 

@@ -1,7 +1,7 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
 using System;
 using System.Runtime.CompilerServices;
-using static Arctium.Shared.Helpers.Binary.BinOps;
+using static Arctium.Shared.BinOps;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {

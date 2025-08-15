@@ -11,9 +11,8 @@
 
 
 using System;
-using Arctium.Shared.Helpers;
 using System.Runtime.CompilerServices;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {

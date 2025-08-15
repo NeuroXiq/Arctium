@@ -1,6 +1,4 @@
-﻿using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared.Helpers.DataStructures;
+﻿using Arctium;
 using Arctium.Protocol.QUICv1;
 using System;
 using System.Collections.Generic;
@@ -9,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Arctium.Shared;
 
 namespace Arctium.Protocol.QUICv1Impl
 {

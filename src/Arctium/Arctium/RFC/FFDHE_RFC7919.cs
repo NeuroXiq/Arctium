@@ -1,5 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.DiffieHellman;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System;
 using System.Numerics;
 

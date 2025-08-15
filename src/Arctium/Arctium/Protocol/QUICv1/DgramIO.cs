@@ -1,5 +1,4 @@
-﻿using Arctium.Shared.Helpers.Buffers;
-using Arctium.Protocol.QUICv1Impl;
+﻿using Arctium.Protocol.QUICv1Impl;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,6 +9,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Arctium.Shared;
 
 namespace Arctium.Protocol.QUICv1
 {

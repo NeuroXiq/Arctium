@@ -1,5 +1,4 @@
-﻿using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared;
+﻿using Arctium.Shared;
 using Arctium.Protocol.Tls13.Extensions;
 using Arctium.Protocol.Tls13Impl.Model;
 using Arctium.Protocol.Tls13Impl.Model.Extensions;

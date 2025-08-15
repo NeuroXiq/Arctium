@@ -18,8 +18,7 @@
 
 using System;
 using System.Collections.Generic;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {

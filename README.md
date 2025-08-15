@@ -28,6 +28,18 @@ In the future there may be some console interface utility tool
 This is a short summary of what is on the development stage and direct links 
 for more interesting parts of the documentation.
 
+## Protocols
+|Name|Link|Comment|
+|:--:|:--:|:--:|
+|DNS - Resolver|...|DNA Resolver|
+|DNS - Server|...|DNA Server|
+
+## Standards
+|Name|Link|
+|:--:|:--:|
+|DNS-1034|[RFC-1034](https://datatracker.ietf.org/doc/html/rfc1034)|
+|DNS-1035|[RFC-1035](https://datatracker.ietf.org/doc/html/rfc1034)|
+
 ## TLS 1.3
 #### TLS 1.3 - Supported Features
 |Name|Supported|Comment|

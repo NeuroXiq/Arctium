@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Helpers.DataStructures;
+﻿using Arctium.Shared;
 using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 using Arctium.Standards.X501.Types;
 using System;

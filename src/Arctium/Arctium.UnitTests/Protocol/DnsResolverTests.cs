@@ -1,5 +1,4 @@
 ﻿using Arctium.Protocol.DNS;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +11,17 @@ namespace Arctium.UnitTests.Protocol
     [TestFixture]
     public class DnsResolverTests
     {
+
+        public void WillConsiderMaxResponseTTLSeconds()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
         [Test]
         public void WillResolveDomainNameToHostAddress()
         {

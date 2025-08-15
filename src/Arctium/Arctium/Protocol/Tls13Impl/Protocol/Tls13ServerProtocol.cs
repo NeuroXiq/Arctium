@@ -10,14 +10,11 @@
 
 // using Arctium.Protocol.Tls13.
 using Arctium.Shared;
-using Arctium.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Arctium.Shared.Helpers.Buffers;
 using Arctium.Standards.X509.X509Cert;
-using Arctium.Shared.Helpers;
 using Arctium.Protocol.Tls13;
 using Arctium.Protocol.Tls13.Extensions;
 using Arctium.Protocol.Tls13.Messages;

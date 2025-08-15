@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Helpers.Binary;
+﻿using Arctium.Shared;
 using System;
 
 namespace Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes

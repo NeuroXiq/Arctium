@@ -26,8 +26,7 @@
 
 using System.Runtime.CompilerServices;
 using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {

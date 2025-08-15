@@ -3,9 +3,6 @@ using System.Numerics;
 using Arctium.Cryptography.Ciphers.EllipticCurves;
 using Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms;
 using Arctium.Shared;
-using Arctium.Shared.Helpers;
-using Arctium.Shared.Helpers.Buffers;
-using Arctium.Shared;
 
 namespace Arctium.Standards.EllipticCurves
 {

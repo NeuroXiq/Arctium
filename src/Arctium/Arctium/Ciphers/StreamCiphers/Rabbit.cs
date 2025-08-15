@@ -1,7 +1,7 @@
-﻿using Arctium.Shared.Helpers.Binary;
+﻿using Arctium.Shared;
 using System;
 using System.Runtime.CompilerServices;
-using static Arctium.Shared.Helpers.Binary.BinConverter;
+using static Arctium.Shared.BinConverter;
 
 namespace Arctium.Cryptography.Ciphers.StreamCiphers
 {

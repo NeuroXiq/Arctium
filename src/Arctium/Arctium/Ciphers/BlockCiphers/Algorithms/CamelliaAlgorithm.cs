@@ -17,7 +17,7 @@
  *  Implemented by NeuroXiq 2022, Arctium project
  * */
 
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms

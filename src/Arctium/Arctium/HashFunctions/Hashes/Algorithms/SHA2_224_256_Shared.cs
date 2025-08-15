@@ -1,5 +1,5 @@
 ﻿using Arctium.Cryptography.Exceptions;
-using Arctium.Shared.Helpers.Binary;
+using Arctium.Shared;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
  * 
  */
 
-namespace  Arctium.Cryptography.HashFunctions.Hashes.Algorithms
+namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
     static unsafe class SHA2_224_256_Shared
     {

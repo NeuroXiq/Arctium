@@ -2,7 +2,7 @@
 using Arctium.Standards.ASN1.Serialization.X690v2.DER;
 using Arctium.Standards.ASN1.Serialization.X690v2.DER.BuildInTypeDecoders;
 using Arctium.Standards.ASN1.Standards.X509.Model;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 
 namespace Arctium.Standards.ASN1.Standards.X509.Decoders.X690Decoders
 {

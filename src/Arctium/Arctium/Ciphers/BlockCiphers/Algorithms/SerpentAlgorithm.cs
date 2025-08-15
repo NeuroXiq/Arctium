@@ -6,10 +6,9 @@
  * https://github.com/NeuroXiq/
  */
 
-using Arctium.Shared.Helpers.Binary;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System.Runtime.CompilerServices;
-using static Arctium.Shared.Helpers.Binary.BinOps;
+using static Arctium.Shared.BinOps;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms
 {

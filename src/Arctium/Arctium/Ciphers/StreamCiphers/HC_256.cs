@@ -1,6 +1,5 @@
 ﻿using Arctium.Cryptography.Ciphers.StreamCiphers.Helpers;
-using Arctium.Shared.Helpers.Binary;
-using Arctium.Shared.Helpers.Buffers;
+using Arctium.Shared;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;

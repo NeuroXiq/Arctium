@@ -1,4 +1,4 @@
-﻿using Arctium.Shared.Helpers.Buffers;
+﻿using Arctium.Shared;
 using Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes;
 
 namespace Arctium.Standards.ASN1.Serialization.X690.BER.BuildInDecoders.Primitive
