@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Arctium.Shared
 {
-    [Obsolete("MemDump is invoked")]
+    [Obsolete("Obsolete for safety reasons - MemDump is invoked, invocation should be removed if not debugging")]
     public static unsafe class MemDump
     {
         public static void HexDump(ulong value)

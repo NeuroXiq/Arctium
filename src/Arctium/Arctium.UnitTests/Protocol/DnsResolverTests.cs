@@ -11,6 +11,15 @@ namespace Arctium.UnitTests.Protocol
     [TestFixture]
     public class DnsResolverTests
     {
+        public void InvalidResponseCode()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
 
         public void WillConsiderMaxResponseTTLSeconds()
         {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Arctium.Shared
 {
-    public struct BytesSpan
+    public class BytesSpan
     {
         public byte[] Buffer { get; private set; }
         public int Offset { get; private set; }
@@ -14,18 +14,38 @@ namespace Arctium.Shared
 
         public byte this[int index]
         {
-            get { ThrowIfOutOfRange(index); return Buffer[Offset + index]; }
+            get {  return Buffer[GetIndex(index)]; }
             set { Buffer[index + Offset] = value; }
         }
 
-        private void ThrowIfOutOfRange(int index)
+        public void ShiftOffset(int relativePosition)
         {
-            if (index + Offset >= Length) throw new ArgumentOutOfRangeException("index if out of range");
+            Offset += relativePosition;
+        }
+
+        public int GetIndex(int index)
+        {
+            ThrowIfOutOfRange(index);
+
+            return Offset + index;
         }
 
         public BytesSpan(byte[] buffer, int offset, int length)
         {
-            
+            Buffer = buffer;
+            Length = length;
+            Offset = offset;
+
+            if (offset + length > buffer.Length) throw new ArgumentException("length exceed real buffer size");
+
+            ThrowIfOutOfRange(0);
+        }
+
+        private void ThrowIfOutOfRange(int index)
+        {
+            if (Offset < 0 || Offset >= Buffer.Length) throw new ArgumentException("Offset < 0 || Offset >= Buffer.Length");
+            if (index < 0) throw new ArgumentOutOfRangeException("negative index");
+            if (index + Offset >= Length) throw new ArgumentOutOfRangeException("index if out of range");
         }
     }
 }
