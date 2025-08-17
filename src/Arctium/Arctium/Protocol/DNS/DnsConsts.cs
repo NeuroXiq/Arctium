@@ -12,5 +12,15 @@ namespace Arctium.Protocol.DNS
         /// rfc-1035 default 1 week in seconds
         /// </summary>
         public const int DefaultMaxResponseTTLSeconds = 604800;
+
+        /// <summary>
+        /// rfc-1035 page 8
+        /// </summary>
+        public const int MaxLabelLength = 63;
+
+        /// <summary>
+        /// rfc-1035 page 10 , label octets and label length octets
+        /// </summary>
+        public const int TotalLengthOfDomainName = 255;
     }
 }

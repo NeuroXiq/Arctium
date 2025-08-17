@@ -1,5 +1,7 @@
 ﻿namespace Arctium.Shared
 {
+    // todo: remove this
+
     /// <summary>
     /// Helper struct to store range of bytes (start offset and length) for byte array.
     /// Have overload implicitly convert from byte[] array (0 offset, bytearray.length length).

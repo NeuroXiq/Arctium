@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNSImpl.Protocol
 {
-    public enum DnsDecodeError : int
+    public enum DnsProtocolError : int
     {
-        DecodeInvalidLabelLength = 1,
-        DecodeMsgLengthNotMatchTotalLength = 1,
-        TotalLengthOfDomainNameExceeded = 2,
+        QRTypeNotQuery = 2,
+        QDCountNotEqual1 = 3,
     }
 }

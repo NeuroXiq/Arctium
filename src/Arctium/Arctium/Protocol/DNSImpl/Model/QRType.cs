@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNSImpl.Model
 {
-    public class Question
+    /// <summary>
+    /// one bit
+    /// </summary>
+    public enum QRType : byte
     {
-        public string[] QName;
-        public QType QType;
-        public QClass QClass;
+        Query = 0,
+        Response= 1,
     }
 }

@@ -911,7 +911,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             // remove original client hello
             byte[] clientHello1Hash = TranscriptHash(hsctx.Buffer, 0, CH1Length);
             hsctx.TrimStart(CH1Length);
-            hsctx.PrependOutside(4 + clientHello1Hash.Length);
+            hsctx.AllocStart(4 + clientHello1Hash.Length);
 
 
             // insert hashed client hello

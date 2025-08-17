@@ -14,6 +14,26 @@ namespace Arctium.Shared
             Buffer = new byte[1024];
         }
 
+        public byte this[int index]
+        {
+            get
+            {
+                CheckIndex(index);
+                return Buffer[index];
+            }
+            set
+            {
+                CheckIndex(index);
+                Buffer[index] = value;
+            }
+        }
+
+        private void CheckIndex(int index)
+        {
+            if (DataLength <= index || index < 0)
+                throw new ArgumentException("index out of range");
+        }
+
         /// <summary>
         /// Asserts buffer size (extends if neeed) that allow append 'length' bytes to if
         /// returns index where data must be appended
@@ -23,7 +43,7 @@ namespace Arctium.Shared
         public int MallocAppend(int length)
         {
             int offset = DataLength;
-            ExtendIfNeededBuffer(length);
+            AllocEnd(length);
             DataLength += length;
 
             return offset;
@@ -48,7 +68,7 @@ namespace Arctium.Shared
 
         public void Append(Span<byte> buffer, int offset, int length)
         {
-            ExtendIfNeededBuffer(length);
+            AllocEnd(length);
             MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
 
             DataLength += length;
@@ -65,7 +85,7 @@ namespace Arctium.Shared
             DataLength = 0;
         }
 
-        private void ExtendIfNeededBuffer(int dataToAppend)
+        public void AllocEnd(int dataToAppend)
         {
             int newLength = dataToAppend + DataLength;
 
@@ -85,9 +105,9 @@ namespace Arctium.Shared
             Buffer = newBuffer;
         }
 
-        public void PrependOutside(int prependLength)
+        public void AllocStart(int prependLength)
         {
-            ExtendIfNeededBuffer(prependLength);
+            AllocEnd(prependLength);
             int shiftRight = DataLength;
             DataLength += prependLength;
 

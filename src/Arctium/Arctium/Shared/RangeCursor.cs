@@ -2,6 +2,7 @@
 
 namespace Arctium.Shared
 {
+    // todo: remove this
     public struct RangeCursor
     {
         private int currentPosition;

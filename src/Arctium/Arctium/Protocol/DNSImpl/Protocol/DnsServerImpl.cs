@@ -66,6 +66,70 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         async Task Process(BytesSpan packet)
         {
             Message result = serializer.Decode(packet);
+
+            Header h = result.Header;
+
+            if (h.QR != QRType.Query) throw new DnsException(DnsProtocolError.QRTypeNotQuery);
+            if (h.QDCount != 1) throw new DnsException(DnsProtocolError.QDCountNotEqual1);
+
+            Question q = result.Question[0];
+
+            Message response = new Message();
+            Header rheader = new Header();
+
+            rheader.Id = 0;
+            rheader.QR = QRType.Response;
+            rheader.Opcode = Opcode.Query;
+            rheader.AA = false;
+            rheader.TC = false;
+            rheader.RD = false;
+            rheader.RA = false;
+            rheader.RCode = ResponseCode.NoErrorCondition;
+            
+            rheader.QDCount = 1;
+            rheader.ANCount = 1;
+            rheader.NSCount = 0;
+            rheader.ARCount = 0;
+
+            Question rquestion = new Question()
+            {
+                QClass = q.QClass,
+                QName = q.QName,
+                QType = q.QType
+            };
+
+            ResourceRecord answer1 = new ResourceRecord()
+            {
+                Class = QClass.IN,
+                Name = "www",
+                Type = QType.A,
+                TTL = 300,
+                RDLength = 0,
+                RData = new RDataA()
+                {
+                    Address = 0xffeebbcc
+                }
+            };
+
+            ResourceRecord answer2 = new ResourceRecord()
+            {
+                Class = QClass.IN,
+                Name = "www",
+                Type = QType.A,
+                TTL = 400,
+                RDLength = 0,
+                RData = new RDataA()
+                {
+                    Address = 0xaabbccdd
+                }
+            };
+
+            response.Header = rheader;
+            response.Question = new Question[] { rquestion };
+            response.Answer = new ResourceRecord[] { answer1, answer2 };
+
+            var rbytes = new ByteBuffer();
+            serializer.Encode(response, rbytes);
         }
 
         /*

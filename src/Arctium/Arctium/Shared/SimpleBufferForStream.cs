@@ -3,6 +3,7 @@ using System.IO;
 
 namespace Arctium.Shared
 {
+    //todo: remove this
     public class SimpleBufferForStream
     {
         byte[] buffer = new byte[2048];

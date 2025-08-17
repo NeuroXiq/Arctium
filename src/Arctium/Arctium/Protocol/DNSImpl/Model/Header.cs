@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,13 +12,13 @@ namespace Arctium.Protocol.DNSImpl.Model
         // header fields
 
         public ushort Id;
-        public bool QR;
-        public byte Opcode;
+        public QRType QR;
+        public Opcode Opcode;
         public bool AA;
         public bool TC;
         public bool RD;
         public bool RA;
-        public const byte Z = 0;
+        public byte Z { get { return 0; } } // this is const
 
         /// <summary>
         /// Response code

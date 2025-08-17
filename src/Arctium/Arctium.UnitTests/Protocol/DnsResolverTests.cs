@@ -1,16 +1,21 @@
 ﻿using Arctium.Protocol.DNS;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arctium.UnitTests.Protocol
 {
     [TestFixture]
     public class DnsResolverTests
     {
+        public void WillProcessSingleQuery()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
         public void InvalidResponseCode()
         {
             // arrange

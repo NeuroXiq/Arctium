@@ -18,7 +18,85 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         public void Encode(Message message, ByteBuffer buffer)
         {
-            
+            Header h = message.Header;
+
+            buffer.AllocEnd(12);
+            MemMap.ToBytes1UShortBE(h.Id, buffer.Buffer, 0);
+
+            buffer[2] =(byte)(
+                (((byte)h.QR) << 7) |
+                ((byte)h.Opcode << 6) |
+                ((h.AA ? 1 : 0) << 2) |
+                ((h.TC ? 1 : 0) << 1) |
+                ((h.RD ? 1 : 0) << 0));
+
+            buffer[3] = (byte)
+                (
+                    (h.Z << 4) |
+                    ((byte)h.RCode << 0) | 0
+                );
+
+            MemMap.ToBytes1UShortBE(h.QDCount, buffer.Buffer, 4);
+            MemMap.ToBytes1UShortBE(h.ANCount, buffer.Buffer, 6);
+            MemMap.ToBytes1UShortBE(h.NSCount, buffer.Buffer, 8);
+            MemMap.ToBytes1UShortBE(h.ARCount, buffer.Buffer, 10);
+
+            for (int i = 0; i < h.QDCount; i++)
+            {
+                Encode_Question(message.Question[i], buffer);
+            }
+
+            for (int i = 0; i < h.ANCount; i++)
+            {
+                Encode_ResourceRecord(message.Answer[i], buffer);
+            }
+
+            for (int i = 0; i < h.NSCount; i++)
+            {
+                Encode_ResourceRecord(message.Authority[i], buffer);
+            }
+
+            for (int i = 0; i < h.ANCount; i++)
+            {
+                Encode_ResourceRecord(message.Additional[i], buffer);
+            }
+        }
+
+        private void Encode_ResourceRecord(ResourceRecord resourceRecord, ByteBuffer buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Encode_Question(Question question, ByteBuffer buffer)
+        {
+            int totalLabelLen = 0;
+            int labelEncodeStart = buffer.DataLength;
+
+            for (int i = 0; i < question.QName.Length; i++)
+            {
+                string label = question.QName[i];
+                buffer.Append((byte)label.Length);
+
+
+                if (label.Length > DnsConsts.MaxLabelLength || label.Length < 1)
+                    throw new DnsException($"invalid label: '{question.QName[i]}'");
+
+                for (int j = 0; j < question.QName[i].Length; j++)
+                {
+                    buffer.Append((byte)label[j]);
+                }
+
+                totalLabelLen += label.Length + 1;
+            }
+
+            buffer.Append(0);
+
+            if (buffer.DataLength - labelEncodeStart > DnsConsts.TotalLengthOfDomainName)
+                throw new DnsException("encoding: total length of label exceed max");
+
+            buffer.Append(4);
+            MemMap.ToBytes1UShortBE((ushort)question.QType, buffer.Buffer, buffer.DataLength - 4);
+            MemMap.ToBytes1UShortBE((ushort)question.QClass, buffer.Buffer, buffer.DataLength - 2);
         }
 
 
@@ -37,7 +115,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             result.Authority = new ResourceRecord[header.NSCount];
             result.Additional = new ResourceRecord[header.ARCount];
 
-
             for (int i = 0; i < header.QDCount; i++)
             {
                 result.Question[i] = Decode_Question(buffer, out decodedLength);
@@ -46,18 +123,20 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             for (int i = 0; i < header.ANCount; i++)
             {
-
+                throw new NotImplementedException();
             }
 
             for (int i = 0; i < header.NSCount; i++)
             {
-
+                throw new NotImplementedException();
             }
 
             for (int i = 0; i < header.ARCount; i++)
             {
-
+                throw new NotImplementedException();
             }
+
+            if (buffer.Offset != buffer.Length) throw new DnsException(DnsDecodeError.DecodeMsgLengthNotMatchTotalLength);
 
             result.Header = header;
 
@@ -74,18 +153,21 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             {
                 int labelLengt = buffer[i];
 
-                if (labelLengt > 63) throw new DnsException(DnsProtocolError.InvalidLabelLength);
-                if (i + buffer.Offset >= buffer.Length) throw new DnsException(DnsProtocolError.InvalidLabelLength);
+                if (labelLengt > DnsConsts.MaxLabelLength) throw new DnsException(DnsDecodeError.DecodeInvalidLabelLength);
+                if (i + buffer.Offset >= buffer.Length) throw new DnsException(DnsDecodeError.DecodeInvalidLabelLength);
 
                 if (labelLengt > 0)
                     labels.Add(Encoding.ASCII.GetString(buffer.Buffer, buffer.GetIndex(i + 1), labelLengt));
 
                 i += labelLengt + 1;
+
+                if (i > DnsConsts.TotalLengthOfDomainName)
+                    throw new DnsException(DnsDecodeError.TotalLengthOfDomainNameExceeded);
             }
             
             i += 1;
 
-            result.QName = string.Join(".", labels.ToArray());
+            result.QName = labels.ToArray();
             result.QType = (QType)BinConverter.ToUShortBE(buffer.Buffer, buffer.GetIndex(i));
             result.QClass = (QClass)BinConverter.ToUShortBE(buffer.Buffer, buffer.GetIndex(i + 2));
 
@@ -101,8 +183,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             Header header = new Header();
             header.Id = (ushort)(buffer[0] << 8 | buffer[1]);
-            header.QR = (buffer[2] & 0x80) ==1;
-            header.Opcode = (byte)((buffer[3] & 0x78) >> 3);
+            header.QR = (QRType)((buffer[2] & 0x80) >> 7);
+            header.Opcode = (Opcode)((buffer[3] & 0x78) >> 3);
             header.AA = (buffer[2] & 0x04) == 1;
             header.TC = (buffer[2] & 0x02) == 1;
             header.RD = (buffer[2] & 0x01) == 1;
