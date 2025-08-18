@@ -121,7 +121,7 @@ namespace Arctium.Protocol.QUICv1Impl
 
         internal void BufferPacket(byte[] buff, int offs, int packetLength)
         {
-            int nextPkgOffs = packets.MallocAppend(packetLength);
+            int nextPkgOffs = packets.AllocEnd(packetLength);
             MemCpy.Copy(buff, offs, packets.Buffer, nextPkgOffs, packetLength);
         }
 
@@ -153,7 +153,7 @@ namespace Arctium.Protocol.QUICv1Impl
         void PacketPaddingIfNeeded()
         {
             int paddinglen = 1250;
-            int opadding = toSendPacketFrames.MallocAppend(paddinglen);
+            int opadding = toSendPacketFrames.AllocEnd(paddinglen);
             MemOps.MemsetZero(toSendPacketFrames.Buffer, opadding, paddinglen);
         }
 

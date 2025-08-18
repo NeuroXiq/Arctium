@@ -94,7 +94,7 @@ namespace Arctium.Protocol.QUICv1Impl
         {
             int enclen = Encode_IntegerVLE_EncodeLength(value);
 
-            int o = output.MallocAppend(enclen);
+            int o = output.AllocEnd(enclen);
             byte[] b = output.Buffer;
 
             switch (enclen)
@@ -364,7 +364,7 @@ namespace Arctium.Protocol.QUICv1Impl
             byte[] buf = output.Buffer;
 
             output.Append(p.FirstByte);
-            int oversion = output.MallocAppend(4);
+            int oversion = output.AllocEnd(4);
             MemMap.ToBytes1UIntBE(p.Version, output.Buffer, oversion);
             
             // dest con id len
@@ -396,13 +396,13 @@ namespace Arctium.Protocol.QUICv1Impl
 
             if (packetNumberLength == 3)
             {
-                o = output.MallocAppend(4);
+                o = output.AllocEnd(4);
                 MemMap.ToBytes1UIntBE(packetNumber, output.Buffer, o);
                 l = 4;
             }
             else if (packetNumberLength == 2)
             {
-                o = output.MallocAppend(3);
+                o = output.AllocEnd(3);
                 output.Buffer[o + 0] = (byte)(packetNumber >> 16);
                 output.Buffer[o + 1] = (byte)(packetNumber >> 8);
                 output.Buffer[o + 2] = (byte)(packetNumber >> 0);
@@ -410,7 +410,7 @@ namespace Arctium.Protocol.QUICv1Impl
             }
             else if (packetNumberLength == 1)
             {
-                o = output.MallocAppend(2);
+                o = output.AllocEnd(2);
                 MemMap.ToUShort2BytesBE(output.Buffer, o);
                 l = 2;
             }
@@ -509,7 +509,7 @@ namespace Arctium.Protocol.QUICv1Impl
             byte[] buf = output.Buffer;
 
             output.Append(p.FirstByte);
-            int oversion = output.MallocAppend(4);
+            int oversion = output.AllocEnd(4);
             MemMap.ToBytes1UIntBE(p.Version, output.Buffer, oversion);
 
             // dest con id len

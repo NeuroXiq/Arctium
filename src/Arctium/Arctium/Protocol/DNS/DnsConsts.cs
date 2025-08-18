@@ -22,5 +22,10 @@ namespace Arctium.Protocol.DNS
         /// rfc-1035 page 10 , label octets and label length octets
         /// </summary>
         public const int TotalLengthOfDomainName = 255;
+
+        /// <summary>
+        /// page 10 rfc-1035
+        /// </summary>
+        public const int UDPSizeLimit = 512;
     }
 }

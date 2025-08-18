@@ -40,10 +40,10 @@ namespace Arctium.Shared
         /// </summary>
         /// <param name="length"></param>
         /// <returns></returns>
-        public int MallocAppend(int length)
+        public int AllocEnd(int length)
         {
             int offset = DataLength;
-            AllocEnd(length);
+            ExtendIfNeeded(length);
             DataLength += length;
 
             return offset;
@@ -68,7 +68,7 @@ namespace Arctium.Shared
 
         public void Append(Span<byte> buffer, int offset, int length)
         {
-            AllocEnd(length);
+            ExtendIfNeeded(length);
             MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
 
             DataLength += length;
@@ -85,7 +85,7 @@ namespace Arctium.Shared
             DataLength = 0;
         }
 
-        public void AllocEnd(int dataToAppend)
+        public void ExtendIfNeeded(int dataToAppend)
         {
             int newLength = dataToAppend + DataLength;
 
@@ -107,7 +107,7 @@ namespace Arctium.Shared
 
         public void AllocStart(int prependLength)
         {
-            AllocEnd(prependLength);
+            ExtendIfNeeded(prependLength);
             int shiftRight = DataLength;
             DataLength += prependLength;
 

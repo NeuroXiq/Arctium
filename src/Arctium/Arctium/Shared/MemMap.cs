@@ -1440,6 +1440,14 @@ namespace Arctium.Shared
                   buf[offset + 3] << 00);
         }
 
+        internal static void ToBytes1IntBE(int value, byte[] buffer, int offset)
+        {
+            buffer[offset + 0] = (byte)(value >> 24);
+            buffer[offset + 1] = (byte)(value >> 16);
+            buffer[offset + 2] = (byte)(value >> 8);
+            buffer[offset + 3] = (byte)(value >> 0);
+        }
+
         //public static uint ToUInt4BytesBE(Span<byte> buf, int offset)
         //{
         //    return (uint)((buf[offset + 0] << 24) |

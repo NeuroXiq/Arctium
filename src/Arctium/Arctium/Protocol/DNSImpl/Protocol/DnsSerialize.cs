@@ -3,6 +3,7 @@ using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Shared;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,30 +42,82 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             MemMap.ToBytes1UShortBE(h.NSCount, buffer.Buffer, 8);
             MemMap.ToBytes1UShortBE(h.ARCount, buffer.Buffer, 10);
 
-            for (int i = 0; i < h.QDCount; i++)
+            for (int i = 0; i < message.Question?.Length; i++)
             {
                 Encode_Question(message.Question[i], buffer);
             }
 
-            for (int i = 0; i < h.ANCount; i++)
+            for (int i = 0; i < message.Answer?.Length; i++)
             {
                 Encode_ResourceRecord(message.Answer[i], buffer);
             }
 
-            for (int i = 0; i < h.NSCount; i++)
+            for (int i = 0; i < message.Authority?.Length; i++)
             {
                 Encode_ResourceRecord(message.Authority[i], buffer);
             }
 
-            for (int i = 0; i < h.ANCount; i++)
+            for (int i = 0; i < message.Additional?.Length; i++)
             {
                 Encode_ResourceRecord(message.Additional[i], buffer);
             }
         }
 
-        private void Encode_ResourceRecord(ResourceRecord resourceRecord, ByteBuffer buffer)
+        private void Encode_ResourceRecord(ResourceRecord rr, ByteBuffer buffer)
         {
-            throw new NotImplementedException();
+            // +2 one byte of length and one zero byte at the end
+            if (rr.Name.Length + 2 > DnsConsts.TotalLengthOfDomainName)
+                throw new DnsException("ResourceRecord.Name.Length + 1 > TotalLengthOfDomainName");
+
+            buffer.Append((byte)rr.Name.Length);
+            foreach (var c in rr.Name) buffer.Append((byte)c);
+            buffer.Append(0);
+
+            int i = buffer.DataLength;
+            buffer.AllocEnd(10);
+            MemMap.ToBytes1UShortBE((ushort)rr.Type, buffer.Buffer, i);
+            MemMap.ToBytes1UShortBE((ushort)rr.Class, buffer.Buffer, i + 2);
+            MemMap.ToBytes1IntBE((ushort)rr.TTL, buffer.Buffer, i + 4);
+            int rdLengthOffset = i + 8;
+            
+
+            switch (rr.Type)
+            {
+                case QType.A:
+                    Encode_RDataA((RDataA)rr.RData, buffer);
+                    break;
+                case QType.NS:
+                case QType.MD:
+                case QType.MF:
+                case QType.CNAME:
+                case QType.SOA:
+                case QType.MB:
+                case QType.MG:
+                case QType.MR:
+                case QType.NULL:
+                case QType.WKS:
+                case QType.PTR:
+                case QType.HINFO:
+                case QType.MINFO:
+                case QType.MX:
+                case QType.TXT:
+                case QType.AXFR:
+                case QType.MAILB:
+                case QType.MAILA:
+                case QType.All:
+                    throw new NotImplementedException();
+                default: throw new DnsException("invalid QType resource record encode");
+            }
+
+            ushort rdLength = (ushort)(buffer.DataLength - rdLengthOffset - 2);
+
+            MemMap.ToBytes1UShortBE(rdLength, buffer.Buffer, rdLengthOffset);
+        }
+
+        private void Encode_RDataA(RDataA rd, ByteBuffer buffer)
+        {
+            buffer.AllocEnd(4);
+            MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, buffer.DataLength - 4);
         }
 
         private void Encode_Question(Question question, ByteBuffer buffer)
