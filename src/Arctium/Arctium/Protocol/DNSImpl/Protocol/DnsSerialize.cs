@@ -61,6 +61,9 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             {
                 Encode_ResourceRecord(message.Additional[i], buffer);
             }
+
+            Console.WriteLine();
+            MemDump.HexDump(buffer.Buffer, 0, buffer.DataLength, 1, 2);
         }
 
         private void Encode_ResourceRecord(ResourceRecord rr, ByteBuffer buffer)
@@ -147,7 +150,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             if (buffer.DataLength - labelEncodeStart > DnsConsts.TotalLengthOfDomainName)
                 throw new DnsException("encoding: total length of label exceed max");
 
-            buffer.Append(4);
+            buffer.AllocEnd(4);
             MemMap.ToBytes1UShortBE((ushort)question.QType, buffer.Buffer, buffer.DataLength - 4);
             MemMap.ToBytes1UShortBE((ushort)question.QClass, buffer.Buffer, buffer.DataLength - 2);
         }

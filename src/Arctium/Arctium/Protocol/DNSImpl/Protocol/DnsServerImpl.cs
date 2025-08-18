@@ -54,40 +54,51 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             while (true)
             {
                 EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
-                // int recvLen = s.ReceiveFrom(buf, ref remoteEndpoint);
-                //var result = new BytesSpan(buf, 0, recvLen);
-                var result = new BytesSpan(a, 0, a.Length);
-                Process(result);
+                int recvLen = s.ReceiveFrom(buf, ref remoteEndpoint);
+                var clientBytes = new BytesSpan(buf, 0, recvLen);
+                // var result = new BytesSpan(a, 0, a.Length);
 
+                var res = GetResponseMessage(clientBytes);
+                var responseBytes = SerializeResponseMessage(res);
+
+                s.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, remoteEndpoint);
+                //s.SendTo(bytes.Buffer, remoteEndpoint);
+                Console.WriteLine("asdf");
                 //MemDump.HexDump(buf, 0, recvLen, chunkLength: 1);
             }
         }
 
-        async Task Process(BytesSpan packet)
+        ByteBuffer SerializeResponseMessage(Message response)
         {
-            Message result = serializer.Decode(packet);
+            var rbytes = new ByteBuffer();
+            serializer.Encode(response, rbytes);
 
-            Header h = result.Header;
+            return rbytes;
+        }
+
+        Message GetResponseMessage(BytesSpan clientPacket)
+        {
+            Message clientMsg = serializer.Decode(clientPacket);
+
+            Header h = clientMsg.Header;
 
             if (h.QR != QRType.Query) throw new DnsException(DnsProtocolError.QRTypeNotQuery);
             if (h.QDCount != 1) throw new DnsException(DnsProtocolError.QDCountNotEqual1);
 
-            Question q = result.Question[0];
+            Question q = clientMsg.Question[0];
 
             Message response = new Message();
             Header rheader = new Header();
 
-            rheader.Id = 0;
+            rheader.Id = h.Id;
             rheader.QR = QRType.Response;
-            rheader.Opcode = Opcode.Query;
-            rheader.AA = false;
+            rheader.Opcode = h.Opcode;
+            rheader.AA = true;
             rheader.TC = false;
-            rheader.RD = false;
+            rheader.RD = h.RD;
             rheader.RA = false;
             rheader.RCode = ResponseCode.NoErrorCondition;
             
-            rheader.QDCount = 1;
-            rheader.ANCount = 1;
             rheader.NSCount = 0;
             rheader.ARCount = 0;
 
@@ -126,10 +137,12 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             response.Header = rheader;
             response.Question = new Question[] { rquestion };
-            response.Answer = new ResourceRecord[] { answer1, answer2 };
+            response.Answer = new ResourceRecord[] { answer1 };
 
-            var rbytes = new ByteBuffer();
-            serializer.Encode(response, rbytes);
+            rheader.QDCount = (ushort)response.Question.Length;
+            rheader.ANCount = (ushort)response.Answer.Length;
+
+            return response;
         }
 
         /*
