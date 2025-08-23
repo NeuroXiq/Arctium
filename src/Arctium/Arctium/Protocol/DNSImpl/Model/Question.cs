@@ -8,7 +8,7 @@ namespace Arctium.Protocol.DNSImpl.Model
 {
     public class Question
     {
-        public string[] QName;
+        public string QName;
         public QType QType;
         public QClass QClass;
     }

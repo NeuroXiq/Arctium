@@ -8,5 +8,13 @@ namespace Arctium.Protocol.DNS
 {
     public class DnsServerOptions
     {
+        public IDnsServerDataSource DnsServerDataSource { get; set; }
+        public int SocketBindPort { get; set; }
+
+        public DnsServerOptions(IDnsServerDataSource dnsServerDataSource)
+        {
+            DnsServerDataSource = dnsServerDataSource;
+            SocketBindPort = DnsConsts.DefaultServerUdpPort;
+        }
     }
 }

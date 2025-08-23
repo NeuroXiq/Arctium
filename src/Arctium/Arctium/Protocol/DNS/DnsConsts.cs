@@ -27,5 +27,7 @@ namespace Arctium.Protocol.DNS
         /// page 10 rfc-1035
         /// </summary>
         public const int UDPSizeLimit = 512;
+
+        public const int DefaultServerUdpPort = 53;
     }
 }

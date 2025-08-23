@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.Protocol.DNSImpl.Protocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,15 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS
 {
-    public class DNSServer
+    public class DnsServer
     {
+        DnsServerImpl dnsServerImpl;
+
+        public DnsServer(DnsServerOptions options)
+        {
+            dnsServerImpl = new DnsServerImpl(options);
+        }
+
+        public void Start(CancellationToken cancellationToken) => dnsServerImpl.Start(cancellationToken);
     }
 }

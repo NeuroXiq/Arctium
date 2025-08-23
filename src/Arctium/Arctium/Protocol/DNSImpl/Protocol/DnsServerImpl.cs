@@ -14,32 +14,33 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 {
     public class DnsServerImpl
     {
-        public DnsServerImpl(DnsServerOptions options)
-        {
-            
-        }
-
+        DnsServerOptions options;
         DnsSerialize serializer = new DnsSerialize();
 
-        public void Start()
+        public DnsServerImpl(DnsServerOptions options)
+        {
+            this.options = options;
+        }
+
+        public void Start(CancellationToken cancellationToken)
         {
             Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            var bindEndpoint = new IPEndPoint(IPAddress.Any, 53);
+            s.Bind(new IPEndPoint(IPAddress.Any, options.SocketBindPort));
 
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                Process(s).Wait(cancellationToken);
 
-            s.Bind(bindEndpoint);
+                // var result = new BytesSpan(a, 0, a.Length);
 
-            byte[] buf = new byte[12345 ];
-            /*
-             4F CC 01 00
-             00 01 00 00
-             00 00 00 00
-             04 61 73 64
-             66 03 63 6F
-             6D 00 00 01
-             00 01
-             */
+                //s.SendTo(bytes.Buffer, remoteEndpoint);
+                Console.WriteLine("asdf");
+                //MemDump.HexDump(buf, 0, recvLen, chunkLength: 1);
+            }
+        }
 
+        public async Task Process(Socket serverSocket)
+        {
             byte[] a = new byte[]
             {
                 0x4F, 0xCC, 0x01, 0x00,
@@ -51,21 +52,21 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 0x00, 0x01,
             };
 
-            while (true)
-            {
-                EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
-                int recvLen = s.ReceiveFrom(buf, ref remoteEndpoint);
-                var clientBytes = new BytesSpan(buf, 0, recvLen);
-                // var result = new BytesSpan(a, 0, a.Length);
+            byte[] buf = new byte[12345];
 
-                var res = GetResponseMessage(clientBytes);
-                var responseBytes = SerializeResponseMessage(res);
+            EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
 
-                s.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, remoteEndpoint);
-                //s.SendTo(bytes.Buffer, remoteEndpoint);
-                Console.WriteLine("asdf");
-                //MemDump.HexDump(buf, 0, recvLen, chunkLength: 1);
-            }
+            //int recvLen = await serverSocket.ReceiveFrom(buf, ref clientEndpoint);
+            var recvResult = await serverSocket.ReceiveFromAsync(buf, clientEndpoint);
+            int recvLen = recvResult.ReceivedBytes;
+            clientEndpoint = recvResult.RemoteEndPoint;
+
+            var clientBytes = new BytesSpan(buf, 0, recvLen);
+
+            var res = GetResponseMessage(clientBytes);
+            var responseBytes = SerializeResponseMessage(res);
+
+            serverSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
         }
 
         ByteBuffer SerializeResponseMessage(Message response)
@@ -137,7 +138,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             response.Header = rheader;
             response.Question = new Question[] { rquestion };
-            response.Answer = new ResourceRecord[] { answer1 };
+            response.Answer = new ResourceRecord[] { answer1, answer2 };
 
             rheader.QDCount = (ushort)response.Question.Length;
             rheader.ANCount = (ushort)response.Answer.Length;

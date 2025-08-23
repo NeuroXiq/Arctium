@@ -127,17 +127,19 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         {
             int totalLabelLen = 0;
             int labelEncodeStart = buffer.DataLength;
+            string[] qnameLabels = question.QName.Split('.');
 
-            for (int i = 0; i < question.QName.Length; i++)
+
+            for (int i = 0; i < qnameLabels.Length; i++)
             {
-                string label = question.QName[i];
+                string label = qnameLabels[i];
                 buffer.Append((byte)label.Length);
 
 
                 if (label.Length > DnsConsts.MaxLabelLength || label.Length < 1)
-                    throw new DnsException($"invalid label: '{question.QName[i]}'");
+                    throw new DnsException($"invalid label: '{qnameLabels[i]}'");
 
-                for (int j = 0; j < question.QName[i].Length; j++)
+                for (int j = 0; j < qnameLabels[i].Length; j++)
                 {
                     buffer.Append((byte)label[j]);
                 }
@@ -223,7 +225,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             
             i += 1;
 
-            result.QName = labels.ToArray();
+            result.QName = string.Join('.', labels);
             result.QType = (QType)BinConverter.ToUShortBE(buffer.Buffer, buffer.GetIndex(i));
             result.QClass = (QClass)BinConverter.ToUShortBE(buffer.Buffer, buffer.GetIndex(i + 2));
 

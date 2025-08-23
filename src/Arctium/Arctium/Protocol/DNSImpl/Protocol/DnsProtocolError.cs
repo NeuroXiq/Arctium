@@ -8,7 +8,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 {
     public enum DnsProtocolError : int
     {
-        QRTypeNotQuery = 2,
-        QDCountNotEqual1 = 3,
+        QRTypeNotQuery = 1,
+        QDCountNotEqual1 = 2,
     }
 }
