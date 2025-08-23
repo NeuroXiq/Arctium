@@ -48,7 +48,7 @@ namespace Arctium.Protocol.DNS
         {
             DnsResolverOptions options = new DnsResolverOptions();
 
-            if (options.Cache == null && options.UseCache) throw new InvalidOperationException("usecache = true, cache = null");
+            // if (options.Cache == null && options.UseCache) throw new InvalidOperationException("usecache = true, cache = null");
 
             return options;
         }
