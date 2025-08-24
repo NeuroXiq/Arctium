@@ -8,7 +8,7 @@ namespace Arctium.Protocol.DNSImpl.Model
 {
     /// <summary>
     /// </summary>
-    public class RDataTxt
+    public class RDataTXT
     {
         public string TxtData;
     }

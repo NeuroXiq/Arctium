@@ -29,7 +29,16 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                Process(s).Wait(cancellationToken);
+                try
+                {
+                    Process(s).Wait(cancellationToken);
+                }
+                catch (Exception e)
+                {
+
+                    throw;
+                }
+                
 
                 // var result = new BytesSpan(a, 0, a.Length);
 
@@ -62,8 +71,9 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             clientEndpoint = recvResult.RemoteEndPoint;
 
             var clientBytes = new BytesSpan(buf, 0, recvLen);
+            Message clientMsg = serializer.Decode(clientBytes);
 
-            var res = GetResponseMessage(clientBytes);
+            var res = GetResponseMessage(clientMsg);
             var responseBytes = SerializeResponseMessage(res);
 
             serverSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
@@ -77,10 +87,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             return rbytes;
         }
 
-        Message GetResponseMessage(BytesSpan clientPacket)
+        Message GetResponseMessage(Message clientMsg)
         {
-            Message clientMsg = serializer.Decode(clientPacket);
-
             Header h = clientMsg.Header;
 
             if (h.QR != QRType.Query) throw new DnsException(DnsProtocolError.QRTypeNotQuery);
@@ -99,9 +107,12 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             rheader.RD = h.RD;
             rheader.RA = false;
             rheader.RCode = ResponseCode.NoErrorCondition;
-            
             rheader.NSCount = 0;
             rheader.ARCount = 0;
+
+            var result = options.DnsServerDataSource.GetRRsAsync(clientMsg.Question[0]).Result;
+
+            // if (result.Length == 0) throw new NotImplementedException("todo");
 
             Question rquestion = new Question()
             {
@@ -110,35 +121,9 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 QType = q.QType
             };
 
-            ResourceRecord answer1 = new ResourceRecord()
-            {
-                Class = QClass.IN,
-                Name = "www",
-                Type = QType.A,
-                TTL = 300,
-                RDLength = 0,
-                RData = new RDataA()
-                {
-                    Address = 0xffeebbcc
-                }
-            };
-
-            ResourceRecord answer2 = new ResourceRecord()
-            {
-                Class = QClass.IN,
-                Name = "www",
-                Type = QType.A,
-                TTL = 400,
-                RDLength = 0,
-                RData = new RDataA()
-                {
-                    Address = 0xaabbccdd
-                }
-            };
-
             response.Header = rheader;
             response.Question = new Question[] { rquestion };
-            response.Answer = new ResourceRecord[] { answer1, answer2 };
+            response.Answer = result;
 
             rheader.QDCount = (ushort)response.Question.Length;
             rheader.ANCount = (ushort)response.Answer.Length;
@@ -146,7 +131,11 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             return response;
         }
 
-        /*
+        
+    }
+}
+
+/*
          SocketAsyncEventArgs args = new SocketAsyncEventArgs();
             args.Completed += OnReceive;
             args.RemoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
@@ -156,18 +145,13 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             {
                 
             }
-         */
-    }
-}
+*/
 
 /*
  warning:
  using nested onreceive calls, if all are synchronous, the can stackoverflow
 
-
-
-
- using System;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;

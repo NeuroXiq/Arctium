@@ -30,6 +30,14 @@ namespace Arctium.Protocol.DNS
         }
 
         public void Add(InMemRRData record) => records.Add(record);
+
+        public void AddRange(List<InMemRRData> records)
+        {
+            foreach (var record in records)
+            {
+                Add(record);
+            }
+        }
     }
 
     public class InMemRRData

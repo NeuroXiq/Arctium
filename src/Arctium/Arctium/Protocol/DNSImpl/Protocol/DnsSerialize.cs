@@ -62,8 +62,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 Encode_ResourceRecord(message.Additional[i], buffer);
             }
 
-            Console.WriteLine();
-            MemDump.HexDump(buffer.Buffer, 0, buffer.DataLength, 1, 2);
+            // MemDump.HexDump(buffer.Buffer, 0, buffer.DataLength, 1, 2);
         }
 
         private void Encode_ResourceRecord(ResourceRecord rr, ByteBuffer buffer)

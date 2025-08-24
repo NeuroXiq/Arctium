@@ -18,6 +18,7 @@ namespace Arctium.IntegrationTests.Protocol
             var cancellationToken = serverStop.Token;
 
             InMemoryDnsServerDataSource inMemDs = new InMemoryDnsServerDataSource();
+            inMemDs.AddRange(records);
             DnsServerOptions options = new DnsServerOptions(inMemDs);
             server = new DnsServer(options);
 
@@ -39,18 +40,37 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         [Test]
-        public void MyTestMethod()
+        public void Succeed_WillReturnAllRecordType()
         {
             // arrange
-            var r = QueryServer();
-            var q = "";
+
+            var allValidQtypes = Enum.GetValues<QType>().Where(t => t != QType.All).ToArray();
+
+            foreach (var qtype in allValidQtypes)
+            {
+                var result = QueryServer("www.all-rrs.pl", qtype);
+                var expected = records.First(r => r.QName == "www.all-rrs.pl" && r.Record.Name == $"all-rrs-{qtype}" && r.Record.Type == qtype).Record;
+                Assert.That(result.Count == 1);
+                AssertRecordEqual(result[0], expected);
+            }
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void Succeed_ReturnRDataA_DomainNameWithDotAtTheEnd()
+        {
+            // arrange
+
             // act
 
             // assert
             Assert.IsTrue(false);
         }
 
-        public void MyTestMethod2()
+        [Test]
+        public void Succeed_ReturnRDataA_DomainNameWithoutDotAtTheEnd()
         {
             // arrange
 
@@ -60,17 +80,95 @@ namespace Arctium.IntegrationTests.Protocol
             Assert.IsTrue(false);
         }
 
+        [Test]
+        public void WillReturnRecordWithMinDomainName()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void WillReturnRecordWithMaxDomainName()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+
+        const string www_test_pl = "www.test.pl";
+        const string www_google1_pl = "www.google1.pl";
+
+        // all tests runs under single server with these records
+        // all record current server have
         static readonly List<InMemRRData> records = new List<InMemRRData>()
         {
-            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 })
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.A, "all-rrs-A", 111, new RDataA() { Address = 0x44332211 }),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MR, "all-rrs-MR", 1234, new RDataMR(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NULL, "all-rrs-NULL", 1234, new RDataNULL(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.HINFO, "all-rrs-HINFO", 1234, new RDataHINFO(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MINFO, "all-rrs-MINFO", 1234, new RDataMINFO(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX(),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234, new RDataTXT() { TxtData = "test-txt-data" }),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.AXFR, "all-rrs-AXFR", 1234, new RDataAXFR(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MAILB, "all-rrs-MAILB", 1234, new RDataMAILB(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MAILA, "all-rrs-MAILA", 1234, new RDataMAILA(),
+            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.All, "all-rrs-All", 1234, new RDataAll(),
+
+            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.HS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.CS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.CH, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+
+            new InMemRRData("www.google1.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 })
         };
 
+        private static void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
+        {
+            Assert.IsTrue(
+                current.TTL == expected.TTL &&
+                expected.Name == current.Name &&
+                (int)expected.Type == current.Type,
+                "expected != current");
 
-        private List<PwshRecord> QueryServer()
+            switch (expected.Type)
+            {
+                case QType.A:
+                    Assert.That(int.Parse(current.IP4Address) == (expected.RData as RDataA).Address);
+                    break;
+                case QType.All:
+                    Assert.IsTrue(false, "must never happen - invalid expected type"); // must never happen
+                    break;
+                default:
+                    throw new NotImplementedException("todo implement other QType conditions");
+            }
+
+
+            throw new NotImplementedException();
+        }
+
+        private List<PwshRecord> QueryServer(string domainName, QType qtype)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = @"powershell.exe";
-            startInfo.Arguments = @"-command resolve-dnsname www.google.com -server 127.0.0.1 | convertto-json";
+            startInfo.Arguments = $@"-command convertto-json @(resolve-dnsname {domainName} -server 127.0.0.1 -type {qtype})";
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.UseShellExecute = false;
@@ -103,11 +201,8 @@ namespace Arctium.IntegrationTests.Protocol
             public int QueryType { get; set; }
         }
 
-        static InMemRRData RecordA_1;
-
         static DnsServerIntegrationTests()
         {
-            RecordA_1 = new InMemRRData("www.local-test.com", QClass.IN, QType.A, "name", 1234, new RDataA() { Address = 0x01020304 });
         }
     }
 }
