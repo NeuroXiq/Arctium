@@ -9,7 +9,7 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// <summary>
     /// obsolete
     /// </summary>
-    struct RDataMF
+    public class RDataMF
     {
         /// <summary>
         /// a domain-name whichspecifies a host which has a mail

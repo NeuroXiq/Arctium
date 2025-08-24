@@ -9,7 +9,7 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// <summary>
     /// obsolete
     /// </summary>
-    struct RDataMD
+    public class RDataMD
     {
         ///<summary>
         /// A domain-name which specified a host which has a  

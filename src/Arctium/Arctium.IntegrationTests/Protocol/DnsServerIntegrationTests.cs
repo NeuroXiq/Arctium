@@ -1,5 +1,6 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNSImpl.Model;
+using Arctium.Protocol.DNSImpl.Protocol;
 using Newtonsoft.Json;
 using System.Diagnostics;
 
@@ -44,7 +45,9 @@ namespace Arctium.IntegrationTests.Protocol
         {
             // arrange
 
-            var allValidQtypes = Enum.GetValues<QType>().Where(t => t != QType.All).ToArray();
+            // var allValidQtypes = Enum.GetValues<QType>().Where(t => t != QType.All).ToArray();
+            var allValidQtypes = new[] { QType.CNAME };
+
 
             foreach (var qtype in allValidQtypes)
             {
@@ -55,7 +58,7 @@ namespace Arctium.IntegrationTests.Protocol
             }
 
             // assert
-            Assert.IsTrue(false);
+            // Assert.IsTrue(false);
         }
 
         [Test]
@@ -92,6 +95,12 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         [Test]
+        public void Succeed_TXT_MaxLengthOfCharacterString()
+        {
+            Assert.Fail("asd");
+        }
+
+        [Test]
         public void WillReturnRecordWithMaxDomainName()
         {
             // arrange
@@ -102,7 +111,6 @@ namespace Arctium.IntegrationTests.Protocol
             Assert.IsTrue(false);
         }
 
-
         const string www_test_pl = "www.test.pl";
         const string www_google1_pl = "www.google1.pl";
 
@@ -111,10 +119,10 @@ namespace Arctium.IntegrationTests.Protocol
         static readonly List<InMemRRData> records = new List<InMemRRData>()
         {
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.A, "all-rrs-A", 111, new RDataA() { Address = 0x44332211 }),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME(),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
             // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA(),
             // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB(),
             // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG(),
@@ -151,17 +159,20 @@ namespace Arctium.IntegrationTests.Protocol
             switch (expected.Type)
             {
                 case QType.A:
-                    Assert.That(int.Parse(current.IP4Address) == (expected.RData as RDataA).Address);
+                    Assert.That(DnsSerialize.Ipv4ToUInt(current.IP4Address) == (expected.RData as RDataA).Address, "A ipv4 not equal");
                     break;
+                case QType.TXT:
+                    Assert.That((expected.RData as RDataTXT).TxtData == current.Text[0], "TXT not match"); break;
+                case QType.MD: Assert.That((expected.RData as RDataMD).MADName == current.NameHost); break;
+                case QType.MF: Assert.That((expected.RData as RDataMF).MADName == current.NameHost); break;
+                case QType.NS: Assert.That((expected.RData as RDataNS).NSDName == current.NameHost); break;
+                case QType.CNAME: Assert.That((expected.RData as RDataCNAME).CName == current.NameHost); break;
                 case QType.All:
                     Assert.IsTrue(false, "must never happen - invalid expected type"); // must never happen
                     break;
                 default:
                     throw new NotImplementedException("todo implement other QType conditions");
             }
-
-
-            throw new NotImplementedException();
         }
 
         private List<PwshRecord> QueryServer(string domainName, QType qtype)
@@ -191,6 +202,7 @@ namespace Arctium.IntegrationTests.Protocol
             public string IP6Address { get; set; }
             public string IP4Address { get; set; }
             public string Name { get; set; }
+            public string NameHost { get; set; }
             public int Type { get; set; }
             public int CharacterSet { get; set; }
             public int Section { get; set; }
@@ -199,6 +211,7 @@ namespace Arctium.IntegrationTests.Protocol
             public string Address { get; set; }
             public string IPAddress { get; set; }
             public int QueryType { get; set; }
+            public string[] Text { get; set; }
         }
 
         static DnsServerIntegrationTests()

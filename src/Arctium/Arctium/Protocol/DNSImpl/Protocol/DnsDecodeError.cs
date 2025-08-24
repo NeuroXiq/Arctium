@@ -11,5 +11,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         DecodeInvalidLabelLength = 1,
         DecodeMsgLengthNotMatchTotalLength = 2,
         TotalLengthOfDomainNameExceeded = 3,
+        TxtMaxCharacterStringLength = 4,
     }
 }

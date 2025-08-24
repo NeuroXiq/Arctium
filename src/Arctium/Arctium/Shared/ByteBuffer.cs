@@ -39,7 +39,7 @@ namespace Arctium.Shared
         /// returns index where data must be appended
         /// </summary>
         /// <param name="length"></param>
-        /// <returns></returns>
+        /// <returns>data length before appending bytes (this offset can be used to start writing to</returns>
         public int AllocEnd(int length)
         {
             int offset = DataLength;

@@ -68,7 +68,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         private void Encode_ResourceRecord(ResourceRecord rr, ByteBuffer buffer)
         {
             // +2 one byte of length and one zero byte at the end
-            if (rr.Name.Length + 2 > DnsConsts.TotalLengthOfDomainName)
+            if (rr.Name.Length + 2 > DnsConsts.MaxDomainNameLength)
                 throw new DnsException("ResourceRecord.Name.Length + 1 > TotalLengthOfDomainName");
 
             buffer.Append((byte)rr.Name.Length);
@@ -85,13 +85,11 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             switch (rr.Type)
             {
-                case QType.A:
-                    Encode_RDataA((RDataA)rr.RData, buffer);
-                    break;
-                case QType.NS:
-                case QType.MD:
-                case QType.MF:
-                case QType.CNAME:
+                case QType.A: Encode_RDataA((RDataA)rr.RData, buffer); break;
+                case QType.NS: Encode_RDataNS((RDataNS)rr.RData, buffer); break;
+                case QType.MD: Encode_RDataMD((RDataMD)rr.RData, buffer); break;
+                case QType.MF: Encode_RDataMF((RDataMF)rr.RData, buffer); break;
+                case QType.CNAME: Encode_RDataCNAME((RDataCNAME)rr.RData, buffer); break;
                 case QType.SOA:
                 case QType.MB:
                 case QType.MG:
@@ -102,7 +100,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 case QType.HINFO:
                 case QType.MINFO:
                 case QType.MX:
-                case QType.TXT:
+                case QType.TXT: Encode_RDataTXT((RDataTXT)rr.RData, buffer); break;
                 case QType.AXFR:
                 case QType.MAILB:
                 case QType.MAILA:
@@ -116,18 +114,34 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             MemMap.ToBytes1UShortBE(rdLength, buffer.Buffer, rdLengthOffset);
         }
 
-        private void Encode_RDataA(RDataA rd, ByteBuffer buffer)
+        private void Encode_RDataCNAME(RDataCNAME rd, ByteBuffer buffer)
         {
-            buffer.AllocEnd(4);
-            MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, buffer.DataLength - 4);
+            EncodeDomainName(buffer, rd.CName);
         }
 
-        private void Encode_Question(Question question, ByteBuffer buffer)
+        private void Encode_RDataMF(RDataMF rd, ByteBuffer buffer)
         {
+            EncodeDomainName(buffer, rd.MADName);
+        }
+
+        private void Encode_RDataMD(RDataMD rd, ByteBuffer buffer)
+        {
+            EncodeDomainName(buffer, rd.MADName);
+        }
+
+        private void Encode_RDataNS(RDataNS rd, ByteBuffer buffer)
+        {
+            EncodeDomainName(buffer, rd.NSDName);
+        }
+
+        private void EncodeDomainName(ByteBuffer buffer, string domainName)
+        {
+            if (domainName.Length + 1 > DnsConsts.MaxDomainNameLength)
+                throw new DnsException("encoded domain name exceed max allowed value: " + domainName);
+
+            string[] qnameLabels = domainName.Split('.');
             int totalLabelLen = 0;
             int labelEncodeStart = buffer.DataLength;
-            string[] qnameLabels = question.QName.Split('.');
-
 
             for (int i = 0; i < qnameLabels.Length; i++)
             {
@@ -148,9 +162,30 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             buffer.Append(0);
 
-            if (buffer.DataLength - labelEncodeStart > DnsConsts.TotalLengthOfDomainName)
+            if (buffer.DataLength - labelEncodeStart > DnsConsts.MaxDomainNameLength)
                 throw new DnsException("encoding: total length of label exceed max");
+        }
 
+        private void Encode_RDataTXT(RDataTXT rd, ByteBuffer buffer)
+        {
+            if (rd.TxtData.Length + 1 > DnsConsts.MaxCharacterStringLength)
+                throw new DnsException("rd.txtdata.length exceed max length");
+
+            buffer.Append((byte)rd.TxtData.Length);
+            int start = buffer.AllocEnd(rd.TxtData.Length);
+            Encoding.ASCII.GetBytes(rd.TxtData, new Span<byte>(buffer.Buffer, start, rd.TxtData.Length));
+        }
+
+        private void Encode_RDataA(RDataA rd, ByteBuffer buffer)
+        {
+            buffer.AllocEnd(4);
+            MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, buffer.DataLength - 4);
+        }
+
+        private void Encode_Question(Question question, ByteBuffer buffer)
+        {
+            EncodeDomainName(buffer, question.QName);
+            
             buffer.AllocEnd(4);
             MemMap.ToBytes1UShortBE((ushort)question.QType, buffer.Buffer, buffer.DataLength - 4);
             MemMap.ToBytes1UShortBE((ushort)question.QClass, buffer.Buffer, buffer.DataLength - 2);
@@ -218,7 +253,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
                 i += labelLengt + 1;
 
-                if (i > DnsConsts.TotalLengthOfDomainName)
+                if (i > DnsConsts.MaxDomainNameLength)
                     throw new DnsException(DnsDecodeError.TotalLengthOfDomainNameExceeded);
             }
             
@@ -258,6 +293,16 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             decodedLength = 12;
 
             return header;
+        }
+
+        public static uint Ipv4ToUInt(string ipv4)
+        {
+            string[] parts = ipv4.Split('.');
+            return
+                ((uint)int.Parse(parts[0]) << 24) |
+                ((uint)int.Parse(parts[1]) << 16) |
+                ((uint)int.Parse(parts[2]) << 08) |
+                ((uint)int.Parse(parts[3]) << 0);
         }
     }
 }

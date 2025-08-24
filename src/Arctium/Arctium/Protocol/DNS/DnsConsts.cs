@@ -21,7 +21,12 @@ namespace Arctium.Protocol.DNS
         /// <summary>
         /// rfc-1035 page 10 , label octets and label length octets
         /// </summary>
-        public const int TotalLengthOfDomainName = 255;
+        public const int MaxDomainNameLength = 255;
+
+        /// <summary>
+        /// characted-string max length including length byte
+        /// </summary>
+        public const int MaxCharacterStringLength = 256;
 
         /// <summary>
         /// page 10 rfc-1035
