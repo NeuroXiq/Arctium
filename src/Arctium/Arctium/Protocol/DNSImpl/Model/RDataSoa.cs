@@ -8,7 +8,7 @@ namespace Arctium.Protocol.DNSImpl.Model
 {
     /// <summary>
     /// </summary>
-    public class RDataSoa
+    public class RDataSOA
     {
         /// <summary>
         /// domain-name of the name server that was the original

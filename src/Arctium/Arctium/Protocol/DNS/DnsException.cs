@@ -10,11 +10,11 @@ namespace Arctium.Protocol.DNS
 {
     public class DnsException : ArctiumException
     {
-        public DnsDecodeError? DecodeError { get; set; }
+        public DnsOtherError? DecodeError { get; set; }
         public DnsProtocolError? ProtocolError { get; set; }
 
         public DnsException(string msg) : base(msg) { }
-        public DnsException(DnsDecodeError code) : base($"Decode error: {code.ToString()} ({(int)code})") { }
+        public DnsException(DnsOtherError code) : base($"Decode error: {code.ToString()} ({(int)code})") { }
         public DnsException(DnsProtocolError code) : base($"Protocol error: {code.ToString()} ({(int)code})") { }
     }
 }

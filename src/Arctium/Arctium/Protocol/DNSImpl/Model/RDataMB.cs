@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNSImpl.Model
 {
-    struct RDataMB
+    public class RDataMB
     {
         /// <summary>
         /// a domain-name which specifies as host which has the specified mailbox

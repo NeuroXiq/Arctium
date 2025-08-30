@@ -9,7 +9,7 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// <summary>
     /// experimental
     /// </summary>
-    struct RDataMInfo
+    public class RDataMINFO
     {
         /// <summary>
         /// a domain-name which specifies a mailbox which is responsible

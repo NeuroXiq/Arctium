@@ -9,7 +9,7 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// <summary>
     /// experimental
     /// </summary>
-    struct RDataMG
+    public class RDataMG
     {
         /// <summary>
         /// a domain-name which specifies a mailbox which is a 

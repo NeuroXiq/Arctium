@@ -8,10 +8,13 @@ namespace Arctium.Protocol.DNSImpl.Model
 {
     /// <summary>
     /// </summary>
-    public class RDataWks
+    public class RDataWKS
     {
         public uint Address;
         public byte Protocol;
+        /// <summary>
+        /// https://datatracker.ietf.org/doc/html/rfc1010
+        /// </summary>
         public byte[] Bitmap;
     }
 }

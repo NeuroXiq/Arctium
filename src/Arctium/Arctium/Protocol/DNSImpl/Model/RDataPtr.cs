@@ -11,7 +11,7 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// rrs are used in special domains to point to some other
     /// location in the domain space
     /// </summary>
-    public class RDataPtr
+    public class RDataPTR
     {
         /// <summary>
         /// a domain-name which points to some

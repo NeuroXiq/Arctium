@@ -124,9 +124,15 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             response.Header = rheader;
             response.Question = new Question[] { rquestion };
             response.Answer = result;
+            
+            // test
+            // response.Additional = result;
+            // response.Authority = result;
 
             rheader.QDCount = (ushort)response.Question.Length;
             rheader.ANCount = (ushort)response.Answer.Length;
+            rheader.ARCount = (ushort)(response.Additional?.Length ?? 0);
+            rheader.NSCount = (ushort)(response.Authority?.Length ?? 0);
 
             return response;
         }

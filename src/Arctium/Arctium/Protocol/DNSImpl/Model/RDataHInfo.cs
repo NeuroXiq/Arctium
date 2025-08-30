@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNSImpl.Model
 {
-    struct RDataHInfo
+    public class RDataHINFO
     {
         /// <summary>
         /// A <characted-string> which specific the CPU type

@@ -3,6 +3,7 @@ using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Protocol.DNSImpl.Protocol;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Text;
 
 namespace Arctium.IntegrationTests.Protocol
 {
@@ -46,7 +47,7 @@ namespace Arctium.IntegrationTests.Protocol
             // arrange
 
             // var allValidQtypes = Enum.GetValues<QType>().Where(t => t != QType.All).ToArray();
-            var allValidQtypes = new[] { QType.CNAME };
+            var allValidQtypes = new[] { QType.SOA };
 
 
             foreach (var qtype in allValidQtypes)
@@ -58,7 +59,7 @@ namespace Arctium.IntegrationTests.Protocol
             }
 
             // assert
-            // Assert.IsTrue(false);
+            Assert.IsTrue(false);
         }
 
         [Test]
@@ -118,26 +119,49 @@ namespace Arctium.IntegrationTests.Protocol
         // all record current server have
         static readonly List<InMemRRData> records = new List<InMemRRData>()
         {
+            // all-rrs stores all possible qtypes
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.A, "all-rrs-A", 111, new RDataA() { Address = 0x44332211 }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MR, "all-rrs-MR", 1234, new RDataMR(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NULL, "all-rrs-NULL", 1234, new RDataNULL(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.HINFO, "all-rrs-HINFO", 1234, new RDataHINFO(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MINFO, "all-rrs-MINFO", 1234, new RDataMINFO(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX(),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA()
+            {
+                Expire = 0x2abbccdd,
+                Minimum = 0x3ccddee,
+                MName = "www.all-rrs-soa-mname.pl",
+                Refresh = 0x0123456,
+                Retry = 0x44335522,
+                RName = "www.all-rrs-soa-rname.pl",
+                Serial = 0xffddee33
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MR, "all-rrs-MR", 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NULL, "all-rrs-NULL", 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS()
+            {
+                Address = 0x332211aa,
+                Bitmap = new byte[] { 1,2,3,4 },
+                Protocol = 6
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),
+
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.HINFO, "all-rrs-HINFO", 1234,
+            new RDataHINFO()
+            {
+                CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl"
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MINFO, "all-rrs-MINFO", 1234,
+            new RDataMINFO()
+            {
+                EMailbx = "www.all-rrs-minfo-emailbx",
+                RMailbx = "www.all-rrs-minfo-rmailbx"
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX() { Preference = 5555, Exchange ="www.all-rrs-exchange"  }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234, new RDataTXT() { TxtData = "test-txt-data" }),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.AXFR, "all-rrs-AXFR", 1234, new RDataAXFR(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MAILB, "all-rrs-MAILB", 1234, new RDataMAILB(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MAILA, "all-rrs-MAILA", 1234, new RDataMAILA(),
-            // new InMemRRData("www.all-rrs.pl", QClass.IN, QType.All, "all-rrs-All", 1234, new RDataAll(),
+
+            // end of all-rrs
 
             new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
             new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
@@ -159,20 +183,80 @@ namespace Arctium.IntegrationTests.Protocol
             switch (expected.Type)
             {
                 case QType.A:
+                    
+                    break;
+                case QType.TXT:
+                case QType.MD: 
+                case QType.MF: 
+                case QType.NS:  break;
+                case QType.CNAME:  break;
+                
+            }
+
+            switch (expected.Type)
+            {
+                case QType.A:
                     Assert.That(DnsSerialize.Ipv4ToUInt(current.IP4Address) == (expected.RData as RDataA).Address, "A ipv4 not equal");
+                    break;
+                case QType.NS:
+                    Assert.That((expected.RData as RDataNS).NSDName == current.NameHost);
+                    break;
+                case QType.MD:
+                    Assert.That((expected.RData as RDataMD).MADName == current.NameHost);
+                    break;
+                case QType.MF:
+                    Assert.That((expected.RData as RDataMF).MADName == current.NameHost);
+                    break;
+                case QType.CNAME:
+                    Assert.That((expected.RData as RDataCNAME).CName == current.NameHost);
+                    break;
+                case QType.SOA:
+                    RDataSOA soa = (RDataSOA)expected.RData;
+                    Assert.That(soa.Expire == current.TimeToZoneExpiration, "SOA.Expire");
+                    Assert.That(soa.Minimum == current.DefaultTTL, "SOA.Minimum");
+                    Assert.That(soa.MName == current.PrimaryServer, "SOA.MName");
+                    Assert.That(soa.Refresh == current.TimeToZoneRefresh, "SOA.Refresh");
+                    Assert.That(soa.Retry == current.TimeToZoneFailureRetry, "SOA.Retry");
+                    Assert.That(soa.RName == current.NameAdministrator, "SOA.RName");
+                    Assert.That(soa.Serial == current.SerialNumber, "SOA.Serial");
+                    break;
+                case QType.MB:
+                    Assert.That(((RDataMB)expected.RData).MADName == current.NameHost, "MB.Namehost");
+                    break;
+                case QType.MG:
+                    Assert.That(((RDataMG)expected.RData).MGMName == current.NameHost, "MGMName");
+                    break;
+                case QType.MR:
+                    Assert.That(((RDataMR)expected.RData).NewName == current.Server, "MR.NewName");
+                    break;
+                case QType.NULL:
+                    throw new NotImplementedException("problems with powershell - for now not implemented - todo implement");
+                    break;
+                case QType.WKS:
+                    RDataWKS wsk = (RDataWKS)expected.RData;
+                    // Assert.That(wsk.
+                    break;
+                case QType.PTR:
+                    break;
+                case QType.HINFO:
+                    break;
+                case QType.MINFO:
+                    break;
+                case QType.MX:
                     break;
                 case QType.TXT:
                     Assert.That((expected.RData as RDataTXT).TxtData == current.Text[0], "TXT not match"); break;
-                case QType.MD: Assert.That((expected.RData as RDataMD).MADName == current.NameHost); break;
-                case QType.MF: Assert.That((expected.RData as RDataMF).MADName == current.NameHost); break;
-                case QType.NS: Assert.That((expected.RData as RDataNS).NSDName == current.NameHost); break;
-                case QType.CNAME: Assert.That((expected.RData as RDataCNAME).CName == current.NameHost); break;
+                    break;
+                case QType.AXFR:
+                case QType.MAILB:
+                case QType.MAILA:
                 case QType.All:
-                    Assert.IsTrue(false, "must never happen - invalid expected type"); // must never happen
+                    Assert.IsTrue(false, "must never happen - invalid expected type (invalid test case) - this are only in query section not in result");
                     break;
                 default:
                     throw new NotImplementedException("todo implement other QType conditions");
             }
+
         }
 
         private List<PwshRecord> QueryServer(string domainName, QType qtype)
@@ -202,6 +286,9 @@ namespace Arctium.IntegrationTests.Protocol
             public string IP6Address { get; set; }
             public string IP4Address { get; set; }
             public string Name { get; set; }
+            /// <summary>
+            /// MB.MADName
+            /// </summary>
             public string NameHost { get; set; }
             public int Type { get; set; }
             public int CharacterSet { get; set; }
@@ -212,6 +299,46 @@ namespace Arctium.IntegrationTests.Protocol
             public string IPAddress { get; set; }
             public int QueryType { get; set; }
             public string[] Text { get; set; }
+
+            /// <summary>
+            /// MR.NewName
+            /// </summary>
+            public string Server { get; set; }
+
+            /// <summary>
+            /// SOA.MName
+            /// </summary>
+            public string PrimaryServer { get; set; }
+
+            /// <summary>
+            /// SOA.RName
+            /// </summary>
+            public string NameAdministrator { get; set; }
+
+            /// <summary>
+            /// SOA.SerialNumber
+            /// </summary>
+            public uint SerialNumber { get; set; }
+            
+            /// <summary>
+            /// SOA.Refresh
+            /// </summary>
+            public int TimeToZoneRefresh { get; set; }
+
+            /// <summary>
+            /// SOA.Retry
+            /// </summary>
+            public int TimeToZoneFailureRetry { get; set; }
+
+            /// <summary>
+            /// SOA.Expire
+            /// </summary>
+            public int TimeToZoneExpiration { get; set; }
+
+            /// <summary>
+            /// SOA.Minimum
+            /// </summary>
+            public int DefaultTTL { get; set; }
         }
 
         static DnsServerIntegrationTests()

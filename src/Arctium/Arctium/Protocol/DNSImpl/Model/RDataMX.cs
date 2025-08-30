@@ -10,7 +10,7 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// MX Records cause type A additional section processing for the host
     /// specified by EXCHANGE. The use of mx rr is explained in detail in [rfc-974]
     /// </summary>
-    struct RDataMX
+    public class RDataMX
     {
         /// <summary>
         /// a 16 bit integer which specifies the preferences give to this rr among other at the same owner.

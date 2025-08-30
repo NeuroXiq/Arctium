@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Arctium.Protocol.DNSImpl.Model
+namespace Arctium.Protocol.DNSImpl.Protocol
 {
     /// <summary>
-    /// experimental
+    /// 
     /// </summary>
-    public class RDataNULL
+    public enum DnsOtherError : int
     {
-        public byte[] Anything;
+        SerializeInvalidCharacterStringLength = 1,
     }
 }

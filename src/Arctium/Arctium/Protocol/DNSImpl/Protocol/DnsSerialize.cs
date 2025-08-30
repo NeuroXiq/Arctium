@@ -90,28 +90,86 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 case QType.MD: Encode_RDataMD((RDataMD)rr.RData, buffer); break;
                 case QType.MF: Encode_RDataMF((RDataMF)rr.RData, buffer); break;
                 case QType.CNAME: Encode_RDataCNAME((RDataCNAME)rr.RData, buffer); break;
-                case QType.SOA:
-                case QType.MB:
-                case QType.MG:
-                case QType.MR:
-                case QType.NULL:
-                case QType.WKS:
-                case QType.PTR:
-                case QType.HINFO:
-                case QType.MINFO:
-                case QType.MX:
+                case QType.SOA: Encode_RDataSOA((RDataSOA)rr.RData, buffer); break;
+                case QType.MB: EncodeDomainName(buffer, ((RDataMB)rr.RData).MADName); break;
+                case QType.MG: EncodeDomainName(buffer, ((RDataMG)rr.RData).MGMName); break;
+                case QType.MR: EncodeDomainName(buffer, ((RDataMR)rr.RData).NewName); break;
+                case QType.NULL: Encode_RDataNULL((RDataNULL)rr.RData, buffer); break;
+                case QType.WKS: Encode_RDataWKS((RDataWKS)rr.RData, buffer); break;
+                case QType.PTR: EncodeDomainName(buffer, ((RDataPTR)rr.RData).PtrDName); break;
+                case QType.HINFO: Encode_RDataHINFO((RDataHINFO)rr.RData, buffer); break;
+                case QType.MINFO: Encode_RDataMINFO((RDataMINFO)rr.RData, buffer); break;
+                case QType.MX: Encode_RDataMX((RDataMX)rr.RData, buffer); break;
                 case QType.TXT: Encode_RDataTXT((RDataTXT)rr.RData, buffer); break;
                 case QType.AXFR:
                 case QType.MAILB:
                 case QType.MAILA:
                 case QType.All:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Cannot encode this because QType is only for queries");
                 default: throw new DnsException("invalid QType resource record encode");
             }
 
             ushort rdLength = (ushort)(buffer.DataLength - rdLengthOffset - 2);
 
             MemMap.ToBytes1UShortBE(rdLength, buffer.Buffer, rdLengthOffset);
+        }
+
+        private void Encode_RDataMX(RDataMX rd, ByteBuffer buffer)
+        {
+            int i = buffer.AllocEnd(2);
+            MemMap.ToBytes1UShortBE(rd.Preference, buffer.Buffer, i);
+            EncodeDomainName(buffer, rd.Exchange);
+        }
+
+        private void Encode_RDataMINFO(RDataMINFO rd, ByteBuffer buffer)
+        {
+            EncodeDomainName(buffer, rd.RMailbx);
+            EncodeDomainName(buffer, rd.EMailbx);
+        }
+
+        private void Encode_RDataHINFO(RDataHINFO rd, ByteBuffer buffer)
+        {
+            if (rd.CPU.Length + 1 > DnsConsts.MaxCharacterStringLength ||
+                rd.OS.Length + 1 > DnsConsts.MaxCharacterStringLength)
+            {
+                throw new DnsException(DnsOtherError.SerializeInvalidCharacterStringLength);
+            }
+
+            int i = buffer.AllocEnd((1 + rd.CPU.Length + 1 + rd.OS.Length));
+            buffer[i] = (byte)rd.CPU.Length;
+            i += 1;
+            Encoding.ASCII.GetBytes(rd.CPU, 0, rd.CPU.Length, buffer.Buffer, i);
+            i += rd.CPU.Length;
+            
+            buffer[i] = (byte)rd.OS.Length;
+            i += 1;
+            Encoding.ASCII.GetBytes(rd.OS, 0, rd.OS.Length, buffer.Buffer, i);
+        }
+
+        private void Encode_RDataWKS(RDataWKS rd, ByteBuffer buffer)
+        {
+            int i = buffer.AllocEnd(5);
+            MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, i);
+            MemMap.ToBytes1UShortBE(rd.Protocol, buffer.Buffer, i + 4);
+            buffer.Append(rd.Bitmap);
+        }
+
+        private void Encode_RDataNULL(RDataNULL rd, ByteBuffer buffer)
+        {
+            buffer.Append(rd.Anything);
+        }
+
+        private void Encode_RDataSOA(RDataSOA rd, ByteBuffer buffer)
+        {
+            EncodeDomainName(buffer, rd.MName);
+            EncodeDomainName(buffer, rd.RName);
+            int i = buffer.AllocEnd(5 * 4);
+
+            MemMap.ToBytes1UIntBE(rd.Serial, buffer.Buffer, i);
+            MemMap.ToBytes1IntBE(rd.Refresh, buffer.Buffer, i + 4);
+            MemMap.ToBytes1IntBE(rd.Retry, buffer.Buffer, i + 8);
+            MemMap.ToBytes1IntBE(rd.Expire, buffer.Buffer, i + 12);
+            MemMap.ToBytes1UIntBE(rd.Minimum, buffer.Buffer, i + 16);
         }
 
         private void Encode_RDataCNAME(RDataCNAME rd, ByteBuffer buffer)
@@ -228,7 +286,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 throw new NotImplementedException();
             }
 
-            if (buffer.Offset != buffer.Length) throw new DnsException(DnsDecodeError.DecodeMsgLengthNotMatchTotalLength);
+            if (buffer.Offset != buffer.Length) throw new DnsException(DnsProtocolError.DecodeMsgLengthNotMatchTotalLength);
 
             result.Header = header;
 
@@ -245,8 +303,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             {
                 int labelLengt = buffer[i];
 
-                if (labelLengt > DnsConsts.MaxLabelLength) throw new DnsException(DnsDecodeError.DecodeInvalidLabelLength);
-                if (i + buffer.Offset >= buffer.Length) throw new DnsException(DnsDecodeError.DecodeInvalidLabelLength);
+                if (labelLengt > DnsConsts.MaxLabelLength) throw new DnsException(DnsProtocolError.DecodeInvalidLabelLength);
+                if (i + buffer.Offset >= buffer.Length) throw new DnsException(DnsProtocolError.DecodeInvalidLabelLength);
 
                 if (labelLengt > 0)
                     labels.Add(Encoding.ASCII.GetString(buffer.Buffer, buffer.GetIndex(i + 1), labelLengt));
@@ -254,7 +312,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 i += labelLengt + 1;
 
                 if (i > DnsConsts.MaxDomainNameLength)
-                    throw new DnsException(DnsDecodeError.TotalLengthOfDomainNameExceeded);
+                    throw new DnsException(DnsProtocolError.TotalLengthOfDomainNameExceeded);
             }
             
             i += 1;
