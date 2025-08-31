@@ -43,7 +43,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 // var result = new BytesSpan(a, 0, a.Length);
 
                 //s.SendTo(bytes.Buffer, remoteEndpoint);
-                Console.WriteLine("asdf");
                 //MemDump.HexDump(buf, 0, recvLen, chunkLength: 1);
             }
         }

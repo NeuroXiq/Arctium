@@ -148,9 +148,9 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         private void Encode_RDataWKS(RDataWKS rd, ByteBuffer buffer)
         {
-            int i = buffer.AllocEnd(5);
+            int i = buffer.AllocEnd(4);
             MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, i);
-            MemMap.ToBytes1UShortBE(rd.Protocol, buffer.Buffer, i + 4);
+            buffer.Append(rd.Protocol);
             buffer.Append(rd.Bitmap);
         }
 

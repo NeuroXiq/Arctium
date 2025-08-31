@@ -142,7 +142,13 @@ namespace Arctium.IntegrationTests.Protocol
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS()
             {
                 Address = 0x332211aa,
-                Bitmap = new byte[] { 1,2,3,4 },
+                // powershell not work well (contrary to nslookup) with WKS
+                // not sure why need future investigations. this will work for now (not sure why work)
+                // nslookup shows correct values (maybe powershell need some alignment to 8-16 bytes?)
+                // nslookup -type=wks - 127.0.0.1
+                // (now type into console following:)
+                // > www.all-rrs.pl
+                Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
                 Protocol = 6
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),
@@ -230,11 +236,15 @@ namespace Arctium.IntegrationTests.Protocol
                     Assert.That(((RDataMR)expected.RData).NewName == current.Server, "MR.NewName");
                     break;
                 case QType.NULL:
-                    throw new NotImplementedException("problems with powershell - for now not implemented - todo implement");
+                    throw new NotImplementedException("problems with powershell - for now not implemented - todo implement. Powershell does not return anything");
                     break;
                 case QType.WKS:
-                    RDataWKS wsk = (RDataWKS)expected.RData;
-                    // Assert.That(wsk.
+                    // Powershell not work (not sure why for now) with WKS 
+                    // this need future investionation, for now this will work like that
+                    // nslookup works ok
+                    RDataWKS wks = (RDataWKS)expected.RData;
+                    Assert.That(wks.Protocol == current.Protocol);
+                    Assert.That(wks.Address == DnsSerialize.Ipv4ToUInt(current.IP4Address));
                     break;
                 case QType.PTR:
                     break;
@@ -339,6 +349,16 @@ namespace Arctium.IntegrationTests.Protocol
             /// SOA.Minimum
             /// </summary>
             public int DefaultTTL { get; set; }
+
+            /// <summary>
+            /// WKS.Bitmap
+            /// </summary>
+            public byte[] Bitmask { get; set; }
+
+            /// <summary>
+            /// WKS.Protocol
+            /// </summary>
+            public byte Protocol { get; set; }
         }
 
         static DnsServerIntegrationTests()

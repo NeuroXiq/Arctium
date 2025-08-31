@@ -29,6 +29,8 @@ namespace Program
             Console.Read();
         }
 
+        static byte[] bm = new byte[512];
+
         static readonly List<InMemRRData> records = new List<InMemRRData>()
         {
             // all-rrs stores all possible qtypes
@@ -57,8 +59,9 @@ namespace Program
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS()
             {
-                Address = 0x332211aa,
-                Bitmap = new byte[] { 1,2,3,4 },
+                Address = 0x7f000001,
+                Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) }, // ok
+                // Bitmap = new byte[] { 0, 0 },
                 Protocol = 6
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),

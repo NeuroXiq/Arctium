@@ -5,6 +5,10 @@ namespace Arctium.Shared
     public class ByteBuffer
     {
         public byte[] Buffer { get; private set; }
+        
+        /// <summary>
+        /// real data length appended/allocated in buffer, means total buffer size, always is <= Buffer.Length
+        /// </summary>
         public int DataLength { get; private set; }
 
         int freeSpace { get { return Buffer.Length - DataLength; } }
