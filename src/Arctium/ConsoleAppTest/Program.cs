@@ -61,7 +61,6 @@ namespace Program
             {
                 Address = 0x7f000001,
                 Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) }, // ok
-                // Bitmap = new byte[] { 0, 0 },
                 Protocol = 6
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),

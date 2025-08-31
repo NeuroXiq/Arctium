@@ -247,10 +247,15 @@ namespace Arctium.IntegrationTests.Protocol
                     Assert.That(wks.Address == DnsSerialize.Ipv4ToUInt(current.IP4Address));
                     break;
                 case QType.PTR:
+                    Assert.That(((RDataPTR)expected.RData).PtrDName == current.NameHost, "PTR");
                     break;
                 case QType.HINFO:
+                    RDataHINFO hinfo = (RDataHINFO)expected.RData;
+                    Assert.That(current.Text.Contains(hinfo.CPU) && current.Text.Contains(hinfo.OS), "HINFO");
                     break;
                 case QType.MINFO:
+                    RDataMINFO minfo = (RDataMINFO)expected.RData;
+                    Assert.That(minfo.RMailbx == current.NameMailbox && minfo.EMailbx == current.NameErrorsMailbox, "minfo");
                     break;
                 case QType.MX:
                     break;
@@ -309,6 +314,16 @@ namespace Arctium.IntegrationTests.Protocol
             public string IPAddress { get; set; }
             public int QueryType { get; set; }
             public string[] Text { get; set; }
+
+            /// <summary>
+            /// MINFO.RMailbx
+            /// </summary>
+            public string NameMailbox { get; set; }
+
+            /// <summary>
+            /// MINFO.EMailbx
+            /// </summary>
+            public string NameErrorsMailbox {get; set; }
 
             /// <summary>
             /// MR.NewName
