@@ -25,14 +25,17 @@ Solution is partitioned into  a following projects, each of them is a set of rel
 In the future there may be some console interface utility tool 
 
 ### Look up documents
-This is a short summary of what is on the development stage and direct links 
-for more interesting parts of the documentation.
+Following list shows all implemented features with links to examples
 
 ## Protocols
-|Name|Link|Comment|
+
+#### DNS
+|Name|Example|Standard|
 |:--:|:--:|:--:|
-|DNS - Resolver|...|DNA Resolver|
-|DNS - Server|...|DNA Server|
+|DNS - Resolver|todo|DNA Resolver|
+|DNS Server - AAAA record types|a|[rfc3596](https://datatracker.ietf.org/doc/html/rfc3596)|
+|todo: DNS Server - AAAA - additional section processing|a|[rfc3596](https://datatracker.ietf.org/doc/html/rfc3596)|
+|DNS Server - All RFC-1035 record types|a|[rfc1035](https://datatracker.ietf.org/doc/html/rfc1035)|
 
 ## Standards
 |Name|Link|

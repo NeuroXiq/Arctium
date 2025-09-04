@@ -3,6 +3,7 @@ using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Protocol.DNSImpl.Protocol;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Net;
 using System.Text;
 
 namespace Arctium.IntegrationTests.Protocol
@@ -54,6 +55,8 @@ namespace Arctium.IntegrationTests.Protocol
                 t != QType.MAILA &&
                 t != QType.MAILB)
                 .ToArray();
+
+            // act
 
             foreach (var qtype in allValidQtypes)
             {
@@ -175,6 +178,11 @@ namespace Arctium.IntegrationTests.Protocol
                     TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" }
                 }),
 
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.AAAA, "all-rrs-AAAA", 1234, new RDataAAAA()
+            {
+                IPv6 = new byte[] {0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 }
+            }),
+
             // end of all-rrs
 
             new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
@@ -272,6 +280,10 @@ namespace Arctium.IntegrationTests.Protocol
                 case QType.TXT:
                     Assert.That((expected.RData as RDataTXT).TxtData.All(t =>  current.Text.Contains(t)), "TXT not match");
                     break;
+                case QType.AAAA:
+                    var currentIpv6 = IPAddress.Parse(current.IP6Address).GetAddressBytes();
+                    Assert.That(currentIpv6.SequenceEqual(((RDataAAAA)expected.RData).IPv6), "AAAA");
+                        break;
                 case QType.MAILB:
                 case QType.MAILA:
                 case QType.AXFR:

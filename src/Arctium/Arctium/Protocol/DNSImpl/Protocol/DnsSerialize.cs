@@ -101,6 +101,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 case QType.MINFO: Encode_RDataMINFO((RDataMINFO)rr.RData, buffer); break;
                 case QType.MX: Encode_RDataMX((RDataMX)rr.RData, buffer); break;
                 case QType.TXT: Encode_RDataTXT((RDataTXT)rr.RData, buffer); break;
+                case QType.AAAA: Encode_RDataAAAA((RDataAAAA)rr.RData, buffer); break;
                 case QType.AXFR:
                 case QType.MAILB:
                 case QType.MAILA:
@@ -114,6 +115,14 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             if (rdLength > ushort.MaxValue) throw new DnsException(DnsOtherError.SerializeMaxRecordLengthExceeded);
 
             MemMap.ToBytes1UShortBE((ushort)rdLength, buffer.Buffer, rdLengthOffset);
+        }
+
+        private void Encode_RDataAAAA(RDataAAAA rd, ByteBuffer buffer)
+        {
+            if (rd.IPv6 == null || rd.IPv6.Length != 16)
+                throw new DnsException(DnsOtherError.SerializeInvalidIpv6LengthOrNull);
+
+            buffer.Append(rd.IPv6);
         }
 
         private void Encode_RDataMX(RDataMX rd, ByteBuffer buffer)

@@ -92,6 +92,11 @@ namespace Arctium.Protocol.DNSImpl.Model
         TXT = 16,
 
         /// <summary>
+        /// Ipv6
+        /// </summary>
+        AAAA = 28,
+
+        /// <summary>
         /// 252 a request for a transfer of an entire zone (Only in query)
         /// </summary>
         AXFR = 252,
