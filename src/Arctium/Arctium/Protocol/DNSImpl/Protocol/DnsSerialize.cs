@@ -109,9 +109,11 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 default: throw new DnsException("invalid QType resource record encode");
             }
 
-            ushort rdLength = (ushort)(buffer.DataLength - rdLengthOffset - 2);
+            int rdLength = buffer.DataLength - rdLengthOffset - 2;
 
-            MemMap.ToBytes1UShortBE(rdLength, buffer.Buffer, rdLengthOffset);
+            if (rdLength > ushort.MaxValue) throw new DnsException(DnsOtherError.SerializeMaxRecordLengthExceeded);
+
+            MemMap.ToBytes1UShortBE((ushort)rdLength, buffer.Buffer, rdLengthOffset);
         }
 
         private void Encode_RDataMX(RDataMX rd, ByteBuffer buffer)
@@ -226,12 +228,15 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         private void Encode_RDataTXT(RDataTXT rd, ByteBuffer buffer)
         {
-            if (rd.TxtData.Length + 1 > DnsConsts.MaxCharacterStringLength)
-                throw new DnsException("rd.txtdata.length exceed max length");
+            foreach (string txt in rd.TxtData)
+            {
+                if (txt?.Length > DnsConsts.MaxCharacterStringLength - 1)
+                    throw new DnsException($"rd.txtdata.length exceed max length for '{txt}'");
 
-            buffer.Append((byte)rd.TxtData.Length);
-            int start = buffer.AllocEnd(rd.TxtData.Length);
-            Encoding.ASCII.GetBytes(rd.TxtData, new Span<byte>(buffer.Buffer, start, rd.TxtData.Length));
+                buffer.Append((byte)txt.Length);
+                int start = buffer.AllocEnd(txt.Length);
+                Encoding.ASCII.GetBytes(txt, new Span<byte>(buffer.Buffer, start, txt.Length));
+            }
         }
 
         private void Encode_RDataA(RDataA rd, ByteBuffer buffer)

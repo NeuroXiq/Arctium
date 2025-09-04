@@ -41,13 +41,13 @@ namespace Program
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA()
             {
-                Expire = 0x2abbccdd,
-                Minimum = 0x3ccddee,
+                Expire = 0x0000005,
+                Minimum = 0x00000004,
                 MName = "www.all-rrs-soa-mname.pl",
-                Refresh = 0x0123456,
-                Retry = 0x44335522,
+                Refresh = 0x00000006,
+                Retry = 0x00000007,
                 RName = "www.all-rrs-soa-rname.pl",
-                Serial = 0xffddee33
+                Serial = 0x00000008
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" }),
@@ -77,7 +77,7 @@ namespace Program
                 RMailbx = "www.all-rrs-minfo-rmailbx"
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX() { Preference = 5555, Exchange ="www.all-rrs-exchange"  }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234, new RDataTXT() { TxtData = "test-txt-data" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234, new RDataTXT() { TxtData = new [] { "txt-line-1", "txt-line-2" } }),
         };
     }
 }

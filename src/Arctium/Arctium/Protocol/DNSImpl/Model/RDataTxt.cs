@@ -10,6 +10,6 @@ namespace Arctium.Protocol.DNSImpl.Model
     /// </summary>
     public class RDataTXT
     {
-        public string TxtData;
+        public string[] TxtData;
     }
 }

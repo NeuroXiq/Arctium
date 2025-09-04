@@ -12,5 +12,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
     public enum DnsOtherError : int
     {
         SerializeInvalidCharacterStringLength = 1,
+        SerializeMaxRecordLengthExceeded = 2,
     }
 }

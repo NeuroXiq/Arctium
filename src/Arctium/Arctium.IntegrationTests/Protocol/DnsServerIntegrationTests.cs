@@ -46,20 +46,24 @@ namespace Arctium.IntegrationTests.Protocol
         {
             // arrange
 
-            // var allValidQtypes = Enum.GetValues<QType>().Where(t => t != QType.All).ToArray();
-            var allValidQtypes = new[] { QType.SOA };
-
+            var allValidQtypes = Enum.GetValues<QType>()
+                .Where(t =>
+                t != QType.NULL &&
+                t != QType.All &&
+                t != QType.AXFR &&
+                t != QType.MAILA &&
+                t != QType.MAILB)
+                .ToArray();
 
             foreach (var qtype in allValidQtypes)
             {
                 var result = QueryServer("www.all-rrs.pl", qtype);
                 var expected = records.First(r => r.QName == "www.all-rrs.pl" && r.Record.Name == $"all-rrs-{qtype}" && r.Record.Type == qtype).Record;
                 Assert.That(result.Count == 1);
+                
+                // assert
                 AssertRecordEqual(result[0], expected);
             }
-
-            // assert
-            Assert.IsTrue(false);
         }
 
         [Test]
@@ -127,13 +131,13 @@ namespace Arctium.IntegrationTests.Protocol
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA()
             {
-                Expire = 0x2abbccdd,
-                Minimum = 0x3ccddee,
+                Expire = 0x0000005,
+                Minimum = 0x00000004,
                 MName = "www.all-rrs-soa-mname.pl",
-                Refresh = 0x0123456,
-                Retry = 0x44335522,
+                Refresh = 0x00000006,
+                Retry = 0x00000007,
                 RName = "www.all-rrs-soa-rname.pl",
-                Serial = 0xffddee33
+                Serial = 0x00000008
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" }),
@@ -165,7 +169,11 @@ namespace Arctium.IntegrationTests.Protocol
                 RMailbx = "www.all-rrs-minfo-rmailbx"
             }),
             new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX() { Preference = 5555, Exchange ="www.all-rrs-exchange"  }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234, new RDataTXT() { TxtData = "test-txt-data" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234,
+                new RDataTXT()
+                {
+                    TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" }
+                }),
 
             // end of all-rrs
 
@@ -218,7 +226,7 @@ namespace Arctium.IntegrationTests.Protocol
                     break;
                 case QType.SOA:
                     RDataSOA soa = (RDataSOA)expected.RData;
-                    Assert.That(soa.Expire == current.TimeToZoneExpiration, "SOA.Expire");
+                    Assert.That(soa.Expire == current.TimeToExpiration, "SOA.Expire");
                     Assert.That(soa.Minimum == current.DefaultTTL, "SOA.Minimum");
                     Assert.That(soa.MName == current.PrimaryServer, "SOA.MName");
                     Assert.That(soa.Refresh == current.TimeToZoneRefresh, "SOA.Refresh");
@@ -236,8 +244,8 @@ namespace Arctium.IntegrationTests.Protocol
                     Assert.That(((RDataMR)expected.RData).NewName == current.Server, "MR.NewName");
                     break;
                 case QType.NULL:
-                    throw new NotImplementedException("problems with powershell - for now not implemented - todo implement. Powershell does not return anything");
-                    break;
+                    throw new NotImplementedException(
+                        "problems with powershell - for now not implemented - todo implement. Powershell does not return anything");
                 case QType.WKS:
                     // Powershell not work (not sure why for now) with WKS 
                     // this need future investionation, for now this will work like that
@@ -258,20 +266,21 @@ namespace Arctium.IntegrationTests.Protocol
                     Assert.That(minfo.RMailbx == current.NameMailbox && minfo.EMailbx == current.NameErrorsMailbox, "minfo");
                     break;
                 case QType.MX:
+                    RDataMX mx = (RDataMX)expected.RData;
+                    Assert.That(mx.Preference == current.Preference && mx.Exchange == current.Exchange, "MX");
                     break;
                 case QType.TXT:
-                    Assert.That((expected.RData as RDataTXT).TxtData == current.Text[0], "TXT not match"); break;
+                    Assert.That((expected.RData as RDataTXT).TxtData.All(t =>  current.Text.Contains(t)), "TXT not match");
                     break;
-                case QType.AXFR:
                 case QType.MAILB:
                 case QType.MAILA:
+                case QType.AXFR:
                 case QType.All:
                     Assert.IsTrue(false, "must never happen - invalid expected type (invalid test case) - this are only in query section not in result");
                     break;
                 default:
                     throw new NotImplementedException("todo implement other QType conditions");
             }
-
         }
 
         private List<PwshRecord> QueryServer(string domainName, QType qtype)
@@ -301,6 +310,7 @@ namespace Arctium.IntegrationTests.Protocol
             public string IP6Address { get; set; }
             public string IP4Address { get; set; }
             public string Name { get; set; }
+
             /// <summary>
             /// MB.MADName
             /// </summary>
@@ -314,6 +324,16 @@ namespace Arctium.IntegrationTests.Protocol
             public string IPAddress { get; set; }
             public int QueryType { get; set; }
             public string[] Text { get; set; }
+
+            /// <summary>
+            /// MX.Preference
+            /// </summary>
+            public int Preference { get; set; }
+
+            /// <summary>
+            /// MX.Exchange
+            /// </summary>
+            public string Exchange { get; set; }
 
             /// <summary>
             /// MINFO.RMailbx
@@ -358,7 +378,7 @@ namespace Arctium.IntegrationTests.Protocol
             /// <summary>
             /// SOA.Expire
             /// </summary>
-            public int TimeToZoneExpiration { get; set; }
+            public int TimeToExpiration { get; set; }
 
             /// <summary>
             /// SOA.Minimum
