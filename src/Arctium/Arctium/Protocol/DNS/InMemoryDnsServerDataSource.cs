@@ -18,9 +18,11 @@ namespace Arctium.Protocol.DNS
 
         public Task<ResourceRecord[]> GetRRsAsync(Question question)
         {
+            string searchingDomainName = question.QName.TrimEnd('.');
+
             ResourceRecord[] results =
                 records.Where(t =>
-                t.QName == question.QName &&
+                t.QName?.TrimEnd('.') == searchingDomainName &&
                 (t.Record.Class == question.QClass || question.QClass == QClass.AnyClass) &&
                 (t.Record.Type == question.QType || question.QType == QType.All))
                 .Select(t => t.Record)

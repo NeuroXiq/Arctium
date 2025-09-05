@@ -33,9 +33,11 @@ Following list shows all implemented features with links to examples
 |Name|Example|Standard|
 |:--:|:--:|:--:|
 |DNS - Resolver|todo|DNA Resolver|
-|DNS Server - AAAA record types|a|[rfc3596](https://datatracker.ietf.org/doc/html/rfc3596)|
-|todo: DNS Server - AAAA - additional section processing|a|[rfc3596](https://datatracker.ietf.org/doc/html/rfc3596)|
-|DNS Server - All RFC-1035 record types|a|[rfc1035](https://datatracker.ietf.org/doc/html/rfc1035)|
+|DNS Server: TCP, UDP|todo|rfc-1035|
+|DNS Server: Truncation|todo|rfc-1035|
+|DNS Server: AAAA record types|a|[rfc-3596](https://datatracker.ietf.org/doc/html/rfc3596)|
+|todo: DNS Server: AAAA additional section processing|a|[rfc-3596](https://datatracker.ietf.org/doc/html/rfc3596)|
+|DNS Server - All RFC-1035 record types|a|rfc-1035|
 
 ## Standards
 |Name|Link|

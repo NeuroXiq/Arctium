@@ -42,6 +42,18 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Dispose();
         }
 
+
+        [Test]
+        public void Success_WillTruncateResponse()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
         [Test]
         public void Succeed_WillReturnAllRecordType()
         {
@@ -72,127 +84,64 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Succeed_ReturnRDataA_DomainNameWithDotAtTheEnd()
         {
-            // arrange
-
             // act
+            var current = QueryServer("www.domain-with-dot.pl.", QType.A).Single();
+            var expected = records.Single(t => t.QName == "www.domain-with-dot.pl.").Record;
 
             // assert
-            Assert.IsTrue(false);
+            AssertRecordEqual(current, expected);
         }
 
         [Test]
         public void Succeed_ReturnRDataA_DomainNameWithoutDotAtTheEnd()
         {
-            // arrange
-
             // act
+            var current = QueryServer("www.domain-with-no-dot-at-the-end.pl", QType.A);
 
             // assert
-            Assert.IsTrue(false);
+            AssertRecordEqual(current.Single(), records.Single(t => t.QName == "www.domain-with-no-dot-at-the-end.pl").Record);
         }
 
         [Test]
         public void WillReturnRecordWithMinDomainName()
         {
-            // arrange
-
             // act
+            var current = QueryServer("a.", QType.A);
 
             // assert
-            Assert.IsTrue(false);
+            AssertRecordEqual(current.Single(), records.Single(t => t.QName == "a").Record);
+        }
+
+
+        [Test]
+        public void Succees_WillReturnRecordWithMaxDomainName()
+        {
+            var domainName = $"{new string('a', 63)}." +
+                $"{new string('b', 63)}." +
+                $"{new string('c', 63)}." +
+                $"{new string('d', 61)}";
+
+            var expected = records.Single(t => t.QName == domainName);
+            
+            // act
+            var current = QueryServer(expected.QName, QType.A);
+
+            // assert
+            AssertRecordEqual(current.Single(), expected.Record);
         }
 
         [Test]
         public void Succeed_TXT_MaxLengthOfCharacterString()
         {
-            Assert.Fail("asd");
-        }
-
-        [Test]
-        public void WillReturnRecordWithMaxDomainName()
-        {
             // arrange
+            var expected = records.Single(t => t.QName == "www.max-txt.pl");
 
             // act
+            var current = QueryServer(expected.QName, QType.TXT).Single();
 
             // assert
-            Assert.IsTrue(false);
+            AssertRecordEqual(current, expected.Record);
         }
-
-        const string www_test_pl = "www.test.pl";
-        const string www_google1_pl = "www.google1.pl";
-
-        // all tests runs under single server with these records
-        // all record current server have
-        static readonly List<InMemRRData> records = new List<InMemRRData>()
-        {
-            // all-rrs stores all possible qtypes
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.A, "all-rrs-A", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA()
-            {
-                Expire = 0x0000005,
-                Minimum = 0x00000004,
-                MName = "www.all-rrs-soa-mname.pl",
-                Refresh = 0x00000006,
-                Retry = 0x00000007,
-                RName = "www.all-rrs-soa-rname.pl",
-                Serial = 0x00000008
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MR, "all-rrs-MR", 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NULL, "all-rrs-NULL", 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS()
-            {
-                Address = 0x332211aa,
-                // powershell not work well (contrary to nslookup) with WKS
-                // not sure why need future investigations. this will work for now (not sure why work)
-                // nslookup shows correct values (maybe powershell need some alignment to 8-16 bytes?)
-                // nslookup -type=wks - 127.0.0.1
-                // (now type into console following:)
-                // > www.all-rrs.pl
-                Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
-                Protocol = 6
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),
-
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.HINFO, "all-rrs-HINFO", 1234,
-            new RDataHINFO()
-            {
-                CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl"
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MINFO, "all-rrs-MINFO", 1234,
-            new RDataMINFO()
-            {
-                EMailbx = "www.all-rrs-minfo-emailbx",
-                RMailbx = "www.all-rrs-minfo-rmailbx"
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX() { Preference = 5555, Exchange ="www.all-rrs-exchange"  }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234,
-                new RDataTXT()
-                {
-                    TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" }
-                }),
-
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.AAAA, "all-rrs-AAAA", 1234, new RDataAAAA()
-            {
-                IPv6 = new byte[] {0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 }
-            }),
-
-            // end of all-rrs
-
-            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.test.pl", QClass.HS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.test.pl", QClass.CS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.test.pl", QClass.CH, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-
-            new InMemRRData("www.google1.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 })
-        };
 
         private static void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
         {
@@ -316,6 +265,95 @@ namespace Arctium.IntegrationTests.Protocol
 
             return result;
         }
+
+
+        // all tests runs under single server with these records
+        // all record current server have
+        static readonly List<InMemRRData> records = new List<InMemRRData>()
+        {
+            // all-rrs stores all possible qtypes
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.A, "all-rrs-A", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA()
+            {
+                Expire = 0x0000005,
+                Minimum = 0x00000004,
+                MName = "www.all-rrs-soa-mname.pl",
+                Refresh = 0x00000006,
+                Retry = 0x00000007,
+                RName = "www.all-rrs-soa-rname.pl",
+                Serial = 0x00000008
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MR, "all-rrs-MR", 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NULL, "all-rrs-NULL", 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS()
+            {
+                Address = 0x332211aa,
+                // powershell not work well (contrary to nslookup) with WKS
+                // not sure why need future investigations. this will work for now (not sure why work)
+                // nslookup shows correct values (maybe powershell need some alignment to 8-16 bytes?)
+                // nslookup -type=wks - 127.0.0.1
+                // (now type into console following:)
+                // > www.all-rrs.pl
+                Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
+                Protocol = 6
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),
+
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.HINFO, "all-rrs-HINFO", 1234,
+            new RDataHINFO()
+            {
+                CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl"
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MINFO, "all-rrs-MINFO", 1234,
+            new RDataMINFO()
+            {
+                EMailbx = "www.all-rrs-minfo-emailbx",
+                RMailbx = "www.all-rrs-minfo-rmailbx"
+            }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX() { Preference = 5555, Exchange ="www.all-rrs-exchange"  }),
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234,
+                new RDataTXT()
+                {
+                    TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" }
+                }),
+
+            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.AAAA, "all-rrs-AAAA", 1234, new RDataAAAA()
+            {
+                IPv6 = new byte[] {0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 }
+            }),
+
+            // end of all-rrs
+
+            new InMemRRData("www.domain-with-dot.pl.", QClass.IN, QType.A, "domain-with-dot.pl", 111, new RDataA() { Address = 0xaabbaaaa }),
+            new InMemRRData("www.domain-with-no-dot-at-the-end.pl", QClass.IN, QType.A, "www.domain-with-no-dot-at-the-end.pl", 111, new RDataA() { Address = 0x11223344 }),
+
+            // min domain name len
+            new InMemRRData("a", QClass.IN, QType.A, "a", 4123, new RDataA() { Address = 0x11112222 }),
+
+            // max domain name
+            new InMemRRData(
+                $"{new string('a', 63)}." +
+                $"{new string('b', 63)}." +
+                $"{new string('c', 63)}." +
+                $"{new string('d', 61)}",
+                QClass.IN, QType.A, "max-domain-name-length", 4123, new RDataA() { Address = 0xbb33dd22 }),
+
+            // max txt
+            new InMemRRData("www.max-txt.pl", QClass.IN, QType.TXT, "testplname", 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } }),
+
+            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.HS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.CS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            new InMemRRData("www.test.pl", QClass.CH, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+
+            new InMemRRData("www.google1.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 })
+        };
 
         class PwshRecord
         {

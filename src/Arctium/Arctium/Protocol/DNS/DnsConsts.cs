@@ -24,9 +24,9 @@ namespace Arctium.Protocol.DNS
         public const int MaxDomainNameLength = 255;
 
         /// <summary>
-        /// characted-string max length including length byte
+        /// characted-string max length (length byte not included)
         /// </summary>
-        public const int MaxCharacterStringLength = 256;
+        public const int MaxCharacterStringLength = 255;
 
         /// <summary>
         /// page 10 rfc-1035

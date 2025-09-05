@@ -140,8 +140,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         private void Encode_RDataHINFO(RDataHINFO rd, ByteBuffer buffer)
         {
-            if (rd.CPU.Length + 1 > DnsConsts.MaxCharacterStringLength ||
-                rd.OS.Length + 1 > DnsConsts.MaxCharacterStringLength)
+            if (rd.CPU.Length > DnsConsts.MaxCharacterStringLength ||
+                rd.OS.Length > DnsConsts.MaxCharacterStringLength)
             {
                 throw new DnsException(DnsOtherError.SerializeInvalidCharacterStringLength);
             }
@@ -239,7 +239,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         {
             foreach (string txt in rd.TxtData)
             {
-                if (txt?.Length > DnsConsts.MaxCharacterStringLength - 1)
+                if (txt?.Length > DnsConsts.MaxCharacterStringLength)
                     throw new DnsException($"rd.txtdata.length exceed max length for '{txt}'");
 
                 buffer.Append((byte)txt.Length);
