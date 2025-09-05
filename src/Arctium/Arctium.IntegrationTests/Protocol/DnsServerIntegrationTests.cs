@@ -1,6 +1,7 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Protocol.DNSImpl.Protocol;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -22,17 +23,18 @@ namespace Arctium.IntegrationTests.Protocol
 
             InMemoryDnsServerDataSource inMemDs = new InMemoryDnsServerDataSource();
             inMemDs.AddRange(records);
-            DnsServerOptions options = new DnsServerOptions(inMemDs);
+            DnsServerOptions options = DnsServerOptions.CreateDefault(inMemDs, cancellationToken);
             server = new DnsServer(options);
 
-            var task = Task.Run(() => { server.Start(cancellationToken); }, cancellationToken);
+            var taskUdp = Task.Run(() => { server.StartUdp(); }, cancellationToken);
+            var taskTcp = Task.Run(() => { server.StartTcp(); }, cancellationToken);
 
-            for (int i = 0; i < 5 && task.Status != TaskStatus.Running; i++)
+            for (int i = 0; i < 5 && taskUdp.Status != TaskStatus.Running && taskTcp.Status != TaskStatus.Running; i++)
             {
                 Task.Delay(500).Wait();
             }
 
-            if (task.Status != TaskStatus.Running) throw new Exception("failed to run server task");
+            if (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running) throw new Exception("failed to run server task");
         }
 
         [OneTimeTearDown]
@@ -41,7 +43,6 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Cancel();
             serverStop.Dispose();
         }
-
 
         [Test]
         public void Success_WillTruncateResponse()
@@ -79,6 +80,20 @@ namespace Arctium.IntegrationTests.Protocol
                 // assert
                 AssertRecordEqual(result[0], expected);
             }
+        }
+
+
+        [Test]
+        public void Succeed_WhenExceed512BytesWillReturnTrunCated()
+        {
+            // arrange
+            var expected = records.Single(t => t.QName == "www.exceed-512-bytes.pl").Record;
+
+            // act
+            var current = QueryServer("www.exceed-512-bytes.pl", QType.TXT).Single();
+
+            // assert
+            AssertRecordEqual(current, expected);
         }
 
         [Test]
@@ -347,7 +362,15 @@ namespace Arctium.IntegrationTests.Protocol
             // max txt
             new InMemRRData("www.max-txt.pl", QClass.IN, QType.TXT, "testplname", 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } }),
 
+            new InMemRRData("www.exceed-512-bytes.pl", QClass.IN, QType.TXT, "exceed-512-bytes", 9203, 
+                new RDataTXT()
+                {
+                    TxtData = new string[] { new string('a', 200), new string('c', 200), new string('b', 200)
+                }}),
+            
             new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+
+
             new InMemRRData("www.test.pl", QClass.HS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
             new InMemRRData("www.test.pl", QClass.CS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
             new InMemRRData("www.test.pl", QClass.CH, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),

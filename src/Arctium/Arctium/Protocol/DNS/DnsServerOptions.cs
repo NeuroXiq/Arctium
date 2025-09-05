@@ -9,12 +9,25 @@ namespace Arctium.Protocol.DNS
     public class DnsServerOptions
     {
         public IDnsServerDataSource DnsServerDataSource { get; set; }
-        public int SocketBindPort { get; set; }
+
+        public int PortUdp { get; set; }
+        public int PortTcp { get; set; }
+        public CancellationToken CancellationToken { get; set; }
 
         public DnsServerOptions(IDnsServerDataSource dnsServerDataSource)
         {
             DnsServerDataSource = dnsServerDataSource;
-            SocketBindPort = DnsConsts.DefaultServerUdpPort;
+            PortUdp = DnsConsts.DefaultServerUdpPort;
+        }
+
+        public static DnsServerOptions CreateDefault(IDnsServerDataSource dataSource, CancellationToken cancellationToken)
+        {
+            return new DnsServerOptions(dataSource)
+            {
+                CancellationToken = cancellationToken,
+                PortTcp = 53,
+                PortUdp = 53
+            };
         }
     }
 }

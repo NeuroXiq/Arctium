@@ -14,5 +14,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         SerializeInvalidCharacterStringLength = 1,
         SerializeMaxRecordLengthExceeded = 2,
         SerializeInvalidIpv6LengthOrNull = 3,
+        SerializeResponseMessageTcpExceedUShortMaxValue = 4,
     }
 }

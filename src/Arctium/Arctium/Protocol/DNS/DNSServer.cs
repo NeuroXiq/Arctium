@@ -16,6 +16,7 @@ namespace Arctium.Protocol.DNS
             dnsServerImpl = new DnsServerImpl(options);
         }
 
-        public void Start(CancellationToken cancellationToken) => dnsServerImpl.Start(cancellationToken);
+        public void StartUdp() => dnsServerImpl.StartUdp();
+        public void StartTcp() => dnsServerImpl.StartTcp();
     }
 }

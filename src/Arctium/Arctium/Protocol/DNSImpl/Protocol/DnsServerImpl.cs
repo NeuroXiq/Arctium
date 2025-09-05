@@ -3,6 +3,7 @@ using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Shared;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -17,28 +18,85 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         DnsServerOptions options;
         DnsSerialize serializer = new DnsSerialize();
 
+        Socket tcpSocket;
+        Socket udpSocket;
+
         public DnsServerImpl(DnsServerOptions options)
         {
             this.options = options;
         }
 
-        public void Start(CancellationToken cancellationToken)
+        public void Stop()
+        {
+            tcpSocket?.Dispose();
+            udpSocket?.Dispose();
+        }
+
+        public void StartTcp()
+        {
+            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            s.Bind(new IPEndPoint(IPAddress.Any, options.PortTcp));
+
+            s.Listen(100);
+
+            while (!options.CancellationToken.IsCancellationRequested)
+            {
+                var client = s.Accept();
+                byte[] lenBuffer = new byte[2];
+
+                int received = client.Receive(lenBuffer, 0, 2, SocketFlags.None);
+
+                if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesFromClient);
+                if (received == 1)
+                {
+                    received = client.Receive(lenBuffer, 1, 1, SocketFlags.None);
+                    if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesFromClient);
+                }
+
+                int toReceive = MemMap.ToUShort2BytesBE(lenBuffer, 0);
+                ByteBuffer buffer = new ByteBuffer();
+                buffer.AllocEnd(toReceive);
+                int offset = 0;
+
+                while (toReceive > 0)
+                {
+                    received = client.Receive(buffer.Buffer, offset, toReceive, SocketFlags.None);
+                    offset += received;
+                    toReceive -= received;
+                }
+
+                var clientMessage = serializer.Decode(new BytesSpan(buffer.Buffer, 0, buffer.DataLength));
+                var res = GetResponseMessage(clientMessage);
+                var responseBytes = SerializeResponseMessage(res);
+
+                if (responseBytes.DataLength > ushort.MaxValue)
+                    throw new DnsException(DnsOtherError.SerializeResponseMessageTcpExceedUShortMaxValue);
+
+                // first send ushort 2-bytes with message length
+                MemMap.ToBytes1UShortBE((ushort)responseBytes.DataLength, lenBuffer, 0);
+                client.Send(lenBuffer, 0, 2, SocketFlags.None);
+                
+                // now send data
+                client.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
+            }
+        }
+
+        public void StartUdp()
         {
             Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            s.Bind(new IPEndPoint(IPAddress.Any, options.SocketBindPort));
+            s.Bind(new IPEndPoint(IPAddress.Any, options.PortUdp));
 
-            while (!cancellationToken.IsCancellationRequested)
+            while (!options.CancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    Process(s).Wait(cancellationToken);
+                    Process(s).Wait(options.CancellationToken);
                 }
                 catch (Exception e)
                 {
 
                     throw;
                 }
-                
 
                 // var result = new BytesSpan(a, 0, a.Length);
 
@@ -49,17 +107,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         public async Task Process(Socket serverSocket)
         {
-            byte[] a = new byte[]
-            {
-                0x4F, 0xCC, 0x01, 0x00,
-                0x00, 0x01, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x04, 0x61, 0x73, 0x64,
-                0x66, 0x03, 0x63, 0x6F,
-                0x6D, 0x00, 0x00, 0x01,
-                0x00, 0x01,
-            };
-
             byte[] buf = new byte[12345];
 
             EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
@@ -75,6 +122,12 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             var res = GetResponseMessage(clientMsg);
             var responseBytes = SerializeResponseMessage(res);
 
+            if (responseBytes.DataLength > DnsConsts.UdpSizeLimit)
+            {
+                res = ConvertToTrunCated(res);
+                responseBytes = SerializeResponseMessage(res);
+            }
+
             serverSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
         }
 
@@ -84,6 +137,21 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             serializer.Encode(response, rbytes);
 
             return rbytes;
+        }
+
+        Message ConvertToTrunCated(Message responseMessage)
+        {
+            responseMessage.Header.TC = true;
+
+            responseMessage.Additional = null;
+            responseMessage.Answer = null;
+            responseMessage.Authority = null;
+
+            responseMessage.Header.ANCount = 0;
+            responseMessage.Header.NSCount = 0;
+            responseMessage.Header.ARCount = 0;
+
+            return responseMessage;
         }
 
         Message GetResponseMessage(Message clientMsg)
