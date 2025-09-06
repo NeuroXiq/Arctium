@@ -1,15 +1,8 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Shared;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNSImpl.Protocol
 {
@@ -34,101 +27,155 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         public void StartTcp()
         {
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            s.Bind(new IPEndPoint(IPAddress.Any, options.PortTcp));
-
-            s.Listen(100);
-
-            while (!options.CancellationToken.IsCancellationRequested)
-            {
-                var client = s.Accept();
-                byte[] lenBuffer = new byte[2];
-
-                int received = client.Receive(lenBuffer, 0, 2, SocketFlags.None);
-
-                if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesFromClient);
-                if (received == 1)
-                {
-                    received = client.Receive(lenBuffer, 1, 1, SocketFlags.None);
-                    if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesFromClient);
-                }
-
-                int toReceive = MemMap.ToUShort2BytesBE(lenBuffer, 0);
-                ByteBuffer buffer = new ByteBuffer();
-                buffer.AllocEnd(toReceive);
-                int offset = 0;
-
-                while (toReceive > 0)
-                {
-                    received = client.Receive(buffer.Buffer, offset, toReceive, SocketFlags.None);
-                    offset += received;
-                    toReceive -= received;
-                }
-
-                var clientMessage = serializer.Decode(new BytesSpan(buffer.Buffer, 0, buffer.DataLength));
-                var res = GetResponseMessage(clientMessage);
-                var responseBytes = SerializeResponseMessage(res);
-
-                if (responseBytes.DataLength > ushort.MaxValue)
-                    throw new DnsException(DnsOtherError.SerializeResponseMessageTcpExceedUShortMaxValue);
-
-                // first send ushort 2-bytes with message length
-                MemMap.ToBytes1UShortBE((ushort)responseBytes.DataLength, lenBuffer, 0);
-                client.Send(lenBuffer, 0, 2, SocketFlags.None);
-                
-                // now send data
-                client.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
-            }
-        }
-
-        public void StartUdp()
-        {
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            s.Bind(new IPEndPoint(IPAddress.Any, options.PortUdp));
+            tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            tcpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortTcp));
+            tcpSocket.Listen(100);
+            Message clientMsg = null;
+            Socket client = null;
 
             while (!options.CancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    Process(s).Wait(options.CancellationToken);
+                    client = tcpSocket.Accept();
+                    byte[] lenBuffer = new byte[2];
+
+                    int received = client.Receive(lenBuffer, 0, 2, SocketFlags.None);
+
+                    if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
+                    if (received == 1)
+                    {
+                        received = client.Receive(lenBuffer, 1, 1, SocketFlags.None);
+                        if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
+                    }
+
+                    int toReceive = MemMap.ToUShort2BytesBE(lenBuffer, 0);
+                    ByteBuffer buffer = new ByteBuffer();
+                    buffer.AllocEnd(toReceive);
+                    int offset = 0;
+
+                    while (toReceive > 0)
+                    {
+                        received = client.Receive(buffer.Buffer, offset, toReceive, SocketFlags.None);
+                        offset += received;
+                        toReceive -= received;
+
+                        if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
+                    }
+
+                    clientMsg = serializer.Decode(new BytesSpan(buffer.Buffer, 0, buffer.DataLength));
+                    var res = GetResponseMessage(clientMsg);
+                    var responseBytes = SerializeResponseMessage(res);
+
+                    if (responseBytes.DataLength > ushort.MaxValue)
+                        throw new DnsException(DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue);
+
+                    // first send ushort 2-bytes with message length
+                    MemMap.ToBytes1UShortBE((ushort)responseBytes.DataLength, lenBuffer, 0);
+                    client.Send(lenBuffer, 0, 2, SocketFlags.None);
+
+                    // now send data
+                    client.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
                 }
                 catch (Exception e)
                 {
-
-                    throw;
+                    OnException(clientMsg, null, client, e);
                 }
-
-                // var result = new BytesSpan(a, 0, a.Length);
-
-                //s.SendTo(bytes.Buffer, remoteEndpoint);
-                //MemDump.HexDump(buf, 0, recvLen, chunkLength: 1);
             }
         }
 
-        public async Task Process(Socket serverSocket)
+        public void StartUdp()
         {
-            byte[] buf = new byte[12345];
+            udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortUdp));
+            Message clientMsg = null;
+            EndPoint clientEndpoint = null;
 
-            EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
-
-            //int recvLen = await serverSocket.ReceiveFrom(buf, ref clientEndpoint);
-            var recvResult = await serverSocket.ReceiveFromAsync(buf, clientEndpoint);
-            int recvLen = recvResult.ReceivedBytes;
-            clientEndpoint = recvResult.RemoteEndPoint;
-
-            var clientBytes = new BytesSpan(buf, 0, recvLen);
-            Message clientMsg = serializer.Decode(clientBytes);
-
-            var res = GetResponseMessage(clientMsg);
-            var responseBytes = SerializeResponseMessage(res);
-
-            if (responseBytes.DataLength > DnsConsts.UdpSizeLimit)
+            while (!options.CancellationToken.IsCancellationRequested)
             {
-                res = ConvertToTrunCated(res);
-                responseBytes = SerializeResponseMessage(res);
-            }
+                try
+                {
+                    byte[] buf = new byte[512];
 
-            serverSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
+                    clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
+
+                    var recvResult = udpSocket.ReceiveFromAsync(buf, clientEndpoint).Result;
+                    int recvLen = recvResult.ReceivedBytes;
+                    clientEndpoint = recvResult.RemoteEndPoint;
+
+                    var clientBytes = new BytesSpan(buf, 0, recvLen);
+                    clientMsg = serializer.Decode(clientBytes);
+
+                    var res = GetResponseMessage(clientMsg);
+                    var responseBytes = SerializeResponseMessage(res);
+
+                    if (responseBytes.DataLength > DnsConsts.UdpSizeLimit)
+                    {
+                        res = ConvertToTrunCated(res);
+                        responseBytes = SerializeResponseMessage(res);
+                    }
+
+                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
+                }
+                catch (Exception e)
+                {
+                    OnException(clientMsg, clientEndpoint, null, e);
+                }
+            }
+        }
+
+        public void OnException(Message clientMsg, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
+        {
+            // intentionally ignoring any other exceptions
+            try
+            {
+                ResponseCode rcode = 0;
+                if (e is DnsException)
+                {
+                    rcode = (ResponseCode)((int)(e as DnsException).ProtocolError >> 8);
+                }
+                else
+                {
+                    rcode = ResponseCode.ServerFailure;
+                }
+
+                var errorResponseMsg = new Message();
+                var h = new Header();
+
+                h.ANCount = 0;
+                h.ARCount = 0;
+                h.NSCount = 0;
+                h.QDCount = 0;
+                h.AA = false;
+                h.RA = false;
+                h.RD = false;
+                h.TC = false;
+                h.Id = clientMsg?.Header.Id ?? 0;
+                h.Opcode = clientMsg?.Header.Opcode ?? Opcode.Query;
+                h.QR = QRType.Response;
+                h.RCode = rcode;
+
+                errorResponseMsg.Header = h;
+                errorResponseMsg.Question = null;
+                errorResponseMsg.Additional = null;
+                errorResponseMsg.Answer = null;
+                errorResponseMsg.Authority = null;
+
+                ByteBuffer responseBytes = new ByteBuffer();
+                serializer.Encode(errorResponseMsg, responseBytes);
+
+                if (udpClientEndpoint != null)
+                {
+                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, udpClientEndpoint);
+                }
+                else
+                {
+                    tcpClientSocket.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
+                }
+            }
+            catch
+            {
+            }
         }
 
         ByteBuffer SerializeResponseMessage(Message response)

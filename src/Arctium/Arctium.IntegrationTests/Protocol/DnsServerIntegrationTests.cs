@@ -1,7 +1,6 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Protocol.DNSImpl.Protocol;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;

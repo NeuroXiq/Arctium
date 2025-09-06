@@ -67,10 +67,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         private void Encode_ResourceRecord(ResourceRecord rr, ByteBuffer buffer)
         {
-            // +2 one byte of length and one zero byte at the end
-            if (rr.Name.Length + 2 > DnsConsts.MaxDomainNameLength)
-                throw new DnsException("ResourceRecord.Name.Length + 1 > TotalLengthOfDomainName");
-
             buffer.Append((byte)rr.Name.Length);
             foreach (var c in rr.Name) buffer.Append((byte)c);
             buffer.Append(0);
@@ -107,12 +103,13 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 case QType.MAILA:
                 case QType.All:
                     throw new NotImplementedException("Cannot encode this because QType is only for queries");
-                default: throw new DnsException("invalid QType resource record encode");
+                default: throw new DnsException(DnsProtocolError.EncodeInvalidQType, "invalid QType resource record encode");
             }
 
             int rdLength = buffer.DataLength - rdLengthOffset - 2;
 
-            if (rdLength > ushort.MaxValue) throw new DnsException(DnsOtherError.SerializeMaxRecordLengthExceeded);
+            if (rdLength > ushort.MaxValue)
+                throw new DnsException(DnsProtocolError.EncodeMaxRecordLengthExceeded);
 
             MemMap.ToBytes1UShortBE((ushort)rdLength, buffer.Buffer, rdLengthOffset);
         }
@@ -120,7 +117,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         private void Encode_RDataAAAA(RDataAAAA rd, ByteBuffer buffer)
         {
             if (rd.IPv6 == null || rd.IPv6.Length != 16)
-                throw new DnsException(DnsOtherError.SerializeInvalidIpv6LengthOrNull);
+                throw new DnsException(DnsProtocolError.EncodeInvalidIpv6LengthOrNull);
 
             buffer.Append(rd.IPv6);
         }
@@ -143,7 +140,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             if (rd.CPU.Length > DnsConsts.MaxCharacterStringLength ||
                 rd.OS.Length > DnsConsts.MaxCharacterStringLength)
             {
-                throw new DnsException(DnsOtherError.SerializeInvalidCharacterStringLength);
+                throw new DnsException(DnsProtocolError.EncodeMaxCharStrLenght);
             }
 
             int i = buffer.AllocEnd((1 + rd.CPU.Length + 1 + rd.OS.Length));
@@ -206,7 +203,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         private void EncodeDomainName(ByteBuffer buffer, string domainName)
         {
             if (domainName.Length + 1 > DnsConsts.MaxDomainNameLength)
-                throw new DnsException("encoded domain name exceed max allowed value: " + domainName);
+                throw new DnsException(DnsProtocolError.EncodeMaxDomainNameLength, "encoded domain name exceed max allowed value: " + domainName);
 
             string[] qnameLabels = domainName.Split('.');
             int totalLabelLen = 0;
@@ -219,7 +216,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
 
                 if (label.Length > DnsConsts.MaxLabelLength || label.Length < 1)
-                    throw new DnsException($"invalid label: '{qnameLabels[i]}'");
+                    throw new DnsException(DnsProtocolError.EncodeInvalidLabel, $"invalid label: '{qnameLabels[i]}'");
 
                 for (int j = 0; j < qnameLabels[i].Length; j++)
                 {
@@ -232,7 +229,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             buffer.Append(0);
 
             if (buffer.DataLength - labelEncodeStart > DnsConsts.MaxDomainNameLength)
-                throw new DnsException("encoding: total length of label exceed max");
+                throw new DnsException(DnsProtocolError.EncodeMaxDomainNameLength, "encoding: total length of label exceed max");
         }
 
         private void Encode_RDataTXT(RDataTXT rd, ByteBuffer buffer)
@@ -240,7 +237,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             foreach (string txt in rd.TxtData)
             {
                 if (txt?.Length > DnsConsts.MaxCharacterStringLength)
-                    throw new DnsException($"rd.txtdata.length exceed max length for '{txt}'");
+                    throw new DnsException(DnsProtocolError.EncodeMaxCharStrLenght, $"rd.txtdata.length exceed max length for '{txt}'");
 
                 buffer.Append((byte)txt.Length);
                 int start = buffer.AllocEnd(txt.Length);
@@ -326,7 +323,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 i += labelLengt + 1;
 
                 if (i > DnsConsts.MaxDomainNameLength)
-                    throw new DnsException(DnsProtocolError.TotalLengthOfDomainNameExceeded);
+                    throw new DnsException(DnsProtocolError.DecodeTotalLengthOfDomainNameExceeded);
             }
             
             i += 1;
@@ -343,7 +340,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
         private Header Decode_Header(BytesSpan buffer, out int decodedLength)
         {
-            if (buffer.Length < 12) throw new DnsException("decode error: min header length < 12");
+            if (buffer.Length < 12) throw new DnsException(DnsProtocolError.DecodeMinHeaderLength, "decode error: min header length < 12");
 
             Header header = new Header();
             header.Id = (ushort)(buffer[0] << 8 | buffer[1]);
@@ -354,7 +351,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             header.RD = (buffer[2] & 0x01) == 1;
             header.RA = (buffer[3] & 0x80) == 1;
 
-            if ((buffer[4] & 0x70) != 0) throw new DnsException("decode error, Z value in header is not zero");
+            if ((buffer[4] & 0x70) != 0)
+                throw new DnsException(DnsProtocolError.DecodeZValudNotZero, "decode error, Z value in header is not zero");
             
             header.RCode = (ResponseCode)(buffer[3] & 0x0F);
             header.QDCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.Offset + 4);
