@@ -30,11 +30,14 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             tcpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortTcp));
             tcpSocket.Listen(100);
-            Message clientMsg = null;
             Socket client = null;
+            BytesSpan clientBytes = null;
 
             while (!options.CancellationToken.IsCancellationRequested)
             {
+                clientBytes = null;
+                client = null;
+
                 try
                 {
                     client = tcpSocket.Accept();
@@ -50,7 +53,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                     }
 
                     int toReceive = MemMap.ToUShort2BytesBE(lenBuffer, 0);
-                    ByteBuffer buffer = new ByteBuffer();
+                    var buffer = new ByteBuffer();
                     buffer.AllocEnd(toReceive);
                     int offset = 0;
 
@@ -63,7 +66,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                         if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
                     }
 
-                    clientMsg = serializer.Decode(new BytesSpan(buffer.Buffer, 0, buffer.DataLength));
+                    clientBytes = new BytesSpan(buffer.Buffer, 0, buffer.DataLength);
+                    var clientMsg = serializer.Decode(clientBytes);
                     var res = GetResponseMessage(clientMsg);
                     var responseBytes = SerializeResponseMessage(res);
 
@@ -79,7 +83,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 }
                 catch (Exception e)
                 {
-                    OnException(clientMsg, null, client, e);
+                    OnException(clientBytes, null, client, e);
                 }
             }
         }
@@ -88,13 +92,16 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         {
             udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortUdp));
-            Message clientMsg = null;
             EndPoint clientEndpoint = null;
+            BytesSpan clientBytes = null;
 
             while (!options.CancellationToken.IsCancellationRequested)
             {
                 try
                 {
+                    clientEndpoint = null;
+                    clientBytes = null;
+
                     byte[] buf = new byte[512];
 
                     clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
@@ -103,8 +110,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                     int recvLen = recvResult.ReceivedBytes;
                     clientEndpoint = recvResult.RemoteEndPoint;
 
-                    var clientBytes = new BytesSpan(buf, 0, recvLen);
-                    clientMsg = serializer.Decode(clientBytes);
+                    clientBytes = new BytesSpan(buf, 0, recvLen);
+                    var clientMsg = serializer.Decode(clientBytes);
 
                     var res = GetResponseMessage(clientMsg);
                     var responseBytes = SerializeResponseMessage(res);
@@ -119,24 +126,37 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 }
                 catch (Exception e)
                 {
-                    OnException(clientMsg, clientEndpoint, null, e);
+                    OnException(clientBytes, clientEndpoint, null, e);
                 }
             }
         }
 
-        public void OnException(Message clientMsg, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
+        public void OnException(BytesSpan clientBytes, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
         {
             // intentionally ignoring any other exceptions
             try
             {
-                ResponseCode rcode = 0;
-                if (e is DnsException)
+                DnsException de = e as DnsException;
+                Header clientHeader;
+                Question clientQuestion;
+
+                if (clientBytes != null && (de == null || ((int)de.ProtocolError >> 8) > 5))
                 {
-                    rcode = (ResponseCode)((int)(e as DnsException).ProtocolError >> 8);
+                    // silently drop packet, this errors must be ignored
+                    return;
                 }
-                else
+
+                try
                 {
-                    rcode = ResponseCode.ServerFailure;
+                    clientBytes.Offset = 0;
+                    clientHeader = serializer.Decode_Header(clientBytes, out int decodedLen);
+                    clientBytes.ShiftOffset(decodedLen);
+                    clientQuestion = serializer.Decode_Question(clientBytes, out _);
+                }
+                catch
+                {
+                    // silently drop packet, cannot parse header (thus create header and send reponse)
+                    return;
                 }
 
                 var errorResponseMsg = new Message();
@@ -145,18 +165,19 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 h.ANCount = 0;
                 h.ARCount = 0;
                 h.NSCount = 0;
-                h.QDCount = 0;
+                h.QDCount = 1;
                 h.AA = false;
                 h.RA = false;
-                h.RD = false;
+                h.RD = clientHeader.RD;
                 h.TC = false;
-                h.Id = clientMsg?.Header.Id ?? 0;
-                h.Opcode = clientMsg?.Header.Opcode ?? Opcode.Query;
+                h.Id = clientHeader.Id;
+                h.Opcode = clientHeader.Opcode;
                 h.QR = QRType.Response;
-                h.RCode = rcode;
+                h.RCode = (ResponseCode)((int)de.ProtocolError >> 8);
 
                 errorResponseMsg.Header = h;
-                errorResponseMsg.Question = null;
+                errorResponseMsg.Question = new[] { clientQuestion };
+
                 errorResponseMsg.Additional = null;
                 errorResponseMsg.Answer = null;
                 errorResponseMsg.Authority = null;
@@ -173,8 +194,9 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                     tcpClientSocket.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
                 }
             }
-            catch
+            catch (Exception ee)
             {
+                Console.WriteLine(ee);
             }
         }
 

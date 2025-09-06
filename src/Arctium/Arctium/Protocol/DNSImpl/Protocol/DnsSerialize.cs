@@ -304,7 +304,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             return result;
         }
 
-        private Question Decode_Question(BytesSpan buffer, out int decodedLength)
+        public Question Decode_Question(BytesSpan buffer, out int decodedLength)
         {
             Question result = new Question();
             int i = 0;
@@ -338,7 +338,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             return result;
         }
 
-        private Header Decode_Header(BytesSpan buffer, out int decodedLength)
+        public Header Decode_Header(BytesSpan buffer, out int decodedLength)
         {
             if (buffer.Length < 12) throw new DnsException(DnsProtocolError.DecodeMinHeaderLength, "decode error: min header length < 12");
 

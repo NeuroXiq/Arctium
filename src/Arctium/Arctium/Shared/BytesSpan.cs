@@ -9,7 +9,7 @@ namespace Arctium.Shared
     public class BytesSpan
     {
         public byte[] Buffer { get; private set; }
-        public int Offset { get; private set; }
+        public int Offset { get; set; }
         public int Length { get; private set; }
 
         public byte this[int index]

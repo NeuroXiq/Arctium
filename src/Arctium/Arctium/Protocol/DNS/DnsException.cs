@@ -8,7 +8,10 @@ namespace Arctium.Protocol.DNS
         public DnsProtocolError ProtocolError { get; set; }
 
         // public DnsException(string msg) : base(msg) { }
-        public DnsException(DnsProtocolError code) : base($"Protocol error: {code.ToString()} ({(int)code})") { }
-        public DnsException(DnsProtocolError code, string msg) : base($"Protocol error: {code.ToString()} ({(int)code}). Details: {msg}") { }
+        public DnsException(DnsProtocolError code) : this(code, null) { }
+        public DnsException(DnsProtocolError code, string msg) : base($"Protocol error: {code.ToString()} ({(int)code}). Details: {msg}")
+        {
+            ProtocolError = code;
+        }
     }
 }

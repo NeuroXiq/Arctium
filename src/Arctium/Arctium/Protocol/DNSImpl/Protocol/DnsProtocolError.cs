@@ -21,9 +21,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         DecodeInvalidLabelLength = 0x0103,
         DecodeMsgLengthNotMatchTotalLength = 0x0104,
         DecodeTotalLengthOfDomainNameExceeded = 0x0105,
-        ReceivedZeroBytesButExpectedMoreTcp = 0x0107,
-        DecodeMinHeaderLength = 0x0108,
-        DecodeZValudNotZero = 0x109,
+        DecodeMinHeaderLength = 0x0106,
+        DecodeZValudNotZero = 0x107,
 
         // server: 0x02xx -> server failure (internal server error)
         EncodeInvalidCharacterStringLength = 0x0201,
@@ -40,6 +39,10 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         // server: 0x04xx -> not implemented (name server not support this query type)
 
         // server: 0x05xx -> refused (name server refused perform this query)
+
+        // server: 0xf0xx -> other errors, server will not send response to client,
+        // client packet should be silently dropped
+        ReceivedZeroBytesButExpectedMoreTcp = 0xf001,
 
     }
 }
