@@ -43,6 +43,26 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Dispose();
         }
 
+
+        [Test]
+        public void Succees_WillWorkTcpWithLargeAmountOfTxtData()
+        {
+            // arrange
+            var expectedRows = records.Where(t => t.QName == "www.tcp-large-data.pl").ToList();
+
+            // act
+            var result = QueryServer("www.tcp-large-data.pl", QType.TXT);
+
+            // assert
+            Assert.That(expectedRows.Count == result.Count);
+            expectedRows.ForEach(e =>
+            {
+                var expected = e.Record;
+                var current = result.Single(r => r.Text.Contains(((RDataTXT)expected.RData).TxtData[0]));
+                AssertRecordEqual(current, expected);
+            });
+        }
+
         [Test]
         public void Success_WillTruncateResponse()
         {
@@ -80,7 +100,6 @@ namespace Arctium.IntegrationTests.Protocol
                 AssertRecordEqual(result[0], expected);
             }
         }
-
 
         [Test]
         public void Succeed_WhenExceed512BytesWillReturnTrunCated()
@@ -125,7 +144,6 @@ namespace Arctium.IntegrationTests.Protocol
             // assert
             AssertRecordEqual(current.Single(), records.Single(t => t.QName == "a").Record);
         }
-
 
         [Test]
         public void Succees_WillReturnRecordWithMaxDomainName()
@@ -360,6 +378,21 @@ namespace Arctium.IntegrationTests.Protocol
 
             // max txt
             new InMemRRData("www.max-txt.pl", QClass.IN, QType.TXT, "testplname", 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } }),
+
+            // tcp large amount of data (txt)
+            new InMemRRData("www.tcp-large-data.pl", QClass.IN, QType.TXT, "tcp-large-data", 555, new RDataTXT()
+            {
+                TxtData = new string[] { new string('a', 255), new string('b', 255), new string('c', 255), new string('d', 255), new string('e', 255), }
+            }),
+            new InMemRRData("www.tcp-large-data.pl", QClass.IN, QType.TXT, "tcp-large-data", 555, new RDataTXT()
+            {
+                TxtData = new string[] { new string('f', 255), new string('g', 255), new string('h', 255), new string('i', 255), new string('j', 255), }
+            }),
+            new InMemRRData("www.tcp-large-data.pl", QClass.IN, QType.TXT, "tcp-large-data", 555, new RDataTXT()
+            {
+                TxtData = new string[] { new string('k', 255), new string('l', 255), new string('m', 255), new string('n', 255), new string('o', 255), }
+            }),
+
 
             new InMemRRData("www.exceed-512-bytes.pl", QClass.IN, QType.TXT, "exceed-512-bytes", 9203, 
                 new RDataTXT()

@@ -41,21 +41,12 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 try
                 {
                     client = tcpSocket.Accept();
-                    byte[] lenBuffer = new byte[2];
 
-                    int received = client.Receive(lenBuffer, 0, 2, SocketFlags.None);
-
-                    if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
-                    if (received == 1)
-                    {
-                        received = client.Receive(lenBuffer, 1, 1, SocketFlags.None);
-                        if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
-                    }
-
-                    int toReceive = MemMap.ToUShort2BytesBE(lenBuffer, 0);
-                    var buffer = new ByteBuffer();
-                    buffer.AllocEnd(toReceive);
                     int offset = 0;
+                    int received = 0;
+                    int toReceive = 2;
+                    var buffer = new ByteBuffer();
+                    buffer.AllocEnd(2);
 
                     while (toReceive > 0)
                     {
@@ -64,22 +55,29 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                         toReceive -= received;
 
                         if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
+                        
+                        // this 'if' executes only once - loaded first two bytes with msg length
+                        if (offset == 2)
+                        {
+                            // first two bytes are msg length (tcp only)
+                            toReceive = MemMap.ToUShort2BytesBE(buffer.Buffer, 0);
+                            buffer.AllocEnd(toReceive);
+                        }
                     }
 
-                    clientBytes = new BytesSpan(buffer.Buffer, 0, buffer.DataLength);
+                    clientBytes = new BytesSpan(buffer.Buffer, 2, buffer.DataLength);
                     var clientMsg = serializer.Decode(clientBytes);
-                    var res = GetResponseMessage(clientMsg);
-                    var responseBytes = SerializeResponseMessage(res);
+                    var responseMessage = GetResponseMessage(clientMsg);
+                    var responseBuffer = new ByteBuffer();
+                    responseBuffer.AllocEnd(2);
+                    serializer.Encode(responseMessage, responseBuffer);
 
-                    if (responseBytes.DataLength > ushort.MaxValue)
+                    if (responseBuffer.DataLength > ushort.MaxValue)
                         throw new DnsException(DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue);
 
-                    // first send ushort 2-bytes with message length
-                    MemMap.ToBytes1UShortBE((ushort)responseBytes.DataLength, lenBuffer, 0);
-                    client.Send(lenBuffer, 0, 2, SocketFlags.None);
-
-                    // now send data
-                    client.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
+                    // first 2-bytes are msg length
+                    MemMap.ToBytes1UShortBE((ushort)(responseBuffer.DataLength - 2), responseBuffer.Buffer, 0);
+                    client.Send(responseBuffer.Buffer, 0, responseBuffer.DataLength, SocketFlags.None);
                 }
                 catch (Exception e)
                 {
@@ -114,12 +112,14 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                     var clientMsg = serializer.Decode(clientBytes);
 
                     var res = GetResponseMessage(clientMsg);
-                    var responseBytes = SerializeResponseMessage(res);
+                    var responseBytes = new ByteBuffer();
+                    serializer.Encode(res, responseBytes);
 
                     if (responseBytes.DataLength > DnsConsts.UdpSizeLimit)
                     {
                         res = ConvertToTrunCated(res);
-                        responseBytes = SerializeResponseMessage(res);
+                        responseBytes.Reset();
+                        serializer.Encode(res, responseBytes);
                     }
 
                     udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
@@ -140,7 +140,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 Header clientHeader;
                 Question clientQuestion;
 
-                if (clientBytes != null && (de == null || ((int)de.ProtocolError >> 8) > 5))
+                if (clientBytes == null || de == null || ((int)de.ProtocolError >> 8) > 5)
                 {
                     // silently drop packet, this errors must be ignored
                     return;
@@ -148,14 +148,15 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
                 try
                 {
-                    clientBytes.Offset = 0;
+                    // tcp only: skip 2 bytes because they are total msg len
+                    clientBytes.Offset = tcpClientSocket != null ? 2 : 0; 
                     clientHeader = serializer.Decode_Header(clientBytes, out int decodedLen);
                     clientBytes.ShiftOffset(decodedLen);
                     clientQuestion = serializer.Decode_Question(clientBytes, out _);
                 }
                 catch
                 {
-                    // silently drop packet, cannot parse header (thus create header and send reponse)
+                    // silently drop packet, cannot parse header (thus create response header)
                     return;
                 }
 
@@ -196,16 +197,8 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             }
             catch (Exception ee)
             {
-                Console.WriteLine(ee);
+                // silently drop packet, something went wrong, ignore everything (e.g. socket error)
             }
-        }
-
-        ByteBuffer SerializeResponseMessage(Message response)
-        {
-            var rbytes = new ByteBuffer();
-            serializer.Encode(response, rbytes);
-
-            return rbytes;
         }
 
         Message ConvertToTrunCated(Message responseMessage)

@@ -21,26 +21,26 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         {
             Header h = message.Header;
 
-            buffer.AllocEnd(12);
-            MemMap.ToBytes1UShortBE(h.Id, buffer.Buffer, 0);
+            int o = buffer.AllocEnd(12);
+            MemMap.ToBytes1UShortBE(h.Id, buffer.Buffer, o + 0);
 
-            buffer[2] =(byte)(
+            buffer[o + 2] =(byte)(
                 (((byte)h.QR) << 7) |
                 ((byte)h.Opcode << 6) |
                 ((h.AA ? 1 : 0) << 2) |
                 ((h.TC ? 1 : 0) << 1) |
                 ((h.RD ? 1 : 0) << 0));
 
-            buffer[3] = (byte)
+            buffer[o + 3] = (byte)
                 (
                     (h.Z << 4) |
                     ((byte)h.RCode << 0) | 0
                 );
 
-            MemMap.ToBytes1UShortBE(h.QDCount, buffer.Buffer, 4);
-            MemMap.ToBytes1UShortBE(h.ANCount, buffer.Buffer, 6);
-            MemMap.ToBytes1UShortBE(h.NSCount, buffer.Buffer, 8);
-            MemMap.ToBytes1UShortBE(h.ARCount, buffer.Buffer, 10);
+            MemMap.ToBytes1UShortBE(h.QDCount, buffer.Buffer, o + 4);
+            MemMap.ToBytes1UShortBE(h.ANCount, buffer.Buffer, o + 6);
+            MemMap.ToBytes1UShortBE(h.NSCount, buffer.Buffer, o + 8);
+            MemMap.ToBytes1UShortBE(h.ARCount, buffer.Buffer, o + 10);
 
             for (int i = 0; i < message.Question?.Length; i++)
             {
@@ -71,13 +71,11 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             foreach (var c in rr.Name) buffer.Append((byte)c);
             buffer.Append(0);
 
-            int i = buffer.DataLength;
-            buffer.AllocEnd(10);
+            int i = buffer.AllocEnd(10);
+            int rdLengthOffset = i + 8;
             MemMap.ToBytes1UShortBE((ushort)rr.Type, buffer.Buffer, i);
             MemMap.ToBytes1UShortBE((ushort)rr.Class, buffer.Buffer, i + 2);
             MemMap.ToBytes1IntBE((ushort)rr.TTL, buffer.Buffer, i + 4);
-            int rdLengthOffset = i + 8;
-            
 
             switch (rr.Type)
             {
