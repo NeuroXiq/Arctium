@@ -63,6 +63,21 @@ namespace Arctium.IntegrationTests.Protocol
             });
         }
 
+
+        [Test]
+        public void Succeed_WillAcceptMultipleParallelClients()
+        {
+            // arrange & act
+            var tasks = Enumerable.Range(0, 50)
+                .Select(t => Task.Factory.StartNew(() => { QueryServer("www.multiple-parralel", QType.A); }))
+                .ToArray();
+
+            Task.WaitAny(Task.WhenAll(tasks), Task.Delay(10000));
+
+            // assert
+            Assert.IsTrue(tasks.All(t => t.IsCompletedSuccessfully));
+        }
+
         [Test]
         public void Success_WillTruncateResponse()
         {
@@ -393,6 +408,12 @@ namespace Arctium.IntegrationTests.Protocol
                 TxtData = new string[] { new string('k', 255), new string('l', 255), new string('m', 255), new string('n', 255), new string('o', 255), }
             }),
 
+            // multiple parallel
+            //"www.multiple-parralel"
+            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 174, new RDataA() { Address = 0x0a0b0c0d }),
+            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 111, new RDataA() { Address = 0x0a1b0c0d }),
+            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 7332, new RDataA() { Address = 0x0a2b0c0d }),
+            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 8576, new RDataA() { Address = 0x0a3b0c0d }),
 
             new InMemRRData("www.exceed-512-bytes.pl", QClass.IN, QType.TXT, "exceed-512-bytes", 9203, 
                 new RDataTXT()
