@@ -32,6 +32,11 @@ Following list shows all implemented features with links to examples
 #### DNS
 |Name|Example|Standard|
 |:--:|:--:|:--:|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
 |DNS - Resolver|todo|DNA Resolver|
 |DNS Server: TCP, UDP|todo|rfc-1035|
 |DNS Server: Truncation|todo|rfc-1035|

@@ -1,6 +1,7 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Protocol.DNSImpl.Protocol;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -43,6 +44,32 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Dispose();
         }
 
+        /// <summary>
+        /// ???
+        /// </summary>
+        [Test]
+        public void Success_RecursionDesired_WillRecurseToOtherServer()
+        {
+            Assert.True(false);
+        }
+
+        /// <summary>
+        /// rfc1035, page 15 | PTR
+        /// </summary>
+        [Test]
+        public void Succes_PTR_WillPointToPrimaryNameToAlias()
+        {
+            Assert.True(false);
+        }
+
+        /// <summary>
+        /// rfc1035, page 15 | CNAME RRs cause special action in DNS software [...]
+        /// </summary>
+        [Test]
+        public void Succeed_CNAME_ServerWillCheckForCName()
+        {
+            Assert.True(false);
+        }
 
         [Test]
         public void Succees_WillWorkTcpWithLargeAmountOfTxtData()
@@ -76,6 +103,29 @@ namespace Arctium.IntegrationTests.Protocol
 
             // assert
             Assert.IsTrue(tasks.All(t => t.IsCompletedSuccessfully));
+        }
+
+
+        [Test]
+        public void Success_ReturnsAdditionalRecords()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void Success_ReturnsAuthorityRecords()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
         }
 
         [Test]
