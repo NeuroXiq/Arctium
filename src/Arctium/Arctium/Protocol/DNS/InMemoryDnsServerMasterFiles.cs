@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS
 {
-    public class InMemoryDnsServerDataSource : IDnsServerDataSource
+    public class InMemoryDnsServerMasterFiles : IDnsServerMasterFiles
     {
         List<InMemRRData> records;
 
-        public InMemoryDnsServerDataSource()
+        public InMemoryDnsServerMasterFiles()
         {
             records = new List<InMemRRData>();
         }

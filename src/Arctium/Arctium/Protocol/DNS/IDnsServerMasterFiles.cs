@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS
 {
-    public interface IDnsServerDataSource
+    public interface IDnsServerMasterFiles
     {
         Task<ResourceRecord[]> GetRRsAsync(Question question);
     }

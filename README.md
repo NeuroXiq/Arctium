@@ -32,11 +32,25 @@ Following list shows all implemented features with links to examples
 #### DNS
 |Name|Example|Standard|
 |:--:|:--:|:--:|
+|DNS Server,  3.7.2. Inverse queries |todo|rfc1035|
+|DNS Server, Additional records e.g. for MX |todo|rfc1035|
+|DNS Server, Inverse queries |todo|rfc1035|
+|DNS Server, AXFR zone transfer |todo|rfc1035|
+|DNS Server, Recursion desired (server calls other server) |todo|rfc1035|
+|DNS Server, Response TrunCation |todo|rfc1035|
+|DNS Server - Wildcards '*'|todo|rfc1035|
 |DNS Server - |todo|rfc1035|
 |DNS Server - |todo|rfc1035|
 |DNS Server - |todo|rfc1035|
 |DNS Server - |todo|rfc1035|
 |DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Server - |todo|rfc1035|
+|DNS Resolver - |todo|rfc1035|
+|DNS Resolver - Resolve doman name|todo|rfc1035|
+|DNS Resolver - Resolve any record type|todo|rfc1035|
 |DNS - Resolver|todo|DNA Resolver|
 |DNS Server: TCP, UDP|todo|rfc-1035|
 |DNS Server: Truncation|todo|rfc-1035|

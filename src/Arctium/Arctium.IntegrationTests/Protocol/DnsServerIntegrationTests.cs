@@ -21,7 +21,7 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop = new CancellationTokenSource();
             var cancellationToken = serverStop.Token;
 
-            InMemoryDnsServerDataSource inMemDs = new InMemoryDnsServerDataSource();
+            InMemoryDnsServerMasterFiles inMemDs = new InMemoryDnsServerMasterFiles();
             inMemDs.AddRange(records);
             DnsServerOptions options = DnsServerOptions.CreateDefault(inMemDs, cancellationToken);
             server = new DnsServer(options);
@@ -42,6 +42,75 @@ namespace Arctium.IntegrationTests.Protocol
         {
             serverStop.Cancel();
             serverStop.Dispose();
+        }
+
+
+
+
+        /// <summary>
+        /// rfc1035 page 26
+        /// </summary>
+        [Test]
+        public void Succeed_WillWorkWithWildcards()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+
+        [Test]
+        public void Success_Flag_RecursionAvailableWorks()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void Success_Flag_AuthoritativeAnswerWorks()
+        {
+            Assert.IsTrue(false);
+        }
+
+        /// <summary>
+        /// rfc1035, page 17 | while the additional section might be
+        /// </summary>
+        [Test]
+        public void Success_AdditionalRecords_WillReturnAdditionalARecordsIfAskedForMX()
+        {
+            Assert.IsTrue(false);
+        }
+
+        [Test]
+        public void Success_AXFR_ZoneTranser()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        /// <summary>
+        /// rfc1035 page 18,  3.7.2. Inverse queries (Optional)
+        /// </summary>
+        [Test]
+        public void Success_WillWorkWithInverseQuery()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
         }
 
         /// <summary>
