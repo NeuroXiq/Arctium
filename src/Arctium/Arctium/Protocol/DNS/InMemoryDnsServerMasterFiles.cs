@@ -45,6 +45,10 @@ namespace Arctium.Protocol.DNS
     public class InMemRRData
     {
         public ResourceRecord Record;
+
+        /// <summary>
+        /// todo remove this
+        /// </summary>
         public string QName;
 
         public InMemRRData(string qname, QClass qclass, QType qtype, string name, int ttl, object rdata)

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -366,11 +367,12 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         public static uint Ipv4ToUInt(string ipv4)
         {
             string[] parts = ipv4.Split('.');
+
             return
-                ((uint)int.Parse(parts[0]) << 24) |
-                ((uint)int.Parse(parts[1]) << 16) |
-                ((uint)int.Parse(parts[2]) << 08) |
-                ((uint)int.Parse(parts[3]) << 0);
+                (uint.Parse(parts[0]) << 24) |
+                (uint.Parse(parts[1]) << 16) |
+                (uint.Parse(parts[2]) << 08) |
+                (uint.Parse(parts[3]) << 0);
         }
     }
 }

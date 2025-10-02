@@ -1,7 +1,6 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNSImpl.Model;
 using Arctium.Protocol.DNSImpl.Protocol;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -46,6 +45,10 @@ namespace Arctium.IntegrationTests.Protocol
 
 
 
+        public void ReturnsError_WillReturnErrorIfSendInvalidDomainName()
+        {
+            // e.g. domain name:"dsjklg!!#%#%,./+_)" is invalid
+        }
 
         /// <summary>
         /// rfc1035 page 26
@@ -432,6 +435,42 @@ namespace Arctium.IntegrationTests.Protocol
             return result;
         }
 
+        // rfc 1034, page 37, sample domain space
+        static readonly List<InMemRRData> rfc1034Records = new List<InMemRRData>()
+        {
+            new InMemRRData(null, QClass.IN, QType.SOA, null, 3, new RDataSOA()
+            {
+                MName = "SRI-NIC.ARPA.",
+                RName = "HOSTMASTER.SRI-NIC.ARPA.",
+                Expire = 604800,
+                Minimum = 86400,
+                Refresh = 1800,
+                Retry = 300,
+                Serial = 870611
+            }),
+            new InMemRRData("", QClass.IN, QType.NS, "A.ISI.EDU", 300, new RDataNS() { NSDName = "A.ISI.EDU" }),
+            new InMemRRData("", QClass.IN, QType.NS, "A.ISI.EDU", 300, new RDataNS() { NSDName = "C.ISI.EDU" }),
+            new InMemRRData("", QClass.IN, QType.NS, "A.ISI.EDU", 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" }),
+            new InMemRRData("MIL.", QClass.IN, QType.NS, "", 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" }),
+            new InMemRRData("MIL.", QClass.IN, QType.NS, "", 86400, new RDataNS() { NSDName = "A.ISI.EDU" }),
+            new InMemRRData("EDU.", QClass.IN, QType.NS, "", 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA." }),
+            new InMemRRData("EDU.", QClass.IN, QType.NS, "", 86400, new RDataNS () { NSDName = "C.ISI.EDU" }),
+            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.A, "SRI-NIC", 300, new RDataA("26.0.0.73")),
+            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.A, "SRI-NIC", 300, new RDataA("10.0.0.51")),
+            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.MX, "SRI-NIC", 300, new RDataA("10.0.0.51")),
+            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.HINFO, "SRI-NIC", 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" }),
+            new InMemRRData("ACC.ARPA.", QClass.IN, QType.A, "ACC", 300, new RDataA("26.6.0.65")),
+            new InMemRRData("ACC.ARPA.", QClass.IN, QType.HINFO, "ACC", 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" }),
+            new InMemRRData("ACC.ARPA.", QClass.IN, QType.MX, "ACC", 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA." }),
+            new InMemRRData("USC-ISIC.ARPA.", QClass.IN, QType.CNAME, "USC-ISIC", 300, new RDataCNAME() { CName = "C.ISI.EDU" }),
+            new InMemRRData("73.0.0.26.IN-ADDR.ARPA", QClass.IN, QType.PTR, "73", 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." }),
+            new InMemRRData("65.0.6.26.IN-ADDR.ARPA", QClass.IN, QType.PTR, "65", 300, new RDataPTR() { PtrDName = "ACC.ARPA." }),
+            new InMemRRData("51.0.0.10.IN-ADDR.ARPA", QClass.IN, QType.PTR, "51", 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." }),
+            new InMemRRData("52.0.0.10.IN-ADDR.ARPA", QClass.IN, QType.PTR, "52", 300, new RDataPTR() { PtrDName = "C.ISI.EDU." }),
+            new InMemRRData("103.0.3.26.IN-ADDR.ARPA", QClass.IN, QType.PTR, "103", 300, new RDataPTR() { PtrDName = "A.ISI.EDU." }),
+            new InMemRRData("A.ISI.EDU", QClass.IN, QType.A, "A", 300, new RDataA("26.3.0.103")),
+            new InMemRRData("C.ISI.EDU", QClass.IN, QType.A, "C", 300, new RDataA("10.0.0.52")),
+        };
 
         // all tests runs under single server with these records
         // all record current server have

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.Protocol.DNSImpl.Protocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,17 @@ namespace Arctium.Protocol.DNSImpl.Model
     public class RDataA
     {
         public uint Address;
+
+        public RDataA() { }
+
+        public RDataA(uint address)
+        {
+            Address = address;
+        }
+
+        public RDataA(string address)
+        {
+            Address = DnsSerialize.Ipv4ToUInt(address);
+        }
     }
 }
