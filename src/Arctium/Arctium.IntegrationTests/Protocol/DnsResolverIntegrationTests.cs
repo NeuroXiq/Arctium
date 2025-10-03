@@ -6,7 +6,6 @@ namespace Arctium.IntegrationTests.Protocol
     [TestFixture]
     public class DnsResolverIntegrationTests
     {
-
         /// <summary>
         /// rfc 1035, page 34
         /// </summary>

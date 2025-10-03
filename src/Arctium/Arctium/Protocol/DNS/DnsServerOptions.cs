@@ -13,6 +13,9 @@ namespace Arctium.Protocol.DNS
         public int PortUdp { get; set; }
         public int PortTcp { get; set; }
         public CancellationToken CancellationToken { get; set; }
+        public bool RecursionAvailable { get; set; }
+
+        public IDnsServerRecursionService RecursionService { get; set; }
 
         public DnsServerOptions(IDnsServerMasterFiles dnsServerDataSource)
         {
@@ -28,6 +31,12 @@ namespace Arctium.Protocol.DNS
                 PortTcp = 53,
                 PortUdp = 53
             };
+        }
+
+        public void EnableRecursionAvailable(IDnsServerRecursionService recursionService)
+        {
+            RecursionAvailable = true;
+            RecursionService = recursionService;
         }
     }
 }

@@ -43,6 +43,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         // server: 0xf0xx -> other errors, server will not send response to client,
         // client packet should be silently dropped
         ReceivedZeroBytesButExpectedMoreTcp = 0xf001,
-
+        
+        CannotFindDnsServerToAsk = 0xf002
     }
 }

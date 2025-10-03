@@ -234,14 +234,21 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             rheader.AA = true;
             rheader.TC = false;
             rheader.RD = h.RD;
-            rheader.RA = false;
+            rheader.RA = options.RecursionAvailable;
             rheader.RCode = ResponseCode.NoErrorCondition;
             rheader.NSCount = 0;
             rheader.ARCount = 0;
 
-            var result = options.DnsServerDataSource.GetRRsAsync(clientMsg.Question[0]).Result;
+            ResourceRecord[] answer = null, authority = null, additional = null;
 
-            // if (result.Length == 0) throw new NotImplementedException("todo");
+            if (options.RecursionAvailable)
+            {
+                answer = options.RecursionService.ResolveAsync(clientMsg).Result;
+            }
+            else
+            {
+                answer = options.DnsServerDataSource.GetRRsAsync(clientMsg.Question[0]).Result;
+            }
 
             Question rquestion = new Question()
             {
@@ -252,7 +259,9 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
             response.Header = rheader;
             response.Question = new Question[] { rquestion };
-            response.Answer = result;
+            response.Answer = answer;
+            response.Authority = authority;
+            response.Additional = additional;
             
             // test
             // response.Additional = result;

@@ -43,12 +43,9 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Dispose();
         }
 
-
-
-        public void ReturnsError_WillReturnErrorIfSendInvalidDomainName()
-        {
-            // e.g. domain name:"dsjklg!!#%#%,./+_)" is invalid
-        }
+        //
+        // rfc tests
+        //
 
         /// <summary>
         /// rfc1035 page 26
@@ -141,6 +138,15 @@ namespace Arctium.IntegrationTests.Protocol
         public void Succeed_CNAME_ServerWillCheckForCName()
         {
             Assert.True(false);
+        }
+
+        //
+        // non rfc tests
+        //
+
+        public void ReturnsError_WillReturnErrorIfSendInvalidDomainName()
+        {
+            // e.g. domain name:"dsjklg!!#%#%,./+_)" is invalid
         }
 
         [Test]

@@ -110,7 +110,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                 return fromRootServers;
             }
 
-            throw new DnsResolverException("Cannot find DNS server to ask");
+            throw new DnsException(DnsProtocolError.CannotFindDnsServerToAsk, "Cannot find DNS server to ask");
         }
 
         object SendRequestToDnsServer(object something, IPAddress dnsServerIp)
