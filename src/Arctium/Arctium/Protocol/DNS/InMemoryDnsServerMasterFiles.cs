@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS
 {
-    public class InMemoryDnsServerMasterFiles : IDnsServerMasterFiles
+    public class InMemoryDnsServerMasterFiles : IDnsServerRecordsData
     {
-        List<InMemRRData> records;
+        public List<ResourceRecord> Records { get; set; }
 
         public InMemoryDnsServerMasterFiles()
         {
-            records = new List<InMemRRData>();
+            Records = new List<ResourceRecord>();
         }
 
         public Task<ResourceRecord[]> GetRRsAsync(Question question)
@@ -21,49 +21,34 @@ namespace Arctium.Protocol.DNS
             string searchingDomainName = question.QName.TrimEnd('.');
 
             ResourceRecord[] results =
-                records.Where(t =>
-                t.QName?.TrimEnd('.') == searchingDomainName &&
-                (t.Record.Class == question.QClass || question.QClass == QClass.AnyClass) &&
-                (t.Record.Type == question.QType || question.QType == QType.All))
-                .Select(t => t.Record)
+                Records.Where(t =>
+                t.Name?.TrimEnd('.') == searchingDomainName &&
+                (t.Class == question.QClass || question.QClass == QClass.AnyClass) &&
+                (t.Type == question.QType || question.QType == QType.All))
                 .ToArray();
 
             return Task.FromResult(results);
         }
 
-        public void Add(InMemRRData record) => records.Add(record);
-
-        public void AddRange(List<InMemRRData> records)
-        {
-            foreach (var record in records)
-            {
-                Add(record);
-            }
-        }
-    }
-
-    public class InMemRRData
-    {
-        public ResourceRecord Record;
-
         /// <summary>
-        /// todo remove this
+        /// Adds IN record type to the the list
         /// </summary>
-        public string QName;
-
-        public InMemRRData(string qname, QClass qclass, QType qtype, string name, int ttl, object rdata)
+        public void AddIN(string name, QType qtype, int ttl, object rdata)
         {
-            Record = new ResourceRecord()
+            Add(name, QClass.IN, qtype, ttl, rdata);
+        }
+
+        public void Add(string name, QClass qclass, QType qtype, int ttl, object rdata)
+        {
+            Records.Add(new ResourceRecord()
             {
                 Class = qclass,
                 Name = name,
                 RData = rdata,
-                RDLength = 0,
                 TTL = ttl,
-                Type = qtype
-            };
-
-            QName = qname;
+                Type = qtype,
+                RDLength = 0
+            });
         }
     }
 }

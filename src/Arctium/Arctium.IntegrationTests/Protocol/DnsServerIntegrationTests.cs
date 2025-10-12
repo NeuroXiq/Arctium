@@ -20,9 +20,7 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop = new CancellationTokenSource();
             var cancellationToken = serverStop.Token;
 
-            InMemoryDnsServerMasterFiles inMemDs = new InMemoryDnsServerMasterFiles();
-            inMemDs.AddRange(records);
-            DnsServerOptions options = DnsServerOptions.CreateDefault(inMemDs, cancellationToken);
+            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles, cancellationToken);
             server = new DnsServer(options);
 
             var taskUdp = Task.Run(() => { server.StartUdp(); }, cancellationToken);
@@ -44,8 +42,16 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         //
-        // rfc tests
+        // rfc  rfc1035tests
         //
+
+        /// <summary>
+        /// rfc1035, p. 25, 4.3.3. Wildcards
+        /// </summary>
+        public void Success_WildcardDomainsWorks()
+        {
+
+        }
 
         /// <summary>
         /// rfc1035 page 26
@@ -153,7 +159,7 @@ namespace Arctium.IntegrationTests.Protocol
         public void Succees_WillWorkTcpWithLargeAmountOfTxtData()
         {
             // arrange
-            var expectedRows = records.Where(t => t.QName == "www.tcp-large-data.pl").ToList();
+            var expectedRows = records.Where(t => t.Name == "www.tcp-large-data.pl").ToList();
 
             // act
             var result = QueryServer("www.tcp-large-data.pl", QType.TXT);
@@ -162,7 +168,7 @@ namespace Arctium.IntegrationTests.Protocol
             Assert.That(expectedRows.Count == result.Count);
             expectedRows.ForEach(e =>
             {
-                var expected = e.Record;
+                var expected = e;
                 var current = result.Single(r => r.Text.Contains(((RDataTXT)expected.RData).TxtData[0]));
                 AssertRecordEqual(current, expected);
             });
@@ -236,7 +242,7 @@ namespace Arctium.IntegrationTests.Protocol
             foreach (var qtype in allValidQtypes)
             {
                 var result = QueryServer("www.all-rrs.pl", qtype);
-                var expected = records.First(r => r.QName == "www.all-rrs.pl" && r.Record.Name == $"all-rrs-{qtype}" && r.Record.Type == qtype).Record;
+                var expected = records.First(r => r.Name == "www.all-rrs.pl" && r.Type == qtype);
                 Assert.That(result.Count == 1);
                 
                 // assert
@@ -248,7 +254,7 @@ namespace Arctium.IntegrationTests.Protocol
         public void Succeed_WhenExceed512BytesWillReturnTrunCated()
         {
             // arrange
-            var expected = records.Single(t => t.QName == "www.exceed-512-bytes.pl").Record;
+            var expected = records.Single(t => t.Name == "www.exceed-512-bytes.pl");
 
             // act
             var current = QueryServer("www.exceed-512-bytes.pl", QType.TXT).Single();
@@ -262,7 +268,7 @@ namespace Arctium.IntegrationTests.Protocol
         {
             // act
             var current = QueryServer("www.domain-with-dot.pl.", QType.A).Single();
-            var expected = records.Single(t => t.QName == "www.domain-with-dot.pl.").Record;
+            var expected = records.Single(t => t.Name == "www.domain-with-dot.pl.");
 
             // assert
             AssertRecordEqual(current, expected);
@@ -275,7 +281,7 @@ namespace Arctium.IntegrationTests.Protocol
             var current = QueryServer("www.domain-with-no-dot-at-the-end.pl", QType.A);
 
             // assert
-            AssertRecordEqual(current.Single(), records.Single(t => t.QName == "www.domain-with-no-dot-at-the-end.pl").Record);
+            AssertRecordEqual(current.Single(), records.Single(t => t.Name == "www.domain-with-no-dot-at-the-end.pl"));
         }
 
         [Test]
@@ -285,7 +291,7 @@ namespace Arctium.IntegrationTests.Protocol
             var current = QueryServer("a.", QType.A);
 
             // assert
-            AssertRecordEqual(current.Single(), records.Single(t => t.QName == "a").Record);
+            AssertRecordEqual(current.Single(), records.Single(t => t.Name == "a"));
         }
 
         [Test]
@@ -296,26 +302,26 @@ namespace Arctium.IntegrationTests.Protocol
                 $"{new string('c', 63)}." +
                 $"{new string('d', 61)}";
 
-            var expected = records.Single(t => t.QName == domainName);
+            var expected = records.Single(t => t.Name == domainName);
             
             // act
-            var current = QueryServer(expected.QName, QType.A);
+            var current = QueryServer(expected.Name, QType.A);
 
             // assert
-            AssertRecordEqual(current.Single(), expected.Record);
+            AssertRecordEqual(current.Single(), expected);
         }
 
         [Test]
         public void Succeed_TXT_MaxLengthOfCharacterString()
         {
             // arrange
-            var expected = records.Single(t => t.QName == "www.max-txt.pl");
+            var expected = records.Single(t => t.Name == "www.max-txt.pl");
 
             // act
-            var current = QueryServer(expected.QName, QType.TXT).Single();
+            var current = QueryServer(expected.Name, QType.TXT).Single();
 
             // assert
-            AssertRecordEqual(current, expected.Record);
+            AssertRecordEqual(current, expected);
         }
 
         private static void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
@@ -441,10 +447,17 @@ namespace Arctium.IntegrationTests.Protocol
             return result;
         }
 
-        // rfc 1034, page 37, sample domain space
-        static readonly List<InMemRRData> rfc1034Records = new List<InMemRRData>()
+        static InMemoryDnsServerMasterFiles itMasterFiles;
+        static InMemoryDnsServerMasterFiles rfc1034MasterFiles;
+        static List<ResourceRecord> records = itMasterFiles.Records;
+
+        static DnsServerIntegrationTests()
         {
-            new InMemRRData(null, QClass.IN, QType.SOA, null, 3, new RDataSOA()
+            // rfc
+            rfc1034MasterFiles = new InMemoryDnsServerMasterFiles();
+            var r = rfc1034MasterFiles;
+
+            r.AddIN(null, QType.SOA, 300, new RDataSOA()
             {
                 MName = "SRI-NIC.ARPA.",
                 RName = "HOSTMASTER.SRI-NIC.ARPA.",
@@ -453,42 +466,42 @@ namespace Arctium.IntegrationTests.Protocol
                 Refresh = 1800,
                 Retry = 300,
                 Serial = 870611
-            }),
-            new InMemRRData("", QClass.IN, QType.NS, "A.ISI.EDU", 300, new RDataNS() { NSDName = "A.ISI.EDU" }),
-            new InMemRRData("", QClass.IN, QType.NS, "A.ISI.EDU", 300, new RDataNS() { NSDName = "C.ISI.EDU" }),
-            new InMemRRData("", QClass.IN, QType.NS, "A.ISI.EDU", 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" }),
-            new InMemRRData("MIL.", QClass.IN, QType.NS, "", 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" }),
-            new InMemRRData("MIL.", QClass.IN, QType.NS, "", 86400, new RDataNS() { NSDName = "A.ISI.EDU" }),
-            new InMemRRData("EDU.", QClass.IN, QType.NS, "", 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA." }),
-            new InMemRRData("EDU.", QClass.IN, QType.NS, "", 86400, new RDataNS () { NSDName = "C.ISI.EDU" }),
-            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.A, "SRI-NIC", 300, new RDataA("26.0.0.73")),
-            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.A, "SRI-NIC", 300, new RDataA("10.0.0.51")),
-            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.MX, "SRI-NIC", 300, new RDataA("10.0.0.51")),
-            new InMemRRData("SRI-NIC.ARPA.", QClass.IN, QType.HINFO, "SRI-NIC", 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" }),
-            new InMemRRData("ACC.ARPA.", QClass.IN, QType.A, "ACC", 300, new RDataA("26.6.0.65")),
-            new InMemRRData("ACC.ARPA.", QClass.IN, QType.HINFO, "ACC", 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" }),
-            new InMemRRData("ACC.ARPA.", QClass.IN, QType.MX, "ACC", 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA." }),
-            new InMemRRData("USC-ISIC.ARPA.", QClass.IN, QType.CNAME, "USC-ISIC", 300, new RDataCNAME() { CName = "C.ISI.EDU" }),
-            new InMemRRData("73.0.0.26.IN-ADDR.ARPA", QClass.IN, QType.PTR, "73", 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." }),
-            new InMemRRData("65.0.6.26.IN-ADDR.ARPA", QClass.IN, QType.PTR, "65", 300, new RDataPTR() { PtrDName = "ACC.ARPA." }),
-            new InMemRRData("51.0.0.10.IN-ADDR.ARPA", QClass.IN, QType.PTR, "51", 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." }),
-            new InMemRRData("52.0.0.10.IN-ADDR.ARPA", QClass.IN, QType.PTR, "52", 300, new RDataPTR() { PtrDName = "C.ISI.EDU." }),
-            new InMemRRData("103.0.3.26.IN-ADDR.ARPA", QClass.IN, QType.PTR, "103", 300, new RDataPTR() { PtrDName = "A.ISI.EDU." }),
-            new InMemRRData("A.ISI.EDU", QClass.IN, QType.A, "A", 300, new RDataA("26.3.0.103")),
-            new InMemRRData("C.ISI.EDU", QClass.IN, QType.A, "C", 300, new RDataA("10.0.0.52")),
-        };
+            });
 
-        // all tests runs under single server with these records
-        // all record current server have
-        static readonly List<InMemRRData> records = new List<InMemRRData>()
-        {
-            // all-rrs stores all possible qtypes
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.A, "all-rrs-A", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NS, "all-rrs-NS", 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MD, "all-rrs-MD", 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MF, "all-rrs-MF", 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.CNAME, "all-rrs-CNAME", 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.SOA, "all-rrs-SOA", 1234, new RDataSOA()
+            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "A.ISI.EDU" });
+            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "C.ISI.EDU" });
+            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
+            r.AddIN("MIL.", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
+            r.AddIN("MIL.", QType.NS, 86400, new RDataNS() { NSDName = "A.ISI.EDU" });
+            r.AddIN("EDU.", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA." });
+            r.AddIN("EDU.", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
+            r.AddIN("SRI-NIC.ARPA.", QType.A, 300, new RDataA("26.0.0.73"));
+            r.AddIN("SRI-NIC.ARPA.", QType.A, 300, new RDataA("10.0.0.51"));
+            r.AddIN("SRI-NIC.ARPA.", QType.MX, 300, new RDataA("10.0.0.51"));
+            r.AddIN("SRI-NIC.ARPA.", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
+            r.AddIN("ACC.ARPA.", QType.A, 300, new RDataA("26.6.0.65"));
+            r.AddIN("ACC.ARPA.", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
+            r.AddIN("ACC.ARPA.", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA." });
+            r.AddIN("USC-ISIC.ARPA.", QType.CNAME, 300, new RDataCNAME() { CName = "C.ISI.EDU" });
+            r.AddIN("73.0.0.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." });
+            r.AddIN("65.0.6.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "ACC.ARPA." });
+            r.AddIN("51.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." });
+            r.AddIN("52.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "C.ISI.EDU." });
+            r.AddIN("103.0.3.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "A.ISI.EDU." });
+            r.AddIN("A.ISI.EDU", QType.A, 300, new RDataA("26.3.0.103"));
+            r.AddIN("C.ISI.EDU", QType.A, 300, new RDataA("10.0.0.52"));
+
+            // it tests
+
+            itMasterFiles = new InMemoryDnsServerMasterFiles();
+            var t = itMasterFiles;
+
+            t.AddIN("www.all-rrs.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.AddIN("www.all-rrs.pl", QType.NS, 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MD, 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MF, 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.CNAME, 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.SOA, 1234, new RDataSOA()
             {
                 Expire = 0x0000005,
                 Minimum = 0x00000004,
@@ -497,12 +510,12 @@ namespace Arctium.IntegrationTests.Protocol
                 Retry = 0x00000007,
                 RName = "www.all-rrs-soa-rname.pl",
                 Serial = 0x00000008
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MB, "all-rrs-MB", 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MG, "all-rrs-MG", 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MR, "all-rrs-MR", 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.NULL, "all-rrs-NULL", 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.WKS, "all-rrs-WKS", 1234, new RDataWKS()
+            });
+            t.AddIN("www.all-rrs.pl", QType.MB, 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MG, 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MR, 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" });
+            t.AddIN("www.all-rrs.pl", QType.NULL, 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") });
+            t.AddIN("www.all-rrs.pl", QType.WKS, 1234, new RDataWKS()
             {
                 Address = 0x332211aa,
                 // powershell not work well (contrary to nslookup) with WKS
@@ -513,87 +526,70 @@ namespace Arctium.IntegrationTests.Protocol
                 // > www.all-rrs.pl
                 Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
                 Protocol = 6
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.PTR, "all-rrs-PTR", 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" }),
-
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.HINFO, "all-rrs-HINFO", 1234,
-            new RDataHINFO()
-            {
-                CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl"
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MINFO, "all-rrs-MINFO", 1234,
-            new RDataMINFO()
-            {
-                EMailbx = "www.all-rrs-minfo-emailbx",
-                RMailbx = "www.all-rrs-minfo-rmailbx"
-            }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.MX, "all-rrs-MX", 1234, new RDataMX() { Preference = 5555, Exchange ="www.all-rrs-exchange"  }),
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.TXT, "all-rrs-TXT", 1234,
-                new RDataTXT()
-                {
-                    TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" }
-                }),
-
-            new InMemRRData("www.all-rrs.pl", QClass.IN, QType.AAAA, "all-rrs-AAAA", 1234, new RDataAAAA()
-            {
-                IPv6 = new byte[] {0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 }
-            }),
+            });
+            t.AddIN("www.all-rrs.pl", QType.PTR, 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" });
+            t.AddIN("www.all-rrs.pl", QType.HINFO, 1234, new RDataHINFO() { CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MINFO, 1234, new RDataMINFO() { EMailbx = "www.all-rrs-minfo-emailbx", RMailbx = "www.all-rrs-minfo-rmailbx" });
+            t.AddIN("www.all-rrs.pl", QType.MX, 1234, new RDataMX() { Preference = 5555, Exchange = "www.all-rrs-exchange" });
+            t.AddIN("www.all-rrs.pl", QType.TXT, 1234, new RDataTXT() { TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" } });
+            t.AddIN("www.all-rrs.pl", QType.AAAA, 1234, new RDataAAAA() { IPv6 = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } });
 
             // end of all-rrs
 
-            new InMemRRData("www.domain-with-dot.pl.", QClass.IN, QType.A, "domain-with-dot.pl", 111, new RDataA() { Address = 0xaabbaaaa }),
-            new InMemRRData("www.domain-with-no-dot-at-the-end.pl", QClass.IN, QType.A, "www.domain-with-no-dot-at-the-end.pl", 111, new RDataA() { Address = 0x11223344 }),
+            t.AddIN("www.domain-with-dot.pl.", QType.A, 111, new RDataA() { Address = 0xaabbaaaa });
+            t.AddIN("www.domain-with-no-dot-at-the-end.pl", QType.A, 111, new RDataA() { Address = 0x11223344 });
 
             // min domain name len
-            new InMemRRData("a", QClass.IN, QType.A, "a", 4123, new RDataA() { Address = 0x11112222 }),
+            t.AddIN("a", QType.A, 4123, new RDataA() { Address = 0x11112222 });
 
             // max domain name
-            new InMemRRData(
+            t.AddIN(
                 $"{new string('a', 63)}." +
                 $"{new string('b', 63)}." +
                 $"{new string('c', 63)}." +
                 $"{new string('d', 61)}",
-                QClass.IN, QType.A, "max-domain-name-length", 4123, new RDataA() { Address = 0xbb33dd22 }),
+                QType.A, 4123, new RDataA() { Address = 0xbb33dd22 });
 
             // max txt
-            new InMemRRData("www.max-txt.pl", QClass.IN, QType.TXT, "testplname", 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } }),
+            t.AddIN("www.max-txt.pl", QType.TXT, 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } });
 
             // tcp large amount of data (txt)
-            new InMemRRData("www.tcp-large-data.pl", QClass.IN, QType.TXT, "tcp-large-data", 555, new RDataTXT()
+            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
             {
-                TxtData = new string[] { new string('a', 255), new string('b', 255), new string('c', 255), new string('d', 255), new string('e', 255), }
-            }),
-            new InMemRRData("www.tcp-large-data.pl", QClass.IN, QType.TXT, "tcp-large-data", 555, new RDataTXT()
+                TxtData = new string[] { new string('a', 255), new string('b', 255), new string('c', 255), new string('d', 255), new string('e', 255) }
+            });
+            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
             {
-                TxtData = new string[] { new string('f', 255), new string('g', 255), new string('h', 255), new string('i', 255), new string('j', 255), }
-            }),
-            new InMemRRData("www.tcp-large-data.pl", QClass.IN, QType.TXT, "tcp-large-data", 555, new RDataTXT()
+                TxtData = new string[] { new string('f', 255), new string('g', 255), new string('h', 255), new string('i', 255), new string('j', 255) }
+            });
+            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
             {
-                TxtData = new string[] { new string('k', 255), new string('l', 255), new string('m', 255), new string('n', 255), new string('o', 255), }
-            }),
+                TxtData = new string[] { new string('k', 255), new string('l', 255), new string('m', 255), new string('n', 255), new string('o', 255) }
+            });
 
             // multiple parallel
             //"www.multiple-parralel"
-            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 174, new RDataA() { Address = 0x0a0b0c0d }),
-            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 111, new RDataA() { Address = 0x0a1b0c0d }),
-            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 7332, new RDataA() { Address = 0x0a2b0c0d }),
-            new InMemRRData("www.multiple-parralel", QClass.IN, QType.A, "www.multiple-parralel", 8576, new RDataA() { Address = 0x0a3b0c0d }),
+            t.AddIN("www.multiple-parralel", QType.A, 174, new RDataA() { Address = 0x0a0b0c0d });
+            t.AddIN("www.multiple-parralel", QType.A, 111, new RDataA() { Address = 0x0a1b0c0d });
+            t.AddIN("www.multiple-parralel", QType.A, 7332, new RDataA() { Address = 0x0a2b0c0d });
+            t.AddIN("www.multiple-parralel", QType.A, 8576, new RDataA() { Address = 0x0a3b0c0d });
 
-            new InMemRRData("www.exceed-512-bytes.pl", QClass.IN, QType.TXT, "exceed-512-bytes", 9203, 
+            t.AddIN("www.exceed-512-bytes.pl", QType.TXT, 9203,
                 new RDataTXT()
                 {
                     TxtData = new string[] { new string('a', 200), new string('c', 200), new string('b', 200)
-                }}),
+                }
+                });
             
-            new InMemRRData("www.test.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            t.AddIN("www.test.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
 
 
-            new InMemRRData("www.test.pl", QClass.HS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.test.pl", QClass.CS, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
-            new InMemRRData("www.test.pl", QClass.CH, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 }),
+            t.Add("www.test.pl", QClass.HS, QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.Add("www.test.pl", QClass.CS, QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.Add("www.test.pl", QClass.CH, QType.A, 111, new RDataA() { Address = 0x44332211 });
 
-            new InMemRRData("www.google1.pl", QClass.IN, QType.A, "testplname", 111, new RDataA() { Address = 0x44332211 })
-        };
+            t.AddIN("www.google1.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
+        }
 
         class PwshRecord
         {
@@ -684,10 +680,6 @@ namespace Arctium.IntegrationTests.Protocol
             /// WKS.Protocol
             /// </summary>
             public byte Protocol { get; set; }
-        }
-
-        static DnsServerIntegrationTests()
-        {
         }
     }
 }

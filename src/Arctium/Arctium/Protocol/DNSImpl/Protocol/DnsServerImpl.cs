@@ -67,7 +67,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
 
                     clientBytes = new BytesSpan(buffer.Buffer, 2, buffer.DataLength);
                     var clientMsg = serializer.Decode(clientBytes);
-                    var responseMessage = GetResponseMessage(clientMsg);
+                    var responseMessage = GetResponseMessage(clientMsg).Result;
                     var responseBuffer = new ByteBuffer();
                     responseBuffer.AllocEnd(2);
                     serializer.Encode(responseMessage, responseBuffer);
@@ -111,7 +111,7 @@ namespace Arctium.Protocol.DNSImpl.Protocol
                     clientBytes = new BytesSpan(buf, 0, recvLen);
                     var clientMsg = serializer.Decode(clientBytes);
 
-                    var res = GetResponseMessage(clientMsg);
+                    var res = GetResponseMessage(clientMsg).Result;
                     var responseBytes = new ByteBuffer();
                     serializer.Encode(res, responseBytes);
 
@@ -216,17 +216,19 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             return responseMessage;
         }
 
-        Message GetResponseMessage(Message clientMsg)
+        async Task<Message> GetResponseMessage(Message clientMsg)
         {
+            // algorithm based on rfc1034, page 24 reference algorithm
+
             Header h = clientMsg.Header;
+            Question q = clientMsg.Question[0];
+            Message response = new Message();
+            Header rheader = new Header();
+            ResourceRecord[] answer = null, authority = null, additional = null;
+            List<ResourceRecord> outAnswer = new List<ResourceRecord>(), outAuthority = new List<ResourceRecord>(), outAdditional = new List<ResourceRecord>();
 
             if (h.QR != QRType.Query) throw new DnsException(DnsProtocolError.QRTypeNotQuery);
             if (h.QDCount != 1) throw new DnsException(DnsProtocolError.QDCountNotEqual1);
-
-            Question q = clientMsg.Question[0];
-
-            Message response = new Message();
-            Header rheader = new Header();
 
             rheader.Id = h.Id;
             rheader.QR = QRType.Response;
@@ -236,19 +238,27 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             rheader.RD = h.RD;
             rheader.RA = options.RecursionAvailable;
             rheader.RCode = ResponseCode.NoErrorCondition;
-            rheader.NSCount = 0;
-            rheader.ARCount = 0;
 
-            ResourceRecord[] answer = null, authority = null, additional = null;
+            var algorithm = new DnsServerAlgorithm(options, clientMsg);
+            await algorithm.Start();
 
-            if (options.RecursionAvailable)
+            if (options.RecursionAvailable && h.RD)
             {
                 answer = options.RecursionService.ResolveAsync(clientMsg).Result;
             }
             else
             {
-                answer = options.DnsServerDataSource.GetRRsAsync(clientMsg.Question[0]).Result;
+                await QueryMasterFiles(q.QName, q.QClass, q.QType, outAnswer, outAuthority);
+
+                answer = outAnswer.ToArray();
+                authority = outAuthority.ToArray();
+
+                // answer = options.DnsServerDataSource.GetRRsAsync(clientMsg.Question[0]).Result;
             }
+
+            // step 6.
+            // response ready, using local data add additional section data
+            // that could be useful
 
             Question rquestion = new Question()
             {
@@ -263,10 +273,6 @@ namespace Arctium.Protocol.DNSImpl.Protocol
             response.Authority = authority;
             response.Additional = additional;
             
-            // test
-            // response.Additional = result;
-            // response.Authority = result;
-
             rheader.QDCount = (ushort)response.Question.Length;
             rheader.ANCount = (ushort)response.Answer.Length;
             rheader.ARCount = (ushort)(response.Additional?.Length ?? 0);
@@ -276,6 +282,15 @@ namespace Arctium.Protocol.DNSImpl.Protocol
         }
 
         
+    }
+
+    class DnsServerCache() : IDnsServerRecordsData
+    {
+        static ResourceRecord[] empty = new ResourceRecord[0];
+
+        public Task<ResourceRecord[]> Get(string name, QClass qclass, QType type) => Task.FromResult(empty);
+
+        public Task<ResourceRecord[]> GetRRsAsync(Question question) => Task.FromResult(empty);
     }
 }
 

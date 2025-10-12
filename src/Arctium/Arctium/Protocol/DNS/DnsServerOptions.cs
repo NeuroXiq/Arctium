@@ -8,7 +8,7 @@ namespace Arctium.Protocol.DNS
 {
     public class DnsServerOptions
     {
-        public IDnsServerMasterFiles DnsServerDataSource { get; set; }
+        public IDnsServerRecordsData DnsServerDataSource { get; set; }
 
         public int PortUdp { get; set; }
         public int PortTcp { get; set; }
@@ -17,13 +17,13 @@ namespace Arctium.Protocol.DNS
 
         public IDnsServerRecursionService RecursionService { get; set; }
 
-        public DnsServerOptions(IDnsServerMasterFiles dnsServerDataSource)
+        public DnsServerOptions(IDnsServerRecordsData dnsServerDataSource)
         {
             DnsServerDataSource = dnsServerDataSource;
             PortUdp = DnsConsts.DefaultServerUdpPort;
         }
 
-        public static DnsServerOptions CreateDefault(IDnsServerMasterFiles dataSource, CancellationToken cancellationToken)
+        public static DnsServerOptions CreateDefault(IDnsServerRecordsData dataSource, CancellationToken cancellationToken)
         {
             return new DnsServerOptions(dataSource)
             {
