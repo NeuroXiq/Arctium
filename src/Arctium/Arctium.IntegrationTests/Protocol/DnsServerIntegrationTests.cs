@@ -353,64 +353,69 @@ namespace Arctium.IntegrationTests.Protocol
         {
             Assert.That(current.Count() == expected.Count());
 
-            Assert.That(current.All(c =>
-                expected.Any(e =>
+            foreach (var c in current)
+            {
+                if (!expected.Any(e => AreRecordEqual(c, e, out var _)))
                 {
-                    try
-                    {
-                        AssertRecordEqual(c, e);
-                        return true;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                })));
+                    Assert.That(false, "failed");
+                }
+            }
+
+            Assert.That(current.All(c => expected.Any(e => AreRecordEqual(c, e, out _))));
         }
 
-        private static void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
+        void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
         {
-            Assert.IsTrue(
-                current.TTL == expected.TTL &&
-                expected.Name == current.Name &&
-                (int)expected.Type == current.Type,
-                "expected != current");
+            bool equal = AreRecordEqual(current, expected, out string errorMessage);
+            Assert.That(equal, errorMessage);
+        }
+
+        private static bool AreRecordEqual(PwshRecord current, ResourceRecord expected, out string errorMessage)
+        {
+            string e = null;
+
+            if (current.TTL != expected.TTL ||
+                expected.Name != current.Name ||
+                (int)expected.Type != current.Type)
+            {
+                e = "expected != current";
+            }
 
             switch (expected.Type)
             {
                 case QType.A:
-                    Assert.That(DnsSerialize.Ipv4ToUInt(current.IP4Address) == (expected.RData as RDataA).Address, "A ipv4 not equal");
+                    if (DnsSerialize.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address) e = "A ipv4 not equal";
                     break;
                 case QType.NS:
-                    Assert.That((expected.RData as RDataNS).NSDName == current.NameHost);
+                    if ((expected.RData as RDataNS).NSDName != current.NameHost) e = "NSDName != NameHost";
                     break;
                 case QType.MD:
-                    Assert.That((expected.RData as RDataMD).MADName == current.NameHost);
+                    if ((expected.RData as RDataMD).MADName != current.NameHost) e = "MADName";
                     break;
                 case QType.MF:
-                    Assert.That((expected.RData as RDataMF).MADName == current.NameHost);
+                    if ((expected.RData as RDataMF).MADName != current.NameHost) e = "MADName";
                     break;
                 case QType.CNAME:
-                    Assert.That((expected.RData as RDataCNAME).CName == current.NameHost);
+                    if ((expected.RData as RDataCNAME).CName != current.NameHost) e = "CName";
                     break;
                 case QType.SOA:
                     RDataSOA soa = (RDataSOA)expected.RData;
-                    Assert.That(soa.Expire == current.TimeToExpiration, "SOA.Expire");
-                    Assert.That(soa.Minimum == current.DefaultTTL, "SOA.Minimum");
-                    Assert.That(soa.MName == current.PrimaryServer, "SOA.MName");
-                    Assert.That(soa.Refresh == current.TimeToZoneRefresh, "SOA.Refresh");
-                    Assert.That(soa.Retry == current.TimeToZoneFailureRetry, "SOA.Retry");
-                    Assert.That(soa.RName == current.NameAdministrator, "SOA.RName");
-                    Assert.That(soa.Serial == current.SerialNumber, "SOA.Serial");
+                    if (soa.Expire != current.TimeToExpiration) e = "SOA.Expire";
+                    else if(soa.Minimum != current.DefaultTTL) e = "SOA.Minimum";
+                    else if(soa.MName != current.PrimaryServer) e = "SOA.MName";
+                    else if(soa.Refresh != current.TimeToZoneRefresh) e = "SOA.Refresh";
+                    else if(soa.Retry != current.TimeToZoneFailureRetry) e = "SOA.Retry";
+                    else if(soa.RName != current.NameAdministrator) e = "SOA.RName";
+                    else if(soa.Serial != current.SerialNumber) e = "SOA.Serial";
                     break;
                 case QType.MB:
-                    Assert.That(((RDataMB)expected.RData).MADName == current.NameHost, "MB.Namehost");
+                    if(((RDataMB)expected.RData).MADName != current.NameHost) e = "MB.Namehost";
                     break;
                 case QType.MG:
-                    Assert.That(((RDataMG)expected.RData).MGMName == current.NameHost, "MGMName");
+                    if(((RDataMG)expected.RData).MGMName != current.NameHost) e = "MGMName";
                     break;
                 case QType.MR:
-                    Assert.That(((RDataMR)expected.RData).NewName == current.Server, "MR.NewName");
+                    if (((RDataMR)expected.RData).NewName != current.Server) e = "MR.NewName";
                     break;
                 case QType.NULL:
                     throw new NotImplementedException(
@@ -420,40 +425,44 @@ namespace Arctium.IntegrationTests.Protocol
                     // this need future investionation, for now this will work like that
                     // nslookup works ok
                     RDataWKS wks = (RDataWKS)expected.RData;
-                    Assert.That(wks.Protocol == current.Protocol);
-                    Assert.That(wks.Address == DnsSerialize.Ipv4ToUInt(current.IP4Address));
+                    if (wks.Protocol != current.Protocol) e = "protocol";
+                    if (wks.Address != DnsSerialize.Ipv4ToUInt(current.IP4Address)) e = "wks";
                     break;
                 case QType.PTR:
-                    Assert.That(((RDataPTR)expected.RData).PtrDName == current.NameHost, "PTR");
+                    if(((RDataPTR)expected.RData).PtrDName != current.NameHost) e = "PTR"; ;
                     break;
                 case QType.HINFO:
                     RDataHINFO hinfo = (RDataHINFO)expected.RData;
-                    Assert.That(current.Text.Contains(hinfo.CPU) && current.Text.Contains(hinfo.OS), "HINFO");
+                    if(!current.Text.Contains(hinfo.CPU) || !current.Text.Contains(hinfo.OS)) e = "HINFO";
                     break;
                 case QType.MINFO:
                     RDataMINFO minfo = (RDataMINFO)expected.RData;
-                    Assert.That(minfo.RMailbx == current.NameMailbox && minfo.EMailbx == current.NameErrorsMailbox, "minfo");
+                    if(minfo.RMailbx != current.NameMailbox || minfo.EMailbx != current.NameErrorsMailbox) e = "minfo";
                     break;
                 case QType.MX:
                     RDataMX mx = (RDataMX)expected.RData;
-                    Assert.That(mx.Preference == current.Preference && mx.Exchange == current.Exchange, "MX");
+                    if(mx.Preference != current.Preference || mx.Exchange != current.Exchange) e = "MX";
                     break;
                 case QType.TXT:
-                    Assert.That((expected.RData as RDataTXT).TxtData.All(t =>  current.Text.Contains(t)), "TXT not match");
+                    if((expected.RData as RDataTXT).TxtData.Any(t => !current.Text.Contains(t))) e = "TXT not match";
                     break;
                 case QType.AAAA:
                     var currentIpv6 = IPAddress.Parse(current.IP6Address).GetAddressBytes();
-                    Assert.That(currentIpv6.SequenceEqual(((RDataAAAA)expected.RData).IPv6), "AAAA");
+                    if(!currentIpv6.SequenceEqual(((RDataAAAA)expected.RData).IPv6)) e = "AAAA";
                         break;
                 case QType.MAILB:
                 case QType.MAILA:
                 case QType.AXFR:
                 case QType.All:
-                    Assert.IsTrue(false, "must never happen - invalid expected type (invalid test case) - this are only in query section not in result");
+                    e = "must never happen - invalid expected type (invalid test case) - this are only in query section not in result";
                     break;
                 default:
-                    throw new NotImplementedException("todo implement other QType conditions");
+                    e = "todo implement other QType conditions";
+                    break;
             }
+
+            errorMessage = e;
+            return e == null;
         }
 
         private List<PwshRecord> QueryServer(string domainName, QType qtype)
