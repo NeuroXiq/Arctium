@@ -8,12 +8,13 @@ namespace Arctium.Protocol.DNS
 {
     public class DnsServerOptions
     {
-        public IDnsServerRecordsData DnsServerDataSource { get; set; }
+        public IDnsServerRecordsData DnsServerDataSource { get; private set; }
+        public IDnsServerRecordsData DnsServerCacheDataSource { get; private set; }
 
-        public int PortUdp { get; set; }
-        public int PortTcp { get; set; }
-        public CancellationToken CancellationToken { get; set; }
-        public bool RecursionAvailable { get; set; }
+        public int PortUdp { get; private set; }
+        public int PortTcp { get; private set; }
+        public CancellationToken CancellationToken { get; private set; }
+        public bool RecursionAvailable { get; private set; }
 
         public IDnsServerRecursionService RecursionService { get; set; }
 
@@ -29,7 +30,8 @@ namespace Arctium.Protocol.DNS
             {
                 CancellationToken = cancellationToken,
                 PortTcp = 53,
-                PortUdp = 53
+                PortUdp = 53,
+                DnsServerCacheDataSource = null
             };
         }
 
@@ -37,6 +39,11 @@ namespace Arctium.Protocol.DNS
         {
             RecursionAvailable = true;
             RecursionService = recursionService;
+        }
+
+        public void SetCache(IDnsServerRecordsData dnsServerCacheDataSource)
+        {
+            DnsServerCacheDataSource = dnsServerCacheDataSource;
         }
     }
 }

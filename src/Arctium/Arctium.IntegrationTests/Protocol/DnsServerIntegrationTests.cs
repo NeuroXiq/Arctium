@@ -1,6 +1,6 @@
 ﻿using Arctium.Protocol.DNS;
-using Arctium.Protocol.DNSImpl.Model;
-using Arctium.Protocol.DNSImpl.Protocol;
+using Arctium.Protocol.DNS.Model;
+using Arctium.Protocol.DNS.Protocol;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -41,13 +41,38 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Dispose();
         }
 
+        // start of 
+        // 6.2. Example standard queries [rfc 1034, page 40]
+
+        /// <summary>
+        /// 6.2.1. QNAME=SRI-NIC.ARPA, QTYPE=A
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_ExampleStandardQueries1()
+        {
+            // 6.2.1. QNAME=SRI-NIC.ARPA, QTYPE=A
+            var expected = records.Where(t => t.Name == "SRI-NIC.ARPA" && t.Type == QType.A).ToArray();
+            var current = QueryServer("SRI-NIC.ARPA.", QType.A);
+
+            AssertSetsEquals(current, expected);
+        }
+
+        // end of 
+        // 6.2. Example standard queries [rfc 1034, page 40]
+
         //
-        // rfc  rfc1035tests
+        // rfc
         //
+
+        /// <summary>
+        ///  
+        /// </summary>
+
 
         /// <summary>
         /// rfc1035, p. 25, 4.3.3. Wildcards
         /// </summary>
+        [Test]
         public void Success_WildcardDomainsWorks()
         {
 
@@ -324,6 +349,25 @@ namespace Arctium.IntegrationTests.Protocol
             AssertRecordEqual(current, expected);
         }
 
+        private static void AssertSetsEquals(IEnumerable<PwshRecord> current, IEnumerable<ResourceRecord> expected)
+        {
+            Assert.That(current.Count() == expected.Count());
+
+            Assert.That(current.All(c =>
+                expected.Any(e =>
+                {
+                    try
+                    {
+                        AssertRecordEqual(c, e);
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                })));
+        }
+
         private static void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
         {
             Assert.IsTrue(
@@ -331,19 +375,6 @@ namespace Arctium.IntegrationTests.Protocol
                 expected.Name == current.Name &&
                 (int)expected.Type == current.Type,
                 "expected != current");
-
-            switch (expected.Type)
-            {
-                case QType.A:
-                    
-                    break;
-                case QType.TXT:
-                case QType.MD: 
-                case QType.MF: 
-                case QType.NS:  break;
-                case QType.CNAME:  break;
-                
-            }
 
             switch (expected.Type)
             {
@@ -448,16 +479,15 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         static InMemoryDnsServerMasterFiles itMasterFiles;
-        static InMemoryDnsServerMasterFiles rfc1034MasterFiles;
-        static List<ResourceRecord> records = itMasterFiles.Records;
+        static List<ResourceRecord> records;
 
         static DnsServerIntegrationTests()
         {
+            itMasterFiles = new InMemoryDnsServerMasterFiles();
+            var r = itMasterFiles;
             // rfc
-            rfc1034MasterFiles = new InMemoryDnsServerMasterFiles();
-            var r = rfc1034MasterFiles;
 
-            r.AddIN(null, QType.SOA, 300, new RDataSOA()
+            r.AddIN(string.Empty, QType.SOA, 300, new RDataSOA()
             {
                 MName = "SRI-NIC.ARPA.",
                 RName = "HOSTMASTER.SRI-NIC.ARPA.",
@@ -471,17 +501,17 @@ namespace Arctium.IntegrationTests.Protocol
             r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "A.ISI.EDU" });
             r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "C.ISI.EDU" });
             r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
-            r.AddIN("MIL.", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
-            r.AddIN("MIL.", QType.NS, 86400, new RDataNS() { NSDName = "A.ISI.EDU" });
-            r.AddIN("EDU.", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA." });
-            r.AddIN("EDU.", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
-            r.AddIN("SRI-NIC.ARPA.", QType.A, 300, new RDataA("26.0.0.73"));
-            r.AddIN("SRI-NIC.ARPA.", QType.A, 300, new RDataA("10.0.0.51"));
-            r.AddIN("SRI-NIC.ARPA.", QType.MX, 300, new RDataA("10.0.0.51"));
-            r.AddIN("SRI-NIC.ARPA.", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
-            r.AddIN("ACC.ARPA.", QType.A, 300, new RDataA("26.6.0.65"));
-            r.AddIN("ACC.ARPA.", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
-            r.AddIN("ACC.ARPA.", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA." });
+            r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
+            r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "A.ISI.EDU" });
+            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA." });
+            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
+            r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("26.0.0.73"));
+            r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("10.0.0.51"));
+            r.AddIN("SRI-NIC.ARPA", QType.MX, 300, new RDataA("10.0.0.51"));
+            r.AddIN("SRI-NIC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
+            r.AddIN("ACC.ARPA", QType.A, 300, new RDataA("26.6.0.65"));
+            r.AddIN("ACC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
+            r.AddIN("ACC.ARPA", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA." });
             r.AddIN("USC-ISIC.ARPA.", QType.CNAME, 300, new RDataCNAME() { CName = "C.ISI.EDU" });
             r.AddIN("73.0.0.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." });
             r.AddIN("65.0.6.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "ACC.ARPA." });
@@ -493,7 +523,9 @@ namespace Arctium.IntegrationTests.Protocol
 
             // it tests
 
-            itMasterFiles = new InMemoryDnsServerMasterFiles();
+            // todo: .AddIN(".pl"), (to have valid dns nodes tree)
+
+
             var t = itMasterFiles;
 
             t.AddIN("www.all-rrs.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
@@ -589,6 +621,8 @@ namespace Arctium.IntegrationTests.Protocol
             t.Add("www.test.pl", QClass.CH, QType.A, 111, new RDataA() { Address = 0x44332211 });
 
             t.AddIN("www.google1.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
+
+            records = itMasterFiles.Nodes.SelectMany(t => t.Records).ToList();
         }
 
         class PwshRecord

@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.DNSImpl.Model;
+﻿using Arctium.Protocol.DNS.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,25 +9,11 @@ namespace Arctium.Protocol.DNS
 {
     public class InMemoryDnsServerMasterFiles : IDnsServerRecordsData
     {
-        public List<ResourceRecord> Records { get; set; }
+        public List<DnsNode> Nodes { get; set; }
 
         public InMemoryDnsServerMasterFiles()
         {
-            Records = new List<ResourceRecord>();
-        }
-
-        public Task<ResourceRecord[]> GetRRsAsync(Question question)
-        {
-            string searchingDomainName = question.QName.TrimEnd('.');
-
-            ResourceRecord[] results =
-                Records.Where(t =>
-                t.Name?.TrimEnd('.') == searchingDomainName &&
-                (t.Class == question.QClass || question.QClass == QClass.AnyClass) &&
-                (t.Type == question.QType || question.QType == QType.All))
-                .ToArray();
-
-            return Task.FromResult(results);
+            Nodes = new List<DnsNode>();
         }
 
         /// <summary>
@@ -40,7 +26,31 @@ namespace Arctium.Protocol.DNS
 
         public void Add(string name, QClass qclass, QType qtype, int ttl, object rdata)
         {
-            Records.Add(new ResourceRecord()
+            string[] labels = name.Split('.');
+            DnsNode node;
+
+            // create nodes if not exists
+            for (int i = 0; i < labels.Length; i++)
+            {
+                string nodeName = string.Join('.', labels, labels.Length - i - 1, i + 1);
+                node = Nodes.Where(t => t.Name == nodeName).FirstOrDefault();
+
+                if (node == null)
+                {
+                    node = new DnsNode()
+                    {
+                        Label = labels[labels.Length - 1 - i],
+                        Name = nodeName,
+                        Records = new List<ResourceRecord>()
+                    };
+
+                    Nodes.Add(node);
+                }
+            }
+
+            node = Nodes.Where(t => t.Name == name).Single();
+
+            node.Records.Add(new ResourceRecord()
             {
                 Class = qclass,
                 Name = name,
@@ -49,6 +59,32 @@ namespace Arctium.Protocol.DNS
                 Type = qtype,
                 RDLength = 0
             });
+        }
+
+        public Task<DnsNode> GetAsync(string name, QClass qclass, QType qtype)
+        {
+            DnsNode node = Nodes.Where(t => string.Compare(t.Name, name, true) == 0).SingleOrDefault();
+            List<ResourceRecord> records;
+
+            if (node == null) return Task.FromResult<DnsNode>(null);
+
+            if (qtype != QType.All)
+            {
+                records = node.Records.Where(t => t.Class == qclass && t.Type == qtype).ToList();
+            }
+            else
+            {
+                records = node.Records.Where(t => t.Class == qclass).ToList();
+            }
+
+            var result = new DnsNode()
+            {
+                Name = node.Name,
+                Label = node.Label,
+                Records = records
+            };
+
+            return Task.FromResult(result);
         }
     }
 }

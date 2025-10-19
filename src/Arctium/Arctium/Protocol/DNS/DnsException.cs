@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.DNSImpl.Protocol;
+﻿using Arctium.Protocol.DNS.Protocol;
 using Arctium.Shared.Exceptions;
 
 namespace Arctium.Protocol.DNS

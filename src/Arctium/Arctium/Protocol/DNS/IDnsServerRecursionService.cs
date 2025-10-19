@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.DNSImpl.Model;
+﻿using Arctium.Protocol.DNS.Model;
 
 namespace Arctium.Protocol.DNS
 {

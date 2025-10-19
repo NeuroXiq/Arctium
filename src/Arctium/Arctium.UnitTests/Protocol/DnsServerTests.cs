@@ -1,5 +1,4 @@
 ﻿using Arctium.Protocol.DNS;
-using Arctium.Protocol.DNSImpl.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;

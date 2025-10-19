@@ -1,4 +1,4 @@
-﻿using Arctium.Protocol.DNSImpl.Model;
+﻿using Arctium.Protocol.DNS.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +9,6 @@ namespace Arctium.Protocol.DNS
 {
     public interface IDnsServerRecordsData
     {
-        Task<ResourceRecord[]> GetRRsAsync(Question question);
-        Task<ResourceRecord[]> Get(string name, QClass qclass, QType type);
+        Task<DnsNode> GetAsync(string name, QClass qclass, QType type);
     }
 }
