@@ -125,10 +125,12 @@ namespace Arctium.Protocol.DNS.Protocol
                 // 3.a whole qname was found, we have valid node
                 if (node != null && name.Length == qname.Length)
                 {
-                    var rr = node.Records.Where(t => t.Type == qtype).ToArray();
+                    var rr = node.Records;
+
+                    if (qtype != QType.All) rr = rr.Where(t => t.Type == qtype).ToList();
 
                     // data at node is cname and query is not cname
-                    if (rr[0].Type == QType.CNAME && qtype != QType.CNAME)
+                    if (rr.Count > 0 && rr[0].Type == QType.CNAME && qtype != QType.CNAME)
                     {
                         // change qname to name from CNAME and search again
                         outAnswer.Add(rr[0]);

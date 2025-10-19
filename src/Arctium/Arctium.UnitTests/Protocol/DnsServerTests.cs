@@ -9,7 +9,16 @@ namespace Arctium.UnitTests.Protocol
 {
     internal class DnsServerTests
     {
+        /// <summary>
+        /// check authority header set
+        /// </summary>
+        [Test]
+        public void Test1()
+        {
 
+        }
+
+        [Test]
         public void MyTestMethod()
         {
             // arrange

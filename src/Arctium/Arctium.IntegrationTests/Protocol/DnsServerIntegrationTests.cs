@@ -26,7 +26,7 @@ namespace Arctium.IntegrationTests.Protocol
             var taskUdp = Task.Run(() => { server.StartUdp(); }, cancellationToken);
             var taskTcp = Task.Run(() => { server.StartTcp(); }, cancellationToken);
 
-            for (int i = 0; i < 5 && taskUdp.Status != TaskStatus.Running && taskTcp.Status != TaskStatus.Running; i++)
+            for (int i = 0; i < 5 && (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running); i++)
             {
                 Task.Delay(500).Wait();
             }
@@ -44,6 +44,20 @@ namespace Arctium.IntegrationTests.Protocol
         // start of 
         // 6.2. Example standard queries [rfc 1034, page 40]
 
+
+        /// <summary>
+        /// 6.2.2. QNAME=SRI-NIC.ARPA, QTYPE=*
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_ExampleStandardQueries2()
+        {
+            var expected = records.Where(t => t.Name == "SRI-NIC.ARPA").ToArray();
+            var current = QueryServer("SRI-NIC.ARPA", QType.All);
+
+            AssertCurrentContainsExcepted(current, expected);
+        }
+
+
         /// <summary>
         /// 6.2.1. QNAME=SRI-NIC.ARPA, QTYPE=A
         /// </summary>
@@ -54,7 +68,7 @@ namespace Arctium.IntegrationTests.Protocol
             var expected = records.Where(t => t.Name == "SRI-NIC.ARPA" && t.Type == QType.A).ToArray();
             var current = QueryServer("SRI-NIC.ARPA.", QType.A);
 
-            AssertSetsEquals(current, expected);
+            AssertCurrentContainsExcepted(current, expected);
         }
 
         // end of 
@@ -349,13 +363,15 @@ namespace Arctium.IntegrationTests.Protocol
             AssertRecordEqual(current, expected);
         }
 
-        private static void AssertSetsEquals(IEnumerable<PwshRecord> current, IEnumerable<ResourceRecord> expected)
+        // because our dns server can return 'additional' records
+        // we need to check if expected intersects current (current.length can be >= than expected because of 'additional')
+        private static void AssertCurrentContainsExcepted(IEnumerable<PwshRecord> current, IEnumerable<ResourceRecord> expected)
         {
-            Assert.That(current.Count() == expected.Count());
+            Assert.That(current.Count() >= expected.Count());
 
-            foreach (var c in current)
+            foreach (var e in expected)
             {
-                if (!expected.Any(e => AreRecordEqual(c, e, out var _)))
+                if (!current.Any(c => AreRecordEqual(c, e, out var _)))
                 {
                     Assert.That(false, "failed");
                 }
@@ -373,94 +389,101 @@ namespace Arctium.IntegrationTests.Protocol
         private static bool AreRecordEqual(PwshRecord current, ResourceRecord expected, out string errorMessage)
         {
             string e = null;
-
-            if (current.TTL != expected.TTL ||
-                expected.Name != current.Name ||
-                (int)expected.Type != current.Type)
+           
+            try
             {
-                e = "expected != current";
-            }
+                if (current.TTL != expected.TTL || expected.Name != current.Name ||
+                    (int)expected.Type != current.Type)
+                {
+                    e = "expected != current";
+                }
 
-            switch (expected.Type)
-            {
-                case QType.A:
-                    if (DnsSerialize.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address) e = "A ipv4 not equal";
-                    break;
-                case QType.NS:
-                    if ((expected.RData as RDataNS).NSDName != current.NameHost) e = "NSDName != NameHost";
-                    break;
-                case QType.MD:
-                    if ((expected.RData as RDataMD).MADName != current.NameHost) e = "MADName";
-                    break;
-                case QType.MF:
-                    if ((expected.RData as RDataMF).MADName != current.NameHost) e = "MADName";
-                    break;
-                case QType.CNAME:
-                    if ((expected.RData as RDataCNAME).CName != current.NameHost) e = "CName";
-                    break;
-                case QType.SOA:
-                    RDataSOA soa = (RDataSOA)expected.RData;
-                    if (soa.Expire != current.TimeToExpiration) e = "SOA.Expire";
-                    else if(soa.Minimum != current.DefaultTTL) e = "SOA.Minimum";
-                    else if(soa.MName != current.PrimaryServer) e = "SOA.MName";
-                    else if(soa.Refresh != current.TimeToZoneRefresh) e = "SOA.Refresh";
-                    else if(soa.Retry != current.TimeToZoneFailureRetry) e = "SOA.Retry";
-                    else if(soa.RName != current.NameAdministrator) e = "SOA.RName";
-                    else if(soa.Serial != current.SerialNumber) e = "SOA.Serial";
-                    break;
-                case QType.MB:
-                    if(((RDataMB)expected.RData).MADName != current.NameHost) e = "MB.Namehost";
-                    break;
-                case QType.MG:
-                    if(((RDataMG)expected.RData).MGMName != current.NameHost) e = "MGMName";
-                    break;
-                case QType.MR:
-                    if (((RDataMR)expected.RData).NewName != current.Server) e = "MR.NewName";
-                    break;
-                case QType.NULL:
-                    throw new NotImplementedException(
-                        "problems with powershell - for now not implemented - todo implement. Powershell does not return anything");
-                case QType.WKS:
-                    // Powershell not work (not sure why for now) with WKS 
-                    // this need future investionation, for now this will work like that
-                    // nslookup works ok
-                    RDataWKS wks = (RDataWKS)expected.RData;
-                    if (wks.Protocol != current.Protocol) e = "protocol";
-                    if (wks.Address != DnsSerialize.Ipv4ToUInt(current.IP4Address)) e = "wks";
-                    break;
-                case QType.PTR:
-                    if(((RDataPTR)expected.RData).PtrDName != current.NameHost) e = "PTR"; ;
-                    break;
-                case QType.HINFO:
-                    RDataHINFO hinfo = (RDataHINFO)expected.RData;
-                    if(!current.Text.Contains(hinfo.CPU) || !current.Text.Contains(hinfo.OS)) e = "HINFO";
-                    break;
-                case QType.MINFO:
-                    RDataMINFO minfo = (RDataMINFO)expected.RData;
-                    if(minfo.RMailbx != current.NameMailbox || minfo.EMailbx != current.NameErrorsMailbox) e = "minfo";
-                    break;
-                case QType.MX:
-                    RDataMX mx = (RDataMX)expected.RData;
-                    if(mx.Preference != current.Preference || mx.Exchange != current.Exchange) e = "MX";
-                    break;
-                case QType.TXT:
-                    if((expected.RData as RDataTXT).TxtData.Any(t => !current.Text.Contains(t))) e = "TXT not match";
-                    break;
-                case QType.AAAA:
-                    var currentIpv6 = IPAddress.Parse(current.IP6Address).GetAddressBytes();
-                    if(!currentIpv6.SequenceEqual(((RDataAAAA)expected.RData).IPv6)) e = "AAAA";
+                switch (expected.Type)
+                {
+                    case QType.A:
+                        if (DnsSerialize.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address) e = "A ipv4 not equal";
                         break;
-                case QType.MAILB:
-                case QType.MAILA:
-                case QType.AXFR:
-                case QType.All:
-                    e = "must never happen - invalid expected type (invalid test case) - this are only in query section not in result";
-                    break;
-                default:
-                    e = "todo implement other QType conditions";
-                    break;
+                    case QType.NS:
+                        if ((expected.RData as RDataNS).NSDName != current.NameHost) e = "NSDName != NameHost";
+                        break;
+                    case QType.MD:
+                        if ((expected.RData as RDataMD).MADName != current.NameHost) e = "MADName";
+                        break;
+                    case QType.MF:
+                        if ((expected.RData as RDataMF).MADName != current.NameHost) e = "MADName";
+                        break;
+                    case QType.CNAME:
+                        if ((expected.RData as RDataCNAME).CName != current.NameHost) e = "CName";
+                        break;
+                    case QType.SOA:
+                        RDataSOA soa = (RDataSOA)expected.RData;
+                        if (soa.Expire != current.TimeToExpiration) e = "SOA.Expire";
+                        else if (soa.Minimum != current.DefaultTTL) e = "SOA.Minimum";
+                        else if (soa.MName != current.PrimaryServer) e = "SOA.MName";
+                        else if (soa.Refresh != current.TimeToZoneRefresh) e = "SOA.Refresh";
+                        else if (soa.Retry != current.TimeToZoneFailureRetry) e = "SOA.Retry";
+                        else if (soa.RName != current.NameAdministrator) e = "SOA.RName";
+                        else if (soa.Serial != current.SerialNumber) e = "SOA.Serial";
+                        break;
+                    case QType.MB:
+                        if (((RDataMB)expected.RData).MADName != current.NameHost) e = "MB.Namehost";
+                        break;
+                    case QType.MG:
+                        if (((RDataMG)expected.RData).MGMName != current.NameHost) e = "MGMName";
+                        break;
+                    case QType.MR:
+                        if (((RDataMR)expected.RData).NewName != current.Server) e = "MR.NewName";
+                        break;
+                    case QType.NULL:
+                        throw new NotImplementedException(
+                            "problems with powershell - for now not implemented - todo implement. Powershell does not return anything");
+                    case QType.WKS:
+                        // Powershell not work (not sure why for now) with WKS 
+                        // this need future investionation, for now this will work like that
+                        // nslookup works ok
+                        RDataWKS wks = (RDataWKS)expected.RData;
+                        if (wks.Protocol != current.Protocol) e = "protocol";
+                        if (wks.Address != DnsSerialize.Ipv4ToUInt(current.IP4Address)) e = "wks";
+                        break;
+                    case QType.PTR:
+                        if (((RDataPTR)expected.RData).PtrDName != current.NameHost) e = "PTR"; ;
+                        break;
+                    case QType.HINFO:
+                        RDataHINFO hinfo = (RDataHINFO)expected.RData;
+                        if (current.Text?.Contains(hinfo.CPU) != true || current.Text?.Contains(hinfo.OS) != true) e = "HINFO";
+                        break;
+                    case QType.MINFO:
+                        RDataMINFO minfo = (RDataMINFO)expected.RData;
+                        if (minfo.RMailbx != current.NameMailbox || minfo.EMailbx != current.NameErrorsMailbox) e = "minfo";
+                        break;
+                    case QType.MX:
+                        RDataMX mx = (RDataMX)expected.RData;
+                        if (mx.Preference != current.Preference || mx.Exchange != current.Exchange) e = "MX";
+                        break;
+                    case QType.TXT:
+                        if ((expected.RData as RDataTXT).TxtData.Any(t => !current.Text.Contains(t))) e = "TXT not match";
+                        break;
+                    case QType.AAAA:
+                        var currentIpv6 = IPAddress.Parse(current.IP6Address).GetAddressBytes();
+                        if (!currentIpv6.SequenceEqual(((RDataAAAA)expected.RData).IPv6)) e = "AAAA";
+                        break;
+                    case QType.MAILB:
+                    case QType.MAILA:
+                    case QType.AXFR:
+                    case QType.All:
+                        e = "must never happen - invalid expected type (invalid test case) - this are only in query section not in result";
+                        break;
+                    default:
+                        e = "todo implement other QType conditions";
+                        break;
+                }
+            }
+            catch (Exception er)
+            {
+                e = er.ToString();
             }
 
+            
             errorMessage = e;
             return e == null;
         }
@@ -516,7 +539,7 @@ namespace Arctium.IntegrationTests.Protocol
             r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
             r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("26.0.0.73"));
             r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("10.0.0.51"));
-            r.AddIN("SRI-NIC.ARPA", QType.MX, 300, new RDataA("10.0.0.51"));
+            r.AddIN("SRI-NIC.ARPA", QType.MX, 300, new RDataMX() { Preference = 0, Exchange = "SRI-NIC.ARPA" });
             r.AddIN("SRI-NIC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
             r.AddIN("ACC.ARPA", QType.A, 300, new RDataA("26.6.0.65"));
             r.AddIN("ACC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
