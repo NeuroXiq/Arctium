@@ -39,7 +39,7 @@ namespace Arctium.Protocol.DNS.Protocol
         /// <summary>
         /// domain name does not exists in name server database
         /// </summary>
-        R3DomainNameDoesNotExists = 0x3000,
+        R3DomainNameDoesNotExists = 0x0300,
 
         // server: 0x04xx -> not implemented (name server not support this query type)
 
@@ -48,7 +48,6 @@ namespace Arctium.Protocol.DNS.Protocol
         // server: 0xf0xx -> other errors, server will not send response to client,
         // client packet should be silently dropped
         ReceivedZeroBytesButExpectedMoreTcp = 0xf001,
-        
         CannotFindDnsServerToAsk = 0xf002,
         Internal_MultipleDnsSOAZonesForSameDomain = 0xF003
     }

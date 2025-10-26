@@ -44,17 +44,91 @@ namespace Arctium.IntegrationTests.Protocol
         // start of 
         // 6.2. Example standard queries [rfc 1034, page 40]
 
+        /// <summary>
+        ///  6.2.7. QNAME=USC-ISIC.ARPA, QTYPE=A
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_7_ExapmleStandardQueries()
+        {
+            var expected = records.Where(t => t.Name == "USC-ISIC.ARPA");
+            var current = QueryServer("USC-ISIC.ARPA", QType.A);
+
+            AssertRecordsEqual(current, expected);
+        }
+
+        /// <summary>
+        ///  6.2.6. QNAME=BRL.MIL, QTYPE=A
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_6_ExapmleStandardQueries()
+        {
+            // cannot test this case because powershell wants to connect to 'BRL.MIL' because of recursion
+            //var expected = records.Where(t => t.Name == "BRL.MIL" && t.Type == QType.A).ToArray();
+            //var current = QueryServer("BRL.MIL", QType.A);
+            
+            //AssertRecordsEqual(current, expected);
+
+            Assert.That(true);
+        }
+
+        [Test]
+        public void asdf()
+        {
+            Thread.Sleep(5 * 60 * 1000);
+            Assert.Fail();
+        }
+
+        /// <summary>
+        /// 6.2.5. QNAME=SIR-NIC.ARPA, QTYPE=A
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_5_ExapmleStandardQueries()
+        {
+            // mistyped intentiallny for this test (SIR -> SRI)
+            var expected = records.Where(t => t.Name == "SIR-NIC.ARPA" && t.Type == QType.A).ToArray();
+            QueryServerAssertException(1, "SIR-NIC.ARPA", QType.A);
+        }
+
+        /// <summary>
+        ///  6.2.4. QNAME=SRI-NIC.ARPA, QTYPE=NS
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_4_ExampleStandardQueries4()
+        {
+            var expected = records
+                .Where(t => t.Name == "SRI-NIC.ARPA" && t.Type == QType.NS)
+                .ToArray();
+
+            var current = QueryServer("SRI-NIC.ARPA", QType.NS);
+
+            AssertRecordsEqual(current, expected);
+        }
+
+        /// <summary>
+        ///  6.2.3. QNAME=SRI-NIC.ARPA, QTYPE=MX
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_3_ExampleStandardQueries3()
+        {
+            var expected = records
+                .Where(t => t.Name == "SRI-NIC.ARPA" && (t.Type == QType.MX || t.Type == QType.A))
+                .ToArray();
+
+            var current = QueryServer("SRI-NIC.ARPA", QType.MX);
+
+            AssertRecordsEqual(current, expected);
+        }
 
         /// <summary>
         /// 6.2.2. QNAME=SRI-NIC.ARPA, QTYPE=*
         /// </summary>
         [Test]
-        public void Succeed_6_2_ExampleStandardQueries2()
+        public void Succeed_6_2_2_ExampleStandardQueries2()
         {
             var expected = records.Where(t => t.Name == "SRI-NIC.ARPA").ToArray();
             var current = QueryServer("SRI-NIC.ARPA", QType.All);
 
-            AssertCurrentContainsExcepted(current, expected);
+            AssertRecordsEqual(current, expected);
         }
 
 
@@ -62,13 +136,13 @@ namespace Arctium.IntegrationTests.Protocol
         /// 6.2.1. QNAME=SRI-NIC.ARPA, QTYPE=A
         /// </summary>
         [Test]
-        public void Succeed_6_2_ExampleStandardQueries1()
+        public void Succeed_6_2_1_ExampleStandardQueries1()
         {
             // 6.2.1. QNAME=SRI-NIC.ARPA, QTYPE=A
             var expected = records.Where(t => t.Name == "SRI-NIC.ARPA" && t.Type == QType.A).ToArray();
             var current = QueryServer("SRI-NIC.ARPA.", QType.A);
 
-            AssertCurrentContainsExcepted(current, expected);
+            AssertRecordsEqual(current, expected);
         }
 
         // end of 
@@ -283,7 +357,7 @@ namespace Arctium.IntegrationTests.Protocol
                 var result = QueryServer("www.all-rrs.pl", qtype);
                 var expected = records.First(r => r.Name == "www.all-rrs.pl" && r.Type == qtype);
                 Assert.That(result.Count == 1);
-                
+
                 // assert
                 AssertRecordEqual(result[0], expected);
             }
@@ -342,7 +416,7 @@ namespace Arctium.IntegrationTests.Protocol
                 $"{new string('d', 61)}";
 
             var expected = records.Single(t => t.Name == domainName);
-            
+
             // act
             var current = QueryServer(expected.Name, QType.A);
 
@@ -363,21 +437,17 @@ namespace Arctium.IntegrationTests.Protocol
             AssertRecordEqual(current, expected);
         }
 
-        // because our dns server can return 'additional' records
-        // we need to check if expected intersects current (current.length can be >= than expected because of 'additional')
-        private static void AssertCurrentContainsExcepted(IEnumerable<PwshRecord> current, IEnumerable<ResourceRecord> expected)
+        private static void AssertRecordsEqual(IEnumerable<PwshRecord> current, IEnumerable<ResourceRecord> expected)
         {
             Assert.That(current.Count() >= expected.Count());
 
             foreach (var e in expected)
             {
-                if (!current.Any(c => AreRecordEqual(c, e, out var _)))
+                if (current.All(c => !AreRecordEqual(c, e, out _)))
                 {
-                    Assert.That(false, "failed");
+                    Assert.Fail("current not in expected");
                 }
             }
-
-            Assert.That(current.All(c => expected.Any(e => AreRecordEqual(c, e, out _))));
         }
 
         void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
@@ -389,19 +459,23 @@ namespace Arctium.IntegrationTests.Protocol
         private static bool AreRecordEqual(PwshRecord current, ResourceRecord expected, out string errorMessage)
         {
             string e = null;
-           
+
             try
             {
                 if (current.TTL != expected.TTL || expected.Name != current.Name ||
-                    (int)expected.Type != current.Type)
+                    (int)expected.Type != (int)current.Type)
                 {
-                    e = "expected != current";
+                    errorMessage = "expected != current";
+                    return false;
                 }
 
                 switch (expected.Type)
                 {
                     case QType.A:
-                        if (DnsSerialize.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address) e = "A ipv4 not equal";
+                        if (DnsSerialize.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address)
+                        {
+                            e = "A ipv4 not equal";
+                        }
                         break;
                     case QType.NS:
                         if ((expected.RData as RDataNS).NSDName != current.NameHost) e = "NSDName != NameHost";
@@ -483,9 +557,38 @@ namespace Arctium.IntegrationTests.Protocol
                 e = er.ToString();
             }
 
-            
+
             errorMessage = e;
             return e == null;
+        }
+
+        private void QueryServerAssertException(int type, string domainName, QType qtype)
+        {
+            // do something to check if powershell returned expected exception
+
+            string expectedErrorText;
+
+            if (type == 1)
+            {
+                expectedErrorText = "DNS name does not exist";
+            }
+            else throw new NotImplementedException();
+
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = @"powershell.exe";
+            startInfo.Arguments = $@"-command convertto-json @(resolve-dnsname {domainName} -server 127.0.0.1 -type {qtype})";
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
+            Process process = new Process();
+            process.StartInfo = startInfo;
+            process.Start();
+
+            string output = process.StandardOutput.ReadToEnd();
+            string errors = process.StandardError.ReadToEnd();
+            Assert.That(!string.IsNullOrEmpty(errors), "no errors but expected");
+            Assert.That(errors.Contains(expectedErrorText));
         }
 
         private List<PwshRecord> QueryServer(string domainName, QType qtype)
@@ -535,7 +638,7 @@ namespace Arctium.IntegrationTests.Protocol
             r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
             r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
             r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "A.ISI.EDU" });
-            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA." });
+            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
             r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
             r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("26.0.0.73"));
             r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("10.0.0.51"));
@@ -543,13 +646,13 @@ namespace Arctium.IntegrationTests.Protocol
             r.AddIN("SRI-NIC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
             r.AddIN("ACC.ARPA", QType.A, 300, new RDataA("26.6.0.65"));
             r.AddIN("ACC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
-            r.AddIN("ACC.ARPA", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA." });
-            r.AddIN("USC-ISIC.ARPA.", QType.CNAME, 300, new RDataCNAME() { CName = "C.ISI.EDU" });
-            r.AddIN("73.0.0.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." });
-            r.AddIN("65.0.6.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "ACC.ARPA." });
-            r.AddIN("51.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA." });
-            r.AddIN("52.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "C.ISI.EDU." });
-            r.AddIN("103.0.3.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "A.ISI.EDU." });
+            r.AddIN("ACC.ARPA", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA" });
+            r.AddIN("USC-ISIC.ARPA", QType.CNAME, 300, new RDataCNAME() { CName = "C.ISI.EDU" });
+            r.AddIN("73.0.0.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA" });
+            r.AddIN("65.0.6.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "ACC.ARPA" });
+            r.AddIN("51.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA" });
+            r.AddIN("52.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "C.ISI.EDU" });
+            r.AddIN("103.0.3.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "A.ISI.EDU" });
             r.AddIN("A.ISI.EDU", QType.A, 300, new RDataA("26.3.0.103"));
             r.AddIN("C.ISI.EDU", QType.A, 300, new RDataA("10.0.0.52"));
 
@@ -644,7 +747,7 @@ namespace Arctium.IntegrationTests.Protocol
                     TxtData = new string[] { new string('a', 200), new string('c', 200), new string('b', 200)
                 }
                 });
-            
+
             t.AddIN("www.test.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
 
 
@@ -657,17 +760,57 @@ namespace Arctium.IntegrationTests.Protocol
             records = itMasterFiles.Nodes.SelectMany(t => t.Records).ToList();
         }
 
+        enum PwshRecordType
+        {
+            UNKNOWN = 0,
+            A_AAAA = 0,
+            A = 1,
+            AAAA = 28,
+            NS = 2,
+            MX = 15,
+            MD = 3,
+            MF = 4,
+            CNAME = 5,
+            SOA = 6,
+            MB = 7,
+            MG = 8,
+            MR = 9,
+            NULL = 10,
+            WKS = 11,
+            PTR = 12,
+            HINFO = 13,
+            MINFO = 14,
+            TXT = 16,
+            RP = 17,
+            AFSDB = 18,
+            X25 = 19,
+            ISDN = 20,
+            RT = 21,
+            SRV = 33,
+            DNAME = 39,
+            OPT = 41,
+            DS = 43,
+            RRSIG = 46,
+            NSEC = 47,
+            DNSKEY = 48,
+            DHCID = 49,
+            NSEC3 = 50,
+            NSEC3PARAM = 51,
+            ANY = 255,
+            ALL = 255,
+        }
+
         class PwshRecord
         {
             public string IP6Address { get; set; }
             public string IP4Address { get; set; }
             public string Name { get; set; }
+            public PwshRecordType Type { get; set; }
 
             /// <summary>
             /// MB.MADName
             /// </summary>
             public string NameHost { get; set; }
-            public int Type { get; set; }
             public int CharacterSet { get; set; }
             public int Section { get; set; }
             public int DataLength { get; set; }
@@ -695,7 +838,7 @@ namespace Arctium.IntegrationTests.Protocol
             /// <summary>
             /// MINFO.EMailbx
             /// </summary>
-            public string NameErrorsMailbox {get; set; }
+            public string NameErrorsMailbox { get; set; }
 
             /// <summary>
             /// MR.NewName
@@ -716,7 +859,7 @@ namespace Arctium.IntegrationTests.Protocol
             /// SOA.SerialNumber
             /// </summary>
             public uint SerialNumber { get; set; }
-            
+
             /// <summary>
             /// SOA.Refresh
             /// </summary>

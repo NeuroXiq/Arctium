@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,6 +24,11 @@ namespace Arctium.Protocol.DNS.Model
         public RDataA(string address)
         {
             Address = DnsSerialize.Ipv4ToUInt(address);
+        }
+
+        public override string ToString()
+        {
+            return DnsSerialize.UIntToIpv4(Address);
         }
     }
 }

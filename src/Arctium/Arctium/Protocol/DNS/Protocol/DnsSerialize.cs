@@ -364,6 +364,15 @@ namespace Arctium.Protocol.DNS.Protocol
             return header;
         }
 
+        public static string UIntToIpv4(uint ipv4)
+        {
+            return string.Format("{0}.{1}.{2}.{3}",
+                (byte)(ipv4 >> 24),
+                (byte)(ipv4 >> 16),
+                (byte)(ipv4 >> 08),
+                (byte)(ipv4 >> 00));
+        }
+
         public static uint Ipv4ToUInt(string ipv4)
         {
             string[] parts = ipv4.Split('.');

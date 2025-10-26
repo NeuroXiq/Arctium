@@ -126,6 +126,8 @@ namespace Arctium.Protocol.DNS.Protocol
                 }
                 catch (Exception e)
                 {
+                    if (e is AggregateException) e = e.InnerException;
+
                     OnException(clientBytes, clientEndpoint, null, e);
                 }
             }

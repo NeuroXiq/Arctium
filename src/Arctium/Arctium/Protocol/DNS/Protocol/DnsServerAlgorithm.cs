@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Arctium.Protocol.DNS.Protocol
 {
@@ -26,8 +27,9 @@ namespace Arctium.Protocol.DNS.Protocol
 
         string name = null;
         string[] labels;
-        int ancestorLvl = 0;
+        int ancestorLvl;
         string originalQname = null;
+        ResourceRecord soa;
 
         public DnsServerAlgorithm(DnsServerOptions options, Message clientMsg)
         {
@@ -40,7 +42,6 @@ namespace Arctium.Protocol.DNS.Protocol
             originalQname = clientMsg.Question[0].QName;
             qtype = clientMsg.Question[0].QType;
             qclass = clientMsg.Question[0].QClass;
-            labels = qname.Split('.');
             this.options = options;
         }
 
@@ -60,6 +61,11 @@ namespace Arctium.Protocol.DNS.Protocol
 
         async Task Step1()
         {
+            labels = qname.Split('.');
+            ancestorLvl = 0;
+            soa = null;
+
+
             if (options.RecursionAvailable && clientMessage.Header.RD)
             {
                 await Step5();
@@ -80,7 +86,7 @@ namespace Arctium.Protocol.DNS.Protocol
         async Task Step2()
         {
             // 2. find zone that is nearest ancestor
-            ResourceRecord soa = null;
+            soa = null;
 
             for (; ancestorLvl <= labels.Length; ancestorLvl++)
             {
@@ -115,9 +121,8 @@ namespace Arctium.Protocol.DNS.Protocol
             // start match down label by label
             outAuthoritativeAnswer = true;
             DnsNode node = null;
-            bool completed = false;
 
-            for (; ancestorLvl >= 0 && !completed; ancestorLvl--)
+            for (; ancestorLvl >= 0; ancestorLvl--)
             {
                 name = QNameAncestor(ancestorLvl);
                 node = await options.DnsServerDataSource.GetAsync(name, qclass, QType.All);
@@ -126,8 +131,6 @@ namespace Arctium.Protocol.DNS.Protocol
                 if (node != null && name.Length == qname.Length)
                 {
                     var rr = node.Records;
-
-                    if (qtype != QType.All) rr = rr.Where(t => t.Type == qtype).ToList();
 
                     // data at node is cname and query is not cname
                     if (rr.Count > 0 && rr[0].Type == QType.CNAME && qtype != QType.CNAME)
@@ -139,14 +142,22 @@ namespace Arctium.Protocol.DNS.Protocol
                     }
                     else
                     {
+                        rr = rr.Where(t => t.Type == qtype).ToList();
                         outAnswer.AddRange(rr);
                         await Step6();
                     }
 
-                    completed = true;
+                    return;
                 }
+
+                // have referral when node exists and NS does not point to current 'SOA' record
+                bool isReferral = node != null &&
+                    node.Records.Any(t => t.Type == QType.NS) &&
+                    !node.Records.Any(t =>
+                        t.Type == QType.NS && t.GetRData<RDataNS>().NSDName != soa.GetRData<RDataSOA>().MName);
+
                 // 3.b, we have a referral
-                else if (node != null && node.Records.Where(t => t.Type == QType.NS).Any())
+                if (isReferral)
                 {
                     outAuthority.AddRange(node.Records.Where(a => a.Type == QType.NS));
                     await Step4();
@@ -214,7 +225,7 @@ namespace Arctium.Protocol.DNS.Protocol
             outAuthoritativeAnswer = false;
             DnsNode node;
 
-            if (options.DnsServerCacheDataSource == null &&
+            if (options.DnsServerCacheDataSource != null &&
                 (node = await options.DnsServerCacheDataSource.GetAsync(name, qclass, qtype)) != null)
             {
                 outAnswer.AddRange(node.Records);
