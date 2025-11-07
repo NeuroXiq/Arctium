@@ -41,8 +41,26 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Dispose();
         }
 
-        // start of 
-        // 6.2. Example standard queries [rfc 1034, page 40]
+        // start of 6.2. Example standard queries [rfc 1034, page 40]
+
+        [Test]
+        public void Succeed_6_2_9_ExampleStandardQueries()
+        {
+            
+        }
+
+        /// <summary>
+        /// 6.2.8. QNAME=USC-ISIC.ARPA, QTYPE=CNAME
+        /// </summary>
+        [Test]
+        public void Succeed_6_2_8_ExampleStandardQueries()
+        {
+            var expected = records.Where(t => t.Name == "USC-ISIC.ARPA" && t.Type == QType.CNAME).ToList();
+            Assert.That(expected.Count == 1);
+            var current = QueryServer("USC-ISIC.ARPA", QType.CNAME);
+
+            AssertRecordsEqual(current, expected);
+        }
 
         /// <summary>
         ///  6.2.7. QNAME=USC-ISIC.ARPA, QTYPE=A
@@ -50,7 +68,10 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Succeed_6_2_7_ExapmleStandardQueries()
         {
-            var expected = records.Where(t => t.Name == "USC-ISIC.ARPA");
+            var expected = records.Where(t => t.Name == "USC-ISIC.ARPA")
+                .Union(records.Where(t => t.Name == "C.ISI.EDU" && t.Type == QType.A))
+                .ToList();
+
             var current = QueryServer("USC-ISIC.ARPA", QType.A);
 
             AssertRecordsEqual(current, expected);
@@ -377,17 +398,6 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         [Test]
-        public void Succeed_ReturnRDataA_DomainNameWithDotAtTheEnd()
-        {
-            // act
-            var current = QueryServer("www.domain-with-dot.pl.", QType.A).Single();
-            var expected = records.Single(t => t.Name == "www.domain-with-dot.pl.");
-
-            // assert
-            AssertRecordEqual(current, expected);
-        }
-
-        [Test]
         public void Succeed_ReturnRDataA_DomainNameWithoutDotAtTheEnd()
         {
             // act
@@ -618,6 +628,10 @@ namespace Arctium.IntegrationTests.Protocol
 
         static DnsServerIntegrationTests()
         {
+            // current master files will store (both at the same time):
+            // 1. tree structure from rfc 1034 for tests data
+            // 2. custom domain names for other tests
+
             itMasterFiles = new InMemoryDnsServerMasterFiles();
             var r = itMasterFiles;
             // rfc

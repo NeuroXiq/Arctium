@@ -9,7 +9,7 @@ using System.Xml.Serialization;
 
 namespace Arctium.Protocol.DNS.Protocol
 {
-    public class DnsServerAlgorithm : IDisposable
+    public class DnsServerAlgorithm
     {
         public List<ResourceRecord> outAnswer;
         public List<ResourceRecord> outAuthority;
@@ -17,7 +17,6 @@ namespace Arctium.Protocol.DNS.Protocol
         public bool outRecursionAvailable;
         public bool outAuthoritativeAnswer;
 
-        bool disposed;
         string qname;
         QClass qclass;
         QType qtype;
@@ -31,9 +30,12 @@ namespace Arctium.Protocol.DNS.Protocol
         string originalQname = null;
         ResourceRecord soa;
 
-        public DnsServerAlgorithm(DnsServerOptions options, Message clientMsg)
+        public DnsServerAlgorithm()
         {
-            disposed = false;
+        }
+
+        public async Task Start(DnsServerOptions options, Message clientMsg)
+        {
             outAnswer = new List<ResourceRecord>();
             outAuthority = new List<ResourceRecord>();
             outAdditional = new List<ResourceRecord>();
@@ -43,20 +45,8 @@ namespace Arctium.Protocol.DNS.Protocol
             qtype = clientMsg.Question[0].QType;
             qclass = clientMsg.Question[0].QClass;
             this.options = options;
-        }
-
-        public void Dispose()
-        {
-            disposed = true;
-        }
-
-        public async Task Start()
-        {
-            if (disposed) throw new ObjectDisposedException(nameof(DnsServerAlgorithm));
 
             await Step1();
-
-            Dispose();
         }
 
         async Task Step1()

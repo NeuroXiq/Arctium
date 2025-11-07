@@ -231,8 +231,8 @@ namespace Arctium.Protocol.DNS.Protocol
             if (h.QR != QRType.Query) throw new DnsException(DnsProtocolError.QRTypeNotQuery);
             if (h.QDCount != 1) throw new DnsException(DnsProtocolError.QDCountNotEqual1);
 
-            var algorithm = new DnsServerAlgorithm(options, clientMsg);
-            await algorithm.Start();
+            var algorithm = new DnsServerAlgorithm();
+            await algorithm.Start(options, clientMsg);
 
             rheader.Id = h.Id;
             rheader.QR = QRType.Response;

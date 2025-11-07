@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace Arctium.UnitTests.Protocol
 {
+    //todo: all rfc 1034 tests check for all fields in resposen (r.g. RD, AA, RA, code etc.)
+
     internal class DnsServerTests
     {
         /// <summary>
