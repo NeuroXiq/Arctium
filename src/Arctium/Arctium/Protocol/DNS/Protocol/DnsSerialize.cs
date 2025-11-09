@@ -105,7 +105,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 default: throw new DnsException(DnsProtocolError.EncodeInvalidQType, "invalid QType resource record encode");
             }
 
-            int rdLength = buffer.DataLength - rdLengthOffset - 2;
+            int rdLength = buffer.Length - rdLengthOffset - 2;
 
             if (rdLength > ushort.MaxValue)
                 throw new DnsException(DnsProtocolError.EncodeMaxRecordLengthExceeded);
@@ -206,7 +206,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
             string[] qnameLabels = domainName.Split('.');
             int totalLabelLen = 0;
-            int labelEncodeStart = buffer.DataLength;
+            int labelEncodeStart = buffer.Length;
 
             for (int i = 0; i < qnameLabels.Length; i++)
             {
@@ -227,7 +227,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
             buffer.Append(0);
 
-            if (buffer.DataLength - labelEncodeStart > DnsConsts.MaxDomainNameLength)
+            if (buffer.Length - labelEncodeStart > DnsConsts.MaxDomainNameLength)
                 throw new DnsException(DnsProtocolError.EncodeMaxDomainNameLength, "encoding: total length of label exceed max");
         }
 
@@ -247,7 +247,7 @@ namespace Arctium.Protocol.DNS.Protocol
         private void Encode_RDataA(RDataA rd, ByteBuffer buffer)
         {
             buffer.AllocEnd(4);
-            MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, buffer.DataLength - 4);
+            MemMap.ToBytes1UIntBE(rd.Address, buffer.Buffer, buffer.Length - 4);
         }
 
         private void Encode_Question(Question question, ByteBuffer buffer)
@@ -255,18 +255,17 @@ namespace Arctium.Protocol.DNS.Protocol
             EncodeDomainName(buffer, question.QName);
             
             buffer.AllocEnd(4);
-            MemMap.ToBytes1UShortBE((ushort)question.QType, buffer.Buffer, buffer.DataLength - 4);
-            MemMap.ToBytes1UShortBE((ushort)question.QClass, buffer.Buffer, buffer.DataLength - 2);
+            MemMap.ToBytes1UShortBE((ushort)question.QType, buffer.Buffer, buffer.Length - 4);
+            MemMap.ToBytes1UShortBE((ushort)question.QClass, buffer.Buffer, buffer.Length - 2);
         }
 
 
         // decoding
 
-        public Message Decode(BytesSpan buffer)
+        public Message Decode(BytesCursor cursor)
         {
             Message result = new Message();
-            Header header = Decode_Header(buffer, out int decodedLength);
-            buffer.ShiftOffset(decodedLength);
+            Header header = Decode_Header(cursor);
 
             // todo: validate max no entries
 
@@ -277,67 +276,114 @@ namespace Arctium.Protocol.DNS.Protocol
 
             for (int i = 0; i < header.QDCount; i++)
             {
-                result.Question[i] = Decode_Question(buffer, out decodedLength);
-                buffer.ShiftOffset(decodedLength);
+                result.Question[i] = Decode_Question(cursor);
             }
 
             for (int i = 0; i < header.ANCount; i++)
             {
-                throw new NotImplementedException();
+                result.Answer[i] = Decode_ResourceRecord(cursor);
             }
 
             for (int i = 0; i < header.NSCount; i++)
             {
-                throw new NotImplementedException();
+                result.Authority[i] = Decode_ResourceRecord(cursor);
             }
 
             for (int i = 0; i < header.ARCount; i++)
             {
-                throw new NotImplementedException();
+                result.Additional[i] = Decode_ResourceRecord(cursor);
             }
 
-            if (buffer.Offset != buffer.Length) throw new DnsException(DnsProtocolError.DecodeMsgLengthNotMatchTotalLength);
+            if (!cursor.IsValidEnd) throw new DnsException(DnsProtocolError.DecodeMsgLengthNotMatchTotalLength);
 
             result.Header = header;
 
             return result;
         }
 
-        public Question Decode_Question(BytesSpan buffer, out int decodedLength)
+        private object Decode_RData(BytesCursor cursor)
         {
-            Question result = new Question();
-            int i = 0;
+            var q = cursor;
+
+            return null;
+        }
+
+        private ResourceRecord Decode_ResourceRecord(BytesCursor cursor)
+        {
+            var rr = new ResourceRecord();
+
+            rr.Name = Decode_DomainName(cursor);
+            rr.Type = (QType)MemMap.ToUShort2BytesBE(cursor.Buffer, cursor.CurrentOffset);
+            rr.Class = (QClass)MemMap.ToUShort2BytesBE(cursor.Buffer, cursor.CurrentOffset += 2);
+            rr.TTL = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 2);
+            rr.RDLength = MemMap.ToUShort2BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+            rr.RData = Decode_RData(cursor);
+
+            throw new Exception();
+        }
+
+        private string Decode_DomainName(BytesCursor cursor)
+        {
             List<string> labels = new List<string>();
 
-            while (buffer[i] > 0)
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeDomainName, "no data for domain name");
+
+            int labelOffset = cursor.CurrentOffset;
+            int labelLength = -1;
+            bool compressedMode = false;
+
+            while (cursor.Buffer[labelOffset] != 0)
             {
-                int labelLengt = buffer[i];
+                if (cursor.Buffer[labelOffset] == 0xC0)
+                {
+                    if (compressedMode) throw new DnsException(DnsProtocolError.DecodeDomainName, "compressed in compressed label");
 
-                if (labelLengt > DnsConsts.MaxLabelLength) throw new DnsException(DnsProtocolError.DecodeInvalidLabelLength);
-                if (i + buffer.Offset >= buffer.Length) throw new DnsException(DnsProtocolError.DecodeInvalidLabelLength);
+                    if (cursor.Length < 2)
+                        throw new DnsException(DnsProtocolError.DecodeDomainName, "DecodeInvalidPtrValueMin2BytesLen");
 
-                if (labelLengt > 0)
-                    labels.Add(Encoding.ASCII.GetString(buffer.Buffer, buffer.GetIndex(i + 1), labelLengt));
+                    compressedMode = true;
+                    labelOffset = (cursor[0] << 8 | cursor[1] << 0) & 0x3FFF; // remove first two MSB
 
-                i += labelLengt + 1;
+                    cursor.CurrentOffset += 2;
+                }
+                else
+                {
+                    if (!cursor.OffsetInStartEnd(labelOffset))
+                        throw new DnsException(DnsProtocolError.DecodeDomainName, "DecodeInvalidLabelCompressionOffset");
 
-                if (i > DnsConsts.MaxDomainNameLength)
-                    throw new DnsException(DnsProtocolError.DecodeTotalLengthOfDomainNameExceeded);
+                    labelLength = cursor.Buffer[labelOffset];
+
+                    if (labelLength > DnsConsts.MaxLabelLength) throw new DnsException(DnsProtocolError.DecodeInvalidLabelLength, "max label length");
+                    if (!cursor.OffsetInStartEnd(labelOffset + labelLength)) throw new DnsException(DnsProtocolError.DecodeInvalidLabelLength, "outside of bounds");
+
+                    string label = Encoding.ASCII.GetString(cursor.Buffer, labelOffset + 1, labelLength);
+                    labels.Add(label);
+
+                    labelOffset += labelLength + 1;
+                    if (!compressedMode) cursor.CurrentOffset += labelLength + 1;
+                }
             }
+
+            // add last '0' byte
+            if (!compressedMode) cursor.CurrentOffset += 1;
+
+            return string.Join(".", labels);
+        }
+
+        public Question Decode_Question(BytesCursor cursor)
+        {
+            Question result = new Question();
+
+            result.QName = Decode_DomainName(cursor);
+            result.QType = (QType)BinConverter.ToUShortBE(cursor.Buffer, cursor.CurrentOffset);
+            result.QClass = (QClass)BinConverter.ToUShortBE(cursor.Buffer, cursor.CurrentOffset + 2);
+
+            cursor.CurrentOffset += 4;
             
-            i += 1;
-
-            result.QName = string.Join('.', labels);
-            result.QType = (QType)BinConverter.ToUShortBE(buffer.Buffer, buffer.GetIndex(i));
-            result.QClass = (QClass)BinConverter.ToUShortBE(buffer.Buffer, buffer.GetIndex(i + 2));
-
-            i += 4;
-
-            decodedLength = i;
             return result;
         }
 
-        public Header Decode_Header(BytesSpan buffer, out int decodedLength)
+        public Header Decode_Header(BytesCursor buffer)
         {
             if (buffer.Length < 12) throw new DnsException(DnsProtocolError.DecodeMinHeaderLength, "decode error: min header length < 12");
 
@@ -354,12 +400,12 @@ namespace Arctium.Protocol.DNS.Protocol
                 throw new DnsException(DnsProtocolError.DecodeZValudNotZero, "decode error, Z value in header is not zero");
             
             header.RCode = (ResponseCode)(buffer[3] & 0x0F);
-            header.QDCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.Offset + 4);
-            header.ANCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.Offset + 6);
-            header.NSCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.Offset + 8);
-            header.ARCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.Offset + 10);
+            header.QDCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 4);
+            header.ANCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 6);
+            header.NSCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 8);
+            header.ARCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 10);
 
-            decodedLength = 12;
+            buffer.ShiftCurrentOffset(12);
 
             return header;
         }

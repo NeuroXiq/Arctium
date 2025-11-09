@@ -137,8 +137,8 @@ namespace Arctium.Protocol.QUICv1Impl
         async Task EncryptAndSend(QuicPNS pns)
         {
             int toSendLen = pns.crypto.EncryptPacket(
-                toSendPacketHeader.Buffer, 0, toSendPacketHeader.DataLength,
-                toSendPacketFrames.Buffer, 0, toSendPacketFrames.DataLength,
+                toSendPacketHeader.Buffer, 0, toSendPacketHeader.Length,
+                toSendPacketFrames.Buffer, 0, toSendPacketFrames.Length,
                 encryptedToSend, 0);
         
             await this.quicServer.WritePacket(encryptedToSend, 0, toSendLen);
@@ -166,7 +166,7 @@ namespace Arctium.Protocol.QUICv1Impl
         async Task WritePacketInitial()
         {
             PacketPaddingIfNeeded();
-            int pnlength = toSendPacketFrames.DataLength + initialPns.crypto.WriteAuthTagLen;
+            int pnlength = toSendPacketFrames.Length + initialPns.crypto.WriteAuthTagLen;
             await Console.Out.WriteLineAsync("wrtie initial:, " + pnlength);
 
             var p = InitialPacket.Create(
@@ -188,7 +188,7 @@ namespace Arctium.Protocol.QUICv1Impl
         {
             PacketPaddingIfNeeded();
 
-            ulong pnlength = (ulong)toSendPacketFrames.DataLength + (ulong)initialPns.crypto.WriteAuthTagLen;
+            ulong pnlength = (ulong)toSendPacketFrames.Length + (ulong)initialPns.crypto.WriteAuthTagLen;
             await Console.Out.WriteLineAsync("wrtie handshake:, " + pnlength);
 
             var p = HandshakePacket.Create(
@@ -225,7 +225,7 @@ namespace Arctium.Protocol.QUICv1Impl
         async Task ProcessPackets()
         {
             // if (tlsState == 1) Debugger.Break();
-            if (packets.DataLength == 0)  await quicServer.LoadPacket();
+            if (packets.Length == 0)  await quicServer.LoadPacket();
             // MemCpy.Copy(testpacketprotected, 0, packets.Buffer, 0, testpacketprotected.Length);
 
             LongHeaderPacket lhp = QuicModelCoding.DecodeLHP(packets.Buffer, 0, true);

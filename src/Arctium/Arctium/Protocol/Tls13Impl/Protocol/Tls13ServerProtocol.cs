@@ -423,7 +423,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             // [ClientHello1 ... ClientFinished] + [certrequest + clientcertificate + verify + finished] + [certrequest + cert + ver + finished] + ... + 
             // so need to store original hsctx and always append messages that are 
             // sent in this particular post-hs-auth
-            authContext.hsctx.Append(hsctx.Buffer, 0, hsctx.DataLength);
+            authContext.hsctx.Append(hsctx.Buffer, 0, hsctx.Length);
 
             messageIO.OnHandshakeReadWrite += authContext.AddHandshakeContext;
             messageIO.WriteHandshake(certRequest);
@@ -460,7 +460,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             var current = context.PostHandshakeClientAuth_CurrentProcessing;
 
             var certOk = crypto.IsClientCertificateVerifyValid(current.hsctx.Buffer,
-                current.hsctx.DataLength,
+                current.hsctx.Length,
                 certVerify,
                 context.PostHandshakeClientAuth_CurrentProcessing.ClientX509Certificate);
 
@@ -659,7 +659,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void Handshake_ClientCertificateVerity()
         {
-            int dataToSignLen = hsctx.DataLength;
+            int dataToSignLen = hsctx.Length;
             var certVer = messageIO.ReadHandshakeMessage<CertificateVerify>();
 
             bool signatureOk = crypto.IsClientCertificateVerifyValid(hsctx.Buffer, dataToSignLen, certVer, context.ClientCertificateOnHandshake);
@@ -961,10 +961,10 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 extensions.Add(new KeyShareHelloRetryRequestExtension(crypto.SelectedNamedGroup));
                 context.HelloRetryRequest = new ServerHello(random, legacySessionId, crypto.SelectedCipherSuite, extensions);
 
-                crypto.ReplaceClientHello1WithMessageHash(hsctx, hsctx.DataLength);
+                crypto.ReplaceClientHello1WithMessageHash(hsctx, hsctx.Length);
                 messageIO.WriteHandshake(context.HelloRetryRequest);
 
-                context.CH2Offset = hsctx.DataLength;
+                context.CH2Offset = hsctx.Length;
                 context.ClientHello2 = messageIO.ReadHandshakeMessage<ClientHello>();
                 validate.ClientHello.GeneralValidateClientHello2(context.ClientHello2, context.ClientHello1, context.HelloRetryRequest);
 

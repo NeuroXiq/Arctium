@@ -95,7 +95,6 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void asdf()
         {
-            Thread.Sleep(5 * 60 * 1000);
             Assert.Fail();
         }
 

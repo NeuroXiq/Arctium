@@ -11,7 +11,7 @@ namespace Arctium.Protocol.DNS.Model
         public string Name;
         public QType Type;
         public QClass Class;
-        public int TTL;
+        public uint TTL;
         public ushort RDLength;
         public object RData;
 

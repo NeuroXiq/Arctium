@@ -31,7 +31,7 @@ namespace Arctium.Protocol.DNS.Protocol
             tcpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortTcp));
             tcpSocket.Listen(100);
             Socket client = null;
-            BytesSpan clientBytes = null;
+            BytesCursor clientBytes = null;
 
             while (!options.CancellationToken.IsCancellationRequested)
             {
@@ -65,19 +65,19 @@ namespace Arctium.Protocol.DNS.Protocol
                         }
                     }
 
-                    clientBytes = new BytesSpan(buffer.Buffer, 2, buffer.DataLength);
+                    clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length);
                     var clientMsg = serializer.Decode(clientBytes);
                     var responseMessage = GetResponseMessage(clientMsg).Result;
                     var responseBuffer = new ByteBuffer();
                     responseBuffer.AllocEnd(2);
                     serializer.Encode(responseMessage, responseBuffer);
 
-                    if (responseBuffer.DataLength > ushort.MaxValue)
+                    if (responseBuffer.Length > ushort.MaxValue)
                         throw new DnsException(DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue);
 
                     // first 2-bytes are msg length
-                    MemMap.ToBytes1UShortBE((ushort)(responseBuffer.DataLength - 2), responseBuffer.Buffer, 0);
-                    client.Send(responseBuffer.Buffer, 0, responseBuffer.DataLength, SocketFlags.None);
+                    MemMap.ToBytes1UShortBE((ushort)(responseBuffer.Length - 2), responseBuffer.Buffer, 0);
+                    client.Send(responseBuffer.Buffer, 0, responseBuffer.Length, SocketFlags.None);
                 }
                 catch (Exception e)
                 {
@@ -91,7 +91,7 @@ namespace Arctium.Protocol.DNS.Protocol
             udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortUdp));
             EndPoint clientEndpoint = null;
-            BytesSpan clientBytes = null;
+            BytesCursor clientBytes = null;
 
             while (!options.CancellationToken.IsCancellationRequested)
             {
@@ -108,21 +108,21 @@ namespace Arctium.Protocol.DNS.Protocol
                     int recvLen = recvResult.ReceivedBytes;
                     clientEndpoint = recvResult.RemoteEndPoint;
 
-                    clientBytes = new BytesSpan(buf, 0, recvLen);
+                    clientBytes = new BytesCursor(buf, 0, recvLen);
                     var clientMsg = serializer.Decode(clientBytes);
 
                     var res = GetResponseMessage(clientMsg).Result;
                     var responseBytes = new ByteBuffer();
                     serializer.Encode(res, responseBytes);
 
-                    if (responseBytes.DataLength > DnsConsts.UdpSizeLimit)
+                    if (responseBytes.Length > DnsConsts.UdpSizeLimit)
                     {
                         res = ConvertToTrunCated(res);
                         responseBytes.Reset();
                         serializer.Encode(res, responseBytes);
                     }
 
-                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, clientEndpoint);
+                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, clientEndpoint);
                 }
                 catch (Exception e)
                 {
@@ -133,7 +133,7 @@ namespace Arctium.Protocol.DNS.Protocol
             }
         }
 
-        public void OnException(BytesSpan clientBytes, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
+        public void OnException(BytesCursor clientBytes, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
         {
             // intentionally ignoring any other exceptions
             try
@@ -151,10 +151,9 @@ namespace Arctium.Protocol.DNS.Protocol
                 try
                 {
                     // tcp only: skip 2 bytes because they are total msg len
-                    clientBytes.Offset = tcpClientSocket != null ? 2 : 0; 
-                    clientHeader = serializer.Decode_Header(clientBytes, out int decodedLen);
-                    clientBytes.ShiftOffset(decodedLen);
-                    clientQuestion = serializer.Decode_Question(clientBytes, out _);
+                    clientBytes.CurrentOffset = tcpClientSocket != null ? 2 : 0; 
+                    clientHeader = serializer.Decode_Header(clientBytes);
+                    clientQuestion = serializer.Decode_Question(clientBytes);
                 }
                 catch
                 {
@@ -190,11 +189,11 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 if (udpClientEndpoint != null)
                 {
-                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None, udpClientEndpoint);
+                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, udpClientEndpoint);
                 }
                 else
                 {
-                    tcpClientSocket.Send(responseBytes.Buffer, 0, responseBytes.DataLength, SocketFlags.None);
+                    tcpClientSocket.Send(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None);
                 }
             }
             catch (Exception ee)

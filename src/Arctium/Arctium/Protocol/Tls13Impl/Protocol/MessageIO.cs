@@ -52,7 +52,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             RecordInfo info;
             applicationDataLength = -1;
 
-            if (byteBuffer.DataLength == 0)
+            if (byteBuffer.Length == 0)
             {
                 info = LoadRecord();
             }
@@ -97,7 +97,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         public ContentType BufferAnyRecordType()
         {
-            if (byteBuffer.DataLength == 0)
+            if (byteBuffer.Length == 0)
             {
                 LoadRecord();
             }
@@ -130,7 +130,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             HandshakeContextAdd(type, buffer, 0, len + 4);
 
             byteBuffer.TrimStart(len + 4);
-            MemOps.MemsetZero(byteBuffer.Buffer, byteBuffer.DataLength, byteBuffer.Buffer.Length - byteBuffer.DataLength);
+            MemOps.MemsetZero(byteBuffer.Buffer, byteBuffer.Length, byteBuffer.Buffer.Length - byteBuffer.Length);
 
             return (T)result;
         }
@@ -164,7 +164,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void LoadHandshake()
         {
-            while (byteBuffer.DataLength < 4)
+            while (byteBuffer.Length < 4)
             {
                 var recordInfo = LoadRecord();
                 validate.Handshake.RecordTypeIsHandshareAndNotInterleavedWithOtherRecordTypes(recordInfo.ContentType);
@@ -175,7 +175,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             validate.Handshake.ValidHandshakeType(handshakeType);
 
-            while (byteBuffer.DataLength < 4 + msgLength)
+            while (byteBuffer.Length < 4 + msgLength)
             {
                 LoadRecord();
             }

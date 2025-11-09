@@ -69,7 +69,7 @@ namespace Arctium.UnitTests.Protocol
             var dnsResolver = new DnsResolver();
 
             // act
-            var a = dnsResolver.ResolveGeneralLookupFunction();
+            Object a = null; // dnsResolver.ResolveGeneralLookupFunction();
 
             // assert
             Assert.IsTrue(false);

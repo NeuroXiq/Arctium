@@ -19,12 +19,12 @@ namespace Arctium.Protocol.DNS
         /// <summary>
         /// Adds IN record type to the the list
         /// </summary>
-        public void AddIN(string name, QType qtype, int ttl, object rdata)
+        public void AddIN(string name, QType qtype, uint ttl, object rdata)
         {
             Add(name, QClass.IN, qtype, ttl, rdata);
         }
 
-        public void Add(string name, QClass qclass, QType qtype, int ttl, object rdata)
+        public void Add(string name, QClass qclass, QType qtype, uint ttl, object rdata)
         {
             string[] labels = name.Split('.');
             DnsNode node;

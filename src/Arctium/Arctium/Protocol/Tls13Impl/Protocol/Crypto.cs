@@ -236,7 +236,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             string contextStr = endpointGeneratingVerify == Endpoint.Client ? ClientCertificateVerifyContextString : "TLS 1.3, server CertificateVerify";
             byte[] stringBytes = Encoding.ASCII.GetBytes(contextStr);
 
-            byte[] hash = TranscriptHash(handshakeContext.Buffer, 0, handshakeContext.DataLength);
+            byte[] hash = TranscriptHash(handshakeContext.Buffer, 0, handshakeContext.Length);
             byte[] tosign = new byte[64 + stringBytes.Length + 1 + hash.Length];
 
             int c = 0;
@@ -621,7 +621,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         {
             hashFunction.Reset();
 
-            hashFunction.HashBytes(buf.Buffer, 0, buf.DataLength);
+            hashFunction.HashBytes(buf.Buffer, 0, buf.Length);
 
             return hashFunction.HashFinal();
         }
@@ -893,7 +893,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             var baseKey = GenerateBinderKey(psk, hkdf, hashFunc);
             var binderKeyForHash = HkdfExpandLabel(hkdf, baseKey, "finished", new byte[0], hashFunc.HashSizeBytes);
 
-            hashFunc.HashBytes(hscontextToBinders.Buffer, 0, hscontextToBinders.DataLength);
+            hashFunc.HashBytes(hscontextToBinders.Buffer, 0, hscontextToBinders.Length);
             var hash = hashFunc.HashFinal();
 
             byte[] result = new byte[hashFunc.HashSizeBytes];

@@ -131,7 +131,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void MessageIO_OnHandshakeReadWrite(byte[] buffer, int offset, int length)
         {
-            bool ch1 = hsctx.DataLength == 0;
+            bool ch1 = hsctx.Length == 0;
 
             hsctx.Append(buffer, offset, length);
 
@@ -472,7 +472,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             // turn on handshake context to compute certificate verify
             context.PostHandshakeAuth = new PostHandshakeAuth();
-            context.PostHandshakeAuth.AppendHsContext(hsctx.Buffer, 0, hsctx.DataLength);
+            context.PostHandshakeAuth.AppendHsContext(hsctx.Buffer, 0, hsctx.Length);
 
             messageIO.OnHandshakeReadWrite += context.PostHandshakeAuth.AppendHsContext;
 
@@ -602,7 +602,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void Handshake_ServerCertificateVerify()
         {
-            int dataLengthToSign = hsctx.DataLength;
+            int dataLengthToSign = hsctx.Length;
             var certVerify = messageIO.ReadHandshakeMessage<CertificateVerify>();
             validate.CertificateVerify.GeneralValidate(context.ClientHello1, certVerify);
 
@@ -849,7 +849,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             int toBindersLen = ModelDeserialization.HelperGetOffsetOfPskExtensionInClientHello(serialization.SerializedData, 0);
 
             ByteBuffer hsContextToBinders = new ByteBuffer();
-            hsContextToBinders.Append(hsctx.Buffer, 0, hsctx.DataLength);
+            hsContextToBinders.Append(hsctx.Buffer, 0, hsctx.Length);
             hsContextToBinders.Append(serialization.SerializedData, 0, toBindersLen);
 
             for (int i = 0; i < context.PskTickets.Length; i++)

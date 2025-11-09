@@ -22,7 +22,8 @@ namespace Arctium.Protocol.DNS.Protocol
         DecodeMsgLengthNotMatchTotalLength = 0x0104,
         DecodeTotalLengthOfDomainNameExceeded = 0x0105,
         DecodeMinHeaderLength = 0x0106,
-        DecodeZValudNotZero = 0x107,
+        DecodeZValudNotZero = 0x0107,
+        DecodeDomainName = 0x010a,
 
         // server: 0x02xx -> server failure (internal server error)
         EncodeInvalidCharacterStringLength = 0x0201,
@@ -49,6 +50,7 @@ namespace Arctium.Protocol.DNS.Protocol
         // client packet should be silently dropped
         ReceivedZeroBytesButExpectedMoreTcp = 0xf001,
         CannotFindDnsServerToAsk = 0xf002,
-        Internal_MultipleDnsSOAZonesForSameDomain = 0xF003
+        Internal_MultipleDnsSOAZonesForSameDomain = 0xF003,
+        Internal = 0xF004
     }
 }

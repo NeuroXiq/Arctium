@@ -9,9 +9,9 @@ namespace Arctium.Shared
         /// <summary>
         /// real data length appended/allocated in buffer, means total buffer size, always is <= Buffer.Length
         /// </summary>
-        public int DataLength { get; private set; }
+        public int Length { get; private set; }
 
-        int freeSpace { get { return Buffer.Length - DataLength; } }
+        int freeSpace { get { return Buffer.Length - Length; } }
 
         public ByteBuffer()
         {
@@ -34,7 +34,7 @@ namespace Arctium.Shared
 
         private void CheckIndex(int index)
         {
-            if (DataLength <= index || index < 0)
+            if (Length <= index || index < 0)
                 throw new ArgumentException("index out of range");
         }
 
@@ -46,26 +46,26 @@ namespace Arctium.Shared
         /// <returns>data length before appending bytes (this offset can be used to start writing to</returns>
         public int AllocEnd(int length)
         {
-            int offset = DataLength;
+            int offset = Length;
             ExtendIfNeeded(length);
-            DataLength += length;
+            Length += length;
 
             return offset;
         }
 
         public void TrimStart(int count)
         {
-            if (count > DataLength) throw new Exception("internal: trying to trim more than datalength");
+            if (count > Length) throw new Exception("internal: trying to trim more than datalength");
 
             // int j = count;
             // int i = 0;
 
-            for (int i = 0; i < DataLength - count; i++)
+            for (int i = 0; i < Length - count; i++)
             {
                 Buffer[i] = Buffer[i + count];
             }
 
-            DataLength -= count;
+            Length -= count;
         }
 
         public void Append(Memory<byte> buffer) => Append(buffer.Span, 0, buffer.Length);
@@ -73,9 +73,9 @@ namespace Arctium.Shared
         public void Append(Span<byte> buffer, int offset, int length)
         {
             ExtendIfNeeded(length);
-            MemCpy.Copy(buffer, offset, Buffer, DataLength, length);
+            MemCpy.Copy(buffer, offset, Buffer, Length, length);
 
-            DataLength += length;
+            Length += length;
         }
 
         public void Append(params byte[] items) => Append(new Span<byte>(items), 0, items.Length);
@@ -86,12 +86,12 @@ namespace Arctium.Shared
 
         public void Reset()
         {
-            DataLength = 0;
+            Length = 0;
         }
 
         public void ExtendIfNeeded(int dataToAppend)
         {
-            int newLength = dataToAppend + DataLength;
+            int newLength = dataToAppend + Length;
 
             if (newLength <= Buffer.Length) return;
 
@@ -104,7 +104,7 @@ namespace Arctium.Shared
 
             byte[] newBuffer = new byte[extendedLen];
 
-            MemCpy.Copy(Buffer, 0, newBuffer, 0, DataLength);
+            MemCpy.Copy(Buffer, 0, newBuffer, 0, Length);
 
             Buffer = newBuffer;
         }
@@ -112,15 +112,15 @@ namespace Arctium.Shared
         public void AllocStart(int prependLength)
         {
             ExtendIfNeeded(prependLength);
-            int shiftRight = DataLength;
-            DataLength += prependLength;
+            int shiftRight = Length;
+            Length += prependLength;
 
-            if (DataLength == prependLength) return;
+            if (Length == prependLength) return;
 
             // move data to free beginning of the buffer (shift data right to make free 'predendLength' at buffer start)
             for (int i = 0; i < shiftRight; i++)
             {
-                Buffer[DataLength - 1 - i] = Buffer[DataLength - prependLength - 1 - i];
+                Buffer[Length - 1 - i] = Buffer[Length - prependLength - 1 - i];
             }
         }
     }

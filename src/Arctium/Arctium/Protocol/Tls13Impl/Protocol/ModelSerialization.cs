@@ -18,7 +18,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         Dictionary<Type, Action<object>> singleExtensionSerializers = new Dictionary<Type, Action<object>>();
 
         public byte[] SerializedData { get { return buffer.Buffer; } }
-        public long SerializedDataLength { get { return buffer.DataLength; } }
+        public long SerializedDataLength { get { return buffer.Length; } }
 
         public ModelSerialization()
         {
@@ -120,7 +120,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 MemCpy.Copy(authority, 0, tempSerializedExtension.Buffer, authorityOffs, authority.Length);
             }
 
-            int listLen = tempSerializedExtension.DataLength - authoritiesLenOffs - 2;
+            int listLen = tempSerializedExtension.Length - authoritiesLenOffs - 2;
             Validation.ThrowInternal(listLen > ushort.MaxValue);
 
             MemMap.ToBytes1UShortBE((ushort)listLen, tempSerializedExtension.Buffer, authoritiesLenOffs);
@@ -175,7 +175,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 MemCpy.Copy(filter.CertificateExtensionValues, 0, buf.Buffer, valueOffs, filter.CertificateExtensionValues.Length);
             }
 
-            int filtersLen = buf.DataLength - filterLenghtOffs - 2;
+            int filtersLen = buf.Length - filterLenghtOffs - 2;
             MemMap.ToBytes1UShortBE((ushort)filtersLen, buf.Buffer, filterLenghtOffs);
         }
 
@@ -209,7 +209,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             }
 
             // -2 because 2bytes to store length
-            ushort listLen = (ushort)(tempSerializedExtension.DataLength - serverNameListOffs - 2);
+            ushort listLen = (ushort)(tempSerializedExtension.Length - serverNameListOffs - 2);
 
             MemMap.ToBytes1UShortBE(listLen, tempSerializedExtension.Buffer, serverNameListOffs);
         }
@@ -247,7 +247,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 MemMap.ToBytes1UIntBE(identity.ObfuscatedTicketAge, tempSerializedExtension.Buffer, obfusTickAgeOffs);
             }
 
-            int identitiesLen = tempSerializedExtension.DataLength - identitiesLenOffs - 2;
+            int identitiesLen = tempSerializedExtension.Length - identitiesLenOffs - 2;
             MemMap.ToBytes1UShortBE((ushort)identitiesLen, tempSerializedExtension.Buffer, identitiesLenOffs);
 
             int bindersLenOffs = tempSerializedExtension.AllocEnd(2);
@@ -261,7 +261,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 MemCpy.Copy(binder, 0, tempSerializedExtension.Buffer, binderOffs, binder.Length);
             }
 
-            int binderLen = tempSerializedExtension.DataLength - bindersLenOffs - 2;
+            int binderLen = tempSerializedExtension.Length - bindersLenOffs - 2;
             MemMap.ToBytes1UShortBE((ushort)binderLen, tempSerializedExtension.Buffer, bindersLenOffs);
         }
 
@@ -320,7 +320,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                     share.KeyExchangeRawBytes.Length);
             }
 
-            int sharesLen = tempSerializedExtension.DataLength - 2 - clientSharesVectorLenOffs;
+            int sharesLen = tempSerializedExtension.Length - 2 - clientSharesVectorLenOffs;
 
             Validation.ThrowInternal(sharesLen > Tls13Const.KeyShareClientHello_ClientSharesVectorMaxLen);
 
@@ -693,14 +693,14 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             Extension extension = (Extension)ext;
             ExtensionContentToBytes(ext);
 
-            if (tempSerializedExtension.DataLength >= 1 << 16) throw new Exception("internal: extension length > 2^16");
+            if (tempSerializedExtension.Length >= 1 << 16) throw new Exception("internal: extension length > 2^16");
 
             buffer.Append(0, 0);
             MemMap.ToBytes1UShortBE((ushort)extension.ExtensionType, SerializedData, SerializedDataLength - 2);
             buffer.Append(0, 0);
-            MemMap.ToBytes1UShortBE((ushort)tempSerializedExtension.DataLength, SerializedData, SerializedDataLength - 2);
-            int contextOffset = buffer.AllocEnd(tempSerializedExtension.DataLength);
-            MemCpy.Copy(tempSerializedExtension.Buffer, 0, SerializedData, contextOffset, tempSerializedExtension.DataLength);
+            MemMap.ToBytes1UShortBE((ushort)tempSerializedExtension.Length, SerializedData, SerializedDataLength - 2);
+            int contextOffset = buffer.AllocEnd(tempSerializedExtension.Length);
+            MemCpy.Copy(tempSerializedExtension.Buffer, 0, SerializedData, contextOffset, tempSerializedExtension.Length);
         }
 
         private void SerializeServerHello(object msg)
@@ -709,7 +709,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             temp[0] = (byte)HandshakeType.ServerHello;
             buffer.Append(temp, 0, 1);
-            int setMessageLengthOffset = buffer.DataLength;
+            int setMessageLengthOffset = buffer.Length;
 
             // write everything and later compute length
             temp[0] = temp[1] = temp[2] = 0;
@@ -728,7 +728,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             temp[0] = ServerHello.LegacyCompressionMethod;
             buffer.Append(temp, 0, 1);
 
-            int setExtensionsLengthOffset = buffer.DataLength;
+            int setExtensionsLengthOffset = buffer.Length;
             temp[0] = temp[1] = 0;
             buffer.Append(temp, 0, 2);
 
@@ -738,12 +738,12 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             }
 
             // serialized extensions length (-2 because 2 bytes to store this computed length before serialized extensions)
-            int extensionsLength = buffer.DataLength - setExtensionsLengthOffset - 2;
+            int extensionsLength = buffer.Length - setExtensionsLengthOffset - 2;
 
             MemMap.ToBytes1UShortBE((ushort)extensionsLength, buffer.Buffer, setExtensionsLengthOffset);
 
             // -3 because 3 bytes to store length
-            int fullLength = buffer.DataLength - setMessageLengthOffset - 3;
+            int fullLength = buffer.Length - setMessageLengthOffset - 3;
 
             buffer.Buffer[setMessageLengthOffset + 0] = (byte)(fullLength >> 16);
             buffer.Buffer[setMessageLengthOffset + 1] = (byte)(fullLength >> 08);

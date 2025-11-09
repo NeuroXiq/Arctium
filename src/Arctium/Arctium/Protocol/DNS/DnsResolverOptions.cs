@@ -10,7 +10,6 @@ namespace Arctium.Protocol.DNS
     public class DnsResolverOptions
     {
         public bool UseCache { get; private set; }
-        public DnsCacheShareMode CacheShareMode { get; private set; }
         public IDnsResolverCache Cache { get; private set; }
 
         /// <summary>
@@ -27,19 +26,17 @@ namespace Arctium.Protocol.DNS
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="useCache">Indicates if resolver should use cache or not. If not then resolver will always make connection to remove dns server</param>
+        /// <param name="useCache">Indicates if resolver should use cache or not. If not then resolver will always make connection to remote dns server</param>
         /// <param name="cacheShareMode"></param>
         /// <param name="cache"></param>
         /// <param name="dnsServers">This servers will be asked first</param>
         public DnsResolverOptions(
             bool useCache = true,
-            DnsCacheShareMode cacheShareMode = DnsCacheShareMode.SingleOSProcess,
             IDnsResolverCache cache = null,
             IPAddress[] dnsServers = null,
             int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds)
         {
             UseCache = useCache;
-            CacheShareMode = cacheShareMode;
             Cache = cache;
             DnsServers = dnsServers;
         }

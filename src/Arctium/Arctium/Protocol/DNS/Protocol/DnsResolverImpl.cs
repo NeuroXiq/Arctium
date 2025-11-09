@@ -1,4 +1,5 @@
 ﻿using Arctium.Protocol.DNS;
+using Arctium.Protocol.DNS.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,11 @@ namespace Arctium.Protocol.DNS.Protocol
             this.options = options;
         }
 
+        internal async Task SendDnsMessage(Message message)
+        {
+            return;
+        }
+
         internal void ResolveGeneralLookupFunction()
         {
             throw new NotImplementedException();
@@ -29,7 +35,7 @@ namespace Arctium.Protocol.DNS.Protocol
             throw new NotImplementedException();
         }
 
-        internal object ResolveHostNameToHostAddress(string hostName)
+        internal async Task<object> ResolveHostNameToHostAddress(string hostName)
         {
             step1:
             // RFC-1035 5.3.3. Algorithm 

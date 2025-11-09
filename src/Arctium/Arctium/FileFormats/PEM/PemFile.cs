@@ -74,7 +74,7 @@ namespace Arctium.Standards.FileFormat.PEM
                 }
             }
 
-            byte[] decodedData = MemCpy.CopyToNewArray(buffer.Buffer, 0, buffer.DataLength);
+            byte[] decodedData = MemCpy.CopyToNewArray(buffer.Buffer, 0, buffer.Length);
 
             return new PemFile(beginLabel, endLabel, decodedData);
         }

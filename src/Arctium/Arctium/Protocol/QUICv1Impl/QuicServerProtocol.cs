@@ -41,7 +41,7 @@ namespace Arctium.Protocol.QUICv1Impl
 
         public async Task LoadPacket()
         {
-            if (packets.DataLength == 0)
+            if (packets.Length == 0)
             {
                 int datalen = 0;
 
@@ -53,7 +53,7 @@ namespace Arctium.Protocol.QUICv1Impl
                 packets.Append(updReadBuffer, 0, datalen);
             }
 
-            if (packets.DataLength == 0) throw new Exception("protocol error: timeout read");
+            if (packets.Length == 0) throw new Exception("protocol error: timeout read");
             byte[] drams = packets.Buffer;
 
             if (QuicModelCoding.IsLongHeaderPacket(drams))
