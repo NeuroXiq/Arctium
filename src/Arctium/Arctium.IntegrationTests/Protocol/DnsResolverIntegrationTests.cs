@@ -118,7 +118,7 @@ namespace Arctium.IntegrationTests.Protocol
             h.NSCount  = 0;
             h.QDCount  = 1;
 
-            var result = DnsResolver.SendDnsMessageAsync(message, IPAddress.Parse("8.8.8.8")).Result;
+            var result = DnsResolver.SendDnsUdpMessageAsync(message, IPAddress.Parse("8.8.8.8")).Result;
 
             Assert.That(result.Answer.Length > 0);
         }
@@ -149,14 +149,44 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         [Test]
+        public void Success_WillWorkWithUdp()
+        {
+            Assert.Fail();
+        }
+
+        [Test]
+        public void Success_WillWorkWithTcp()
+        {
+            Assert.Fail();
+        }
+
+        [Test]
         public void Success_WillWorkWithAllArctiumServerTypes()
         {
+            // arrange
             var msg = new Message();
             var server = StartArctiumDnsServer(out var cancellationToken);
-            var allQTypes = Enum.GetValues<QType>();
+            var allQType = Enum.GetValues<QType>();
+            var ignoreQType = new QType[] { QType.AXFR, QType.All, QType.MAILA, QType.MAILB };
 
-            foreach (var qtype in allQTypes)
+            foreach (var qtype in allQType)
             {
+                msg.Header = new Header()
+                {
+                    AA = false,
+                    ANCount = 0,
+                    ARCount = 0,
+                    NSCount = 0,
+                    QDCount = 1,
+                    RA = false,
+                    RD = false,
+                    Id = 1234,
+                    Opcode = Opcode.Query,
+                    QR = QRType.Query,
+                    RCode = ResponseCode.NoErrorCondition,
+                    TC = false,
+                };
+
                 msg.Question = new Question[]
                 {
                     new Question()
@@ -167,15 +197,14 @@ namespace Arctium.IntegrationTests.Protocol
                     }
                 };
 
-                var result = DnsResolver.SendDnsMessageAsync(msg, IPAddress.Loopback, 53);
+                // act
+                var result = DnsResolver.SendDnsUdpMessageAsync(msg, IPAddress.Loopback, 53).Result;
+
+                // assert
+                AssertArctiumServerRecord(msg, result);
             }
 
             cancellationToken.Cancel();
-        }
-
-        void AssertRecords()
-        {
-            
         }
 
         private DnsResolver CreateResolver()
@@ -205,6 +234,11 @@ namespace Arctium.IntegrationTests.Protocol
             return server;
         }
 
+        void AssertArctiumServerRecord(Message clientRequest, Message serverResponse)
+        {
+            Assert.That(1 == 1);
+        }
+
         static InMemoryDnsServerMasterFiles CreateArctiumDnsMasterFiles()
         {
             var itMasterFiles = new InMemoryDnsServerMasterFiles();
@@ -232,12 +266,6 @@ namespace Arctium.IntegrationTests.Protocol
             t.AddIN("www.all-rrs.pl", QType.WKS, 1234, new RDataWKS()
             {
                 Address = 0x332211aa,
-                // powershell not work well (contrary to nslookup) with WKS
-                // not sure why need future investigations. this will work for now (not sure why work)
-                // nslookup shows correct values (maybe powershell need some alignment to 8-16 bytes?)
-                // nslookup -type=wks - 127.0.0.1
-                // (now type into console following:)
-                // > www.all-rrs.pl
                 Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
                 Protocol = 6
             });
@@ -245,7 +273,8 @@ namespace Arctium.IntegrationTests.Protocol
             t.AddIN("www.all-rrs.pl", QType.HINFO, 1234, new RDataHINFO() { CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl" });
             t.AddIN("www.all-rrs.pl", QType.MINFO, 1234, new RDataMINFO() { EMailbx = "www.all-rrs-minfo-emailbx", RMailbx = "www.all-rrs-minfo-rmailbx" });
             t.AddIN("www.all-rrs.pl", QType.MX, 1234, new RDataMX() { Preference = 5555, Exchange = "www.all-rrs-exchange" });
-            t.AddIN("www.all-rrs.pl", QType.TXT, 1234, new RDataTXT() { TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" } });
+            t.AddIN("www.all-rrs.pl", QType.TXT, 1234, new RDataTXT() { TxtData = new string[] { "www.all-rrs-txt-1.pl", "w", "" } });
+            t.AddIN("www.all-rrs.pl", QType.TXT, 1234, new RDataTXT() { TxtData = new string[] { "", "a", "www.all-rrs-txt-1.pl" } });
             t.AddIN("www.all-rrs.pl", QType.AAAA, 1234, new RDataAAAA() { IPv6 = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } });
 
             return itMasterFiles;

@@ -17,5 +17,8 @@ namespace Arctium.Protocol.DNS.Model
         /// a <character-string> which specifies the operating system type
         /// </summary>
         public string OS;
+
+        public RDataHINFO() { }
+        public RDataHINFO(string cpu, string os) { CPU = cpu; OS = os; }
     }
 }

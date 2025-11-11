@@ -11,5 +11,8 @@ namespace Arctium.Protocol.DNS.Model
     public class RDataTXT
     {
         public string[] TxtData;
+
+        public RDataTXT() { }
+        public RDataTXT(string[] txtData) { TxtData = txtData; }
     }
 }

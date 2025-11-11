@@ -17,5 +17,8 @@ namespace Arctium.Protocol.DNS.Model
         /// for forwarding to the domain
         /// </summary>
         public string MADName;
+
+        public RDataMF() { }
+        public RDataMF(string madName) { MADName = madName; }
     }
 }

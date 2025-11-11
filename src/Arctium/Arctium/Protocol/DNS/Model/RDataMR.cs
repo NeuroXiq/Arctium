@@ -13,5 +13,8 @@ namespace Arctium.Protocol.DNS.Model
         /// propert rename of the specified mailbox
         /// </summary>
         public string NewName;
+
+        public RDataMR() { }
+        public RDataMR(string newName) { NewName = newName; }
     }
 }

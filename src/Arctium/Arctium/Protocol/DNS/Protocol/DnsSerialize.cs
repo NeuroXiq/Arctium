@@ -113,6 +113,46 @@ namespace Arctium.Protocol.DNS.Protocol
             MemMap.ToBytes1UShortBE((ushort)rdLength, buffer.Buffer, rdLengthOffset);
         }
 
+        public Question Decode_Question(BytesCursor cursor)
+        {
+            Question result = new Question();
+
+            result.QName = Decode_DomainName(cursor);
+            result.QType = (QType)BinConverter.ToUShortBE(cursor.Buffer, cursor.CurrentOffset);
+            result.QClass = (QClass)BinConverter.ToUShortBE(cursor.Buffer, cursor.CurrentOffset + 2);
+
+            cursor.CurrentOffset += 4;
+
+            return result;
+        }
+
+        public Header Decode_Header(BytesCursor buffer)
+        {
+            if (buffer.Length < 12) throw new DnsException(DnsProtocolError.DecodeMinHeaderLength, "decode error: min header length < 12");
+
+            Header header = new Header();
+            header.Id = (ushort)(buffer[0] << 8 | buffer[1]);
+            header.QR = (QRType)((buffer[2] & 0x80) >> 7);
+            header.Opcode = (Opcode)((buffer[3] & 0x78) >> 3);
+            header.AA = (buffer[2] & 0x04) == 1;
+            header.TC = (buffer[2] & 0x02) == 1;
+            header.RD = (buffer[2] & 0x01) == 1;
+            header.RA = (buffer[3] & 0x80) == 1;
+
+            if ((buffer[4] & 0x70) != 0)
+                throw new DnsException(DnsProtocolError.DecodeZValudNotZero, "decode error, Z value in header is not zero");
+
+            header.RCode = (ResponseCode)(buffer[3] & 0x0F);
+            header.QDCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 4);
+            header.ANCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 6);
+            header.NSCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 8);
+            header.ARCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 10);
+
+            buffer.ShiftCurrentOffset(12);
+
+            return header;
+        }
+
         private void Encode_RDataAAAA(RDataAAAA rd, ByteBuffer buffer)
         {
             if (rd.IPv6 == null || rd.IPv6.Length != 16)
@@ -301,11 +341,195 @@ namespace Arctium.Protocol.DNS.Protocol
             return result;
         }
 
-        private object Decode_RData(BytesCursor cursor)
+        private RDataA Decode_RDataA(BytesCursor cursor)
         {
-            var q = cursor;
+            if (cursor.Length < 4) throw new DnsException(DnsProtocolError.DecodeError, "RDataA length < 4");
 
-            return null;
+            RDataA result = new RDataA(MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset));
+
+            cursor.CurrentOffset += 4;
+
+            return result;
+        }
+
+        private RDataNS Decode_RDataNS(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataNS length < 1");
+
+            string nsDomainName = Decode_DomainName(cursor);
+
+            RDataNS result = new RDataNS(nsDomainName);
+
+            return result;
+        }
+
+        private RDataMD Decode_RDataMD(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataMD length < 1");
+
+            string madName = Decode_DomainName(cursor);
+            RDataMD result = new RDataMD(madName);
+
+            return result;
+        }
+
+        private RDataMF Decode_RDataMF(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RdataMF length < 1");
+
+            string madName = Decode_DomainName(cursor);
+            RDataMF result = new RDataMF(madName);
+
+            return result;
+        }
+
+        private RDataCNAME Decode_RDataCNAME(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeDomainName, "RData CNAME length == 0");
+
+            string cname = Decode_DomainName(cursor);
+            RDataCNAME result = new RDataCNAME(cname);
+
+            return result;
+        }
+
+        private RDataSOA Decode_RDataSOA(BytesCursor cursor)
+        {
+            if (cursor.Length < 22) throw new DnsException(DnsProtocolError.DecodeError, "SOA record length < 22 but 22 i min");
+
+            string mname = Decode_DomainName(cursor);
+            string rname = Decode_DomainName(cursor);
+
+            if (cursor.Length < 20) throw new DnsException(DnsProtocolError.DecodeError, "SOA record missing length for all fields");
+
+            uint serial = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset);
+            int refresh = MemMap.ToInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+            uint retry = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+            int expire = MemMap.ToInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+            uint minimum = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+
+            RDataSOA result = new RDataSOA()
+            {
+                MName = mname,
+                RName = rname,
+                Serial = serial,
+                Refresh = refresh,
+                Expire = expire,
+                Minimum = minimum
+            };
+
+            return result;
+        }
+
+        public RDataMB Decode_RDataMB(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataMB cursor length == 0");
+
+            string madName = Decode_DomainName(cursor);
+            RDataMB result = new RDataMB(madName);
+
+            return result;
+        }
+
+        public RDataMG Decode_RDataMG(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataMG cursor len = 0");
+
+            string madName = Decode_DomainName(cursor);
+            RDataMG result = new RDataMG(madName);
+
+            return result;
+        }
+
+        public RDataPTR Decode_RDataPTR(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataPTR empty");
+
+            string ptrName = Decode_DomainName(cursor);
+            RDataPTR result = new RDataPTR(ptrName);
+
+            return result;
+        }
+
+        public RDataHINFO Decode_RDataHINFO(BytesCursor cursor)
+        {
+            string cpu = Decode_CharacterString(cursor);
+            string os = Decode_CharacterString(cursor);
+
+            return new RDataHINFO(cpu, os);
+        }
+
+        public RDataMINFO Decode_RDataMINFO(BytesCursor cursor)
+        {
+            string rmailbx = Decode_DomainName(cursor);
+            string emailbx = Decode_DomainName(cursor);
+
+            return new RDataMINFO(rmailbx, emailbx);
+        }
+
+        public RDataMX Decode_RDataMX(BytesCursor cursor)
+        {
+            if (cursor.Length < 3) throw new DnsException(DnsProtocolError.DecodeError, "min length 3 of RdataMX");
+
+            ushort preference = MemMap.ToUShort2BytesBE(cursor.Buffer, cursor.CurrentOffset);
+            cursor.CurrentOffset += 2;
+            string exchange = Decode_DomainName(cursor);
+
+            return new RDataMX(preference, exchange);
+        }
+
+        public RDataTXT Decode_RDataTXT(BytesCursor cursor, int rdlength)
+        {
+            List<string> txt = new List<string>();
+            
+            int decoded = 0, stringStartOffset = cursor.CurrentOffset;
+
+            while (decoded < rdlength)
+            {
+                string txtString = Decode_CharacterString(cursor);
+                txt.Add(txtString);
+                decoded += cursor.CurrentOffset - stringStartOffset;
+                stringStartOffset = cursor.CurrentOffset;
+            }
+
+            return new RDataTXT(txt.ToArray());
+        }
+
+        public RDataAAAA Decode_RDataAAAA(BytesCursor cursor)
+        {
+            if (cursor.Length < 16) throw new DnsException(DnsProtocolError.DecodeError, "aaaa invalid length cursor.length < 16");
+
+            byte[] ipv6 = new byte[16];
+            Buffer.BlockCopy(cursor.Buffer, cursor.CurrentOffset, ipv6, 0, 16);
+
+            cursor.CurrentOffset += 16;
+
+            return new RDataAAAA(ipv6);
+        }
+
+        public RDataMR Decode_RDataMR(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataMG cursor len = 0");
+
+            string newName = Decode_DomainName(cursor);
+            RDataMR result = new RDataMR(newName);
+
+            return result;
+        }
+
+        public string Decode_CharacterString(BytesCursor cursor)
+        {
+            if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "character string without 1-byte indicating length");
+
+            int length = cursor[0];
+
+            if (cursor.Length < length + 1) throw new DnsException(DnsProtocolError.DecodeError, "character string length exceed cursor length");
+            
+            cursor.CurrentOffset += 1;
+            string result = Encoding.ASCII.GetString(cursor.Buffer, cursor.CurrentOffset, length);
+            cursor.CurrentOffset += length;
+
+            return result;
         }
 
         private ResourceRecord Decode_ResourceRecord(BytesCursor cursor)
@@ -317,9 +541,48 @@ namespace Arctium.Protocol.DNS.Protocol
             rr.Class = (QClass)MemMap.ToUShort2BytesBE(cursor.Buffer, cursor.CurrentOffset += 2);
             rr.TTL = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 2);
             rr.RDLength = MemMap.ToUShort2BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
-            rr.RData = Decode_RData(cursor);
+            cursor.CurrentOffset += 2;
 
-            throw new Exception();
+            object rdata = null;
+
+            switch (rr.Type)
+            {
+                case QType.A: rdata = Decode_RDataA(cursor); break;
+                case QType.NS: rdata = Decode_RDataNS(cursor); break;
+                case QType.MD: rdata = Decode_RDataMD(cursor); break;
+                case QType.MF: rdata = Decode_RDataMF(cursor); break; 
+                case QType.CNAME: rdata = Decode_RDataCNAME(cursor); break;
+                case QType.SOA: rdata = Decode_RDataSOA(cursor); break;
+                case QType.MB: rdata = Decode_RDataMB(cursor); break;
+                case QType.MG: rdata = Decode_RDataMG(cursor); break;
+                case QType.MR: rdata = Decode_RDataMR(cursor); break; 
+                case QType.PTR: rdata = Decode_RDataPTR(cursor); break;
+                case QType.HINFO: rdata = Decode_RDataHINFO(cursor); break;
+                case QType.MINFO: Decode_RDataMINFO(cursor); break;
+                case QType.MX: Decode_RDataMX(cursor); break;
+                case QType.TXT: Decode_RDataTXT(cursor, rr.RDLength); break;
+                case QType.AAAA: Decode_RDataAAAA(cursor); break;
+                case QType.MAILB: 
+                case QType.MAILA:
+                case QType.AXFR:
+                case QType.All:
+                    throw new DnsException(DnsProtocolError.DecodeError, $"invalid qtype of resource record: {rr.Type} ({(int)rr.Type})");
+                // null, wsk or anything unknown as byte array
+                case QType.NULL:
+                case QType.WKS:
+                default:
+                    if (cursor.Length < rr.RDLength) throw new DnsException(DnsProtocolError.DecodeError, "rdlength exceed current length");
+                    
+                    byte[] rawRData = new byte[rr.RDLength];
+                    Buffer.BlockCopy(cursor.Buffer, cursor.CurrentOffset, rawRData, 0, rr.RDLength);
+                    rdata = rawRData;
+                    cursor.CurrentOffset += rr.RDLength;
+                    break;
+            }
+
+            rr.RData = rdata;
+
+            return rr;
         }
 
         private string Decode_DomainName(BytesCursor cursor)
@@ -349,7 +612,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 else
                 {
                     if (!cursor.OffsetInStartEnd(labelOffset))
-                        throw new DnsException(DnsProtocolError.DecodeDomainName, "DecodeInvalidLabelCompressionOffset");
+                        throw new DnsException(DnsProtocolError.DecodeDomainName, "invalid label offset not in cursor range");
 
                     labelLength = cursor.Buffer[labelOffset];
 
@@ -370,45 +633,7 @@ namespace Arctium.Protocol.DNS.Protocol
             return string.Join(".", labels);
         }
 
-        public Question Decode_Question(BytesCursor cursor)
-        {
-            Question result = new Question();
-
-            result.QName = Decode_DomainName(cursor);
-            result.QType = (QType)BinConverter.ToUShortBE(cursor.Buffer, cursor.CurrentOffset);
-            result.QClass = (QClass)BinConverter.ToUShortBE(cursor.Buffer, cursor.CurrentOffset + 2);
-
-            cursor.CurrentOffset += 4;
-            
-            return result;
-        }
-
-        public Header Decode_Header(BytesCursor buffer)
-        {
-            if (buffer.Length < 12) throw new DnsException(DnsProtocolError.DecodeMinHeaderLength, "decode error: min header length < 12");
-
-            Header header = new Header();
-            header.Id = (ushort)(buffer[0] << 8 | buffer[1]);
-            header.QR = (QRType)((buffer[2] & 0x80) >> 7);
-            header.Opcode = (Opcode)((buffer[3] & 0x78) >> 3);
-            header.AA = (buffer[2] & 0x04) == 1;
-            header.TC = (buffer[2] & 0x02) == 1;
-            header.RD = (buffer[2] & 0x01) == 1;
-            header.RA = (buffer[3] & 0x80) == 1;
-
-            if ((buffer[4] & 0x70) != 0)
-                throw new DnsException(DnsProtocolError.DecodeZValudNotZero, "decode error, Z value in header is not zero");
-            
-            header.RCode = (ResponseCode)(buffer[3] & 0x0F);
-            header.QDCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 4);
-            header.ANCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 6);
-            header.NSCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 8);
-            header.ARCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 10);
-
-            buffer.ShiftCurrentOffset(12);
-
-            return header;
-        }
+        
 
         public static string UIntToIpv4(uint ipv4)
         {

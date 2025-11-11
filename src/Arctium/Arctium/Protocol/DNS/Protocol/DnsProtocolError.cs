@@ -24,6 +24,7 @@ namespace Arctium.Protocol.DNS.Protocol
         DecodeMinHeaderLength = 0x0106,
         DecodeZValudNotZero = 0x0107,
         DecodeDomainName = 0x010a,
+        DecodeError = 0x010b,
 
         // server: 0x02xx -> server failure (internal server error)
         EncodeInvalidCharacterStringLength = 0x0201,

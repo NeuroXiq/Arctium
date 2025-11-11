@@ -13,5 +13,9 @@ namespace Arctium.Protocol.DNS.Model
         /// for the specified class and domain
         /// </summary>
         public string NSDName;
+
+        public RDataNS() { }
+        
+        public RDataNS(string nsdName) { NSDName = nsdName; }
     }
 }

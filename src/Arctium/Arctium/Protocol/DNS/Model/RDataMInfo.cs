@@ -24,5 +24,8 @@ namespace Arctium.Protocol.DNS.Model
         /// related to the mailing list or mailbox specified by the owner of the minfo rr
         /// </summary>
         public string EMailbx;
+
+        public RDataMINFO() { }
+        public RDataMINFO(string rmailbx, string emailbx) { RMailbx = rmailbx; EMailbx = emailbx; }
     }
 }

@@ -18,5 +18,8 @@ namespace Arctium.Protocol.DNS.Model
         /// location in the domain name space
         /// </summary>
         public string PtrDName;
+
+        public RDataPTR() { }
+        public RDataPTR(string ptrDName) { PtrDName = ptrDName; }
     }
 }

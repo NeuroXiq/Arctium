@@ -23,5 +23,8 @@ namespace Arctium.Protocol.DNS.Model
         /// exchange for the owner name
         /// </summary>
         public string Exchange;
+
+        public RDataMX() { }
+        public RDataMX(ushort preference, string exchange) { Preference = preference; Exchange = exchange; }
     }
 }

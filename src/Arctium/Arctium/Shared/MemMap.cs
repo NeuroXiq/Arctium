@@ -764,7 +764,7 @@ namespace Arctium.Shared
         {
             for (long i = inputOffset, j = outputOffset; i < 8 * outputULongCount + inputOffset; i += 8, j++)
             {
-                output[j] = 
+                output[j] =
                        (ulong)input[i + 7] << 56 |
                        (ulong)input[i + 6] << 48 |
                        (ulong)input[i + 5] << 40 |
@@ -793,7 +793,7 @@ namespace Arctium.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToULong32BytesLE(byte[] input, long inputOffset, ulong[] output, long outputOffset)
         {
-            output[outputOffset] = 
+            output[outputOffset] =
                     (ulong)input[inputOffset + 7] << 56 |
                     (ulong)input[inputOffset + 6] << 48 |
                     (ulong)input[inputOffset + 5] << 40 |
@@ -803,7 +803,7 @@ namespace Arctium.Shared
                     (ulong)input[inputOffset + 1] << 8 |
                     (ulong)input[inputOffset + 0] << 0;
 
-            output[outputOffset + 1] = 
+            output[outputOffset + 1] =
                    (ulong)input[inputOffset + 8 + 7] << 56 |
                    (ulong)input[inputOffset + 8 + 6] << 48 |
                    (ulong)input[inputOffset + 8 + 5] << 40 |
@@ -813,7 +813,7 @@ namespace Arctium.Shared
                    (ulong)input[inputOffset + 8 + 1] << 8 |
                    (ulong)input[inputOffset + 8 + 0] << 0;
 
-            output[outputOffset + 2] = 
+            output[outputOffset + 2] =
                     (ulong)input[inputOffset + 16 + 7] << 56 |
                     (ulong)input[inputOffset + 16 + 6] << 48 |
                     (ulong)input[inputOffset + 16 + 5] << 40 |
@@ -823,7 +823,7 @@ namespace Arctium.Shared
                     (ulong)input[inputOffset + 16 + 1] << 8 |
                     (ulong)input[inputOffset + 16 + 0] << 0;
 
-            output[outputOffset + 3] = 
+            output[outputOffset + 3] =
                    (ulong)input[inputOffset + 24 + 7] << 56 |
                    (ulong)input[inputOffset + 24 + 6] << 48 |
                    (ulong)input[inputOffset + 24 + 5] << 40 |
@@ -837,7 +837,7 @@ namespace Arctium.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToULong8BytesLE(byte[] input, long inputOffset)
         {
-            return 
+            return
                     (ulong)input[inputOffset + 7] << 56 |
                     (ulong)input[inputOffset + 6] << 48 |
                     (ulong)input[inputOffset + 5] << 40 |
@@ -857,7 +857,7 @@ namespace Arctium.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToULong8BytesBE(Span<byte> input, int inputOffset)
         {
-            return 
+            return
                     (ulong)input[inputOffset + 0] << 56 |
                     (ulong)input[inputOffset + 1] << 48 |
                     (ulong)input[inputOffset + 2] << 40 |
@@ -871,7 +871,7 @@ namespace Arctium.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToULong8BytesBE(byte[] input, long inputOffset)
         {
-            return 
+            return
                     (ulong)input[inputOffset + 0] << 56 |
                     (ulong)input[inputOffset + 1] << 48 |
                     (ulong)input[inputOffset + 2] << 40 |
@@ -885,7 +885,7 @@ namespace Arctium.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ToULong8BytesBE(byte* input, long inputOffset)
         {
-            return 
+            return
                     (ulong)input[inputOffset + 0] << 56 |
                     (ulong)input[inputOffset + 1] << 48 |
                     (ulong)input[inputOffset + 2] << 40 |
@@ -899,7 +899,7 @@ namespace Arctium.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ToULong8BytesBE(byte* input, long inputOffset, ulong* output, long outputOffset)
         {
-            output[outputOffset] = 
+            output[outputOffset] =
                     (ulong)input[inputOffset + 0] << 56 |
                     (ulong)input[inputOffset + 1] << 48 |
                     (ulong)input[inputOffset + 2] << 40 |
@@ -1434,7 +1434,18 @@ namespace Arctium.Shared
 
         public static uint ToUInt4BytesBE(Span<byte> buf, int offset)
         {
-            return (uint)(buf[offset + 0] << 24 |
+            unchecked
+            {
+                return (uint)(buf[offset + 0] << 24 |
+                       buf[offset + 1] << 16 |
+                       buf[offset + 2] << 08 |
+                      buf[offset + 3] << 00);
+            }
+        }
+
+        public static int ToInt4BytesBE(Span<byte> buf, int offset)
+        {
+            return (buf[offset + 0] << 24 |
                    buf[offset + 1] << 16 |
                    buf[offset + 2] << 08 |
                   buf[offset + 3] << 00);

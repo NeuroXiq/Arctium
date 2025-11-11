@@ -12,5 +12,8 @@ namespace Arctium.Protocol.DNS.Model
         /// a domain-name which specifies as host which has the specified mailbox
         /// </summary>
         public string MADName;
+
+        public RDataMB() { }
+        public RDataMB(string madName) { MADName = madName; }
     }
 }

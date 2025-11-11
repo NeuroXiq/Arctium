@@ -19,5 +19,8 @@ namespace Arctium.Protocol.DNS.Model
         /// name for the owner.The owner name is an alias
         /// </summary>
         public string CName;
+
+        public RDataCNAME() { }
+        public RDataCNAME(string cname) { CName = cname; }
     }
 }

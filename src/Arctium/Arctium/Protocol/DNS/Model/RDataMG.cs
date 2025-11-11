@@ -16,5 +16,8 @@ namespace Arctium.Protocol.DNS.Model
         /// member of the mail group specified by the domain name
         /// </summary>
         public string MGMName;
+
+        public RDataMG() { }
+        public RDataMG(string mgmName ) { MGMName = mgmName; }
     }
 }
