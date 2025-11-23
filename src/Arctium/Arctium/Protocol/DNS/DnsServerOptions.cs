@@ -21,7 +21,7 @@ namespace Arctium.Protocol.DNS
         public DnsServerOptions(IDnsServerRecordsData dnsServerDataSource)
         {
             DnsServerDataSource = dnsServerDataSource;
-            PortUdp = DnsConsts.DefaultServerUdpPort;
+            PortUdp = DnsConsts.DefaultServerDnsPort;
         }
 
         public static DnsServerOptions CreateDefault(IDnsServerRecordsData dataSource, CancellationToken cancellationToken)

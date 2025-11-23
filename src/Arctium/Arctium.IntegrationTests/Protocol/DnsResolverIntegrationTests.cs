@@ -131,10 +131,11 @@ namespace Arctium.IntegrationTests.Protocol
             // arrange
             var dnsResolver = new DnsResolver();
             // act
-            var result = dnsResolver.ResolveHostNameToHostAddress("www.google.com");
+            var result = dnsResolver.ResolveHostNameToHostAddress("www.google.com").Result;
 
             // assert
-            Assert.True(false);
+            Assert.That(result.Any(t => t.AddressFamily == AddressFamily.InterNetwork));
+            Assert.That(result.Any(t => t.AddressFamily == AddressFamily.InterNetworkV6));
         }
 
         [Test]

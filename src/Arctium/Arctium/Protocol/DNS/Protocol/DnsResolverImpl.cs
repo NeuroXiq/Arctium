@@ -1,12 +1,8 @@
-﻿using Arctium.Protocol.DNS;
-using Arctium.Protocol.DNS.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+﻿using Arctium.Protocol.DNS.Model;
+using Arctium.Shared;
+using System.Diagnostics;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net.Sockets;
 
 namespace Arctium.Protocol.DNS.Protocol
 {
@@ -35,7 +31,115 @@ namespace Arctium.Protocol.DNS.Protocol
             throw new NotImplementedException();
         }
 
-        internal async Task<object> ResolveHostNameToHostAddress(string hostName)
+        internal async Task<IPAddress[]> ResolveHostNameToHostAddress(string hostName)
+        {
+            Header header = new Header()
+            {
+                Id = (ushort)Random.Shared.NextInt64(),
+                AA = false,
+                RA = false,
+                RD = false,
+                TC = false,
+                Opcode = Opcode.Query,
+                ANCount = 0,
+                ARCount = 0,
+                NSCount = 0,
+                QDCount = 1,
+                QR = QRType.Query,
+                RCode = ResponseCode.NoErrorCondition,
+            };
+
+            Question question = new Question()
+            {
+                QClass = QClass.IN,
+                QName = hostName,
+                QType = QType.A
+            };
+
+            Message message = new Message()
+            {
+                Header = header,
+                Question = new Question[] { question },
+                Additional = null,
+                Answer = null,
+                Authority = null
+            };
+
+            Message ipv4Result = await SendQueryToServerAsync(message, IPAddress.Parse("8.8.8.8"));
+
+            question.QType = QType.AAAA;
+
+            Message ipv6Result = await SendQueryToServerAsync(message, IPAddress.Parse("8.8.8.8"));
+
+            List<IPAddress> result = new List<IPAddress>();
+
+            if (ipv4Result.Header.ANCount > 0)
+            {
+                IEnumerable<IPAddress> ipv4List = ipv4Result.Answer
+                    .Where(a => a.Type == QType.A)
+                    .Select(a => new IPAddress(a.GetRData<RDataA>().Address));
+
+                result.AddRange(ipv4List);
+            }
+
+            if (ipv4Result.Header.ANCount > 0)
+            {
+                IEnumerable<IPAddress> ipv6List = ipv6Result.Answer
+                    .Where(t => t.Type == QType.AAAA)
+                    .Select(t => new IPAddress(t.GetRData<RDataAAAA>().IPv6));
+
+                result.AddRange(ipv6List);
+            }
+
+            return result.ToArray();
+        }
+
+        private async Task<Message> SendQueryToServerAsync(Message clientMessage, IPAddress ipAddress, bool useTcp = false, bool replyTcpWhenTruncated = true)
+        {
+            Message serverMessage = null;
+
+            if (!useTcp)
+            {
+                DnsSerialize serialize = new DnsSerialize();
+                ByteBuffer bbuf = new ByteBuffer();
+                byte[] receiveBuffer = new byte[DnsConsts.UdpSizeLimit];
+
+                using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                IPEndPoint endpoint = new IPEndPoint(ipAddress, DnsConsts.DefaultServerDnsPort);
+
+                serialize.Encode(clientMessage, bbuf);
+
+                if (bbuf.Length > DnsConsts.UdpSizeLimit)
+                    throw new DnsException(DnsProtocolError.Internal, "should never happen: udp query exceed max udp datagram size");
+
+                await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
+                var sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);
+
+                Message result = serialize.Decode(new BytesCursor(receiveBuffer, 0, sresult.ReceivedBytes));
+
+                serverMessage = result;
+            }
+
+            if (serverMessage != null)
+            {
+                if (serverMessage.Header.Id != clientMessage.Header.Id)
+                    throw new DnsException(DnsProtocolError.ClientError, "server header id reply does not match client header ID");
+            }
+
+            if (useTcp || (replyTcpWhenTruncated && serverMessage?.Header.TC == true))
+            {
+                throw new NotImplementedException();
+
+                serverMessage = null; //todo
+            }
+
+            if (serverMessage.Header.Id != clientMessage.Header.Id)
+                throw new DnsException(DnsProtocolError.ClientError, "server header id reply does not match client header ID");
+
+            return serverMessage;
+        }
+
+        internal async Task<object> ResolveHostNameToHostAddress2(string hostName)
         {
             step1:
             // RFC-1035 5.3.3. Algorithm 

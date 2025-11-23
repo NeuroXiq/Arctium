@@ -33,6 +33,6 @@ namespace Arctium.Protocol.DNS
         /// </summary>
         public const int UdpSizeLimit = 512;
 
-        public const int DefaultServerUdpPort = 53;
+        public const int DefaultServerDnsPort = 53;
     }
 }

@@ -52,6 +52,7 @@ namespace Arctium.Protocol.DNS.Protocol
         ReceivedZeroBytesButExpectedMoreTcp = 0xf001,
         CannotFindDnsServerToAsk = 0xf002,
         Internal_MultipleDnsSOAZonesForSameDomain = 0xF003,
-        Internal = 0xF004
+        Internal = 0xF004,
+        ClientError = 0xF005
     }
 }

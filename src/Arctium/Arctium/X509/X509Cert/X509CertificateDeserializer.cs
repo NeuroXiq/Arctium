@@ -44,7 +44,7 @@ namespace Arctium.Standards.X509.X509Cert
             {
               
             }
-            catch (Exception e)
+            catch
             {
                 throw;
             }
