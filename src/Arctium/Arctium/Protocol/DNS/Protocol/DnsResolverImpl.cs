@@ -25,7 +25,7 @@ namespace Arctium.Protocol.DNS.Protocol
             return;
         }
 
-        internal void ResolveGeneralLookupFunction()
+        internal void ResolveGeneralLookupFunction(string hostName, QType qtype, QClass qclass)
         {
             throw new NotImplementedException();
         }

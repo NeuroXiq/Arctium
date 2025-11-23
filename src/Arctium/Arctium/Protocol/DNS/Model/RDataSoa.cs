@@ -33,19 +33,19 @@ namespace Arctium.Protocol.DNS.Model
         /// <summary>
         /// a 32 bit time interval before the zone should be refreshed
         /// </summary>
-        public int Refresh;
+        public uint Refresh;
 
         /// <summary>
         /// a 32 bit time interval that shouldelapse before a failed refresh should be retried
         /// </summary>
-        public int Retry;
+        public uint Retry;
 
         /// <summary>
         /// a 32 bit time value that specifies the upper limit on
         /// the time interval that can elapse before
         /// the zone is no longer authoritative
         /// </summary>
-        public int Expire;
+        public uint Expire;
 
         /// <summary>
         /// The unsigned 32 bit minimum ttl field that should be exported with any rr from this zonne

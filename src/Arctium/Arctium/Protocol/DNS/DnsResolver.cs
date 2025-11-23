@@ -40,15 +40,19 @@ namespace Arctium.Protocol.DNS
 
         public object ResolveGeneralLookupFunction(string hostName, QType qtype, QClass qclass)
         {
-            dnsResolverImpl.ResolveGeneralLookupFunction();
+            throw new NotImplementedException();
+            //return dnsResolverImpl.ResolveGeneralLookupFunction(hostName, qtype, qclass);
+        }
 
-            return null;
+        public async Task<Message> SendDnsTcpMessageAsync(Message message, IPAddress ipAddress, int port = DnsConsts.DefaultServerUdpPort)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Sends arbitrary <see cref="Message"/> to server. 
-        /// Returns raw response message from server without
-        /// any futher processing (e.g. will no cache, no recurse, no resolve CNAME, no do redirects etc.)
+        /// Opens socket, sends arbitrary <see cref="Message"/> to the server, and returns response
+        /// Returns raw response message without any futher processing 
+        /// (e.g. will no cache, no recurse, no resolve CNAME, no do redirects etc.)
         /// </summary>
         /// <param name="message">Message to send</param>
         /// <returns>Result message from DNS server</returns>

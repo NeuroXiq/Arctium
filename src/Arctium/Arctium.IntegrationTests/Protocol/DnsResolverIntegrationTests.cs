@@ -1,5 +1,7 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNS.Model;
+using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -157,6 +159,9 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_WillWorkWithTcp()
         {
+            var msg = new Message();
+            // var server = 
+
             Assert.Fail();
         }
 
@@ -201,7 +206,7 @@ namespace Arctium.IntegrationTests.Protocol
                 var result = DnsResolver.SendDnsUdpMessageAsync(msg, IPAddress.Loopback, 53).Result;
 
                 // assert
-                AssertArctiumServerRecord(msg, result);
+                AssertArctiumServerAnswer(msg, result);
             }
 
             cancellationToken.Cancel();
@@ -234,14 +239,44 @@ namespace Arctium.IntegrationTests.Protocol
             return server;
         }
 
-        void AssertArctiumServerRecord(Message clientRequest, Message serverResponse)
+        void AssertArctiumServerAnswer(Message clientRequest, Message serverResponse)
         {
-            Assert.That(1 == 1);
+            var expected = itMasterFiles.Nodes.Where(t => t.Name == clientRequest.Question[0].QName)
+                .SelectMany(t => t.Records)
+                .Where(t => t.Type == clientRequest.Question[0].QType && clientRequest.Question[0].QClass == t.Class)
+                .ToArray();
+
+            var current = serverResponse.Answer;
+
+            Assert.That(expected.Length == current.Length);
+
+            foreach (var e in expected)
+            {
+                Assert.That(current.Any(c => AreResourceRecordsEqual(c, e)), "missing record");
+            }
         }
+
+        bool AreResourceRecordsEqual(ResourceRecord current, ResourceRecord expected)
+        {
+            var r1 = JsonConvert.SerializeObject(current.RData);
+            var r2 = JsonConvert.SerializeObject(expected.RData);
+
+            bool result = current.Name == expected.Name &&
+                current.TTL == expected.TTL &&
+                current.Type == expected.Type &&
+                current.Class == expected.Class &&
+                r1 == r2;
+            
+            if (!result) Debugger.Break();
+
+            return result;
+        }
+
+        static InMemoryDnsServerMasterFiles itMasterFiles;
 
         static InMemoryDnsServerMasterFiles CreateArctiumDnsMasterFiles()
         {
-            var itMasterFiles = new InMemoryDnsServerMasterFiles();
+            itMasterFiles = new InMemoryDnsServerMasterFiles();
             var t = itMasterFiles;
 
             t.AddIN("www.all-rrs.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });

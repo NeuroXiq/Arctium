@@ -4,6 +4,7 @@ using Arctium.Shared;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -213,9 +214,9 @@ namespace Arctium.Protocol.DNS.Protocol
             int i = buffer.AllocEnd(5 * 4);
 
             MemMap.ToBytes1UIntBE(rd.Serial, buffer.Buffer, i);
-            MemMap.ToBytes1IntBE(rd.Refresh, buffer.Buffer, i + 4);
-            MemMap.ToBytes1IntBE(rd.Retry, buffer.Buffer, i + 8);
-            MemMap.ToBytes1IntBE(rd.Expire, buffer.Buffer, i + 12);
+            MemMap.ToBytes1UIntBE(rd.Refresh, buffer.Buffer, i + 4);
+            MemMap.ToBytes1UIntBE(rd.Retry, buffer.Buffer, i + 8);
+            MemMap.ToBytes1UIntBE(rd.Expire, buffer.Buffer, i + 12);
             MemMap.ToBytes1UIntBE(rd.Minimum, buffer.Buffer, i + 16);
         }
 
@@ -403,16 +404,19 @@ namespace Arctium.Protocol.DNS.Protocol
             if (cursor.Length < 20) throw new DnsException(DnsProtocolError.DecodeError, "SOA record missing length for all fields");
 
             uint serial = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset);
-            int refresh = MemMap.ToInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+            uint refresh = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
             uint retry = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
-            int expire = MemMap.ToInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+            uint expire = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
             uint minimum = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset += 4);
+
+            cursor.CurrentOffset += 4;
 
             RDataSOA result = new RDataSOA()
             {
                 MName = mname,
                 RName = rname,
                 Serial = serial,
+                Retry = retry,
                 Refresh = refresh,
                 Expire = expire,
                 Minimum = minimum
@@ -507,6 +511,18 @@ namespace Arctium.Protocol.DNS.Protocol
             return new RDataAAAA(ipv6);
         }
 
+        public RDataNULL Decode_RDataNULL(BytesCursor cursor, ushort length)
+        {
+            if (cursor.Length < length) throw new DnsException(DnsProtocolError.DecodeError, "RDataNULL: cursor length < rdata.length");
+
+            byte[] result = new byte[length];
+
+            Buffer.BlockCopy(cursor.Buffer, cursor.CurrentOffset, result, 0, length);
+            cursor.CurrentOffset += length;
+
+            return new RDataNULL(result);
+        }
+
         public RDataMR Decode_RDataMR(BytesCursor cursor)
         {
             if (!cursor.HasData) throw new DnsException(DnsProtocolError.DecodeError, "RDataMG cursor len = 0");
@@ -558,18 +574,18 @@ namespace Arctium.Protocol.DNS.Protocol
                 case QType.MR: rdata = Decode_RDataMR(cursor); break; 
                 case QType.PTR: rdata = Decode_RDataPTR(cursor); break;
                 case QType.HINFO: rdata = Decode_RDataHINFO(cursor); break;
-                case QType.MINFO: Decode_RDataMINFO(cursor); break;
-                case QType.MX: Decode_RDataMX(cursor); break;
-                case QType.TXT: Decode_RDataTXT(cursor, rr.RDLength); break;
-                case QType.AAAA: Decode_RDataAAAA(cursor); break;
+                case QType.MINFO: rdata = Decode_RDataMINFO(cursor); break;
+                case QType.MX: rdata = Decode_RDataMX(cursor); break;
+                case QType.TXT: rdata = Decode_RDataTXT(cursor, rr.RDLength); break;
+                case QType.AAAA: rdata = Decode_RDataAAAA(cursor); break;
+                case QType.NULL: rdata = Decode_RDataNULL(cursor, rr.RDLength); break;
+                case QType.WKS: rdata = Decode_RDataWKS(cursor, rr.RDLength); break;
                 case QType.MAILB: 
                 case QType.MAILA:
                 case QType.AXFR:
                 case QType.All:
                     throw new DnsException(DnsProtocolError.DecodeError, $"invalid qtype of resource record: {rr.Type} ({(int)rr.Type})");
-                // null, wsk or anything unknown as byte array
-                case QType.NULL:
-                case QType.WKS:
+                // wsk or anything unknown as byte array
                 default:
                     if (cursor.Length < rr.RDLength) throw new DnsException(DnsProtocolError.DecodeError, "rdlength exceed current length");
                     
@@ -580,9 +596,34 @@ namespace Arctium.Protocol.DNS.Protocol
                     break;
             }
 
+            Debug.Assert(rdata != null);
+
             rr.RData = rdata;
 
             return rr;
+        }
+
+        private RDataWKS Decode_RDataWKS(BytesCursor cursor, ushort rdlength)
+        {
+            byte[] bitmap;
+
+            if (cursor.Length < rdlength) throw new DnsException(DnsProtocolError.DecodeError, "rdatawks cursor.Length < rdlength");
+            if (cursor.Length < 5) throw new DnsException(DnsProtocolError.DecodeError, "rdatawks: length < 5 (5 is min)");
+
+            bitmap = new byte[rdlength - 5];
+
+            if (rdlength > 5) Buffer.BlockCopy(cursor.Buffer, cursor.CurrentOffset + 5, bitmap, 0, rdlength - 5);
+
+            RDataWKS result = new RDataWKS()
+            {
+                Address = MemMap.ToUInt4BytesBE(cursor.Buffer, cursor.CurrentOffset),
+                Protocol = cursor[4],
+                Bitmap = bitmap,
+            };
+
+            cursor.CurrentOffset += rdlength;
+
+            return result;
         }
 
         private string Decode_DomainName(BytesCursor cursor)
