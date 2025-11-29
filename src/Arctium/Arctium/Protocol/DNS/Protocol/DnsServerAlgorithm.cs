@@ -1,11 +1,4 @@
-﻿using Arctium.Protocol.DNS;
-using Arctium.Protocol.DNS.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
+﻿using Arctium.Protocol.DNS.Model;
 
 namespace Arctium.Protocol.DNS.Protocol
 {

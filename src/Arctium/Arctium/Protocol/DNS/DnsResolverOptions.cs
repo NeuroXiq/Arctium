@@ -11,6 +11,7 @@ namespace Arctium.Protocol.DNS
     {
         public bool UseCache { get; private set; }
         public IDnsResolverCache Cache { get; private set; }
+        public IPAddress[] SBeltDnsServers { get; private set; }
 
         /// <summary>
         /// Max TTL. If TTL from received packet exceed this limit it is dropped.
@@ -30,15 +31,18 @@ namespace Arctium.Protocol.DNS
         /// <param name="cacheShareMode"></param>
         /// <param name="cache"></param>
         /// <param name="dnsServers">This servers will be asked first</param>
+        /// <param name="sbeltDnsServers">Security bet DNS servers. If null then by default root name servers will be used</param>
         public DnsResolverOptions(
             bool useCache = true,
             IDnsResolverCache cache = null,
             IPAddress[] dnsServers = null,
+            IPAddress[] sbeltDnsServers = null,
             int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds)
         {
             UseCache = useCache;
             Cache = cache;
             DnsServers = dnsServers;
+            SBeltDnsServers = DnsRootServers.All.Select(t => t.IPv4Address).ToArray();
         }
 
         public static DnsResolverOptions CreateDefault()
