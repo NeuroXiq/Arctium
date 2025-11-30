@@ -17,5 +17,10 @@ namespace Arctium.Protocol.DNS.Model
         public RDataNS() { }
         
         public RDataNS(string nsdName) { NSDName = nsdName; }
+
+        public override string ToString()
+        {
+            return NSDName;
+        }
     }
 }

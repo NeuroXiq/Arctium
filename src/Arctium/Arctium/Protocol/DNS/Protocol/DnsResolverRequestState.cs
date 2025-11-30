@@ -13,5 +13,12 @@ namespace Arctium.Protocol.DNS.Protocol
         public object SList { get; set; }
         public object SBelt { get; set; }
         public object Cache { get; set; }
+
+        public DnsResolverRequestState(string sname, QClass sclass, QType stype)
+        {
+            SName = sname;
+            SType = stype;
+            SClass = sclass;
+        }
     }
 }

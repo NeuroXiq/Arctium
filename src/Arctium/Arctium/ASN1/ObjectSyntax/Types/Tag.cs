@@ -26,8 +26,6 @@ namespace Arctium.Standards.ASN1.ObjectSyntax.Types
 
         public override string ToString()
         {
-            string formatted = "";
-
             string className = Enum.GetName(typeof(TagClass), Class);
             string numName = "";
             string classNo = ((long)Class).ToString();

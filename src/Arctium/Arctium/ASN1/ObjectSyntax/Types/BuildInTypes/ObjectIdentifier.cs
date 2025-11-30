@@ -116,7 +116,7 @@ namespace Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes
                     numValues[i] = BinConverter.ToULongLE(Subidentifiers[i], 0, Subidentifiers[i].Length);
                 }
             }
-            catch (ArgumentException e)
+            catch (ArgumentException)
             {
                 throw new InvalidOperationException("Subidentifier of current OID object cannot be converter to unsigned integer");
             }

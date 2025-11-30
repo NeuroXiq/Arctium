@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Arctium.Protocol.DNS
 {
-    public interface IDnsResolverCache
+    public interface IDndResolverLocalData
     {
         //void SetDelegation(string hostName, object delegation);
 
@@ -19,8 +19,10 @@ namespace Arctium.Protocol.DNS
         //bool TryGetDelegation(string hostName, out IPAddress ipAddress);
         //void CacheCname(string hostName, object response);
 
-        bool TryGet(string hostName, QType qtype, QClass qclass, out ResourceRecord[] resultResourceRecords);
+        IPAddress[] GetSBeltServers();
 
-        void Set(string hostName, QType qtype, QClass qclass, ResourceRecord[] resourceRecords);
+        bool TryGetCache(string hostName, QType qtype, QClass qclass, out ResourceRecord[] resultResourceRecords);
+
+        void SetCache(string hostName, QType qtype, QClass qclass, ResourceRecord[] resourceRecords);
     }
 }

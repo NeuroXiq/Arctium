@@ -1,14 +1,7 @@
-﻿using Arctium.Protocol.DNS;
-using Arctium.Protocol.DNS.Model;
+﻿using Arctium.Protocol.DNS.Model;
 using Arctium.Shared;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.NetworkInformation;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS.Protocol
 {
@@ -634,21 +627,19 @@ namespace Arctium.Protocol.DNS.Protocol
 
             int labelOffset = cursor.CurrentOffset;
             int labelLength = -1;
-            bool compressedMode = false;
+            bool compressedModeInitialized = false;
 
             while (cursor.Buffer[labelOffset] != 0)
             {
-                if (cursor.Buffer[labelOffset] == 0xC0)
+                if ((cursor.Buffer[labelOffset] & 0xC0) == 0xC0)
                 {
-                    if (compressedMode) throw new DnsException(DnsProtocolError.DecodeDomainName, "compressed in compressed label");
-
                     if (cursor.Length < 2)
                         throw new DnsException(DnsProtocolError.DecodeDomainName, "DecodeInvalidPtrValueMin2BytesLen");
 
-                    compressedMode = true;
-                    labelOffset = (cursor[0] << 8 | cursor[1] << 0) & 0x3FFF; // remove first two MSB
+                    labelOffset = (cursor.Buffer[labelOffset] << 8 | cursor.Buffer[labelOffset + 1] << 0) & 0x3FFF; // remove first two MSB
 
-                    cursor.CurrentOffset += 2;
+                    if (!compressedModeInitialized) cursor.CurrentOffset += 2;
+                    compressedModeInitialized = true;
                 }
                 else
                 {
@@ -664,12 +655,12 @@ namespace Arctium.Protocol.DNS.Protocol
                     labels.Add(label);
 
                     labelOffset += labelLength + 1;
-                    if (!compressedMode) cursor.CurrentOffset += labelLength + 1;
+                    if (!compressedModeInitialized) cursor.CurrentOffset += labelLength + 1;
                 }
             }
 
-            // add last '0' byte
-            if (!compressedMode) cursor.CurrentOffset += 1;
+            // add last '0' - in this case we had a sequence of labels without pointer
+            if (!compressedModeInitialized) cursor.CurrentOffset += 1;
 
             return string.Join(".", labels);
         }
