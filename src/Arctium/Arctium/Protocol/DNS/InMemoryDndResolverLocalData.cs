@@ -29,12 +29,10 @@ namespace Arctium.Protocol.DNS
             return sbelt;
         }
 
-        public void SetCache(string hostName, QType qtype, QClass qclass, ResourceRecord[] resourceRecords)
+        public void AppendCache(ResourceRecord[] resourceRecords)
         {
             lock (_lock)
             {
-                entries.RemoveAll(e => e.Record.Name == hostName && e.Record.Type == qtype && e.Record.Class == qclass);
-
                 foreach (ResourceRecord record in resourceRecords)
                 {
                     CacheEntry newEntry = new CacheEntry(record, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddSeconds(record.TTL));

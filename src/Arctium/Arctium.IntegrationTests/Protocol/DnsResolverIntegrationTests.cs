@@ -88,6 +88,22 @@ namespace Arctium.IntegrationTests.Protocol
             
         }
 
+        //
+        // No-rfc tests
+        //
+
+        [Test]
+        public void Success_WillResolveIPv6()
+        {
+            Assert.Fail();
+        }
+
+        [Test]
+        public void Success_WillResolveIPv4()
+        {
+            Assert.Fail();
+        }
+
         [Test]
         public void Success_WillSendArbitraryDnsMessageAndGetResponse()
         {

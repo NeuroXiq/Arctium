@@ -23,6 +23,6 @@ namespace Arctium.Protocol.DNS
 
         bool TryGetCache(string hostName, QType qtype, QClass qclass, out ResourceRecord[] resultResourceRecords);
 
-        void SetCache(string hostName, QType qtype, QClass qclass, ResourceRecord[] resourceRecords);
+        void AppendCache(ResourceRecord[] resourceRecords);
     }
 }

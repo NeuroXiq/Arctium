@@ -139,7 +139,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
         }
 
-        async Task<Message> Step3_SendQueriesUntilOneResponse(DnsResolverRequestState state, IPAddress serverAddress)
+        async Task<Message> TrySendMessageToServer(DnsResolverRequestState state, IPAddress serverAddress)
         {
             try
             {
@@ -148,7 +148,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     Id = (ushort)Random.Shared.NextInt64(),
                     AA = false,
                     RA = false,
-                    RD = true,
+                    RD = false,
                     TC = false,
                     Opcode = Opcode.Query,
                     ANCount = 0,
@@ -205,7 +205,13 @@ namespace Arctium.Protocol.DNS.Protocol
         // RFC-1035 5.3.3. Algorithm 
         internal async Task<ResourceRecord[]> ResolveHostNameToHostAddress(string sname, QClass qclass, QType qtype)
         {
-            DnsResolverRequestState state = new DnsResolverRequestState(sname, qclass, qtype);
+            DnsResolverRequestState state = new DnsResolverRequestState(sname, QClass.IN, QType.A);
+            Message response = null;
+            List<IPAddress> nameServersToAsk = new List<IPAddress>();
+            bool sbeltUsed = false;
+            int i = 0;
+            string parentHostName = sname;
+            bool found = false;
 
             // step 1
             if (options.LocalData.TryGetCache(state.SName, state.SType, state.SClass, out ResourceRecord[] records))
@@ -214,45 +220,73 @@ namespace Arctium.Protocol.DNS.Protocol
             }
 
             // step 2
+            // find best servers to ask
 
             // first check NS rr for domain
-            IPAddress[] nameServersToAsk = new IPAddress[0];
-            string parentHostName = sname;
-            bool found = false;
-            
             do
             {
                 found = options.LocalData.TryGetCache(parentHostName, QType.NS, state.SClass, out var nameServers);
                 parentHostName = GetParentDomain(parentHostName);
-
             } while (!found && parentHostName != null);
 
-            if (nameServersToAsk == null) nameServersToAsk = new IPAddress[0];
-
-            // step 3
-            Message response = null;
-
-            foreach (var nameServer in nameServersToAsk)
+            while (true)
             {
-                response = await Step3_SendQueriesUntilOneResponse(state, nameServer);
+                // step 3
+                // send queries until one responds
+                response = await TrySendMessageToServer(state, nameServersToAsk[i]);
 
-                if (response != null) break;
-            }
-
-            // no nameserver gived a response? try again with SBELT (last resort servers)
-            if (response == null)
-            {
-                // IPAddress[] sbeltServers = localData.GetSBeltServers();
-                state.SType = QType.A;
-                state.SName = "server001asdfasdfwef.azurewebsites.com";
-                //IPAddress[] sbeltServers = new IPAddress[] { IPAddress.Parse("170.247.170.2") };
-                IPAddress[] sbeltServers = new IPAddress[] { IPAddress.Parse("8.8.8.8") };
-
-                foreach (var sbeltServer in sbeltServers)
+                if (response == null)
                 {
-                    response = await Step3_SendQueriesUntilOneResponse(state, sbeltServer);
+                    continue;
+                }
 
-                    if (response != null) break;
+                // step 4
+                // investigate response
+
+                if (response.Answer.Any(t => t.Class != state.SClass || t.Type != state.SType))
+                {
+                    throw new DnsException("server answer has other qclass or qtype than requested");
+                }
+
+                options.LocalData.AppendCache(response.Answer);
+                options.LocalData.AppendCache(response.Authority);
+                options.LocalData.AppendCache(response.Additional);
+
+                if (response.Answer.Length > 0)
+                {
+                    // 4.a answers question?s
+
+                    return response.Answer;
+                }
+                else if (response.Header.AA && response.Header.RCode == ResponseCode.NameError)
+                {
+                    // 4.a name error?
+
+                    // todo cache data
+                    throw new DnsException("Cannot resolve host name. Host name does not exists");
+                }
+                else if (response.Authority.Length > 0)
+                {
+                    // 4.b better delegation?
+                    response.Authority
+                        .Where(t => t.Type == QType.NS)
+                        .Select(t => t.GetRData<RDataNS>().NSDName);
+
+                    i = 0;
+                    response = null;
+                }
+                else if (response.Answer.Length == 1 && response.Answer[0].Type == QType.CNAME && qtype != QType.CNAME)
+                {
+                    // 4.c response shows CNAME?
+                    return await ResolveHostNameToHostAddress(response.Answer[0].GetRData<RDataCNAME>().CName, qclass, qtype);
+                }
+                else
+                {
+                    // 4.d response shows server failure or other bizzare content
+                    // continue with other servers
+
+                    response = null;
+                    i++;
                 }
             }
 
