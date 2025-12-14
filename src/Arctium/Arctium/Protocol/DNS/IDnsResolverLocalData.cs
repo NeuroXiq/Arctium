@@ -18,9 +18,9 @@ namespace Arctium.Protocol.DNS
         //bool TryGetDelegation(string hostName, out IPAddress ipAddress);
         //void CacheCname(string hostName, object response);
 
-        ResourceRecord[] GetSBeltServers();
+        ResourceRecord[] SBeltServers { get; }
 
-        bool TryGetCache(string hostName, QType qtype, QClass qclass, out ResourceRecord[] resultResourceRecords);
+        bool TryGetCache(string hostName, QClass qclass, QType qtype,  out ResourceRecord[] resultResourceRecords);
 
         void AppendCache(ResourceRecord[] resourceRecords);
     }

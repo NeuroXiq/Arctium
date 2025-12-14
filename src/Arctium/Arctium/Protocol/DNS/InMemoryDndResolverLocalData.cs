@@ -7,7 +7,6 @@ namespace Arctium.Protocol.DNS
     {
         private List<CacheEntry> entries;
         static readonly ResourceRecord[] sbeltServers;
-        static readonly ResourceRecord[] sbeltNs;
         static readonly object _lock = new object();
 
         static InMemoryDndResolverLocalData()
@@ -25,18 +24,19 @@ namespace Arctium.Protocol.DNS
             roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.4.4"), TTL = 1000 });
 
             sbeltServers = roots.ToArray();
-            sbeltNs = sbeltServers.Where(t => t.Type == QType.NS).ToArray();
         }
 
         public InMemoryDndResolverLocalData()
         {
             entries = new List<CacheEntry>();
+
+            foreach (var sserver in sbeltServers)
+            {
+                entries.Add(new CacheEntry(sserver, DateTime.UtcNow, DateTimeOffset.Parse("2999-12-31")));
+            }
         }
 
-        public ResourceRecord[] GetSBeltServers()
-        {
-            return sbeltNs;
-        }
+        public ResourceRecord[] SBeltServers => sbeltServers;
 
         public void AppendCache(ResourceRecord[] resourceRecords)
         {
@@ -44,13 +44,21 @@ namespace Arctium.Protocol.DNS
             {
                 foreach (ResourceRecord record in resourceRecords)
                 {
-                    CacheEntry newEntry = new CacheEntry(record, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddSeconds(record.TTL));
+                    var existing = entries.Where(t => t.Record.Class == record.Class && t.Record.Type == record.Type && t.Record.Name == record.Name).ToArray();
+
+                    foreach (var toRemove in existing) entries.Remove(toRemove);
+
+                    DateTimeOffset expiration = DateTimeOffset.UtcNow.AddSeconds(record.TTL);
+                    DateTimeOffset minExpiration = DateTimeOffset.UtcNow.AddMinutes(10);
+                    expiration = expiration > minExpiration ? expiration : minExpiration;
+
+                    CacheEntry newEntry = new CacheEntry(record, DateTimeOffset.UtcNow, expiration);
                     entries.Add(newEntry);
                 }
             }
         }
 
-        public bool TryGetCache(string hostName, QType qtype, QClass qclass, out ResourceRecord[] resultResourceRecords)
+        public bool TryGetCache(string hostName, QClass qclass, QType qtype, out ResourceRecord[] resultResourceRecords)
         {
             lock (_lock)
             {
@@ -67,7 +75,7 @@ namespace Arctium.Protocol.DNS
                     return false;
                 }
 
-                List<CacheEntry> expired = foundEntries.Where(t => t.ExpireOn < now).ToList();
+                List<CacheEntry> expired = foundEntries.Where(t => t.ExpireOn > now).ToList();
 
                 if (expired.Count > 0)
                 {
@@ -81,7 +89,7 @@ namespace Arctium.Protocol.DNS
                 ResourceRecord[] result = foundEntries.Select(t => t.Record).ToArray();
 
                 resultResourceRecords = result;
-                return true;
+                return result.Length > 0;
             }
         }
 
@@ -97,6 +105,8 @@ namespace Arctium.Protocol.DNS
                 ExpireOn = expireOn;
                 Record = record;
             }
+
+            public override string ToString() => $"{Record.Name} {Record.Type}";
         }
     }
 }

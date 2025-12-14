@@ -139,7 +139,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
         }
 
-        async Task<Message> TrySendMessageToServer(DnsResolverRequestState state, IPAddress serverAddress)
+        async Task<Message> TrySendMessageToServer(string sname, QClass qclass, QType qtype, IPAddress serverAddress)
         {
             Header header = new Header()
             {
@@ -159,9 +159,9 @@ namespace Arctium.Protocol.DNS.Protocol
 
             Question question = new Question()
             {
-                QClass = state.SClass,
-                QType = state.SType,
-                QName = state.SName,
+                QClass = qclass,
+                QType = qtype,
+                QName = sname,
             };
 
             Message message = new Message()
@@ -200,19 +200,30 @@ namespace Arctium.Protocol.DNS.Protocol
         {
             RDataNS serverToAsk;
             List<IPAddress> serverToAskIps;
-            DnsResolverRequestState state = new DnsResolverRequestState(sname, QClass.IN, QType.A);
+            // DnsResolverRequestState state = new DnsResolverRequestState(sname, QClass.IN, QType.A);
             Message response = null;
             List<ResourceRecord> nameServersToAsk = new List<ResourceRecord>();
-            List<ResourceRecord> sbelt = new List<ResourceRecord>();
             bool sbeltUsed = false;
             int i = 0;
             string parentHostName = sname;
             bool found = false;
             IEnumerable<IPAddress> ipv4 = null, ipv6 = null;
 
+            // special case -> quering for IP of sbelt server?
+            // some configuration must be hardcordr in the system
+            if (qtype == QType.A || qtype == QType.AAAA)
+            {
+                var sbeltServerResourceRecords = options.LocalData.SBeltServers.Where(t => t.Name == sname && t.Class == qclass && t.Type == qtype).ToList();
+
+                if (sbeltServerResourceRecords.Count > 0)
+                {
+                    return sbeltServerResourceRecords.ToArray();
+                }
+            }
+
             // step 1
             // check if already in cache
-            if (options.LocalData.TryGetCache(state.SName, state.SType, state.SClass, out ResourceRecord[] records))
+            if (options.LocalData.TryGetCache(sname, qclass, qtype, out ResourceRecord[] records))
             {
                 // done, found in cache
                 return records;
@@ -222,7 +233,7 @@ namespace Arctium.Protocol.DNS.Protocol
             // find best servers to ask first check NS rr for domain
             do
             {
-                found = options.LocalData.TryGetCache(parentHostName, QType.NS, state.SClass, out var nameServers);
+                found = options.LocalData.TryGetCache(parentHostName, qclass, QType.NS, out var nameServers);
                 parentHostName = GetParentDomain(parentHostName);
             } while (!found && parentHostName != null);
 
@@ -235,8 +246,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     if (!sbeltUsed)
                     {
                         sbeltUsed = true;
-                        nameServersToAsk = options.LocalData.GetSBeltServers().ToList();
-                        sbelt = nameServersToAsk;
+                        nameServersToAsk = options.LocalData.SBeltServers.Where(t => t.Type == QType.NS).ToList();
                     }
                     else
                     {
@@ -250,7 +260,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 try
                 {
-                    ipv4 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.A)).Select(t => new IPAddress(t.GetRData<RDataA>().Address));
+                    ipv4 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.A)).Select(t => IPAddress.Parse(DnsSerialize.UIntToIpv4(t.GetRData<RDataA>().Address)));
                     ipv6 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.AAAA)).Select(t => new IPAddress(t.GetRData<RDataAAAA>().IPv6));
 
                     serverToAskIps.AddRange(ipv4);
@@ -266,7 +276,9 @@ namespace Arctium.Protocol.DNS.Protocol
                 {
                     try
                     {
-                        response = await TrySendMessageToServer(state, serverToAskIp);
+                        response = await TrySendMessageToServer(sname, qclass, qtype, serverToAskIp);
+
+                        if (response != null) break;
                     }
                     catch
                     {
@@ -276,7 +288,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 // step 4
                 // investigate response
-                if (response.Answer.Any(t => t.Class != state.SClass || t.Type != state.SType))
+                if (response.Answer.Any(t => t.Class != qclass || t.Type != qtype))
                 {
                     throw new DnsException("server answer has other qclass or qtype than requested");
                 }
