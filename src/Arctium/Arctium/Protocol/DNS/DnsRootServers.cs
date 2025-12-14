@@ -23,6 +23,7 @@
             
             A = new DnsRootServer(
                 'A',
+                "a.root-servers.net",
                 "198.41.0.4",
                 "2001:503:ba3e::2:30",
                 "AS19836, AS36619, AS36620, AS36622, AS36625, AS36631, AS64820",
@@ -36,6 +37,7 @@
 
             B = new DnsRootServer(
                 'B',
+                "b.root-servers.net",
                 "170.247.170.2",
                 "2801:1b8:10::b",
                 "AS394353",
@@ -50,6 +52,7 @@
 
             C = new DnsRootServer(
                 'C',
+                "c.root-servers.net",
                 "192.33.4.12",
                 "2001:500:2::c",
                 "AS2149",
@@ -64,6 +67,7 @@
 
             D = new DnsRootServer(
                 'D',
+                "d.root-servers.net",
                 "199.7.91.13",
                 "2001:500:2d::d",
                 "AS10886",
@@ -78,6 +82,7 @@
 
             E = new DnsRootServer(
                 'E',
+                "e.root-servers.net",
                 "192.203.230.10",
                 "2001:500:a8::e",
                 "AS21556",
@@ -92,6 +97,7 @@
 
             F = new DnsRootServer(
                 'F',
+                "f.root-servers.net",
                 "192.5.5.241",
                 "2001:500:2f::f",
                 "AS3557",
@@ -106,6 +112,7 @@
 
             G = new DnsRootServer(
                 'G',
+                "g.root-servers.net",
                 "192.112.36.4",
                 "2001:500:12::d0d",
                 "AS5927",
@@ -120,6 +127,7 @@
 
             H = new DnsRootServer(
                 'H',
+                "h.root-servers.net",
                 "198.97.190.53",
                 "2001:500:1::53",
                 "AS1508",
@@ -134,6 +142,7 @@
 
             I = new DnsRootServer(
                 'I',
+                "i.root-servers.net",
                 "192.36.148.17",
                 "2001:7fe::53",
                 "AS29216",
@@ -148,6 +157,7 @@
 
             J = new DnsRootServer(
                 'J',
+                "j.root-servers.net",
                 "192.58.128.30",
                 "2001:503:c27::2:30",
                 "AS26415,[8][30] AS36626, AS36628, AS36632",
@@ -162,6 +172,7 @@
 
             K = new DnsRootServer(
                 'K',
+                "k.root-servers.net",
                 "193.0.14.129",
                 "2001:7fd::1",
                 "AS25152",
@@ -176,6 +187,7 @@
 
             L = new DnsRootServer(
                 'L',
+                "l.root-servers.net",
                 "199.7.83.42",
                 "2001:500:9f::42",
                 "AS20144",
@@ -190,6 +202,7 @@
 
             M = new DnsRootServer(
                 'M',
+                "m.root-servers.net",
                 "202.12.27.33",
                 "2001:dc3::35",
                 "AS7500",

@@ -21,7 +21,7 @@ namespace Arctium.Protocol.DNS
 
         public async Task<IPAddress[]> ResolveHostNameToHostAddress(string hostName)
         {
-            ResourceRecord[] ipv4Result = await dnsResolverImpl.ResolveHostNameToHostAddress(hostName);
+            ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.A);
             // ResourceRecord[] ipv6Result = await dnsResolverImpl.ResolveHostNameToHostAddress(hostName);
 
             IPAddress[] ipv4Address = ipv4Result.Select(t => t.GetRData<RDataA>().Address)

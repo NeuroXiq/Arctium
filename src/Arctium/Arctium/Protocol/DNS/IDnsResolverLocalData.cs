@@ -1,5 +1,4 @@
 ﻿using Arctium.Protocol.DNS.Model;
-using System.Net;
 
 namespace Arctium.Protocol.DNS
 {
@@ -19,7 +18,7 @@ namespace Arctium.Protocol.DNS
         //bool TryGetDelegation(string hostName, out IPAddress ipAddress);
         //void CacheCname(string hostName, object response);
 
-        IPAddress[] GetSBeltServers();
+        ResourceRecord[] GetSBeltServers();
 
         bool TryGetCache(string hostName, QType qtype, QClass qclass, out ResourceRecord[] resultResourceRecords);
 

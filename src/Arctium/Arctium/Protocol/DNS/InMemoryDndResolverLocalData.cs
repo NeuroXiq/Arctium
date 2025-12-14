@@ -6,17 +6,26 @@ namespace Arctium.Protocol.DNS
     public class InMemoryDndResolverLocalData : IDndResolverLocalData
     {
         private List<CacheEntry> entries;
-        static readonly IPAddress[] sbelt;
+        static readonly ResourceRecord[] sbeltServers;
+        static readonly ResourceRecord[] sbeltNs;
         static readonly object _lock = new object();
 
         static InMemoryDndResolverLocalData()
         {
-            List<IPAddress> sbeltList = new List<IPAddress>();
-            sbeltList.Add(IPAddress.Parse("8.8.8.8"));
-            sbeltList.Add(IPAddress.Parse("8.8.4.4"));
-            sbeltList.AddRange(DnsRootServers.All.Select(t => t.IPv4Address));
+            var roots = DnsRootServers.All.SelectMany(t => new ResourceRecord[]
+            {
+                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = t.HostName, TTL = 1000, RData = new RDataNS(t.HostName) },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = t.HostName, TTL = 1000, RData = new RDataA(t.IPv4Address.ToString()) },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.AAAA, Name = t.HostName, TTL = 1000, RData = new RDataAAAA(t.IPv6Address.GetAddressBytes()) },
+            }).ToList();
 
-            sbelt = sbeltList.ToArray();
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 });
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.8.8"), TTL = 1000 });
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 });
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.4.4"), TTL = 1000 });
+
+            sbeltServers = roots.ToArray();
+            sbeltNs = sbeltServers.Where(t => t.Type == QType.NS).ToArray();
         }
 
         public InMemoryDndResolverLocalData()
@@ -24,9 +33,9 @@ namespace Arctium.Protocol.DNS
             entries = new List<CacheEntry>();
         }
 
-        public IPAddress[] GetSBeltServers()
+        public ResourceRecord[] GetSBeltServers()
         {
-            return sbelt;
+            return sbeltNs;
         }
 
         public void AppendCache(ResourceRecord[] resourceRecords)

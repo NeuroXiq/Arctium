@@ -141,49 +141,41 @@ namespace Arctium.Protocol.DNS.Protocol
 
         async Task<Message> TrySendMessageToServer(DnsResolverRequestState state, IPAddress serverAddress)
         {
-            try
+            Header header = new Header()
             {
-                Header header = new Header()
-                {
-                    Id = (ushort)Random.Shared.NextInt64(),
-                    AA = false,
-                    RA = false,
-                    RD = false,
-                    TC = false,
-                    Opcode = Opcode.Query,
-                    ANCount = 0,
-                    ARCount = 0,
-                    NSCount = 0,
-                    QDCount = 1,
-                    QR = QRType.Query,
-                    RCode = ResponseCode.NoErrorCondition,
-                };
+                Id = (ushort)Random.Shared.NextInt64(),
+                AA = false,
+                RA = false,
+                RD = false,
+                TC = false,
+                Opcode = Opcode.Query,
+                ANCount = 0,
+                ARCount = 0,
+                NSCount = 0,
+                QDCount = 1,
+                QR = QRType.Query,
+                RCode = ResponseCode.NoErrorCondition,
+            };
 
-                Question question = new Question()
-                {
-                    QClass = state.SClass,
-                    QType = state.SType,
-                    QName = state.SName,
-                };
-
-                Message message = new Message()
-                {
-                    Header = header,
-                    Question = new Question[] { question },
-                    Additional = null,
-                    Answer = null,
-                    Authority = null
-                };
-
-                Message serverResponse = await SendQueryToServerAsync(message, serverAddress);
-
-                return serverResponse;
-            }
-            catch (Exception e)
+            Question question = new Question()
             {
+                QClass = state.SClass,
+                QType = state.SType,
+                QName = state.SName,
+            };
 
-                throw;
-            }
+            Message message = new Message()
+            {
+                Header = header,
+                Question = new Question[] { question },
+                Additional = null,
+                Answer = null,
+                Authority = null
+            };
+
+            Message serverResponse = await SendQueryToServerAsync(message, serverAddress);
+
+            return serverResponse;
         }
 
         void Step4_AnalyzeResponse(DnsResolverRequestState state)
@@ -202,47 +194,88 @@ namespace Arctium.Protocol.DNS.Protocol
             return parentHostName;
         }
 
-        // RFC-1035 5.3.3. Algorithm 
-        internal async Task<ResourceRecord[]> ResolveHostNameToHostAddress(string sname, QClass qclass, QType qtype)
+        // RFC-1035 5.3.3. Algorithm
+        // todo max recursrion level
+        internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype)
         {
+            RDataNS serverToAsk;
+            List<IPAddress> serverToAskIps;
             DnsResolverRequestState state = new DnsResolverRequestState(sname, QClass.IN, QType.A);
             Message response = null;
-            List<IPAddress> nameServersToAsk = new List<IPAddress>();
+            List<ResourceRecord> nameServersToAsk = new List<ResourceRecord>();
+            List<ResourceRecord> sbelt = new List<ResourceRecord>();
             bool sbeltUsed = false;
             int i = 0;
             string parentHostName = sname;
             bool found = false;
+            IEnumerable<IPAddress> ipv4 = null, ipv6 = null;
 
             // step 1
+            // check if already in cache
             if (options.LocalData.TryGetCache(state.SName, state.SType, state.SClass, out ResourceRecord[] records))
             {
+                // done, found in cache
                 return records;
             }
 
             // step 2
-            // find best servers to ask
-
-            // first check NS rr for domain
+            // find best servers to ask first check NS rr for domain
             do
             {
                 found = options.LocalData.TryGetCache(parentHostName, QType.NS, state.SClass, out var nameServers);
                 parentHostName = GetParentDomain(parentHostName);
             } while (!found && parentHostName != null);
 
-            while (true)
+            // step 3
+            // send queries until one responds
+            do
             {
-                // step 3
-                // send queries until one responds
-                response = await TrySendMessageToServer(state, nameServersToAsk[i]);
-
-                if (response == null)
+                if (nameServersToAsk.Count == 0)
                 {
+                    if (!sbeltUsed)
+                    {
+                        sbeltUsed = true;
+                        nameServersToAsk = options.LocalData.GetSBeltServers().ToList();
+                        sbelt = nameServersToAsk;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                serverToAsk = nameServersToAsk[0].GetRData<RDataNS>();
+                serverToAskIps = new List<IPAddress>();
+                nameServersToAsk.RemoveAt(0);
+
+                try
+                {
+                    ipv4 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.A)).Select(t => new IPAddress(t.GetRData<RDataA>().Address));
+                    ipv6 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.AAAA)).Select(t => new IPAddress(t.GetRData<RDataAAAA>().IPv6));
+
+                    serverToAskIps.AddRange(ipv4);
+                    serverToAskIps.AddRange(ipv6);
+                }
+                catch (Exception e)
+                {
+                    // failed to get name server ip address
                     continue;
+                }
+
+                foreach (var serverToAskIp in serverToAskIps)
+                {
+                    try
+                    {
+                        response = await TrySendMessageToServer(state, serverToAskIp);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                 }
 
                 // step 4
                 // investigate response
-
                 if (response.Answer.Any(t => t.Class != state.SClass || t.Type != state.SType))
                 {
                     throw new DnsException("server answer has other qclass or qtype than requested");
@@ -254,7 +287,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 if (response.Answer.Length > 0)
                 {
-                    // 4.a answers question?s
+                    // 4.a answers question?
 
                     return response.Answer;
                 }
@@ -265,12 +298,16 @@ namespace Arctium.Protocol.DNS.Protocol
                     // todo cache data
                     throw new DnsException("Cannot resolve host name. Host name does not exists");
                 }
-                else if (response.Authority.Length > 0)
+                else if (response.Authority.Any(t => t.Type == QType.NS))
                 {
                     // 4.b better delegation?
-                    response.Authority
-                        .Where(t => t.Type == QType.NS)
-                        .Select(t => t.GetRData<RDataNS>().NSDName);
+                    foreach (var rr in response.Authority)
+                    {
+                        if (rr.Type == QType.NS)
+                        {
+                            nameServersToAsk.Insert(0, rr);
+                        }
+                    }
 
                     i = 0;
                     response = null;
@@ -278,17 +315,15 @@ namespace Arctium.Protocol.DNS.Protocol
                 else if (response.Answer.Length == 1 && response.Answer[0].Type == QType.CNAME && qtype != QType.CNAME)
                 {
                     // 4.c response shows CNAME?
-                    return await ResolveHostNameToHostAddress(response.Answer[0].GetRData<RDataCNAME>().CName, qclass, qtype);
+                    return await QueryServerForData(response.Answer[0].GetRData<RDataCNAME>().CName, qclass, qtype);
                 }
                 else
                 {
                     // 4.d response shows server failure or other bizzare content
                     // continue with other servers
-
-                    response = null;
-                    i++;
+                    
                 }
-            }
+            } while (true);
 
             // if all servers failed then cannot do anything, operation failed
             if (response == null)

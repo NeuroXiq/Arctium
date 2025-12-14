@@ -10,6 +10,7 @@ namespace Arctium.Protocol.DNS
     public class DnsRootServer
     {
         public readonly char Letter;
+        public readonly string HostName;
         public readonly IPAddress IPv4Address;
         public readonly IPAddress IPv6Address;
         public readonly string ASNumber;
@@ -22,6 +23,7 @@ namespace Arctium.Protocol.DNS
 
         public DnsRootServer(
             char letter,
+            string hostName,
             string ipv4Address,
             string ipv6Address,
             string asNumber,
@@ -34,6 +36,7 @@ namespace Arctium.Protocol.DNS
             )
         {
             Letter = letter;
+            HostName = hostName;
             IPv4Address = IPAddress.Parse(ipv4Address);
             IPv6Address = IPAddress.Parse(ipv6Address);
             ASNumber = asNumber;
