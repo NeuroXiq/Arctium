@@ -22,13 +22,13 @@ namespace Arctium.Protocol.DNS
         public async Task<IPAddress[]> ResolveHostNameToHostAddress(string hostName)
         {
             ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.A);
-            // ResourceRecord[] ipv6Result = await dnsResolverImpl.ResolveHostNameToHostAddress(hostName);
+            ResourceRecord[] ipv6Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.AAAA);
 
-            IPAddress[] ipv4Address = ipv4Result.Select(t => t.GetRData<RDataA>().Address)
+            IPAddress[] ipv4Address = ipv6Result.Select(t => t.GetRData<RDataA>().Address)
                 .Select(ipv4UInt => new IPAddress(ipv4UInt))
                 .ToArray();
 
-            IPAddress[] ipv6Address = ipv4Result.Select(t => t.GetRData<RDataAAAA>().IPv6)
+            IPAddress[] ipv6Address = ipv6Result.Select(t => t.GetRData<RDataAAAA>().IPv6)
                 .Select(ipv6ByteArray => new IPAddress(ipv6ByteArray))
                 .ToArray();
 

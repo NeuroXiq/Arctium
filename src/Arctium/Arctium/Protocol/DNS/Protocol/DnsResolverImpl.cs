@@ -198,21 +198,22 @@ namespace Arctium.Protocol.DNS.Protocol
         // todo max recursrion level
         internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype)
         {
-            bool sbeltUsed = false;
             RDataNS serverToAsk;
-            Message response = null;
-            List<ResourceRecord> nsToAsk = null;
-            List<ResourceRecord> serverToAskAddresses = null;
+            List<ResourceRecord> nsToAsk;
+            List<ResourceRecord> serverToAskAddresses;
             // must to force to cache some of the records during processing even if LocalData.Cache not caching them
             List<ResourceRecord> requiredTempCache;
             List<ResourceRecord> sbelt;
+            IPAddress nsIPAddress;
+            Message response = null;
+            bool sbeltUsed = false;
 
             // step 1
             // check if already in cache
             if (options.LocalData.TryGetCache(sname, qclass, qtype, out ResourceRecord[] records))
             {
                 // done, found in cache
-                return records;
+                // return records;
             }
 
             // step 2
@@ -255,11 +256,20 @@ namespace Arctium.Protocol.DNS.Protocol
                     continue;
                 }
 
-                foreach (var serverToAskIp in serverToAskIps)
+                foreach (var nsAddress in serverToAskAddresses)
                 {
                     try
                     {
-                        response = await TrySendMessageToServer(sname, qclass, qtype, serverToAskIp);
+                        if (nsAddress.Type == QType.A)
+                        {
+                            nsIPAddress = IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.GetRData<RDataA>().Address));
+                        }
+                        else
+                        {
+                            nsIPAddress = new IPAddress(nsAddress.GetRData<RDataAAAA>().IPv6);
+                        }
+
+                        response = await TrySendMessageToServer(sname, qclass, qtype, nsIPAddress);
 
                         if (response != null) break;
                     }
@@ -271,6 +281,8 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 // step 4
                 // investigate response
+
+                // validate response e.g.
                 if (response.Answer.Any(t => t.Class != qclass || t.Type != qtype))
                 {
                     throw new DnsException("server answer has other qclass or qtype than requested");
@@ -279,6 +291,9 @@ namespace Arctium.Protocol.DNS.Protocol
                 options.LocalData.AppendCache(response.Answer);
                 options.LocalData.AppendCache(response.Authority);
                 options.LocalData.AppendCache(response.Additional);
+                requiredTempCache.AddRange(response.Answer);
+                requiredTempCache.AddRange(response.Authority);
+                requiredTempCache.AddRange(response.Additional);
 
                 if (response.Answer.Length > 0)
                 {
@@ -296,12 +311,9 @@ namespace Arctium.Protocol.DNS.Protocol
                 else if (response.Authority.Any(t => t.Type == QType.NS))
                 {
                     // 4.b better delegation?
-                    foreach (var rr in response.Authority)
+                    foreach (ResourceRecord nsRecord in response.Authority)
                     {
-                        if (rr.Type == QType.NS)
-                        {
-                            nameServersToAsk.Insert(0, rr);
-                        }
+                        nsToAsk.Insert(0, nsRecord);
                     }
 
                     response = null;
@@ -315,7 +327,6 @@ namespace Arctium.Protocol.DNS.Protocol
                 {
                     // 4.d response shows server failure or other bizzare content
                     // continue with other servers
-                    
                 }
             } while (true);
 
