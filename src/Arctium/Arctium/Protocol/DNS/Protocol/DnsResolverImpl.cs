@@ -198,28 +198,14 @@ namespace Arctium.Protocol.DNS.Protocol
         // todo max recursrion level
         internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype)
         {
-            RDataNS serverToAsk;
-            List<IPAddress> serverToAskIps;
-            // DnsResolverRequestState state = new DnsResolverRequestState(sname, QClass.IN, QType.A);
-            Message response = null;
-            List<ResourceRecord> nameServersToAsk = new List<ResourceRecord>();
             bool sbeltUsed = false;
-            int i = 0;
-            string parentHostName = sname;
-            bool found = false;
+            RDataNS serverToAsk;
+            Message response = null;
             IEnumerable<IPAddress> ipv4 = null, ipv6 = null;
-
-            // special case -> quering for IP of sbelt server?
-            // some configuration must be hardcordr in the system
-            if (qtype == QType.A || qtype == QType.AAAA)
-            {
-                var sbeltServerResourceRecords = options.LocalData.SBeltServers.Where(t => t.Name == sname && t.Class == qclass && t.Type == qtype).ToList();
-
-                if (sbeltServerResourceRecords.Count > 0)
-                {
-                    return sbeltServerResourceRecords.ToArray();
-                }
-            }
+            List<ResourceRecord> nsToAsk = null;
+            // must to force to cache some of the records during processing even if LocalData.Cache not caching them
+            List<ResourceRecord> requiredTempCache;
+            List<ResourceRecord> sbelt;
 
             // step 1
             // check if already in cache
@@ -230,47 +216,35 @@ namespace Arctium.Protocol.DNS.Protocol
             }
 
             // step 2
-            // find best servers to ask first check NS rr for domain
-            do
-            {
-                found = options.LocalData.TryGetCache(parentHostName, qclass, QType.NS, out var nameServers);
-                parentHostName = GetParentDomain(parentHostName);
-            } while (!found && parentHostName != null);
+            // check cache, parent, parent-parent ns
+            //if (!options.LocalData.TryGetCache(parentHostName, qclass, QType.NS, out var nameServers))
+            //{
+            //    nameServers = await QueryServerForData(GetParentDomain(parentHostName), qclass, QType.NS);
+            //}
+
+            requiredTempCache = new List<ResourceRecord>();
+            nsToAsk = new List<ResourceRecord>();
 
             // step 3
             // send queries until one responds
             do
             {
-                if (nameServersToAsk.Count == 0)
+                if (nsToAsk.Count == 0 && !sbeltUsed)
                 {
-                    if (!sbeltUsed)
-                    {
-                        sbeltUsed = true;
-                        nameServersToAsk = options.LocalData.SBeltServers.Where(t => t.Type == QType.NS).ToList();
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    sbelt = options.LocalData.SBeltServers.ToList();
+                    nsToAsk = sbelt.Where(t => t.Type == QType.NS).ToList();
+                    requiredTempCache.AddRange(sbelt);
+                    sbeltUsed = true;
                 }
 
-                serverToAsk = nameServersToAsk[0].GetRData<RDataNS>();
+                if (nsToAsk.Count == 0 && sbeltUsed)
+                {
+                    throw new DnsException($"failed to resolve dns name: '{sname}'");
+                }
+
+                serverToAsk = nsToAsk[0].GetRData<RDataNS>();
                 serverToAskIps = new List<IPAddress>();
                 nameServersToAsk.RemoveAt(0);
-
-                try
-                {
-                    ipv4 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.A)).Select(t => IPAddress.Parse(DnsSerialize.UIntToIpv4(t.GetRData<RDataA>().Address)));
-                    ipv6 = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.AAAA)).Select(t => new IPAddress(t.GetRData<RDataAAAA>().IPv6));
-
-                    serverToAskIps.AddRange(ipv4);
-                    serverToAskIps.AddRange(ipv6);
-                }
-                catch (Exception e)
-                {
-                    // failed to get name server ip address
-                    continue;
-                }
 
                 foreach (var serverToAskIp in serverToAskIps)
                 {
@@ -321,7 +295,6 @@ namespace Arctium.Protocol.DNS.Protocol
                         }
                     }
 
-                    i = 0;
                     response = null;
                 }
                 else if (response.Answer.Length == 1 && response.Answer[0].Type == QType.CNAME && qtype != QType.CNAME)
