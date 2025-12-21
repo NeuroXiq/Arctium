@@ -201,8 +201,8 @@ namespace Arctium.Protocol.DNS.Protocol
             bool sbeltUsed = false;
             RDataNS serverToAsk;
             Message response = null;
-            IEnumerable<IPAddress> ipv4 = null, ipv6 = null;
             List<ResourceRecord> nsToAsk = null;
+            List<ResourceRecord> serverToAskAddresses = null;
             // must to force to cache some of the records during processing even if LocalData.Cache not caching them
             List<ResourceRecord> requiredTempCache;
             List<ResourceRecord> sbelt;
@@ -242,9 +242,18 @@ namespace Arctium.Protocol.DNS.Protocol
                     throw new DnsException($"failed to resolve dns name: '{sname}'");
                 }
 
-                serverToAsk = nsToAsk[0].GetRData<RDataNS>();
-                serverToAskIps = new List<IPAddress>();
-                nameServersToAsk.RemoveAt(0);
+                serverToAsk = nsToAsk.First().GetRData<RDataNS>();
+                nsToAsk.RemoveAt(0);
+                serverToAskAddresses = requiredTempCache.Where(t =>
+                    string.Compare(t.Name, serverToAsk.NSDName, true) == 0
+                    && t.Class == qclass
+                    && (t.Type == QType.A || t.Type == QType.AAAA))
+                    .ToList();
+
+                if (serverToAskAddresses.Count == 0)
+                {
+                    continue;
+                }
 
                 foreach (var serverToAskIp in serverToAskIps)
                 {
