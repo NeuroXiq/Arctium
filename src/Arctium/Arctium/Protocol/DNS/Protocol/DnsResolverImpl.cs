@@ -285,6 +285,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 // validate response e.g.
                 if (response.Answer.Any(t => t.Class != qclass || t.Type != qtype))
                 {
+                    continue;
                     throw new DnsException("server answer has other qclass or qtype than requested");
                 }
 
@@ -295,37 +296,41 @@ namespace Arctium.Protocol.DNS.Protocol
                 requiredTempCache.AddRange(response.Authority);
                 requiredTempCache.AddRange(response.Additional);
 
-                if (response.Answer.Length > 0)
-                {
-                    // 4.a answers question?
+                bool hasDelegation = response.Authority.Any(t => t.Type == QType.NS);
 
+                // 4.a answers question?
+                if (response.Header.RCode == ResponseCode.NoErrorCondition && response.Answer.Length > 0)
+                {
                     return response.Answer;
                 }
-                else if (response.Header.AA && response.Header.RCode == ResponseCode.NameError)
+                // 4.a no records?
+                else if (response.Header.RCode == ResponseCode.NoErrorCondition && response.Answer.Length == 0 && !hasDelegation)
                 {
-                    // 4.a name error?
-
+                    return new ResourceRecord[0];
+                }
+                // 4.a name error?
+                else if (response.Header.RCode == ResponseCode.NameError)
+                {
                     // todo cache data
                     throw new DnsException("Cannot resolve host name. Host name does not exists");
                 }
-                else if (response.Authority.Any(t => t.Type == QType.NS))
+                // 4.b better delegation?
+                else if (hasDelegation)
                 {
-                    // 4.b better delegation?
                     foreach (ResourceRecord nsRecord in response.Authority)
-                    {
                         nsToAsk.Insert(0, nsRecord);
-                    }
 
                     response = null;
                 }
+                // 4.c response shows CNAME?
                 else if (response.Answer.Length == 1 && response.Answer[0].Type == QType.CNAME && qtype != QType.CNAME)
                 {
-                    // 4.c response shows CNAME?
                     return await QueryServerForData(response.Answer[0].GetRData<RDataCNAME>().CName, qclass, qtype);
                 }
+                // 4.d response shows server failure or other bizzare content
                 else
                 {
-                    // 4.d response shows server failure or other bizzare content
+                    continue;
                     // continue with other servers
                 }
             } while (true);
