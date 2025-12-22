@@ -201,12 +201,13 @@ namespace Arctium.Protocol.DNS.Protocol
             RDataNS serverToAsk;
             List<ResourceRecord> nsToAsk;
             List<ResourceRecord> serverToAskAddresses;
-            // must to force to cache some of the records during processing even if LocalData.Cache not caching them
+            // must force to cache some of the records during processing even if LocalData.Cache not caching them
             List<ResourceRecord> requiredTempCache;
             List<ResourceRecord> sbelt;
             IPAddress nsIPAddress;
             Message response = null;
             bool sbeltUsed = false;
+            int requestCounter = 0;
 
             // step 1
             // check if already in cache
@@ -216,15 +217,15 @@ namespace Arctium.Protocol.DNS.Protocol
                 // return records;
             }
 
+            requiredTempCache = new List<ResourceRecord>();
+            nsToAsk = new List<ResourceRecord>();
+
             // step 2
             // check cache, parent, parent-parent ns
             //if (!options.LocalData.TryGetCache(parentHostName, qclass, QType.NS, out var nameServers))
             //{
             //    nameServers = await QueryServerForData(GetParentDomain(parentHostName), qclass, QType.NS);
             //}
-
-            requiredTempCache = new List<ResourceRecord>();
-            nsToAsk = new List<ResourceRecord>();
 
             // step 3
             // send queries until one responds
@@ -236,11 +237,8 @@ namespace Arctium.Protocol.DNS.Protocol
                     nsToAsk = sbelt.Where(t => t.Type == QType.NS).ToList();
                     requiredTempCache.AddRange(sbelt);
                     sbeltUsed = true;
-                }
 
-                if (nsToAsk.Count == 0 && sbeltUsed)
-                {
-                    throw new DnsException($"failed to resolve dns name: '{sname}'");
+                    continue;
                 }
 
                 serverToAsk = nsToAsk.First().GetRData<RDataNS>();
@@ -260,15 +258,11 @@ namespace Arctium.Protocol.DNS.Protocol
                 {
                     try
                     {
-                        if (nsAddress.Type == QType.A)
-                        {
-                            nsIPAddress = IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.GetRData<RDataA>().Address));
-                        }
-                        else
-                        {
-                            nsIPAddress = new IPAddress(nsAddress.GetRData<RDataAAAA>().IPv6);
-                        }
+                        nsIPAddress = nsAddress.Type == QType.A
+                            ? IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.GetRData<RDataA>().Address))
+                            : new IPAddress(nsAddress.GetRData<RDataAAAA>().IPv6);
 
+                        requestCounter++;
                         response = await TrySendMessageToServer(sname, qclass, qtype, nsIPAddress);
 
                         if (response != null) break;
@@ -282,16 +276,15 @@ namespace Arctium.Protocol.DNS.Protocol
                 // step 4
                 // investigate response
 
-                // validate response e.g.
+                // validate
                 if (response.Answer.Any(t => t.Class != qclass || t.Type != qtype))
                 {
                     continue;
-                    throw new DnsException("server answer has other qclass or qtype than requested");
                 }
 
-                options.LocalData.AppendCache(response.Answer);
-                options.LocalData.AppendCache(response.Authority);
-                options.LocalData.AppendCache(response.Additional);
+                options.LocalData.AddCache(response.Answer);
+                options.LocalData.AddCache(response.Authority);
+                options.LocalData.AddCache(response.Additional);
                 requiredTempCache.AddRange(response.Answer);
                 requiredTempCache.AddRange(response.Authority);
                 requiredTempCache.AddRange(response.Additional);
@@ -319,31 +312,28 @@ namespace Arctium.Protocol.DNS.Protocol
                 {
                     foreach (ResourceRecord nsRecord in response.Authority)
                         nsToAsk.Insert(0, nsRecord);
-
-                    response = null;
                 }
                 // 4.c response shows CNAME?
                 else if (response.Answer.Length == 1 && response.Answer[0].Type == QType.CNAME && qtype != QType.CNAME)
                 {
-                    return await QueryServerForData(response.Answer[0].GetRData<RDataCNAME>().CName, qclass, qtype);
+                    sname = response.Answer[0].GetRData<RDataCNAME>().CName;
+
+                    if (options.LocalData.TryGetCache(sname, qclass, qtype, out ResourceRecord[] cachedCname))
+                    {
+                        return cachedCname;
+                    }
+                }
+                // (custom arctium behaviour)
+                else if (requestCounter >= options.MaxRequestCountForResolve)
+                {
+                    throw new DnsException("Maximum number of requests exceeded, resolve operation cancelled");
                 }
                 // 4.d response shows server failure or other bizzare content
                 else
                 {
-                    continue;
                     // continue with other servers
                 }
             } while (true);
-
-            // if all servers failed then cannot do anything, operation failed
-            if (response == null)
-            {
-                throw new DnsException("Queried all servers but and all servers failed to answer any correct DNS Message.");
-            }
-
-            // step 4 analyze response
-            
-            throw new NotImplementedException();
         }
     }
 }

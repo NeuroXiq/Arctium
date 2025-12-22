@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 namespace Arctium.Protocol.DNS
 {
@@ -16,6 +11,13 @@ namespace Arctium.Protocol.DNS
         /// Value in seconds. Default to one week <see cref="DnsConsts.DefaultMaxResponseTTLSeconds"/>
         /// </summary>
         public int MaxResponseTTL { get; private set; }
+
+        /// <summary>
+        /// Maximum number of requests (sum of udp and tcp) that resolver can do.
+        /// If resolver is not able to complete in less that this limit
+        /// exception will be thrown
+        /// </summary>
+        public int MaxRequestCountForResolve { get; set; }
 
         /// <summary>
         /// Dns servers to as first

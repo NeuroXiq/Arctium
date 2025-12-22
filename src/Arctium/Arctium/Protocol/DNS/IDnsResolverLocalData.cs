@@ -4,24 +4,10 @@ namespace Arctium.Protocol.DNS
 {
     public interface IDndResolverLocalData
     {
-        //void SetDelegation(string hostName, object delegation);
-
-        //public void SetHostNameToIp(string hostName, IPAddress ip);
-
-        //public void SetIpToHostName(string hostName, IPAddress ip);
-
-        //public void SetAnswer(string hostName, object answer);
-
-        //public bool TryResolveHostNameToHostAddress(string hostName, out object result);
-
-        //public bool TryResolveHostAddressToHostName(IPAddress ipAddress, out object result);
-        //bool TryGetDelegation(string hostName, out IPAddress ipAddress);
-        //void CacheCname(string hostName, object response);
-
         ResourceRecord[] SBeltServers { get; }
 
         bool TryGetCache(string hostName, QClass qclass, QType qtype,  out ResourceRecord[] resultResourceRecords);
 
-        void AppendCache(ResourceRecord[] resourceRecords);
+        void AddCache(ResourceRecord[] resourceRecords);
     }
 }

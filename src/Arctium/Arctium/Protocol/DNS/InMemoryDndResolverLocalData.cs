@@ -38,7 +38,7 @@ namespace Arctium.Protocol.DNS
 
         public ResourceRecord[] SBeltServers => sbeltServers;
 
-        public void AppendCache(ResourceRecord[] resourceRecords)
+        public void AddCache(ResourceRecord[] resourceRecords)
         {
             lock (_lock)
             {

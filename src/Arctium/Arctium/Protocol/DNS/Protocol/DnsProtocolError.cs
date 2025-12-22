@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Arctium.Protocol.DNS.Protocol
+﻿namespace Arctium.Protocol.DNS.Protocol
 {
     /// <summary>
     /// error related to specification of dns protocol and rfc
