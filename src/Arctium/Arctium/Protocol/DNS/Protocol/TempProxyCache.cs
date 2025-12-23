@@ -2,6 +2,12 @@
 
 namespace Arctium.Protocol.DNS.Protocol
 {
+    /// <summary>
+    /// During resolving processing some records must be always cached
+    /// to reuse them later in next parts of query processing.
+    /// This proxy class will always store temporary cached records.
+    /// without expiration. Additionaly makes a proxy for real cache.
+    /// </summary>
     class TempProxyCache
     {
         private List<ResourceRecord> tempCacheRecords;
