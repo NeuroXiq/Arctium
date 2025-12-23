@@ -17,7 +17,7 @@ namespace Arctium.Protocol.DNS
         /// If resolver is not able to complete in less that this limit
         /// exception will be thrown
         /// </summary>
-        public int MaxRequestCountForResolve { get; set; }
+        public int MaxRequestCountForResolve { get; private set; }
 
         /// <summary>
         /// Dns servers to as first
@@ -34,8 +34,10 @@ namespace Arctium.Protocol.DNS
             IDndResolverLocalData localData = null,
             IPAddress[] dnsServers = null,
             IPAddress[] sbeltDnsServers = null,
-            int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds)
+            int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds,
+            int maxRequestCountForResolve = 50)
         {
+            MaxRequestCountForResolve = maxRequestCountForResolve;
             LocalData = localData;
             DnsServers = dnsServers;
         }
