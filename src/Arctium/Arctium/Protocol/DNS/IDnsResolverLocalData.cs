@@ -6,8 +6,6 @@ namespace Arctium.Protocol.DNS
     {
         ResourceRecord[] SBeltServers { get; }
 
-        bool TryGetCache(string hostName, QClass qclass, QType qtype,  out ResourceRecord[] resultResourceRecords);
-
-        void AddCache(ResourceRecord[] resourceRecords);
+        IDnsResolverCache Cache { get; }
     }
 }
