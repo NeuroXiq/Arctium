@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Arctium.Protocol.DNS.Model
+﻿namespace Arctium.Protocol.DNS.Model
 {
     public class ResourceRecord
     {
@@ -20,6 +14,18 @@ namespace Arctium.Protocol.DNS.Model
         public override string ToString()
         {
             return $"{Name} {Type} {Class} {RData}";
+        }
+
+        public bool IsNameTypeClassEqual(string name, QClass qclass, QType qtype)
+        {
+            return string.Compare(Name, name) == 0
+                && this.Type == qtype
+                && this.Class == qclass;
+        }
+
+        public bool IsNameTypeClassEqual(ResourceRecord other)
+        {
+            return IsNameTypeClassEqual(other.Name, other.Class, other.Type);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Arctium.Protocol.DNS
             entries = new List<CacheEntry>();
         }
 
-        public void AddCache(ResourceRecord[] resourceRecords)
+        public void Set(ResourceRecord[] resourceRecords)
         {
             lock (_lock)
             {
@@ -32,7 +32,7 @@ namespace Arctium.Protocol.DNS
             }
         }
 
-        public bool TryGetCache(string hostName, QClass qclass, QType qtype, out ResourceRecord[] resultResourceRecords)
+        public bool TryGet(string hostName, QClass qclass, QType qtype, out ResourceRecord[] resultResourceRecords)
         {
             lock (_lock)
             {

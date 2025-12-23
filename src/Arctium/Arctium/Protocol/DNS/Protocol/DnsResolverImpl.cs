@@ -134,11 +134,6 @@ namespace Arctium.Protocol.DNS.Protocol
             return serverMessage;
         }
 
-        void Step2_FindBestServersToAsk(DnsResolverRequestState state)
-        {
-
-        }
-
         async Task<Message> TrySendMessageToServer(string sname, QClass qclass, QType qtype, IPAddress serverAddress)
         {
             Header header = new Header()
@@ -178,11 +173,6 @@ namespace Arctium.Protocol.DNS.Protocol
             return serverResponse;
         }
 
-        void Step4_AnalyzeResponse(DnsResolverRequestState state)
-        {
-
-        }
-
         string GetParentDomain(string domainName)
         {
             string result;
@@ -199,11 +189,17 @@ namespace Arctium.Protocol.DNS.Protocol
             return result;
         }
 
-        class RequestState
+        internal class RequestState
         {
             public int RequestCounter;
             // must force to cache some of the records during processing even if LocalData.Cache not caching them
             public TempProxyCache TempCache;
+
+            public RequestState(IDnsResolverCache realCache)
+            {
+                RequestCounter = 0;
+                TempCache = new TempProxyCache(realCache);
+            }
         }
 
         // RFC-1035 5.3.3. Algorithm
@@ -211,160 +207,156 @@ namespace Arctium.Protocol.DNS.Protocol
         internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype, RequestState state)
         {
             RDataNS serverToAsk;
-            Queue<ResourceRecord> nsToAsk;
-            List<ResourceRecord> serverToAskAddresses, sbelt;
-            TempProxyCache requiredTempCache = state.TempCache;
+            ResourceRecord[] resultRecords, serverToAskAddresses, sbelt;
             IPAddress nsIPAddress;
-            ResourceRecord[] resultRecords = null;
+            bool isDelegation, innerBreak;
+            TempProxyCache proxyCache = state.TempCache;
+            Queue<ResourceRecord> nsToAsk = new Queue<ResourceRecord>();
             Message response = null;
-            bool isDelegation;
             bool cacheResponse = true;
-            bool innerBreak = false;
-
-            innerBreak = false;
-            nsToAsk = new Queue<ResourceRecord>();
-
-            // step 1
-            // check if already in cache
-            if (options.LocalData.TryGetCache(sname, qclass, qtype, out resultRecords))
-            {
-                // done, found in cache
-                return resultRecords;
-            }
-
-            // step 2
-            // find best servers to ask
-            string searchingDomain = sname;
-            var best = new List<ResourceRecord>();
 
             do
             {
-                best.AddRange(requiredTempCache.Where(rr => rr.Type == QType.NS && rr.Class == qclass && rr.Name == searchingDomain));
-                if (options.LocalData.TryGetCache(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
-                    best.AddRange(cachedNs);
+                innerBreak = false;
 
-                searchingDomain = GetParentDomain(searchingDomain);
-            } while (searchingDomain != null);
-
-            // best 5 - sbelt
-            sbelt = options.LocalData.SBeltServers.ToList();
-            best.AddRange(sbelt.Where(t => t.Type == QType.NS));
-            requiredTempCache.AddRange(sbelt);
-
-            // best servers:
-            // ResourceRecord.Name longest (best match with sname),
-            // already cached IP Address (no need to resolve name server IP)
-            best = best
-                .DistinctBy(t => t.GetRData<RDataNS>().NSDName)
-                .OrderByDescending(t => sname.EndsWith(t.Name) ? t.Name.Length : -1)
-                .OrderByDescending(t => requiredTempCache.Count(t => t.Class == qclass && t.Type == QType.AAAA && t.Type == QType.A))
-                .ToList();
-
-            best.ForEach(nsToAsk.Enqueue);
-
-            // step 3 send them queries until one responds
-            do
-            {
-                if (nsToAsk.Count == 0)
+                // step 1
+                // check if already in cache
+                if (proxyCache.TryGet(sname, qclass, qtype, out resultRecords))
                 {
-                    throw new DnsException("failed to resolve - no more servers to ask (all asked servers failed)");
+                    // done, found in cache
+                    return resultRecords;
                 }
 
-                if (state.RequestCounter >= options.MaxRequestCountForResolve)
+                // step 2
+                // find best servers to ask
+                // best servers:
+                // * server 'record.Name' parameter must be a domain name suffix
+                //   (e.g. rr.Name='org.net' or '.net' or '' for sname: 'www.svr.a.org.net'
+                // * largest 'record.Name' length (best match with sname)
+                // * already cached IP Address (no need to resolve name server IP)
+                // * sbelt as last resort
+
+                string searchingDomain = sname;
+                var best = new List<ResourceRecord>();
+
+                do
                 {
-                    throw new DnsException("Maximum number of requests exceeded, resolve operation cancelled");
-                }
+                    if (proxyCache.TryGet(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
+                        best.AddRange(cachedNs);
 
-                serverToAsk = nsToAsk.Dequeue().GetRData<RDataNS>();
+                    searchingDomain = GetParentDomain(searchingDomain);
+                } while (searchingDomain != null);
 
-                serverToAskAddresses = requiredTempCache
-                    .Where(t =>
-                        string.Compare(t.Name, serverToAsk.NSDName, true) == 0
-                        && t.Class == qclass
-                        && (t.Type == QType.A || t.Type == QType.AAAA))
+                sbelt = options.LocalData.SBeltServers;
+                best.AddRange(sbelt.Where(t => t.Type == QType.NS));
+                proxyCache.Set(sbelt);
+
+                best = best
+                    .DistinctBy(t => t.GetRData<RDataNS>().NSDName)
+                    .OrderByDescending(t => t.Name.Length)
+                    .OrderByDescending(t => (proxyCache.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
                     .ToList();
 
-                if (serverToAskAddresses.Count == 0)
-                {
-                    serverToAskAddresses = (await QueryServerForData(serverToAsk.NSDName, qclass, QType.A)).ToList();
-                }
+                best.ForEach(nsToAsk.Enqueue);
 
-                if (serverToAskAddresses.Count == 0) continue;
-
-                foreach (var nsAddress in serverToAskAddresses)
+                // step 3 try to send queries to all server until one responds
+                do
                 {
-                    try
+                    if (nsToAsk.Count == 0)
                     {
-                        nsIPAddress = nsAddress.Type == QType.A
-                            ? IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.GetRData<RDataA>().Address))
-                            : new IPAddress(nsAddress.GetRData<RDataAAAA>().IPv6);
-
-                        requestCounter++;
-                        response = await TrySendMessageToServer(sname, qclass, qtype, nsIPAddress);
-
-                        if (response != null) break;
+                        throw new DnsException("failed to resolve - no more servers to ask (all asked servers failed)");
                     }
-                    catch
+
+                    serverToAsk = nsToAsk.Dequeue().GetRData<RDataNS>();
+
+                    if (!proxyCache.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses))
                     {
-                        continue;
+                        serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
                     }
-                }
 
-                // step 4
-                // investigate server response
+                    // cache (or resolved value) may may be empty - this is ok because maybe there are no A/AAAA records
+                    // and domain name is valid, skip this server
+                    if (serverToAskAddresses.Length == 0) continue;
 
-                isDelegation = response.Authority.Any(t => t.Type == QType.NS);
-                var exactAnswer = response.Answer
-                        .Where(t => t.Type == qtype && t.Class == qclass)
-                        .ToArray();
+                    // query server
+                    // if server has multiple IP addresses, try until first give response
+                    foreach (var nsAddress in serverToAskAddresses)
+                    {
+                        try
+                        {
+                            nsIPAddress = nsAddress.Type == QType.A
+                                ? IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.GetRData<RDataA>().Address))
+                                : new IPAddress(nsAddress.GetRData<RDataAAAA>().IPv6);
 
-                cacheResponse = true;
-                resultRecords = null;
-                bool answerQuestion = exactAnswer.Length > 0;
-                answerQuestion |= !isDelegation && response.Answer.Length == 0;
-                answerQuestion &= response.Header.RCode == ResponseCode.NoErrorCondition;
+                            state.RequestCounter++;
 
-                // 4.a answers question?
-                if (answerQuestion)
-                {
-                    resultRecords = exactAnswer;
-                }
-                // 4.a name error?
-                else if (response.Header.RCode == ResponseCode.NameError)
-                {
-                    // todo cache data
-                    throw new DnsException("Cannot resolve host name. Host name does not exists");
-                }
-                // 4.b better delegation?
-                else if (isDelegation)
-                {
-                    innerBreak = true;
-                }
-                // 4.c response shows CNAME?
-                else if (response.Answer.Count(t => t.Type == QType.CNAME) == 1)
-                {
-                    return await QueryServerForData(response.Answer.Single(t => t.Type == QType.CNAME).GetRData<RDataCNAME>().CName, qclass, qtype);
-                }
-                // 4.d response shows server failure or other bizzare content
-                else
-                {
-                    // continue with other servers
-                    cacheResponse = false;
-                }
+                            if (state.RequestCounter >= options.MaxRequestCountForResolve)
+                            {
+                                throw new DnsException("error, maximum number of requests, operation cancelled");
+                            }
 
-                if (cacheResponse)
-                {
-                    options.LocalData.AddCache(response.Answer);
-                    options.LocalData.AddCache(response.Authority);
-                    options.LocalData.AddCache(response.Additional);
-                    requiredTempCache.AddRange(response.Answer);
-                    requiredTempCache.AddRange(response.Additional);
-                    requiredTempCache.AddRange(response.Authority);
-                }
+                            response = await TrySendMessageToServer(sname, qclass, qtype, nsIPAddress);
 
-                if (resultRecords != null) return resultRecords;
+                            if (response != null) break;
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
 
-            } while (!innerBreak);
+                    // step 4
+                    // investigate server response
+
+                    isDelegation = response.Authority.Any(t => t.Type == QType.NS);
+                    var exactAnswer = response.Answer
+                            .Where(t => t.Type == qtype && t.Class == qclass)
+                            .ToArray();
+
+                    cacheResponse = true;
+                    resultRecords = null;
+
+                    // 4.a answers question?
+                    if (response.Header.RCode == ResponseCode.NoErrorCondition &&
+                        (exactAnswer.Length > 0 || !isDelegation && response.Answer.Length == 0))
+                    {
+                        resultRecords = exactAnswer;
+                    }
+                    // 4.a name error?
+                    else if (response.Header.RCode == ResponseCode.NameError)
+                    {
+                        // todo cache data
+                        throw new DnsException("Cannot resolve host name. Host name does not exists");
+                    }
+                    // 4.b better delegation?
+                    else if (isDelegation)
+                    {
+                        innerBreak = true;
+                    }
+                    // 4.c response shows CNAME?
+                    else if (response.Answer.Count(t => t.Type == QType.CNAME) == 1)
+                    {
+                        sname = response.Answer.Single(t => t.Type == QType.CNAME).GetRData<RDataCNAME>().CName;
+                        innerBreak = true;
+                    }
+                    // 4.d response shows server failure or other bizzare content
+                    else
+                    {
+                        // continue with other servers
+                        cacheResponse = false;
+                    }
+
+                    if (cacheResponse)
+                    {
+                        proxyCache.Set(response.Answer);
+                        proxyCache.Set(response.Authority);
+                        proxyCache.Set(response.Additional);
+                    }
+
+                    if (resultRecords != null) return resultRecords;
+
+                } while (!innerBreak);
+            } while (true);
         }
     }
 }
