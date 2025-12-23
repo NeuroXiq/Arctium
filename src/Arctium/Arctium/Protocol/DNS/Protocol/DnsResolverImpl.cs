@@ -207,7 +207,6 @@ namespace Arctium.Protocol.DNS.Protocol
                 nsToAsk.Clear();
 
                 // step 1
-
                 // check for CNAME
                 // try to resolve cname
                 string cnameCacheResolved = sname;
@@ -252,11 +251,10 @@ namespace Arctium.Protocol.DNS.Protocol
                 best.AddRange(sbelt.Where(t => t.Type == QType.NS));
                 state.Set(sbelt);
 
-                // important: first sort by 'IP address exists' and later by by name length
                 best = best
                     .DistinctBy(t => t.GetRData<RDataNS>().NSDName)
-                    .OrderByDescending(t => (state.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
                     .OrderByDescending(t => t.Name.Length)
+                    .OrderByDescending(t => (state.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
                     .ToList();
 
                 best.ForEach(nsToAsk.Enqueue);
@@ -271,17 +269,14 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     serverToAsk = nsToAsk.Dequeue().GetRData<RDataNS>();
 
-                    if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses))
-                    {
-                        // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
-                        // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
-                        // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
-                        // skip this server
-                        if (serverToAsk.NSDName == sname)
-                        {
-                            continue;
-                        }
+                    // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
+                    // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
+                    // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
+                    // skip this server
+                    bool isInfiniteLoop = serverToAsk.NSDName == sname;
 
+                    if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses) && !isInfiniteLoop)
+                    {
                         serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
                     }
 
