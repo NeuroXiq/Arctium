@@ -192,13 +192,60 @@ namespace Arctium.Protocol.DNS.Protocol
         internal class RequestState
         {
             public int RequestCounter;
-            // must force to cache some of the records during processing even if LocalData.Cache not caching them
-            public TempProxyCache TempCache;
+            // must force to cache some of the records because query processing 
+            // requires caching some of the records
+            public readonly InMemoryDnsResolverCache ProcessingRequiredCache;
+            public readonly IDnsResolverCache RealCache;
 
             public RequestState(IDnsResolverCache realCache)
             {
                 RequestCounter = 0;
-                TempCache = new TempProxyCache(realCache);
+                ProcessingRequiredCache = new InMemoryDnsResolverCache(true);
+                RealCache = realCache;
+            }
+
+            public bool TryGet(string name, QClass qclass, QType qtype, out ResourceRecord[] records)
+            {
+                // always prefere required cache as it have newest data
+                if (ProcessingRequiredCache.TryGet(name, qclass, qtype, out records))
+                {
+                    return true;
+                }
+
+                if (RealCache.TryGet(name, qclass, qtype, out records))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            public void Set(ResourceRecord[] records)
+            {
+                ProcessingRequiredCache.Set(records);
+                RealCache.Set(records);
+            }
+
+            public bool TryGetAandAAAA(string name, QClass qclass, out ResourceRecord[] records)
+            {
+                List<ResourceRecord> result = new List<ResourceRecord>();
+                ResourceRecord[] result1, result2;
+                bool ok1, ok2;
+
+                if (ok1 = TryGet(name, qclass, QType.A, out result1))
+                    result.AddRange(result1);
+
+                if (ok2 = TryGet(name, qclass, QType.AAAA, out result2))
+                    result.AddRange(result2);
+
+                if (ok1 || ok2)
+                {
+                    records = result.ToArray();
+                    return true;
+                }
+
+                records = null;
+                return false;
             }
         }
 
@@ -210,7 +257,6 @@ namespace Arctium.Protocol.DNS.Protocol
             ResourceRecord[] resultRecords, serverToAskAddresses, sbelt;
             IPAddress nsIPAddress;
             bool isDelegation, innerBreak;
-            TempProxyCache proxyCache = state.TempCache;
             Queue<ResourceRecord> nsToAsk = new Queue<ResourceRecord>();
             Message response = null;
             bool cacheResponse = true;
@@ -227,7 +273,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 string cnameCacheResolved = sname;
                 if (qtype != QType.CNAME)
                 {
-                    while (proxyCache.TryGet(cnameCacheResolved, qclass, QType.CNAME, out resultRecords))
+                    while (state.TryGet(cnameCacheResolved, qclass, QType.CNAME, out resultRecords))
                     {
                         if (resultRecords.Length == 1)
                             cnameCacheResolved = resultRecords[0].GetRData<RDataCNAME>().CName;
@@ -236,13 +282,11 @@ namespace Arctium.Protocol.DNS.Protocol
                 }
 
                 // check if already in cache
-                if (proxyCache.TryGet(cnameCacheResolved, qclass, qtype, out resultRecords))
+                if (state.TryGet(cnameCacheResolved, qclass, qtype, out resultRecords))
                 {
                     // done, found in cache
                     return resultRecords;
                 }
-
-                
 
                 // step 2
                 // find best servers to ask
@@ -258,7 +302,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 do
                 {
-                    if (proxyCache.TryGet(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
+                    if (state.TryGet(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
                         best.AddRange(cachedNs);
 
                     searchingDomain = GetParentDomain(searchingDomain);
@@ -266,12 +310,12 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 sbelt = options.LocalData.SBeltServers;
                 best.AddRange(sbelt.Where(t => t.Type == QType.NS));
-                proxyCache.Set(sbelt);
+                state.Set(sbelt);
 
                 // important: first sort by 'IP address exists' and later by by name length
                 best = best
                     .DistinctBy(t => t.GetRData<RDataNS>().NSDName)
-                    .OrderByDescending(t => (proxyCache.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
+                    .OrderByDescending(t => (state.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
                     .OrderByDescending(t => t.Name.Length)
                     .ToList();
 
@@ -287,7 +331,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     serverToAsk = nsToAsk.Dequeue().GetRData<RDataNS>();
 
-                    if (!proxyCache.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses))
+                    if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses))
                     {
                         // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
                         // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
@@ -375,9 +419,9 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     if (cacheResponse)
                     {
-                        proxyCache.Set(response.Answer);
-                        proxyCache.Set(response.Authority);
-                        proxyCache.Set(response.Additional);
+                        state.Set(response.Answer);
+                        state.Set(response.Authority);
+                        state.Set(response.Additional);
                     }
 
                     if (resultRecords != null) return resultRecords;
@@ -385,5 +429,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 } while (!innerBreak);
             } while (true);
         }
+
+        
     }
 }
