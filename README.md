@@ -31,6 +31,7 @@ Following list shows all implemented features with links to examples
 
 #### DNS
 |Name|Documentation|Standard|
+|-|-|-|
 |DNS Client/Server |TODO|[RFC-1101](https://datatracker.ietf.org/doc/html/rfc1101)|
 |DNS Client/Server |TODO|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|
 |DNS Client/Server |TODO|[RFC-1348](https://datatracker.ietf.org/doc/html/rfc1348)|
