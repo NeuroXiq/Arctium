@@ -189,66 +189,6 @@ namespace Arctium.Protocol.DNS.Protocol
             return result;
         }
 
-        internal class RequestState
-        {
-            public int RequestCounter;
-            // must force to cache some of the records because query processing 
-            // requires caching some of the records
-            public readonly InMemoryDnsResolverCache ProcessingRequiredCache;
-            public readonly IDnsResolverCache RealCache;
-
-            public RequestState(IDnsResolverCache realCache)
-            {
-                RequestCounter = 0;
-                ProcessingRequiredCache = new InMemoryDnsResolverCache(true);
-                RealCache = realCache;
-            }
-
-            public bool TryGet(string name, QClass qclass, QType qtype, out ResourceRecord[] records)
-            {
-                // always prefere required cache as it have newest data
-                if (ProcessingRequiredCache.TryGet(name, qclass, qtype, out records))
-                {
-                    return true;
-                }
-
-                if (RealCache.TryGet(name, qclass, qtype, out records))
-                {
-                    return true;
-                }
-
-                return false;
-            }
-
-            public void Set(ResourceRecord[] records)
-            {
-                ProcessingRequiredCache.Set(records);
-                RealCache.Set(records);
-            }
-
-            public bool TryGetAandAAAA(string name, QClass qclass, out ResourceRecord[] records)
-            {
-                List<ResourceRecord> result = new List<ResourceRecord>();
-                ResourceRecord[] result1, result2;
-                bool ok1, ok2;
-
-                if (ok1 = TryGet(name, qclass, QType.A, out result1))
-                    result.AddRange(result1);
-
-                if (ok2 = TryGet(name, qclass, QType.AAAA, out result2))
-                    result.AddRange(result2);
-
-                if (ok1 || ok2)
-                {
-                    records = result.ToArray();
-                    return true;
-                }
-
-                records = null;
-                return false;
-            }
-        }
-
         // RFC-1035 5.3.3. Algorithm
         // todo max recursrion level
         internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype, RequestState state)
@@ -430,6 +370,64 @@ namespace Arctium.Protocol.DNS.Protocol
             } while (true);
         }
 
-        
+        internal class RequestState
+        {
+            public int RequestCounter;
+            // must force to cache some of the records because query processing 
+            // requires caching some of the records
+            public readonly InMemoryDnsResolverCache ProcessingRequiredCache;
+            public readonly IDnsResolverCache RealCache;
+
+            public RequestState(IDnsResolverCache realCache)
+            {
+                RequestCounter = 0;
+                ProcessingRequiredCache = new InMemoryDnsResolverCache(true);
+                RealCache = realCache;
+            }
+
+            public bool TryGet(string name, QClass qclass, QType qtype, out ResourceRecord[] records)
+            {
+                // always prefere required cache as it have newest data
+                if (ProcessingRequiredCache.TryGet(name, qclass, qtype, out records))
+                {
+                    return true;
+                }
+
+                if (RealCache.TryGet(name, qclass, qtype, out records))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            public void Set(ResourceRecord[] records)
+            {
+                ProcessingRequiredCache.Set(records);
+                RealCache.Set(records);
+            }
+
+            public bool TryGetAandAAAA(string name, QClass qclass, out ResourceRecord[] records)
+            {
+                List<ResourceRecord> result = new List<ResourceRecord>();
+                ResourceRecord[] result1, result2;
+                bool ok1, ok2;
+
+                if (ok1 = TryGet(name, qclass, QType.A, out result1))
+                    result.AddRange(result1);
+
+                if (ok2 = TryGet(name, qclass, QType.AAAA, out result2))
+                    result.AddRange(result2);
+
+                if (ok1 || ok2)
+                {
+                    records = result.ToArray();
+                    return true;
+                }
+
+                records = null;
+                return false;
+            }
+        }
     }
 }
