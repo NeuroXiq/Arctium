@@ -20,7 +20,7 @@ namespace Arctium.Protocol.DNS
                 {
                     var existing = entries.Where(t => t.Record.Class == record.Class && t.Record.Type == record.Type && t.Record.Name == record.Name).ToArray();
 
-                    foreach (var toRemove in existing) entries.Remove(toRemove);
+                    // foreach (var toRemove in existing) entries.Remove(toRemove);
 
                     DateTimeOffset expiration = DateTimeOffset.UtcNow.AddSeconds(record.TTL);
                     DateTimeOffset minExpiration = DateTimeOffset.UtcNow.AddMinutes(10);
@@ -49,15 +49,12 @@ namespace Arctium.Protocol.DNS
                     return false;
                 }
 
-                List<CacheEntry> expired = foundEntries.Where(t => t.ExpireOn > now).ToList();
+                List<CacheEntry> expired = foundEntries.Where(t => t.ExpireOn < now).ToList();
 
-                if (expired.Count > 0)
+                foreach (CacheEntry expiredEntry in expired)
                 {
-                    foreach (CacheEntry expiredEntry in expired)
-                    {
-                        foundEntries.Remove(expiredEntry);
-                        entries.Remove(expiredEntry);
-                    }
+                    foundEntries.Remove(expiredEntry);
+                    entries.Remove(expiredEntry);
                 }
 
                 ResourceRecord[] result = foundEntries.Select(t => t.Record).ToArray();

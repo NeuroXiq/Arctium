@@ -221,12 +221,28 @@ namespace Arctium.Protocol.DNS.Protocol
                 nsToAsk.Clear();
 
                 // step 1
+
+                // check for CNAME
+                // try to resolve cname
+                string cnameCacheResolved = sname;
+                if (qtype != QType.CNAME)
+                {
+                    while (proxyCache.TryGet(cnameCacheResolved, qclass, QType.CNAME, out resultRecords))
+                    {
+                        if (resultRecords.Length == 1)
+                            cnameCacheResolved = resultRecords[0].GetRData<RDataCNAME>().CName;
+                        else break;
+                    }
+                }
+
                 // check if already in cache
-                if (proxyCache.TryGet(sname, qclass, qtype, out resultRecords))
+                if (proxyCache.TryGet(cnameCacheResolved, qclass, qtype, out resultRecords))
                 {
                     // done, found in cache
                     return resultRecords;
                 }
+
+                
 
                 // step 2
                 // find best servers to ask
