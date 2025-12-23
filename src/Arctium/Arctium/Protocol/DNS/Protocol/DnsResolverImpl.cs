@@ -218,6 +218,7 @@ namespace Arctium.Protocol.DNS.Protocol
             do
             {
                 innerBreak = false;
+                nsToAsk.Clear();
 
                 // step 1
                 // check if already in cache
@@ -251,10 +252,11 @@ namespace Arctium.Protocol.DNS.Protocol
                 best.AddRange(sbelt.Where(t => t.Type == QType.NS));
                 proxyCache.Set(sbelt);
 
+                // important: first sort by 'IP address exists' and later by by name length
                 best = best
                     .DistinctBy(t => t.GetRData<RDataNS>().NSDName)
-                    .OrderByDescending(t => t.Name.Length)
                     .OrderByDescending(t => (proxyCache.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
+                    .OrderByDescending(t => t.Name.Length)
                     .ToList();
 
                 best.ForEach(nsToAsk.Enqueue);
@@ -271,6 +273,15 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     if (!proxyCache.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses))
                     {
+                        // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
+                        // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
+                        // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
+                        // skip this server
+                        if (serverToAsk.NSDName == sname)
+                        {
+                            continue;
+                        }
+
                         serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
                     }
 

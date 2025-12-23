@@ -58,10 +58,10 @@ namespace Arctium.Protocol.DNS.Protocol
                 }
             }
 
-            if (anyReal || anyReal)
+            if (anyReal || anyTemp)
             {
                 records = result.ToArray();
-                return false;
+                return true;
             }
             else
             {
