@@ -30,27 +30,27 @@ Following list shows all implemented features with links to examples
 ## Protocols
 
 #### DNS
-|Name|Documentation|Standard|
-|-|-|-|
-|DNS Client/Server |TODO|[RFC-1101](https://datatracker.ietf.org/doc/html/rfc1101)|
-|DNS Client/Server |TODO|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|
-|DNS Client/Server |TODO|[RFC-1348](https://datatracker.ietf.org/doc/html/rfc1348)|
-|DNS Client/Server |TODO|[RFC-8020](https://datatracker.ietf.org/doc/html/rfc8020)|
-|DNS Client/Server |TODO|[RFC-8482](https://datatracker.ietf.org/doc/html/rfc8482)|
-|DNS Client/Server |TODO|[RFC-8767](https://datatracker.ietf.org/doc/html/rfc8767)|
-|DNS Client/Server |TODO|[RFC-9471](https://datatracker.ietf.org/doc/html/rfc9471)|
-|DNS Client/Server |TODO|[RFC-2308](https://datatracker.ietf.org/doc/html/rfc2308)|
-|DNS Client/Server |TODO|[RFC-2181](https://datatracker.ietf.org/doc/html/rfc2181)|
-|DNS Client/Server |TODO|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|
-|DNS Client/Server |TODO|[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|
-|DNS Client/Server |TODO|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|
-|DNS Client/Server |TODO|[RFC-4034](https://datatracker.ietf.org/doc/html/rfc4034)|
-|DNS Client/Server |TODO|[RFC-4035](https://datatracker.ietf.org/doc/html/rfc4035)|
-|DNS Client/Server |TODO|[RFC-4343](https://datatracker.ietf.org/doc/html/rfc4343)|
-|DNS Client/Server |TODO|[RFC-4592](https://datatracker.ietf.org/doc/html/rfc4592)|
-|DNS Client/Server |TODO|[RFC-2535](https://datatracker.ietf.org/doc/html/rfc2535)|
-|DNS Client/Server |TODO|[RFC-5936](https://datatracker.ietf.org/doc/html/rfc5936)|
-|DNS Client/Server |TODO|[RFC-4033](https://datatracker.ietf.org/doc/html/rfc4033)|
+|Name|Documentation|Standard|Implementation Status|
+|-|-|-|-|
+|DNS Client/Server |TODO|[RFC-1101](https://datatracker.ietf.org/doc/html/rfc1101)|NO (and will not)|
+|DNS Client/Server |TODO|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|-|
+|DNS Client/Server |TODO|[RFC-1348](https://datatracker.ietf.org/doc/html/rfc1348)|-|
+|DNS Client/Server |TODO|[RFC-8020](https://datatracker.ietf.org/doc/html/rfc8020)|-|
+|DNS Client/Server |TODO|[RFC-8482](https://datatracker.ietf.org/doc/html/rfc8482)|-|
+|DNS Client/Server |TODO|[RFC-8767](https://datatracker.ietf.org/doc/html/rfc8767)|-|
+|DNS Client/Server |TODO|[RFC-9471](https://datatracker.ietf.org/doc/html/rfc9471)|-|
+|DNS Client/Server |TODO|[RFC-2308](https://datatracker.ietf.org/doc/html/rfc2308)|-|
+|DNS Client/Server |TODO|[RFC-2181](https://datatracker.ietf.org/doc/html/rfc2181)|-|
+|DNS Client/Server |TODO|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|-|
+|DNS Client/Server |TODO|[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|-|
+|DNS Client/Server |TODO|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|-|
+|DNS Client/Server |TODO|[RFC-4034](https://datatracker.ietf.org/doc/html/rfc4034)|-|
+|DNS Client/Server |TODO|[RFC-4035](https://datatracker.ietf.org/doc/html/rfc4035)|-|
+|DNS Client/Server |TODO|[RFC-4343](https://datatracker.ietf.org/doc/html/rfc4343)|-|
+|DNS Client/Server |TODO|[RFC-4592](https://datatracker.ietf.org/doc/html/rfc4592)|-|
+|DNS Client/Server |TODO|[RFC-2535](https://datatracker.ietf.org/doc/html/rfc2535)|-|
+|DNS Client/Server |TODO|[RFC-5936](https://datatracker.ietf.org/doc/html/rfc5936)|-|
+|DNS Client/Server |TODO|[RFC-4033](https://datatracker.ietf.org/doc/html/rfc4033)|-|
 
 
 
