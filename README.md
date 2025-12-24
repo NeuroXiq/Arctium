@@ -51,6 +51,10 @@ Following list shows all implemented features with links to examples
 |DNS Client/Server |TODO|[RFC-2535](https://datatracker.ietf.org/doc/html/rfc2535)|-|
 |DNS Client/Server |TODO|[RFC-5936](https://datatracker.ietf.org/doc/html/rfc5936)|-|
 |DNS Client/Server |TODO|[RFC-4033](https://datatracker.ietf.org/doc/html/rfc4033)|-|
+|DNS Client/Server |TODO|[RFC-5395](https://datatracker.ietf.org/doc/html/rfc5395)|-|
+|DNS Client/Server |TODO|[RFC-5864](https://datatracker.ietf.org/doc/html/rfc5864)|-|
+|DNS Client/Server |TODO|[RFC-6195](https://datatracker.ietf.org/doc/html/rfc6195)|-|
+|DNS Client/Server |TODO|[RFC-6895](https://datatracker.ietf.org/doc/html/rfc6895)|-|
 
 
 
