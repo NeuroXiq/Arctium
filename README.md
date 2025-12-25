@@ -33,7 +33,7 @@ Following list shows all implemented features with links to examples
 |Name|Documentation|Standard|Implementation Status|
 |-|-|-|-|
 |DNS Client/Server |TODO|[RFC-1101](https://datatracker.ietf.org/doc/html/rfc1101)|NO (and will not)|
-|DNS Client/Server |TODO|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|-|
+|DNS Client/Server |TODO|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|NO (and will not)|
 |DNS Client/Server |TODO|[RFC-1348](https://datatracker.ietf.org/doc/html/rfc1348)|-|
 |DNS Client/Server |TODO|[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|-|
 |DNS Client/Server |TODO|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|-|
