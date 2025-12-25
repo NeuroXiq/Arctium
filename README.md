@@ -36,7 +36,7 @@ Following list shows all implemented features with links to examples
 |DNS Client/Server |TODO|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|NO (and will not)|
 |DNS Client/Server |TODO|[RFC-1348](https://datatracker.ietf.org/doc/html/rfc1348)|NO (and will not)|
 |DNS Client/Server |TODO|[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|NO (and will not)|
-|DNS Client/Server |TODO|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|NO (Maybe)|
+|DNS Client/Server |TODO|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|NO (todo?)|
 |DNS Client/Server |TODO|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|-|
 |DNS Client/Server |TODO|[RFC-2181](https://datatracker.ietf.org/doc/html/rfc2181)|-|
 |DNS Client/Server |TODO|[RFC-2308](https://datatracker.ietf.org/doc/html/rfc2308)|-|
