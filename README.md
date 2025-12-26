@@ -38,9 +38,21 @@ Following list shows all implemented features with links to examples
 |DNS Client/Server |TODO|[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|NO (and will not)|
 |DNS Client/Server |TODO|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|NO (todo?)|
 |DNS Client/Server |TODO|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|-|
+|DNS Client/Server |TODO|[RFC-2136](https://datatracker.ietf.org/doc/html/rfc2136)|-|
 |DNS Client/Server |TODO|[RFC-2181](https://datatracker.ietf.org/doc/html/rfc2181)|-|
 |DNS Client/Server |TODO|[RFC-2308](https://datatracker.ietf.org/doc/html/rfc2308)|-|
-|DNS Client/Server |TODO|[RFC-2535](https://datatracker.ietf.org/doc/html/rfc2535)|-|
+|DNS Client/Server |TODO|[RFC-2535](https://datatracker.ietf.org/doc/html/rfc2535)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3008](https://datatracker.ietf.org/doc/html/rfc3008)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3007](https://datatracker.ietf.org/doc/html/rfc3007)|-|
+|DNS Client/Server |TODO|[RFC-3090](https://datatracker.ietf.org/doc/html/rfc3090)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3226](https://datatracker.ietf.org/doc/html/rfc3226)|-|
+|DNS Client/Server |TODO|[RFC-3445](https://datatracker.ietf.org/doc/html/rfc3445)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3597](https://datatracker.ietf.org/doc/html/rfc3597)|-|
+|DNS Client/Server |TODO|[RFC-3665](https://datatracker.ietf.org/doc/html/rfc3665)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3658](https://datatracker.ietf.org/doc/html/rfc3658)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3755](https://datatracker.ietf.org/doc/html/rfc3755)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3757](https://datatracker.ietf.org/doc/html/rfc3757)|NO (obsolete)|
+|DNS Client/Server |TODO|[RFC-3845](https://datatracker.ietf.org/doc/html/rfc3845)|NO (obsolete)|
 |DNS Client/Server |TODO|[RFC-4033](https://datatracker.ietf.org/doc/html/rfc4033)|-|
 |DNS Client/Server |TODO|[RFC-4034](https://datatracker.ietf.org/doc/html/rfc4034)|-|
 |DNS Client/Server |TODO|[RFC-4035](https://datatracker.ietf.org/doc/html/rfc4035)|-|
