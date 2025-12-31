@@ -34,7 +34,7 @@ namespace Arctium.IntegrationTests.Protocol
         {
 
         }
-        
+
         /// <summary>
         /// rfc page 31, In most cases a resolver simply restarts the query at the new name whenit encounters a CNAME
         /// </summary>
@@ -55,18 +55,53 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_WillReturnResponseFromCache()
         {
+            string domainName = "www.cached-name.com";
+            string ipv4 = "1.2.3.4";
+            string ipv6 = "1:2:3:4:5:6:7:8";
             
+            InMemoryDnsResolverCache fakeCache = new InMemoryDnsResolverCache(true);
+
+            fakeCache.Set(new ResourceRecord[]
+            {
+                new ResourceRecord()
+                {
+                    Class = QClass.IN,
+                    TTL = 12345,
+                    Name = domainName,
+                    Type = QType.A,
+                    RData = new RDataA(ipv4)
+                },
+                new ResourceRecord()
+                {
+                    Class = QClass.IN,
+                    TTL = 12345,
+                    Name = domainName,
+                    Type = QType.AAAA,
+                    RData = new RDataAAAA(IPAddress.Parse(ipv6).GetAddressBytes())
+                }
+            });
+
+            DnsResolver resolver = new DnsResolver(DnsResolverOptions.CreateDefault(fakeCache));
+
+            var result = resolver.ResolveHostNameToHostAddress(domainName);
+
+            Assert.That(result.Length == 2);
+            Assert.That(result.Single(t => t.AddressFamily == AddressFamily.InterNetworkV6).ToString() == ipv6);
+            Assert.That(result.Single(t => t.AddressFamily == AddressFamily.InterNetwork).ToString() == ipv4);
         }
 
         [Test]
-        public void Success_WillPutInCacheResponse()
+        public void Success_WillCacheResponse()
         {
             // arrange
+            InMemoryDnsResolverCache fakeCache = new InMemoryDnsResolverCache(true);
+            DnsResolver resolver = new DnsResolver(DnsResolverOptions.CreateDefault(fakeCache));
 
             // act
+            var result = resolver.ResolveHostNameToHostAddress("www.google.com");
 
             // assert
-            Assert.IsTrue(false);
+            Assert.That(fakeCache.TryGet("www.google.com", QClass.IN, QType.A, out var cachedRrs) && cachedRrs.Length > 0);
         }
 
         [Test]
@@ -86,7 +121,7 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_WillWorkWithAllQTypes()
         {
-            
+
         }
 
         //
@@ -94,61 +129,23 @@ namespace Arctium.IntegrationTests.Protocol
         //
 
         [Test]
-        public void Success_WillResolveIPv6()
+        public void Success_WillResolveIPv4AndIPv6()
         {
-            Assert.Fail();
-        }
+            DnsResolver resolver = CreateResolver();
 
-        [Test]
-        public void Success_WillResolveIPv4()
-        {
-            Assert.Fail();
-        }
+            IPAddress[] addresses = resolver.ResolveHostNameToHostAddress("www.google.com");
 
-        [Test]
-        public void Success_WillSendArbitraryDnsMessageAndGetResponse()
-        {
-            var dnsResolver = new DnsResolver();
-
-            var message = new Message();
-            var h = new Header();
-            message.Header = h;
-            message.Question = new Question[1];
-
-            var question = new Question()
-            {
-                QClass = QClass.IN,
-                QType = QType.A,
-                QName = "www.google.com"
-            };
-
-            message.Question[0] = question;
-
-            h.AA = false;
-            h.Id = 1234;
-            h.Opcode = Opcode.Query;
-            h.QR = QRType.Query;
-            h.RA = false;
-            h.RCode = ResponseCode.NoErrorCondition;
-            h.RD = false;
-            h.TC = false;
-            h.ANCount = 0;
-            h.ARCount  = 0;
-            h.NSCount  = 0;
-            h.QDCount  = 1;
-
-            var result = DnsResolver.SendDnsUdpMessageAsync(message, IPAddress.Parse("8.8.8.8")).Result;
-
-            Assert.That(result.Answer.Length > 0);
+            Assert.That(addresses.Any(t => t.AddressFamily == AddressFamily.InterNetwork));
+            Assert.That(addresses.Any(t => t.AddressFamily == AddressFamily.InterNetworkV6));
         }
 
         [Test]
         public void Success_SimpleWillResolveDomainNameAddress()
         {
             // arrange
-            var dnsResolver = new DnsResolver();
+            var dnsResolver = CreateResolver();
             // act
-            var result = dnsResolver.ResolveHostNameToHostAddress("www.google.com").Result;
+            var result = dnsResolver.ResolveHostNameToHostAddress("www.google.com");
 
             // assert
             Assert.That(result.Any(t => t.AddressFamily == AddressFamily.InterNetwork));
@@ -171,17 +168,61 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_WillWorkWithUdp()
         {
-            Assert.Fail();
+            var m = new Message();
+
+            m.Question = new Question[]
+            {
+                new Question()
+                {
+                    QClass = QClass.IN,
+                    QName = "www.google.com",
+                    QType = QType.A
+                }
+            };
+
+            m.Header = new Header
+            {
+                Id = 1234,
+                QDCount = 1,
+                RCode = ResponseCode.NoErrorCondition,
+                RD = true,
+                QR = QRType.Query,
+            };
+
+            var result = DnsResolver.SendDnsUdpMessageAsync(m, IPAddress.Parse("8.8.8.8"), 53).Result;
+
+            Assert.That(result?.Answer.Length > 0);
+            Assert.That(result?.Answer.FirstOrDefault(t => t.Type == QType.A) != null);
         }
 
         [Test]
         public void Success_WillWorkWithTcp()
         {
-            var msg = new Message();
+            var m = new Message();
 
-            // DnsResolver.SendDnsTcpMessage();
+            m.Question = new Question[]
+            {
+                new Question()
+                {
+                    QClass = QClass.IN,
+                    QName = "www.google.com",
+                    QType = QType.A
+                }
+            };
 
-            Assert.Fail();
+            m.Header = new Header
+            {
+                Id = 1234,
+                QDCount = 1,
+                RCode = ResponseCode.NoErrorCondition,
+                RD = true,
+                QR = QRType.Query,
+            };
+
+            var result = DnsResolver.SendDnsTcpMessageAsync(m, IPAddress.Parse("8.8.8.8"), 53).Result;
+
+            Assert.That(result?.Answer.Length > 0);
+            Assert.That(result?.Answer.FirstOrDefault(t => t.Type == QType.A) != null);
         }
 
         [Test]
@@ -287,7 +328,7 @@ namespace Arctium.IntegrationTests.Protocol
                 current.Type == expected.Type &&
                 current.Class == expected.Class &&
                 r1 == r2;
-            
+
             if (!result) Debugger.Break();
 
             return result;

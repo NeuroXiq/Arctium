@@ -1,10 +1,13 @@
-﻿using System.Net;
+﻿using Arctium.Protocol.DNS.Model;
+using System.Net;
 
 namespace Arctium.Protocol.DNS
 {
     public class DnsResolverOptions
     {
-        public IDndResolverLocalData LocalData { get; private set; }
+        public ResourceRecord[] SBeltServers { get; private set; }
+
+        public IDnsResolverCache Cache { get; private set; }
 
         /// <summary>
         /// Max TTL. If TTL from received packet exceed this limit it is dropped.
@@ -20,36 +23,48 @@ namespace Arctium.Protocol.DNS
         public int MaxRequestCountForResolve { get; private set; }
 
         /// <summary>
-        /// Dns servers to as first
         /// </summary>
-        public IPAddress[] DnsServers { get; private set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="cacheShareMode"></param>
-        /// <param name="cache"></param>
-        /// <param name="dnsServers">This servers will be asked first</param>
         public DnsResolverOptions(
-            IDndResolverLocalData localData = null,
-            IPAddress[] dnsServers = null,
-            IPAddress[] sbeltDnsServers = null,
+            ResourceRecord[] sbeltDnsServers,
+            IDnsResolverCache cache = null,
             int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds,
-            int maxRequestCountForResolve = 50)
+            int maxRequestCountForResolve = 150)
         {
+            if (sbeltDnsServers == null || sbeltDnsServers.Length == 0)
+                throw new ArgumentException("sbeltDnsServers is null or empty");
+
+            SBeltServers = sbeltDnsServers;
             MaxRequestCountForResolve = maxRequestCountForResolve;
-            LocalData = localData;
-            DnsServers = dnsServers;
+            Cache = cache;
         }
 
-        public static DnsResolverOptions CreateDefault()
+        public static DnsResolverOptions CreateDefault(IDnsResolverCache cache = null)
         {
-            IDndResolverLocalData localData = new InMemoryDndResolverLocalData();
-            DnsResolverOptions options = new DnsResolverOptions(localData);
-
-            // if (options.Cache == null && options.UseCache) throw new InvalidOperationException("usecache = true, cache = null");
+            DnsResolverOptions options = new DnsResolverOptions(
+                CreateDefaultSBeltServers(),
+                cache ?? new InMemoryDnsResolverCache());
 
             return options;
+        }
+
+        public static ResourceRecord[] CreateDefaultSBeltServers()
+        {
+            var roots = DnsRootServers.All.SelectMany(t => new ResourceRecord[]
+            {
+                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = "", TTL = 1000, RData = new RDataNS(t.HostName) },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = t.HostName, TTL = 1000, RData = new RDataA(t.IPv4Address.ToString()) },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.AAAA, Name = t.HostName, TTL = 1000, RData = new RDataAAAA(t.IPv6Address.GetAddressBytes()) },
+            }).ToList();
+
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 });
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.8.8"), TTL = 1000 });
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 });
+            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.4.4"), TTL = 1000 });
+
+            var sbeltServers = roots.ToArray();
+
+            return sbeltServers;
         }
     }
 }

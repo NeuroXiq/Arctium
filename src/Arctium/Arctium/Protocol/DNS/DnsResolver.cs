@@ -19,9 +19,14 @@ namespace Arctium.Protocol.DNS
             dnsResolverImpl = new DnsResolverImpl(options);
         }
 
-        public async Task<IPAddress[]> ResolveHostNameToHostAddress(string hostName)
+        public IPAddress[] ResolveHostNameToHostAddress(string hostName)
         {
-            DnsResolverImpl.RequestState state = new DnsResolverImpl.RequestState(options.LocalData.Cache);
+            return ResolveHostNameToHostAddressAsync(hostName).Result;
+        }
+
+        public async Task<IPAddress[]> ResolveHostNameToHostAddressAsync(string hostName)
+        {
+            DnsResolverImpl.RequestState state = new DnsResolverImpl.RequestState(options.Cache);
 
             ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.A, state);
             ResourceRecord[] ipv6Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.AAAA, state);
@@ -109,18 +114,11 @@ namespace Arctium.Protocol.DNS
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPEndPoint endpoint = new IPEndPoint(ipAddress, port);
             serialize.Encode(message, bbuf);
-
-            
-            {
-                // todo
-                throw new NotSupportedException();
-            }
             
             await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
             var sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);
 
             Message result = serialize.Decode(new BytesCursor(receiveBuffer, 0, sresult.ReceivedBytes));
-            // Message result = serialize.Decode(new BytesCursor(a, 0, a.Length));
 
             return result;
         }

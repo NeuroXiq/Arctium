@@ -9,7 +9,6 @@ namespace Arctium.Protocol.DNS.Protocol
     public class DnsResolverImpl
     {
         private DnsResolverOptions options;
-        private IDndResolverLocalData localData { get { return options.LocalData; } }
 
         public DnsResolverImpl(DnsResolverOptions options)
         {
@@ -189,7 +188,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     searchingDomain = GetParentDomain(searchingDomain);
                 } while (searchingDomain != null);
 
-                sbelt = options.LocalData.SBeltServers;
+                sbelt = options.SBeltServers;
                 best.AddRange(sbelt.Where(t => t.Type == QType.NS));
                 state.Set(sbelt);
 
