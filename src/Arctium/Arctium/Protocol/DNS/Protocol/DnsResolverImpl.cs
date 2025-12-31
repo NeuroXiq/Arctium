@@ -194,12 +194,13 @@ namespace Arctium.Protocol.DNS.Protocol
         internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype, RequestState state)
         {
             RDataNS serverToAsk;
-            ResourceRecord[] resultRecords, serverToAskAddresses, sbelt;
+            ResourceRecord[] resultRecords, serverToAskAddresses, sbelt, exactAnswer;
             IPAddress nsIPAddress;
-            bool isDelegation, innerBreak;
             Queue<ResourceRecord> nsToAsk = new Queue<ResourceRecord>();
             Message response = null;
-            bool cacheResponse = true;
+            bool cacheResponse = true, isInfiniteLoop = false, isDelegation, innerBreak;
+            string searchingDomain;
+            List<ResourceRecord> best;
 
             do
             {
@@ -229,15 +230,14 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 // step 2
                 // find best servers to ask
-                // best servers:
-                // * server 'record.Name' parameter must be a domain name suffix
-                //   (e.g. rr.Name='org.net' or '.net' or '' for sname: 'www.svr.a.org.net'
+                // best servers to ask:
+                // * server is authority/has info about of domain, or parent domain or parent-parent domain etc.
                 // * largest 'record.Name' length (best match with sname)
-                // * already cached IP Address (no need to resolve name server IP)
+                // * already cached IP Address
                 // * sbelt as last resort
 
-                string searchingDomain = sname;
-                var best = new List<ResourceRecord>();
+                searchingDomain = sname;
+                best = new List<ResourceRecord>();
 
                 do
                 {
@@ -273,14 +273,14 @@ namespace Arctium.Protocol.DNS.Protocol
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
                     // skip this server
-                    bool isInfiniteLoop = serverToAsk.NSDName == sname;
+                    isInfiniteLoop = serverToAsk.NSDName == sname;
 
                     if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses) && !isInfiniteLoop)
                     {
                         serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
                     }
 
-                    // cache (or resolved value) may may be empty - this is ok because maybe there are no A/AAAA records
+                    // cache (or resolved value) may be empty - this is ok because maybe there are no A/AAAA records
                     // and domain name is valid, skip this server
                     if (serverToAskAddresses.Length == 0) continue;
 
@@ -315,7 +315,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     // investigate server response
 
                     isDelegation = response.Authority.Any(t => t.Type == QType.NS);
-                    var exactAnswer = response.Answer
+                    exactAnswer = response.Answer
                             .Where(t => t.Type == qtype && t.Class == qclass)
                             .ToArray();
 
