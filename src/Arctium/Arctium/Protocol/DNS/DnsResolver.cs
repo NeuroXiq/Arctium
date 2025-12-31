@@ -51,9 +51,46 @@ namespace Arctium.Protocol.DNS
             //return dnsResolverImpl.ResolveGeneralLookupFunction(hostName, qtype, qclass);
         }
 
-        public async Task<Message> SendDnsTcpMessageAsync(Message message, IPAddress ipAddress, int port = DnsConsts.DefaultServerDnsPort)
+        public static async Task<Message> SendDnsTcpMessageAsync(Message message, IPAddress ipAddress, int port = DnsConsts.DefaultServerDnsPort)
         {
-            throw new NotImplementedException();
+            DnsSerialize serialize = new DnsSerialize();
+            ByteBuffer messageBuffer = new ByteBuffer(), recvBuffer = new ByteBuffer();
+            Socket clientSocket;
+            Message result;
+            int recvLength = 0, shouldRecvLength = 2, recv = 0;
+            byte[] tempRecvBuffer = new byte[256];
+
+            serialize.Encode(message, messageBuffer, true);
+
+            using (clientSocket = new Socket(ipAddress.AddressFamily,SocketType.Stream, ProtocolType.Tcp))
+            {
+                await clientSocket.ConnectAsync(new IPEndPoint(ipAddress, port));
+                await clientSocket.SendAsync(new ArraySegment<byte>(messageBuffer.Buffer, 0, messageBuffer.Length));
+
+                do
+                {
+                    recv = await clientSocket.ReceiveAsync(tempRecvBuffer);
+                    recvLength += recv;
+
+                    if (recv == 0)
+                    {
+                        throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp, "received 0 bytes from tcp connection");
+                    }
+
+                    recvBuffer.Append(tempRecvBuffer, 0, recvLength);
+
+                    if (recvLength >= 2 && shouldRecvLength == 2)
+                    {
+                        shouldRecvLength = 2 + MemMap.ToUShort2BytesBE(tempRecvBuffer, 0);
+
+                        if (shouldRecvLength == 2) break;
+                    }
+                } while (recvLength < shouldRecvLength);
+            }
+
+            result = serialize.Decode(new BytesCursor(recvBuffer.Buffer, 0, recvLength), true);
+
+            return result;
         }
 
         /// <summary>
@@ -73,7 +110,7 @@ namespace Arctium.Protocol.DNS
             IPEndPoint endpoint = new IPEndPoint(ipAddress, port);
             serialize.Encode(message, bbuf);
 
-            if (bbuf.Length > DnsConsts.UdpSizeLimit)
+            
             {
                 // todo
                 throw new NotSupportedException();

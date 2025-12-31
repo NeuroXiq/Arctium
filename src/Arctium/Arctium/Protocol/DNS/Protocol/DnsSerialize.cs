@@ -318,8 +318,13 @@ namespace Arctium.Protocol.DNS.Protocol
 
         // decoding
 
-        public Message Decode(BytesCursor cursor)
+        public Message Decode(BytesCursor cursor, bool isTcp = false)
         {
+            if (isTcp)
+            {
+                cursor.ShiftCurrentOffset(2);
+            }
+
             Message result = new Message();
             Header header = Decode_Header(cursor);
 

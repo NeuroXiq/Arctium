@@ -3,6 +3,7 @@ using Arctium.Protocol.DNS.Model;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 
@@ -177,7 +178,8 @@ namespace Arctium.IntegrationTests.Protocol
         public void Success_WillWorkWithTcp()
         {
             var msg = new Message();
-            // var server = 
+
+            // DnsResolver.SendDnsTcpMessage();
 
             Assert.Fail();
         }
