@@ -48,11 +48,12 @@ namespace Arctium.Protocol.DNS.Protocol
             {
                 receiveBuffer = new byte[DnsConsts.UdpSizeLimit];
                 endpoint = new IPEndPoint(ipAddress, DnsConsts.DefaultServerDnsPort);
+                using var timeout = new CancellationTokenSource(options.UdpSocketRecvTimeoutMs);
 
                 using (Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp))
                 {
                     await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
-                    sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);
+                    sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint, timeout.Token);
                 }
 
                 result = serialize.Decode(new BytesCursor(receiveBuffer, 0, sresult.ReceivedBytes));
@@ -64,6 +65,8 @@ namespace Arctium.Protocol.DNS.Protocol
 
             if (serverMessage == null || (replyTcpWhenTruncated && serverMessage?.Header.TC == true))
             {
+                using var timeout = new CancellationTokenSource(options.UdpSocketRecvTimeoutMs);
+
                 throw new NotImplementedException();
 
                 serverMessage = null; //todo
@@ -218,7 +221,14 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses) && !isInfiniteLoop)
                     {
-                        serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
+                        try
+                        {
+                            serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
+                        }
+                        catch
+                        {
+                            serverToAskAddresses = new ResourceRecord[0];
+                        }
                     }
 
                     // cache (or resolved value) may be empty - this is ok because maybe there are no A/AAAA records
@@ -251,6 +261,8 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     // step 4
                     // investigate server response
+
+                    if (response == null) continue;
 
                     isDelegation = response.Authority.Any(t => t.Type == QType.NS);
                     exactAnswer = response.Answer

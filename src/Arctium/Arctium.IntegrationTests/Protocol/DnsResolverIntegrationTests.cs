@@ -3,7 +3,6 @@ using Arctium.Protocol.DNS.Model;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 
@@ -12,6 +11,8 @@ namespace Arctium.IntegrationTests.Protocol
     [TestFixture]
     public class DnsResolverIntegrationTests
     {
+        #region RFC1035
+
         /// <summary>
         /// rfc 1035, page 34
         /// </summary>
@@ -19,11 +20,27 @@ namespace Arctium.IntegrationTests.Protocol
         public void Success_WillQueryOtherServerIfOneThrowsErrorOrNotWork()
         {
             // arrange
+            var sbelt = new ResourceRecord[]
+            {
+                // one fake - will not work, intentionally 'com' to be selected first by a resolver
+                // fake ip 1.2.3.4
+                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = "com", TTL = 1000, RData = new RDataNS("dns.notexists.com") },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = "dns.notexists.com", TTL = 1000, RData = new RDataA("1.2.3.4") },
+
+                // one real - root server that will allow perform real resolve
+                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = "", TTL = 1000, RData = new RDataNS("a.root-servers.net") },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = "a.root-servers.net", TTL = 1000, RData = new RDataA("198.41.0.4") },
+            };
+
+
+            var options = DnsResolverOptions.CreateDefault(sbeltServers: sbelt);
+            var resolver = new DnsResolver(options);
 
             // act
+            var result = resolver.ResolveHostNameToHostAddress("www.google.com");
 
             // assert
-            Assert.IsTrue(false);
+            Assert.That(result.Any());
         }
 
         /// <summary>
@@ -48,6 +65,8 @@ namespace Arctium.IntegrationTests.Protocol
             // assert
             Assert.IsTrue(false);
         }
+
+        #endregion
 
         /// <summary>
         /// 
