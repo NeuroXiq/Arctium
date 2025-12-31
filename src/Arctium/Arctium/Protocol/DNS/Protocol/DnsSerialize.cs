@@ -1,6 +1,7 @@
 ﻿using Arctium.Protocol.DNS.Model;
 using Arctium.Shared;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Arctium.Protocol.DNS.Protocol
@@ -12,30 +13,37 @@ namespace Arctium.Protocol.DNS.Protocol
 
         // encoding
 
-        public void Encode(Message message, ByteBuffer buffer)
+        public void Encode(Message message, ByteBuffer buffer, bool isTcp = false)
         {
+            int tcpLengthOffset = -1;
+            
+            if (isTcp)
+            {
+                tcpLengthOffset = buffer.AllocEnd(2);
+            }
+
             Header h = message.Header;
 
-            int o = buffer.AllocEnd(12);
-            MemMap.ToBytes1UShortBE(h.Id, buffer.Buffer, o + 0);
+            int start = buffer.AllocEnd(12);
+            MemMap.ToBytes1UShortBE(h.Id, buffer.Buffer, start + 0);
 
-            buffer[o + 2] =(byte)(
+            buffer[start + 2] =(byte)(
                 (byte)h.QR << 7 |
                 (byte)h.Opcode << 6 |
                 (h.AA ? 1 : 0) << 2 |
                 (h.TC ? 1 : 0) << 1 |
                 (h.RD ? 1 : 0) << 0);
 
-            buffer[o + 3] = (byte)
+            buffer[start + 3] = (byte)
                 (
                     h.Z << 4 |
                     (byte)h.RCode << 0 | 0
                 );
 
-            MemMap.ToBytes1UShortBE(h.QDCount, buffer.Buffer, o + 4);
-            MemMap.ToBytes1UShortBE(h.ANCount, buffer.Buffer, o + 6);
-            MemMap.ToBytes1UShortBE(h.NSCount, buffer.Buffer, o + 8);
-            MemMap.ToBytes1UShortBE(h.ARCount, buffer.Buffer, o + 10);
+            MemMap.ToBytes1UShortBE(h.QDCount, buffer.Buffer, start + 4);
+            MemMap.ToBytes1UShortBE(h.ANCount, buffer.Buffer, start + 6);
+            MemMap.ToBytes1UShortBE(h.NSCount, buffer.Buffer, start + 8);
+            MemMap.ToBytes1UShortBE(h.ARCount, buffer.Buffer, start + 10);
 
             for (int i = 0; i < message.Question?.Length; i++)
             {
@@ -57,7 +65,21 @@ namespace Arctium.Protocol.DNS.Protocol
                 Encode_ResourceRecord(message.Additional[i], buffer);
             }
 
-            // MemDump.HexDump(buffer.Buffer, 0, buffer.DataLength, 1, 2);
+            if (isTcp)
+            {
+                int contentLength = buffer.Length - 2 - tcpLengthOffset;
+
+                if (contentLength > ushort.MaxValue)
+                {
+                    throw new DnsException(DnsProtocolError.Internal, "serialized message length > ushort.maxvalue");
+                }
+
+                MemMap.ToBytes1UShortBE((ushort)contentLength, buffer.Buffer, tcpLengthOffset);
+            }
+            else if (buffer.Length - start > DnsConsts.UdpSizeLimit)
+            {
+                throw new DnsException(DnsProtocolError.Internal, "encoded > udp max length");
+            }
         }
 
         private void Encode_ResourceRecord(ResourceRecord rr, ByteBuffer buffer)
@@ -95,8 +117,8 @@ namespace Arctium.Protocol.DNS.Protocol
                 case QType.MAILB:
                 case QType.MAILA:
                 case QType.All:
-                    throw new NotImplementedException("Cannot encode this because QType is only for queries");
-                default: throw new DnsException(DnsProtocolError.EncodeInvalidQType, "invalid QType resource record encode");
+                    throw new NotImplementedException("Cannot encode this because this QType is only for queries");
+                default: throw new DnsException(DnsProtocolError.EncodeInvalidQType, "unknown or not supported QType");
             }
 
             int rdLength = buffer.Length - rdLengthOffset - 2;

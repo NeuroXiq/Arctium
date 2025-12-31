@@ -137,7 +137,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 bool isReferral = node != null &&
                     node.Records.Any(t => t.Type == QType.NS) &&
                     !node.Records.Any(t =>
-                        t.Type == QType.NS && t.GetRData<RDataNS>().NSDName != soa.GetRData<RDataSOA>().MName);
+                        t.Type == QType.NS && t.AsRData<RDataNS>().NSDName != soa.AsRData<RDataSOA>().MName);
 
                 // 3.b, we have a referral
                 if (isReferral)

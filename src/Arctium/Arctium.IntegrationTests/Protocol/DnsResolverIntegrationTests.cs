@@ -229,6 +229,8 @@ namespace Arctium.IntegrationTests.Protocol
             cancellationToken.Cancel();
         }
 
+        // tools and arctium dns server for tests
+
         private DnsResolver CreateResolver()
         {
             return new DnsResolver();

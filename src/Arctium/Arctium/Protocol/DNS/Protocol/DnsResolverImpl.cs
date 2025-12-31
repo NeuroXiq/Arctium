@@ -31,90 +31,32 @@ namespace Arctium.Protocol.DNS.Protocol
             throw new NotImplementedException();
         }
 
-        internal async Task<IPAddress[]> ResolveHostNameToHostAddress2(string hostName)
-        {
-            Header header = new Header()
-            {
-                Id = (ushort)Random.Shared.NextInt64(),
-                AA = false,
-                RA = false,
-                RD = false,
-                TC = false,
-                Opcode = Opcode.Query,
-                ANCount = 0,
-                ARCount = 0,
-                NSCount = 0,
-                QDCount = 1,
-                QR = QRType.Query,
-                RCode = ResponseCode.NoErrorCondition,
-            };
-
-            Question question = new Question()
-            {
-                QClass = QClass.IN,
-                QName = hostName,
-                QType = QType.A
-            };
-
-            Message message = new Message()
-            {
-                Header = header,
-                Question = new Question[] { question },
-                Additional = null,
-                Answer = null,
-                Authority = null
-            };
-
-            Message ipv4Result = await SendQueryToServerAsync(message, IPAddress.Parse("8.8.8.8"));
-
-            question.QType = QType.AAAA;
-
-            Message ipv6Result = await SendQueryToServerAsync(message, IPAddress.Parse("8.8.8.8"));
-
-            List<IPAddress> result = new List<IPAddress>();
-
-            if (ipv4Result.Header.ANCount > 0)
-            {
-                IEnumerable<IPAddress> ipv4List = ipv4Result.Answer
-                    .Where(a => a.Type == QType.A)
-                    .Select(a => new IPAddress(a.GetRData<RDataA>().Address));
-
-                result.AddRange(ipv4List);
-            }
-
-            if (ipv4Result.Header.ANCount > 0)
-            {
-                IEnumerable<IPAddress> ipv6List = ipv6Result.Answer
-                    .Where(t => t.Type == QType.AAAA)
-                    .Select(t => new IPAddress(t.GetRData<RDataAAAA>().IPv6));
-
-                result.AddRange(ipv6List);
-            }
-
-            return result.ToArray();
-        }
-
         private async Task<Message> SendQueryToServerAsync(
             Message clientMessage,
             IPAddress ipAddress,
             bool replyTcpWhenTruncated = true)
         {
-            Message serverMessage = null;
+            byte[] receiveBuffer;
+            SocketReceiveFromResult sresult;
+            IPEndPoint endpoint = null;
+            Message serverMessage = null, result;
             DnsSerialize serialize = new DnsSerialize();
             ByteBuffer bbuf = new ByteBuffer();
+
             serialize.Encode(clientMessage, bbuf);
 
             if (bbuf.Length <= DnsConsts.UdpSizeLimit)
             {
-                byte[] receiveBuffer = new byte[DnsConsts.UdpSizeLimit];
+                receiveBuffer = new byte[DnsConsts.UdpSizeLimit];
+                endpoint = new IPEndPoint(ipAddress, DnsConsts.DefaultServerDnsPort);
 
-                using var socket = new Socket(ipAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                IPEndPoint endpoint = new IPEndPoint(ipAddress, DnsConsts.DefaultServerDnsPort);
+                using (Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp))
+                {
+                    await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
+                    sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);
+                }
 
-                await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
-                var sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);
-
-                Message result = serialize.Decode(new BytesCursor(receiveBuffer, 0, sresult.ReceivedBytes));
+                result = serialize.Decode(new BytesCursor(receiveBuffer, 0, sresult.ReceivedBytes));
                 serverMessage = result;
 
                 if (serverMessage.Header.Id != clientMessage.Header.Id)
@@ -194,12 +136,12 @@ namespace Arctium.Protocol.DNS.Protocol
         internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype, RequestState state)
         {
             RDataNS serverToAsk;
-            ResourceRecord[] resultRecords, serverToAskAddresses, sbelt, exactAnswer;
+            ResourceRecord[] resultRecords, serverToAskAddresses, sbelt, exactAnswer, addresses;
             IPAddress nsIPAddress;
             Queue<ResourceRecord> nsToAsk = new Queue<ResourceRecord>();
             Message response = null;
             bool cacheResponse = true, isInfiniteLoop = false, isDelegation, innerBreak;
-            string searchingDomain;
+            string searchingDomain, cnameCacheResolved;
             List<ResourceRecord> best;
 
             do
@@ -210,13 +152,13 @@ namespace Arctium.Protocol.DNS.Protocol
                 // step 1
                 // check for CNAME
                 // try to resolve cname
-                string cnameCacheResolved = sname;
+                cnameCacheResolved = sname;
                 if (qtype != QType.CNAME)
                 {
                     while (state.TryGet(cnameCacheResolved, qclass, QType.CNAME, out resultRecords))
                     {
                         if (resultRecords.Length == 1)
-                            cnameCacheResolved = resultRecords[0].GetRData<RDataCNAME>().CName;
+                            cnameCacheResolved = resultRecords[0].AsRData<RDataCNAME>().CName;
                         else break;
                     }
                 }
@@ -252,9 +194,9 @@ namespace Arctium.Protocol.DNS.Protocol
                 state.Set(sbelt);
 
                 best = best
-                    .DistinctBy(t => t.GetRData<RDataNS>().NSDName)
+                    .DistinctBy(t => t.AsRData<RDataNS>().NSDName)
                     .OrderByDescending(t => t.Name.Length)
-                    .OrderByDescending(t => (state.TryGetAandAAAA(t.Name, qclass, out var addresses) && addresses.Length > 0) ? 1 : 0)
+                    .OrderByDescending(t => (state.TryGetAandAAAA(t.Name, qclass, out addresses) && addresses.Length > 0) ? 1 : 0)
                     .ToList();
 
                 best.ForEach(nsToAsk.Enqueue);
@@ -267,7 +209,7 @@ namespace Arctium.Protocol.DNS.Protocol
                         throw new DnsException("failed to resolve - no more servers to ask (all asked servers failed)");
                     }
 
-                    serverToAsk = nsToAsk.Dequeue().GetRData<RDataNS>();
+                    serverToAsk = nsToAsk.Dequeue().AsRData<RDataNS>();
 
                     // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
@@ -291,8 +233,8 @@ namespace Arctium.Protocol.DNS.Protocol
                         try
                         {
                             nsIPAddress = nsAddress.Type == QType.A
-                                ? IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.GetRData<RDataA>().Address))
-                                : new IPAddress(nsAddress.GetRData<RDataAAAA>().IPv6);
+                                ? IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.AsRData<RDataA>().Address))
+                                : new IPAddress(nsAddress.AsRData<RDataAAAA>().IPv6);
 
                             state.RequestCounter++;
 
@@ -305,10 +247,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                             if (response != null) break;
                         }
-                        catch
-                        {
-                            continue;
-                        }
+                        catch { }
                     }
 
                     // step 4
@@ -342,7 +281,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     // 4.c response shows CNAME?
                     else if (response.Answer.Count(t => t.Type == QType.CNAME) == 1)
                     {
-                        sname = response.Answer.Single(t => t.Type == QType.CNAME).GetRData<RDataCNAME>().CName;
+                        sname = response.Answer.Single(t => t.Type == QType.CNAME).AsRData<RDataCNAME>().CName;
                         innerBreak = true;
                     }
                     // 4.d response shows server failure or other bizzare content

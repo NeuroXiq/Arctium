@@ -26,10 +26,10 @@ namespace Arctium.Protocol.DNS
             ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.A, state);
             ResourceRecord[] ipv6Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.AAAA, state);
 
-            IPAddress[] ipv4Address = ipv4Result.Select(t => IPAddress.Parse(DnsSerialize.UIntToIpv4(t.GetRData<RDataA>().Address)))
+            IPAddress[] ipv4Address = ipv4Result.Select(t => IPAddress.Parse(DnsSerialize.UIntToIpv4(t.AsRData<RDataA>().Address)))
                 .ToArray();
 
-            IPAddress[] ipv6Address = ipv6Result.Select(t => t.GetRData<RDataAAAA>().IPv6)
+            IPAddress[] ipv6Address = ipv6Result.Select(t => t.AsRData<RDataAAAA>().IPv6)
                 .Select(ipv6ByteArray => new IPAddress(ipv6ByteArray))
                 .ToArray();
 
@@ -71,14 +71,14 @@ namespace Arctium.Protocol.DNS
 
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPEndPoint endpoint = new IPEndPoint(ipAddress, port);
-            
+            serialize.Encode(message, bbuf);
+
             if (bbuf.Length > DnsConsts.UdpSizeLimit)
             {
                 // todo
                 throw new NotSupportedException();
             }
-
-            serialize.Encode(message, bbuf);
+            
             await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
             var sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);
 

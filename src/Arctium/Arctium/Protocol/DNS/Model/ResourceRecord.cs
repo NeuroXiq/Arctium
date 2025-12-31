@@ -9,7 +9,7 @@
         public ushort RDLength;
         public object RData;
 
-        public T GetRData<T>() => (T)RData;
+        public T AsRData<T>() => (T)RData;
 
         public override string ToString()
         {
