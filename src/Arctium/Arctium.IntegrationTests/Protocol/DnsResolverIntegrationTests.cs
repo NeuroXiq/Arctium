@@ -208,10 +208,10 @@ namespace Arctium.IntegrationTests.Protocol
             var dnsResolver = CreateResolver();
 
             // act
-            var result = dnsResolver.ResolveHostAddressToHostName(IPAddress.Parse("1.2.3.4"));
+            var domainName = dnsResolver.ResolvePtrReverseResolution(IPAddress.Parse("8.8.4.4")).Result;
 
             // assert
-            Assert.IsTrue(false);
+            Assert.IsTrue(domainName == "dns.google");
         }
 
         [Test]

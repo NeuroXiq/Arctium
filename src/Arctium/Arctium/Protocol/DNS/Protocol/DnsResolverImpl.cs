@@ -41,7 +41,24 @@ namespace Arctium.Protocol.DNS.Protocol
                 {
                     options.Cache.Set(serverMessage.Answer);
 
-                    records = serverMessage.Answer;
+                    // resolve cname alias
+                    string cname = hostName;
+                    ResourceRecord r = null;
+                    
+                    for (int i = 0; i < serverMessage.Answer.Length; i++)
+                    {
+                        r = serverMessage.Answer
+                            .Where(t => t.IsNameTypeClassEqual(cname, QClass.IN, QType.CNAME))
+                            .FirstOrDefault();
+
+                        if (r != null) cname = r.AsRData<RDataCNAME>().CName;
+                    }
+
+                    if (r != null) throw new DnsException("cyclic cname");
+
+                    records = serverMessage.Answer
+                        .Where(t => t.IsNameTypeClassEqual(cname, QClass.IN, qtype))
+                        .ToArray();
                 }
                 else throw new DnsException($"ResponseCode is '{serverMessage.Header.RCode}'");
             }
@@ -265,7 +282,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 do
                 {
-                    if (TryResolveFromCache(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
+                    if (TryResolveFromCache(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs, state.ProcessingRequiredCache))
                     {
                         best.AddRange(cachedNs);
                     }
@@ -278,11 +295,12 @@ namespace Arctium.Protocol.DNS.Protocol
                 state.Set(sbelt);
 
                 // sorting is very important,
-                // first must be servers that are most-near searching domain,
-                // means record.Name that has longest suffix must be first
+                // first must be servers that are nearest to searching domain,
+                // means servers with record.Name that is the longest suffix of searching domain must be first
+                // in the queue
                 best = best
                     .Distinct()
-                    .OrderByDescending(t => sname.EndsWith(t.Name, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                    .OrderByDescending(t => sname.EndsWith(t.Name, StringComparison.OrdinalIgnoreCase) ? t.Name.Length : 0)
                     .ThenByDescending(t => t.Name.Length)
                     .ThenByDescending(t => {
                         // order if already have ip (have ip first)

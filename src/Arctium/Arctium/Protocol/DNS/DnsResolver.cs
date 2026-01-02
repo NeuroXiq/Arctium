@@ -53,16 +53,7 @@ namespace Arctium.Protocol.DNS
             return result;
         }
 
-        public string ResolveHostAddressToHostNameAsync(IPAddress dnsServerIp, IPAddress hostToResolveIp)
-        {
-            if (dnsServerIp == null) throw new ArgumentNullException("dnsServerIp");
-            if (hostToResolveIp == null) throw new ArgumentNullException("hostToResolveIp");
-
-            throw new NotImplementedException();
-            // return ResolveInverseQueryAsync(dnsServerIp, null);
-        }
-
-        public async Task<string> ResolvePtrReverseResolution(IPAddress dnsServerIp, IPAddress ipAddress)
+        public async Task<string> ResolvePtrReverseResolution(IPAddress ipAddress)
         {
             string hostName;
             byte[] i;
