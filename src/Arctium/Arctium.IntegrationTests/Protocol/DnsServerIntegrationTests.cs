@@ -481,7 +481,7 @@ namespace Arctium.IntegrationTests.Protocol
                 switch (expected.Type)
                 {
                     case QType.A:
-                        if (DnsSerialize.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address)
+                        if (DnsHelper.Ipv4ToUInt(current.IP4Address) != (expected.RData as RDataA).Address)
                         {
                             e = "A ipv4 not equal";
                         }
@@ -526,7 +526,7 @@ namespace Arctium.IntegrationTests.Protocol
                         // nslookup works ok
                         RDataWKS wks = (RDataWKS)expected.RData;
                         if (wks.Protocol != current.Protocol) e = "protocol";
-                        if (wks.Address != DnsSerialize.Ipv4ToUInt(current.IP4Address)) e = "wks";
+                        if (wks.Address != DnsHelper.Ipv4ToUInt(current.IP4Address)) e = "wks";
                         break;
                     case QType.PTR:
                         if (((RDataPTR)expected.RData).PtrDName != current.NameHost) e = "PTR"; ;

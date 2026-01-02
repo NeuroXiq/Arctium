@@ -233,6 +233,8 @@ namespace Arctium.Protocol.DNS.Protocol
             }
         }
 
+        
+
         // RFC-1035 5.3.3. Algorithm
         // todo max recursrion level
         private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
@@ -322,7 +324,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
                     // skip this server
-                    isInfiniteLoop = DnsSerialize.DnsNameEquals(serverToAskHostName, sname);
+                    isInfiniteLoop = DnsHelper.DnsNameEquals(serverToAskHostName, sname);
 
                     if (!TryResolveIpsFromCache(serverToAskHostName, qclass, out serverToAskIps, state.RealCache) && !isInfiniteLoop)
                     {

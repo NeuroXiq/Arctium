@@ -20,7 +20,7 @@ namespace Arctium.Protocol.DNS.Model
 
         public bool IsNameTypeClassEqual(string name, QClass qclass, QType qtype)
         {
-            return DnsSerialize.DnsNameEquals(Name, name)
+            return DnsHelper.DnsNameEquals(Name, name)
                 && Type == qtype
                 && Class == qclass;
         }

@@ -17,7 +17,7 @@ namespace Arctium.Protocol.DNS.Model
 
         public RDataA(string address)
         {
-            Address = DnsSerialize.Ipv4ToUInt(address);
+            Address = DnsHelper.Ipv4ToUInt(address);
         }
 
         public override string ToString()
