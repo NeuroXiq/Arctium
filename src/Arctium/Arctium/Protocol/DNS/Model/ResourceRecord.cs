@@ -1,4 +1,6 @@
-﻿namespace Arctium.Protocol.DNS.Model
+﻿using Arctium.Protocol.DNS.Protocol;
+
+namespace Arctium.Protocol.DNS.Model
 {
     public class ResourceRecord
     {
@@ -18,9 +20,9 @@
 
         public bool IsNameTypeClassEqual(string name, QClass qclass, QType qtype)
         {
-            return string.Compare(Name, name) == 0
-                && this.Type == qtype
-                && this.Class == qclass;
+            return DnsSerialize.DnsNameEquals(Name, name)
+                && Type == qtype
+                && Class == qclass;
         }
 
         public bool IsNameTypeClassEqual(ResourceRecord other)

@@ -45,8 +45,12 @@ namespace Arctium.Protocol.DNS
             {
                 DateTimeOffset now = DateTimeOffset.UtcNow;
                 List<CacheEntry> foundEntries = entries.Where(t => t.Record.IsNameTypeClassEqual(hostName, qclass, qtype)).ToList();
-
                 List<CacheEntry> expired = foundEntries.Where(t => t.ExpireOn < now).ToList();
+
+                if (qtype != QType.CNAME)
+                {
+                    foundEntries.AddRange(entries.Where(t => t.Record.IsNameTypeClassEqual(hostName, qclass, QType.CNAME)));
+                }
 
                 if (neverExpire) expired.Clear();
 

@@ -1,6 +1,7 @@
 ﻿using Arctium.Protocol.DNS.Model;
 using Arctium.Shared;
 using System.Diagnostics;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -692,16 +693,38 @@ namespace Arctium.Protocol.DNS.Protocol
             return string.Join(".", labels);
         }
 
-        
-
-        public static string UIntToIpv4(uint ipv4)
+        public static IPAddress ConvertToIPAddress(ResourceRecord record)
         {
-            return string.Format("{0}.{1}.{2}.{3}",
-                (byte)(ipv4 >> 24),
-                (byte)(ipv4 >> 16),
-                (byte)(ipv4 >> 08),
-                (byte)(ipv4 >> 00));
+            if (record.Type == QType.A)
+            {
+                uint ip = record.AsRData<RDataA>().Address;
+
+                return new IPAddress(
+                    ((ip & 0xff000000) >> 24) |
+                    ((ip & 0x00ff0000) >> 8) |
+                    ((ip & 0x0000ff00) << 8) |
+                    ((ip & 0x000000ff) << 24)
+                    );
+            }
+            else if (record.Type == QType.AAAA)
+            {
+                return new IPAddress(record.AsRData<RDataAAAA>().IPv6);
+            }
+            else
+            {
+                throw new ArgumentException($"record is not A or AAAA, current type: {record.Type} ({record.GetType().Name})");
+            }
         }
+
+        public static bool DnsNameEquals(string name1, string name2)
+        {
+            if (name1 == name2) return true;
+            if (name1 != null || name2 != null) return false;
+
+            return string.Compare(name1, name2, true) == 0;
+        }
+
+       
 
         public static uint Ipv4ToUInt(string ipv4)
         {

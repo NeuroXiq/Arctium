@@ -25,6 +25,11 @@ namespace Arctium.Protocol.DNS
         public int MaxRequestCountForResolve { get; private set; }
         public int UdpSocketRecvTimeoutMs { get; private set; }
         public int TcpSocketRecvTimeoutMs { get; private set; }
+        
+        /// <summary>
+        /// Recursion-desired flag
+        /// </summary>
+        public readonly bool RecursionDesired;
 
         /// <summary>
         /// </summary>
@@ -34,7 +39,8 @@ namespace Arctium.Protocol.DNS
             int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds,
             int maxRequestCountForResolve = 150,
             int udpSocketTimeout = DefaultUdpSocketTimeoutMs,
-            int tcpSocketTimeout = DefaultTcpSocketTimeoutMs)
+            int tcpSocketTimeout = DefaultTcpSocketTimeoutMs,
+            bool recursionDesired = true)
         {
             if (sbeltDnsServers == null || sbeltDnsServers.Length == 0)
                 throw new ArgumentException("sbeltDnsServers is null or empty");
@@ -47,6 +53,7 @@ namespace Arctium.Protocol.DNS
             TcpSocketRecvTimeoutMs = tcpSocketTimeout;
             SBeltServers = sbeltDnsServers;
             Cache = cache;
+            RecursionDesired = recursionDesired;
         }
 
         public static DnsResolverOptions CreateDefault(IDnsResolverCache cache = null, ResourceRecord[] sbeltServers = null)

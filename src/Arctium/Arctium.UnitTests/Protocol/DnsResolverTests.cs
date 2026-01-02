@@ -43,7 +43,7 @@ namespace Arctium.UnitTests.Protocol
             var dnsResolver = new DnsResolver();
 
             // act
-            var result = dnsResolver.ResolveHostNameToHostAddress("www.google.com");
+            var result = dnsResolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
 
             // assert
             Assert.True(false);

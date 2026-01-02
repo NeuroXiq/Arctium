@@ -19,26 +19,32 @@ namespace Arctium.Protocol.DNS
             dnsResolverImpl = new DnsResolverImpl(options);
         }
 
-        public IPAddress[] ResolveHostNameToHostAddress(string hostName)
+        /// <summary>
+        /// Stub resolver, use specific server, send message with 'recursion desired' flag 
+        /// and return response
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IPAddress[]> ResolveHostNameToAddressAsStubAsync(IPAddress serverIp, string hostName)
         {
-            return ResolveHostNameToHostAddressAsync(hostName).Result;
+            var recordsIp4 = await dnsResolverImpl.QueryServerAsStubResolver(serverIp, hostName, QType.A);
+            var recordsIp6 = await dnsResolverImpl.QueryServerAsStubResolver(serverIp, hostName, QType.AAAA);
+            var result = recordsIp4
+                .Union(recordsIp6)
+                .Select(DnsSerialize.ConvertToIPAddress)
+                .ToArray();
+
+            return result;
         }
 
         public async Task<IPAddress[]> ResolveHostNameToHostAddressAsync(string hostName)
         {
-            DnsResolverImpl.RequestState state = new DnsResolverImpl.RequestState(options.Cache);
+            ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerAsFullResolver(hostName, QClass.IN, QType.A);
+            ResourceRecord[] ipv6Result = await dnsResolverImpl.QueryServerAsFullResolver(hostName, QClass.IN, QType.AAAA);
 
-            ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.A, state);
-            ResourceRecord[] ipv6Result = await dnsResolverImpl.QueryServerForData(hostName, QClass.IN, QType.AAAA, state);
-
-            IPAddress[] ipv4Address = ipv4Result.Select(t => IPAddress.Parse(DnsSerialize.UIntToIpv4(t.AsRData<RDataA>().Address)))
+            IPAddress[] result = ipv4Result
+                .Union(ipv6Result)
+                .Select(DnsSerialize.ConvertToIPAddress)
                 .ToArray();
-
-            IPAddress[] ipv6Address = ipv6Result.Select(t => t.AsRData<RDataAAAA>().IPv6)
-                .Select(ipv6ByteArray => new IPAddress(ipv6ByteArray))
-                .ToArray();
-
-            IPAddress[] result = ipv4Address.Concat(ipv6Address).ToArray();
 
             return result;
         }
@@ -46,14 +52,13 @@ namespace Arctium.Protocol.DNS
         public string ResolveHostAddressToHostName(IPAddress ipAddress)
         {
             dnsResolverImpl.ResolveHostAddressToHostName(ipAddress);
-
+            throw new NotImplementedException();
             return null;
         }
 
-        public object ResolveGeneralLookupFunction(string hostName, QType qtype, QClass qclass)
+        public Task<ResourceRecord[]> ResolveGeneralLookupFunctionAsync(string hostName, QType qtype, QClass qclass)
         {
-            throw new NotImplementedException();
-            //return dnsResolverImpl.ResolveGeneralLookupFunction(hostName, qtype, qclass);
+            return dnsResolverImpl.QueryServerAsFullResolver(hostName, qclass, qtype);
         }
 
         public static async Task<Message> SendDnsTcpMessageAsync(Message message, IPAddress ipAddress, int port = DnsConsts.DefaultServerDnsPort)

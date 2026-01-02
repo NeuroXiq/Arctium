@@ -1,10 +1,4 @@
 ﻿using Arctium.Protocol.DNS.Protocol;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS.Model
 {
@@ -28,7 +22,12 @@ namespace Arctium.Protocol.DNS.Model
 
         public override string ToString()
         {
-            return DnsSerialize.UIntToIpv4(Address);
+            uint ipv4 = Address;
+            return string.Format("{0}.{1}.{2}.{3}",
+                (byte)(ipv4 >> 24),
+                (byte)(ipv4 >> 16),
+                (byte)(ipv4 >> 08),
+                (byte)(ipv4 >> 00));
         }
     }
 }

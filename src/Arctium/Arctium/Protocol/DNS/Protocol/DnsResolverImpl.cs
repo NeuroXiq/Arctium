@@ -3,6 +3,7 @@ using Arctium.Shared;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS.Protocol
 {
@@ -30,7 +31,56 @@ namespace Arctium.Protocol.DNS.Protocol
             throw new NotImplementedException();
         }
 
-        private async Task<Message> SendQueryToServerAsync(
+        public async Task<ResourceRecord[]> QueryServerAsStubResolver(IPAddress serverIp, string hostName, QType qtype, bool skipCache = false)
+        {
+            Message clientMessage, serverMessage;
+            ResourceRecord[] records;
+
+            if (skipCache || !options.Cache.TryGet(hostName, QClass.IN, qtype, out records))
+            {
+                clientMessage = CreateMessage(hostName, QClass.IN, qtype, true);
+                serverMessage = await SendMessage(clientMessage, serverIp);
+
+                if (serverMessage.Header.RCode == ResponseCode.NoErrorCondition)
+                {
+                    options.Cache.Set(serverMessage.Answer);
+
+                    records = serverMessage.Answer;
+                }
+                else throw new DnsException($"ResponseCode is '{serverMessage.Header.RCode}'");
+            }
+
+            ResourceRecord cname = records.FirstOrDefault(t => t.IsNameTypeClassEqual(hostName, QClass.IN, QType.CNAME));
+
+            string resolvedCname = hostName;
+
+            if (qtype != QType.CNAME && cname != null)
+            {
+                bool found = false;
+
+                for (int i = 0; i < records.Length + 1 && ! found; i++)
+                {
+                    cname = records.FirstOrDefault(t => t.IsNameTypeClassEqual(resolvedCname, QClass.IN, QType.CNAME));
+                    found = cname == null;
+                    
+                    if (!found)
+                    {
+                        resolvedCname = cname.AsRData<RDataCNAME>().CName;
+                    }
+                }
+
+                if (!found)
+                {
+                    throw new DnsException("errors resolving - cname infinite loop or invalid records");
+                }
+            }
+
+            records = records.Where(t => t.IsNameTypeClassEqual(resolvedCname, QClass.IN, qtype)).ToArray();
+
+            return records;
+        }
+
+        private async Task<Message> SendMessage(
             Message clientMessage,
             IPAddress ipAddress,
             bool replyTcpWhenTruncated = true)
@@ -78,14 +128,14 @@ namespace Arctium.Protocol.DNS.Protocol
             return serverMessage;
         }
 
-        async Task<Message> TrySendMessageToServer(string sname, QClass qclass, QType qtype, IPAddress serverAddress)
+        Message CreateMessage(string hostName, QClass qclass, QType qtype, bool rd)
         {
-            Header header = new Header()
+            Header header = new Header
             {
                 Id = (ushort)Random.Shared.NextInt64(),
                 AA = false,
                 RA = false,
-                RD = false,
+                RD = options.RecursionDesired,
                 TC = false,
                 Opcode = Opcode.Query,
                 ANCount = 0,
@@ -96,14 +146,14 @@ namespace Arctium.Protocol.DNS.Protocol
                 RCode = ResponseCode.NoErrorCondition,
             };
 
-            Question question = new Question()
+            Question question = new Question
             {
                 QClass = qclass,
                 QType = qtype,
-                QName = sname,
+                QName = hostName,
             };
 
-            Message message = new Message()
+            Message message = new Message
             {
                 Header = header,
                 Question = new Question[] { question },
@@ -112,9 +162,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 Authority = null
             };
 
-            Message serverResponse = await SendQueryToServerAsync(message, serverAddress);
-
-            return serverResponse;
+            return message;
         }
 
         string GetParentDomain(string domainName)
@@ -133,15 +181,22 @@ namespace Arctium.Protocol.DNS.Protocol
             return result;
         }
 
+        public async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype)
+        {
+            RequestState state = new RequestState(options.Cache);
+
+            return await QueryServerAsFullResolver(sname, qclass, qtype, state);
+        }
+
         // RFC-1035 5.3.3. Algorithm
         // todo max recursrion level
-        internal async Task<ResourceRecord[]> QueryServerForData(string sname, QClass qclass, QType qtype, RequestState state)
+        private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
         {
             RDataNS serverToAsk;
-            ResourceRecord[] resultRecords, serverToAskAddresses, sbelt, exactAnswer, addresses;
+            ResourceRecord[] resultRecords, serverToAskIps, sbelt, exactAnswer, addresses;
             IPAddress nsIPAddress;
             Queue<ResourceRecord> nsToAsk = new Queue<ResourceRecord>();
-            Message response = null;
+            Message clientMessage, response = null;
             bool cacheResponse = true, isInfiniteLoop = false, isDelegation, innerBreak;
             string searchingDomain, cnameCacheResolved;
             List<ResourceRecord> best;
@@ -154,6 +209,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 // step 1
                 // check for CNAME
                 // try to resolve cname
+                // todo what will happen if infinite loop?
                 cnameCacheResolved = sname;
                 if (qtype != QType.CNAME)
                 {
@@ -217,33 +273,34 @@ namespace Arctium.Protocol.DNS.Protocol
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
                     // skip this server
-                    isInfiniteLoop = serverToAsk.NSDName == sname;
+                    isInfiniteLoop = DnsSerialize.DnsNameEquals(serverToAsk.NSDName, sname);
 
-                    if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskAddresses) && !isInfiniteLoop)
+                    if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskIps) && !isInfiniteLoop)
                     {
                         try
                         {
-                            serverToAskAddresses = await QueryServerForData(serverToAsk.NSDName, qclass, QType.A, state);
+                            ResourceRecord[] serverIp4 = await QueryServerAsFullResolver(serverToAsk.NSDName, qclass, QType.A, state);
+                            ResourceRecord[] serverIp6 = await QueryServerAsFullResolver(serverToAsk.NSDName, qclass, QType.AAAA, state);
+
+                            serverToAskIps = serverIp4.Union(serverIp6).ToArray();
                         }
                         catch
                         {
-                            serverToAskAddresses = new ResourceRecord[0];
+                            serverToAskIps = new ResourceRecord[0];
                         }
                     }
 
                     // cache (or resolved value) may be empty - this is ok because maybe there are no A/AAAA records
                     // and domain name is valid, skip this server
-                    if (serverToAskAddresses.Length == 0) continue;
+                    if (serverToAskIps.Length == 0) continue;
 
                     // query server
                     // if server has multiple IP addresses, try until first give response
-                    foreach (var nsAddress in serverToAskAddresses)
+                    foreach (var nsAddress in serverToAskIps)
                     {
                         try
                         {
-                            nsIPAddress = nsAddress.Type == QType.A
-                                ? IPAddress.Parse(DnsSerialize.UIntToIpv4(nsAddress.AsRData<RDataA>().Address))
-                                : new IPAddress(nsAddress.AsRData<RDataAAAA>().IPv6);
+                            nsIPAddress = DnsSerialize.ConvertToIPAddress(nsAddress);
 
                             state.RequestCounter++;
 
@@ -252,7 +309,8 @@ namespace Arctium.Protocol.DNS.Protocol
                                 throw new DnsException("error, maximum number of requests, operation cancelled");
                             }
 
-                            response = await TrySendMessageToServer(sname, qclass, qtype, nsIPAddress);
+                            clientMessage = CreateMessage(sname, qclass, qtype, options.RecursionDesired);
+                            response = await SendMessage(clientMessage, nsIPAddress);
 
                             if (response != null) break;
                         }
@@ -266,7 +324,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     isDelegation = response.Authority.Any(t => t.Type == QType.NS);
                     exactAnswer = response.Answer
-                            .Where(t => t.Type == qtype && t.Class == qclass)
+                            .Where(t => t.IsNameTypeClassEqual(sname, qclass, qtype))
                             .ToArray();
 
                     cacheResponse = true;

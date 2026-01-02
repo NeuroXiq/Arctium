@@ -11,6 +11,8 @@ namespace Arctium.IntegrationTests.Protocol
     [TestFixture]
     public class DnsResolverIntegrationTests
     {
+        static readonly IPAddress GoogleDnsIp = IPAddress.Parse("8.8.8.8");
+
         #region RFC1035
 
         /// <summary>
@@ -37,7 +39,7 @@ namespace Arctium.IntegrationTests.Protocol
             var resolver = new DnsResolver(options);
 
             // act
-            var result = resolver.ResolveHostNameToHostAddress("www.google.com");
+            var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
 
             // assert
             Assert.That(result.Any());
@@ -67,6 +69,29 @@ namespace Arctium.IntegrationTests.Protocol
         }
 
         #endregion
+
+        #region NO-RFC
+
+        [Test]
+        public void Success_GeneralLookupFunction()
+        {
+            Assert.Fail();
+        }
+
+        [Test]
+        public void Success_StubResolveWillWork()
+        {
+            var resolver = CreateResolver();
+            var result1 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.google.com").Result;
+            var result2 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.microsoft.com").Result;
+            var result3 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.gmail.com").Result;
+            var result4 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.youtube.com").Result;
+
+            Assert.That(result1.Any());
+            Assert.That(result2.Any());
+            Assert.That(result3.Any());
+            Assert.That(result4.Any());
+        }
 
         /// <summary>
         /// 
@@ -102,7 +127,7 @@ namespace Arctium.IntegrationTests.Protocol
 
             DnsResolver resolver = new DnsResolver(DnsResolverOptions.CreateDefault(fakeCache));
 
-            var result = resolver.ResolveHostNameToHostAddress(domainName);
+            var result = resolver.ResolveHostNameToHostAddressAsync(domainName).Result;
 
             Assert.That(result.Length == 2);
             Assert.That(result.Single(t => t.AddressFamily == AddressFamily.InterNetworkV6).ToString() == ipv6);
@@ -117,7 +142,7 @@ namespace Arctium.IntegrationTests.Protocol
             DnsResolver resolver = new DnsResolver(DnsResolverOptions.CreateDefault(fakeCache));
 
             // act
-            var result = resolver.ResolveHostNameToHostAddress("www.google.com");
+            var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
 
             // assert
             Assert.That(fakeCache.TryGet("www.google.com", QClass.IN, QType.A, out var cachedRrs) && cachedRrs.Length > 0);
@@ -140,7 +165,7 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_WillWorkWithAllQTypes()
         {
-
+            Assert.IsTrue(false);
         }
 
         //
@@ -152,7 +177,7 @@ namespace Arctium.IntegrationTests.Protocol
         {
             DnsResolver resolver = CreateResolver();
 
-            IPAddress[] addresses = resolver.ResolveHostNameToHostAddress("www.google.com");
+            IPAddress[] addresses = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
 
             Assert.That(addresses.Any(t => t.AddressFamily == AddressFamily.InterNetwork));
             Assert.That(addresses.Any(t => t.AddressFamily == AddressFamily.InterNetworkV6));
@@ -164,7 +189,7 @@ namespace Arctium.IntegrationTests.Protocol
             // arrange
             var dnsResolver = CreateResolver();
             // act
-            var result = dnsResolver.ResolveHostNameToHostAddress("www.google.com");
+            var result = dnsResolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
 
             // assert
             Assert.That(result.Any(t => t.AddressFamily == AddressFamily.InterNetwork));
@@ -290,6 +315,8 @@ namespace Arctium.IntegrationTests.Protocol
 
             cancellationToken.Cancel();
         }
+
+        #endregion
 
         // tools and arctium dns server for tests
 
