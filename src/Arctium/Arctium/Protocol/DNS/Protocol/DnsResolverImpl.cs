@@ -3,6 +3,7 @@ using Arctium.Shared;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS.Protocol
@@ -50,32 +51,9 @@ namespace Arctium.Protocol.DNS.Protocol
                 else throw new DnsException($"ResponseCode is '{serverMessage.Header.RCode}'");
             }
 
-            ResourceRecord cname = records.FirstOrDefault(t => t.IsNameTypeClassEqual(hostName, QClass.IN, QType.CNAME));
+            throw new NotImplementedException("cache not return cname never")
 
-            string resolvedCname = hostName;
-
-            if (qtype != QType.CNAME && cname != null)
-            {
-                bool found = false;
-
-                for (int i = 0; i < records.Length + 1 && ! found; i++)
-                {
-                    cname = records.FirstOrDefault(t => t.IsNameTypeClassEqual(resolvedCname, QClass.IN, QType.CNAME));
-                    found = cname == null;
-                    
-                    if (!found)
-                    {
-                        resolvedCname = cname.AsRData<RDataCNAME>().CName;
-                    }
-                }
-
-                if (!found)
-                {
-                    throw new DnsException("errors resolving - cname infinite loop or invalid records");
-                }
-            }
-
-            records = records.Where(t => t.IsNameTypeClassEqual(resolvedCname, QClass.IN, qtype)).ToArray();
+            
 
             return records;
         }
@@ -188,17 +166,87 @@ namespace Arctium.Protocol.DNS.Protocol
             return await QueryServerAsFullResolver(sname, qclass, qtype, state);
         }
 
+        private bool TryResolveFromCache(
+            string hostName,
+            QClass qclass,
+            QType qtype,
+            out ResourceRecord[] result,
+            IDnsResolverCache requiredCache = null)
+        {
+            ResourceRecord[] records;
+            HashSet<string> processedCnames = new HashSet<string>();
+            bool found = false;
+            bool isCname;
+            
+            do
+            {
+                processedCnames.Add(hostName);
+
+                isCname = (requiredCache != null && requiredCache.TryGet(hostName, qclass, QType.CNAME, out records))
+                    || options.Cache.TryGet(hostName, qclass, QType.CNAME, out records);
+
+                if (isCname && qtype == QType.CNAME)
+                {
+                    result = records;
+                    return true;
+                }
+
+                hostName = records[0].AsRData<RDataCNAME>().CName;
+                
+                if (processedCnames.Contains(hostName))
+                    throw new DnsException("cache processing shows cyclic cname " + hostName);
+
+            } while (isCname);
+
+            if ((requiredCache != null && requiredCache.TryGet(hostName, qclass, QType.CNAME, out result))
+                    || options.Cache.TryGet(hostName, qclass, QType.CNAME, out result))
+            {
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        private bool TryResolveIpsFromCache(string hostName, QClass qclass, out IPAddress[] outIps, IDnsResolverCache requiredCache)
+        {
+            List<IPAddress> ips = new List<IPAddress>();
+
+            if (TryResolveFromCache(hostName, qclass, QType.A, out var ip4, requiredCache))
+            {
+                ips.AddRange(ip4.Select(ConvertToIPAddress));
+            }
+
+            if (TryResolveFromCache(hostName, qclass, QType.AAAA, out var ip6, requiredCache))
+            {
+                ips.AddRange(ip6.Select(ConvertToIPAddress));
+            }
+
+            if (ips.Count > 0)
+            {
+                outIps = ips.ToArray();
+                return true;
+            }
+            else
+            {
+                outIps = null;
+                return false;
+            }
+        }
+
         // RFC-1035 5.3.3. Algorithm
         // todo max recursrion level
         private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
         {
             string serverToAskHostName;
-            ResourceRecord[] resultRecords, serverToAskIps, sbelt, exactAnswer, addresses;
-            IPAddress nsIPAddress;
+            ResourceRecord[] resultRecords, sbelt, exactAnswer, addresses;
+            IPAddress[] serverToAskIps;
             Queue<string> nsToAsk = new Queue<string>();
             Message clientMessage, response = null;
             bool cacheResponse = true, isInfiniteLoop = false, isDelegation, innerBreak;
-            string searchingDomain, cnameCacheResolved;
+            string searchingDomain;
             List<ResourceRecord> best;
 
             do
@@ -207,22 +255,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 nsToAsk.Clear();
 
                 // step 1
-                // check for CNAME
-                // try to resolve cname
-                // todo what will happen if infinite loop?
-                cnameCacheResolved = sname;
-                if (qtype != QType.CNAME)
-                {
-                    while (state.TryGet(cnameCacheResolved, qclass, QType.CNAME, out resultRecords))
-                    {
-                        if (resultRecords.Length == 1)
-                            cnameCacheResolved = resultRecords[0].AsRData<RDataCNAME>().CName;
-                        else break;
-                    }
-                }
-
-                // check if already in cache
-                if (state.TryGet(cnameCacheResolved, qclass, qtype, out resultRecords))
+                if (TryResolveFromCache(sname,qclass, qtype, out resultRecords, state.ProcessingRequiredCache))
                 {
                     // done, found in cache
                     return resultRecords;
@@ -241,10 +274,9 @@ namespace Arctium.Protocol.DNS.Protocol
 
                 do
                 {
-                    if (state.TryGet(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
+                    if (TryResolveFromCache(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
                     {
                         best.AddRange(cachedNs);
-                        
                     }
 
                     searchingDomain = GetParentDomain(searchingDomain);
@@ -266,7 +298,7 @@ namespace Arctium.Protocol.DNS.Protocol
                             ? t.AsRData<RDataCNAME>().CName
                             : t.AsRData<RDataNS>().NSDName;
 
-                        return (state.TryGetAandAAAA(hostName, qclass, out addresses) && addresses.Length > 0) ? 1 : 0;
+                        return TryResolveIpsFromCache(hostName, qclass, out var ips, state.ProcessingRequiredCache) ? 1 : 0;
                         })
                     .ToList();
 
@@ -288,6 +320,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     }
 
                     serverToAskHostName = nsToAsk.Dequeue();
+                    Console.WriteLine("dequeue: " + serverToAskHostName);
 
                     // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
@@ -295,18 +328,18 @@ namespace Arctium.Protocol.DNS.Protocol
                     // skip this server
                     isInfiniteLoop = DnsSerialize.DnsNameEquals(serverToAskHostName, sname);
 
-                    if (!state.TryGetAandAAAA(serverToAskHostName, qclass, out serverToAskIps) && !isInfiniteLoop)
+                    if (!TryResolveIpsFromCache(serverToAskHostName, qclass, out serverToAskIps, state.RealCache) && !isInfiniteLoop)
                     {
                         try
                         {
                             ResourceRecord[] serverIp4 = await QueryServerAsFullResolver(serverToAskHostName, qclass, QType.A, state);
                             ResourceRecord[] serverIp6 = await QueryServerAsFullResolver(serverToAskHostName, qclass, QType.AAAA, state);
 
-                            serverToAskIps = serverIp4.Union(serverIp6).ToArray();
+                            serverToAskIps = serverIp4.Union(serverIp6).Select(ConvertToIPAddress).ToArray();
                         }
                         catch
                         {
-                            serverToAskIps = new ResourceRecord[0];
+                            serverToAskIps = new IPAddress[0];
                         }
                     }
 
@@ -316,12 +349,10 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     // query server
                     // if server has multiple IP addresses, try until first give response
-                    foreach (var nsAddress in serverToAskIps)
+                    foreach (var nsIpAddress in serverToAskIps)
                     {
                         try
                         {
-                            nsIPAddress = DnsSerialize.ConvertToIPAddress(nsAddress);
-
                             state.RequestCounter++;
 
                             if (state.RequestCounter >= options.MaxRequestCountForResolve)
@@ -330,7 +361,7 @@ namespace Arctium.Protocol.DNS.Protocol
                             }
 
                             clientMessage = CreateMessage(sname, qclass, qtype, options.RecursionDesired);
-                            response = await SendMessage(clientMessage, nsIPAddress);
+                            response = await SendMessage(clientMessage, nsIpAddress);
 
                             if (response != null) break;
                         }
@@ -341,6 +372,12 @@ namespace Arctium.Protocol.DNS.Protocol
                     // investigate server response
 
                     if (response == null) continue;
+
+                    Console.WriteLine("response: ");
+                    Console.WriteLine("answer:");
+                    Console.WriteLine(string.Join("\r\n", response.Answer.Select(t => t.RData.ToString()).ToArray()));
+                    Console.WriteLine("authority:");
+                    Console.WriteLine(string.Join("\r\n", response.Answer.Select(t => t.RData.ToString()).ToArray()));
 
                     isDelegation = response.Authority.Any(t => t.Type == QType.NS);
                     exactAnswer = response.Answer
@@ -393,6 +430,29 @@ namespace Arctium.Protocol.DNS.Protocol
             } while (true);
         }
 
+        public static IPAddress ConvertToIPAddress(ResourceRecord record)
+        {
+            if (record.Type == QType.A)
+            {
+                uint ip = record.AsRData<RDataA>().Address;
+
+                return new IPAddress(
+                    ((ip & 0xff000000) >> 24) |
+                    ((ip & 0x00ff0000) >> 8) |
+                    ((ip & 0x0000ff00) << 8) |
+                    ((ip & 0x000000ff) << 24)
+                    );
+            }
+            else if (record.Type == QType.AAAA)
+            {
+                return new IPAddress(record.AsRData<RDataAAAA>().IPv6);
+            }
+            else
+            {
+                throw new ArgumentException($"record is not A or AAAA, current type: {record.Type} ({record.GetType().Name})");
+            }
+        }
+
         internal class RequestState
         {
             public int RequestCounter;
@@ -408,48 +468,10 @@ namespace Arctium.Protocol.DNS.Protocol
                 RealCache = realCache;
             }
 
-            public bool TryGet(string name, QClass qclass, QType qtype, out ResourceRecord[] records)
-            {
-                // always prefere required cache as it have newest data
-                if (ProcessingRequiredCache.TryGet(name, qclass, qtype, out records))
-                {
-                    return true;
-                }
-
-                if (RealCache.TryGet(name, qclass, qtype, out records))
-                {
-                    return true;
-                }
-
-                return false;
-            }
-
             public void Set(ResourceRecord[] records)
             {
                 ProcessingRequiredCache.Set(records);
                 RealCache.Set(records);
-            }
-
-            public bool TryGetAandAAAA(string name, QClass qclass, out ResourceRecord[] records)
-            {
-                List<ResourceRecord> result = new List<ResourceRecord>();
-                ResourceRecord[] result1, result2;
-                bool ok1, ok2;
-
-                if (ok1 = TryGet(name, qclass, QType.A, out result1))
-                    result.AddRange(result1);
-
-                if (ok2 = TryGet(name, qclass, QType.AAAA, out result2))
-                    result.AddRange(result2);
-
-                if (ok1 || ok2)
-                {
-                    records = result.ToArray();
-                    return true;
-                }
-
-                records = null;
-                return false;
             }
         }
     }

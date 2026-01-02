@@ -693,29 +693,6 @@ namespace Arctium.Protocol.DNS.Protocol
             return string.Join(".", labels);
         }
 
-        public static IPAddress ConvertToIPAddress(ResourceRecord record)
-        {
-            if (record.Type == QType.A)
-            {
-                uint ip = record.AsRData<RDataA>().Address;
-
-                return new IPAddress(
-                    ((ip & 0xff000000) >> 24) |
-                    ((ip & 0x00ff0000) >> 8) |
-                    ((ip & 0x0000ff00) << 8) |
-                    ((ip & 0x000000ff) << 24)
-                    );
-            }
-            else if (record.Type == QType.AAAA)
-            {
-                return new IPAddress(record.AsRData<RDataAAAA>().IPv6);
-            }
-            else
-            {
-                throw new ArgumentException($"record is not A or AAAA, current type: {record.Type} ({record.GetType().Name})");
-            }
-        }
-
         public static bool DnsNameEquals(string name1, string name2)
         {
             if (name1 == name2) return true;
