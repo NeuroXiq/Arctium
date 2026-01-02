@@ -62,7 +62,7 @@ namespace Arctium.Protocol.DNS
             // return ResolveInverseQueryAsync(dnsServerIp, null);
         }
 
-        public async Task<ResourceRecord[]> ResolvePtrReverseResolution(IPAddress dnsServerIp, IPAddress ipAddress)
+        public async Task<string> ResolvePtrReverseResolution(IPAddress dnsServerIp, IPAddress ipAddress)
         {
             string hostName;
             byte[] i;
@@ -70,8 +70,6 @@ namespace Arctium.Protocol.DNS
             {
                 i = ipAddress.GetAddressBytes();
                 hostName = string.Format("{0}.{1}.{2}.{3}.IN-ADDR.ARPA", i[3], i[2], i[1], i[0]);
-                Debugger.Break();
-
             }
             else if (ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
             {
@@ -104,9 +102,11 @@ namespace Arctium.Protocol.DNS
 
             var result = await ResolveGeneralLookupFunctionAsync(hostName, QClass.IN, QType.PTR).ConfigureAwait(false);
 
-            Debugger.Break();
-
-            throw new NotImplementedException();
+            if (result != null && result.Length > 0 && result[0].Type == QType.PTR)
+            {
+                return result[0].AsRData<RDataPTR>().PtrDName;
+            }
+            else throw new DnsException("failed to resolve reverse-dns name");
         }
 
         public Task<ResourceRecord[]> ResolveGeneralLookupFunctionAsync(string hostName, QClass qclass, QType qtype)
