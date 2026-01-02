@@ -10,7 +10,10 @@ namespace Arctium.Protocol.DNS
     {
         private DnsResolverOptions options;
         private DnsResolverImpl dnsResolverImpl;
-
+        
+        /// <summary>
+        /// Initialize new instance with default options
+        /// </summary>
         public DnsResolver() : this (DnsResolverOptions.CreateDefault()) { }
 
         public DnsResolver(DnsResolverOptions options)

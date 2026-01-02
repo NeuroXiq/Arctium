@@ -34,9 +34,7 @@ namespace Arctium.IntegrationTests.Protocol
                 new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = "a.root-servers.net", TTL = 1000, RData = new RDataA("198.41.0.4") },
             };
 
-
-            var options = DnsResolverOptions.CreateDefault(sbeltServers: sbelt);
-            var resolver = new DnsResolver(options);
+            var resolver = new DnsResolver(new DnsResolverOptions(sbelt, DnsResolverOptions.CreateDefaultCache()));
 
             // act
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
@@ -58,10 +56,13 @@ namespace Arctium.IntegrationTests.Protocol
         /// rfc page 31, In most cases a resolver simply restarts the query at the new name whenit encounters a CNAME
         /// </summary>
         [Test]
-        public void Success_StandardCase_ResolveWillAutomaticallyQueryServerAgainWhenServerReturnsCNAME()
+        public void Success_ResolveWillAutomaticallyQueryServerAgainWhenServerReturnsCNAME()
         {
             // arrange
+            var cache = new InMemoryDnsResolverCache();
+            var options = new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), cache);
 
+            //var resolver = new DnsResolver(
             // act
 
             // assert
@@ -125,7 +126,7 @@ namespace Arctium.IntegrationTests.Protocol
                 }
             });
 
-            DnsResolver resolver = new DnsResolver(DnsResolverOptions.CreateDefault(fakeCache));
+            DnsResolver resolver = new DnsResolver(new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), fakeCache));
 
             var result = resolver.ResolveHostNameToHostAddressAsync(domainName).Result;
 
@@ -139,7 +140,7 @@ namespace Arctium.IntegrationTests.Protocol
         {
             // arrange
             InMemoryDnsResolverCache fakeCache = new InMemoryDnsResolverCache(true);
-            DnsResolver resolver = new DnsResolver(DnsResolverOptions.CreateDefault(fakeCache));
+            DnsResolver resolver = new DnsResolver(new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), fakeCache));
 
             // act
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;

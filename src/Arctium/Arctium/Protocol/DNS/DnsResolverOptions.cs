@@ -8,7 +8,7 @@ namespace Arctium.Protocol.DNS
         public const int DefaultTcpSocketTimeoutMs = 10000;
 
         public ResourceRecord[] SBeltServers { get; private set; }
-
+        
         public IDnsResolverCache Cache { get; private set; }
 
         /// <summary>
@@ -23,7 +23,9 @@ namespace Arctium.Protocol.DNS
         /// exception will be thrown
         /// </summary>
         public int MaxRequestCountForResolve { get; private set; }
+        
         public int UdpSocketRecvTimeoutMs { get; private set; }
+        
         public int TcpSocketRecvTimeoutMs { get; private set; }
         
         /// <summary>
@@ -56,14 +58,17 @@ namespace Arctium.Protocol.DNS
             RecursionDesired = recursionDesired;
         }
 
-        public static DnsResolverOptions CreateDefault(IDnsResolverCache cache = null, ResourceRecord[] sbeltServers = null)
+        public static DnsResolverOptions CreateDefault()
         {
-            DnsResolverOptions options = new DnsResolverOptions(
-                sbeltServers ?? CreateDefaultSBeltServers(),
-                cache ?? new InMemoryDnsResolverCache());
-
-            return options;
+            return new DnsResolverOptions(CreateDefaultSBeltServers(), CreateDefaultCache());
         }
+
+        public static IDnsResolverCache CreateDefaultCache()
+        {
+            return new InMemoryDnsResolverCache();
+        }
+        
+        // public static void 
 
         public static ResourceRecord[] CreateDefaultSBeltServers()
         {
