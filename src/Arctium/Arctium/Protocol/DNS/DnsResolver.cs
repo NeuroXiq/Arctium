@@ -33,7 +33,7 @@ namespace Arctium.Protocol.DNS
             var recordsIp6 = await dnsResolverImpl.QueryServerAsStubResolver(serverIp, hostName, QType.AAAA);
             var result = recordsIp4
                 .Union(recordsIp6)
-                .Select(DnsSerialize.ConvertToIPAddress)
+                .Select(DnsResolverImpl.ConvertToIPAddress)
                 .ToArray();
 
             return result;
@@ -46,7 +46,7 @@ namespace Arctium.Protocol.DNS
 
             IPAddress[] result = ipv4Result
                 .Union(ipv6Result)
-                .Select(DnsSerialize.ConvertToIPAddress)
+                .Select(DnsResolverImpl.ConvertToIPAddress)
                 .ToArray();
 
             return result;

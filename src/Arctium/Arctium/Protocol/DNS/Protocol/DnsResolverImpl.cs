@@ -37,7 +37,7 @@ namespace Arctium.Protocol.DNS.Protocol
             Message clientMessage, serverMessage;
             ResourceRecord[] records;
 
-            if (skipCache || !options.Cache.TryGet(hostName, QClass.IN, qtype, out records))
+            if (skipCache || !TryResolveFromCache(hostName, QClass.IN, qtype, out records))
             {
                 clientMessage = CreateMessage(hostName, QClass.IN, qtype, true);
                 serverMessage = await SendMessage(clientMessage, serverIp);
@@ -50,10 +50,6 @@ namespace Arctium.Protocol.DNS.Protocol
                 }
                 else throw new DnsException($"ResponseCode is '{serverMessage.Header.RCode}'");
             }
-
-            throw new NotImplementedException("cache not return cname never")
-
-            
 
             return records;
         }
@@ -175,7 +171,6 @@ namespace Arctium.Protocol.DNS.Protocol
         {
             ResourceRecord[] records;
             HashSet<string> processedCnames = new HashSet<string>();
-            bool found = false;
             bool isCname;
             
             do
@@ -185,21 +180,23 @@ namespace Arctium.Protocol.DNS.Protocol
                 isCname = (requiredCache != null && requiredCache.TryGet(hostName, qclass, QType.CNAME, out records))
                     || options.Cache.TryGet(hostName, qclass, QType.CNAME, out records);
 
-                if (isCname && qtype == QType.CNAME)
+                if (isCname)
                 {
-                    result = records;
-                    return true;
+                    if (qtype == QType.CNAME)
+                    {
+                        result = records;
+                        return true;
+                    }
+
+                    hostName = records[0].AsRData<RDataCNAME>().CName;
+
+                    if (processedCnames.Contains(hostName))
+                        throw new DnsException("cache processing shows cyclic cname " + hostName);
                 }
-
-                hostName = records[0].AsRData<RDataCNAME>().CName;
-                
-                if (processedCnames.Contains(hostName))
-                    throw new DnsException("cache processing shows cyclic cname " + hostName);
-
             } while (isCname);
 
-            if ((requiredCache != null && requiredCache.TryGet(hostName, qclass, QType.CNAME, out result))
-                    || options.Cache.TryGet(hostName, qclass, QType.CNAME, out result))
+            if ((requiredCache != null && requiredCache.TryGet(hostName, qclass, qtype, out result))
+                    || options.Cache.TryGet(hostName, qclass, qtype, out result))
             {
                 return true;
             }
@@ -241,7 +238,7 @@ namespace Arctium.Protocol.DNS.Protocol
         private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
         {
             string serverToAskHostName;
-            ResourceRecord[] resultRecords, sbelt, exactAnswer, addresses;
+            ResourceRecord[] resultRecords, sbelt, exactAnswer;
             IPAddress[] serverToAskIps;
             Queue<string> nsToAsk = new Queue<string>();
             Message clientMessage, response = null;
@@ -320,7 +317,6 @@ namespace Arctium.Protocol.DNS.Protocol
                     }
 
                     serverToAskHostName = nsToAsk.Dequeue();
-                    Console.WriteLine("dequeue: " + serverToAskHostName);
 
                     // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
@@ -339,13 +335,13 @@ namespace Arctium.Protocol.DNS.Protocol
                         }
                         catch
                         {
-                            serverToAskIps = new IPAddress[0];
+                            serverToAskIps = null;
                         }
                     }
 
                     // cache (or resolved value) may be empty - this is ok because maybe there are no A/AAAA records
                     // and domain name is valid, skip this server
-                    if (serverToAskIps.Length == 0) continue;
+                    if (serverToAskIps == null || serverToAskIps.Length == 0) continue;
 
                     // query server
                     // if server has multiple IP addresses, try until first give response
