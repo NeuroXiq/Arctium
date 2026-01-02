@@ -62,11 +62,15 @@ namespace Arctium.IntegrationTests.Protocol
             var cache = new InMemoryDnsResolverCache();
             var options = new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), cache);
 
-            //var resolver = new DnsResolver(
             // act
+            var resolver = new DnsResolver(options);
+            var result = resolver.ResolveHostNameToHostAddressAsync("www.microsoft.com").Result;
 
             // assert
-            Assert.IsTrue(false);
+            // if cache has cname and result has any records means that
+            // resolved encountered 'cname' and resolved to ip
+            Assert.That(result.Any());
+            Assert.That(cache.TryGet("www.microsoft.com", QClass.IN, QType.CNAME, out var _));
         }
 
         #endregion

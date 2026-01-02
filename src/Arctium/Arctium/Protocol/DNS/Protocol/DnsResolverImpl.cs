@@ -192,10 +192,10 @@ namespace Arctium.Protocol.DNS.Protocol
         // todo max recursrion level
         private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
         {
-            RDataNS serverToAsk;
+            string serverToAskHostName;
             ResourceRecord[] resultRecords, serverToAskIps, sbelt, exactAnswer, addresses;
             IPAddress nsIPAddress;
-            Queue<ResourceRecord> nsToAsk = new Queue<ResourceRecord>();
+            Queue<string> nsToAsk = new Queue<string>();
             Message clientMessage, response = null;
             bool cacheResponse = true, isInfiniteLoop = false, isDelegation, innerBreak;
             string searchingDomain, cnameCacheResolved;
@@ -242,7 +242,10 @@ namespace Arctium.Protocol.DNS.Protocol
                 do
                 {
                     if (state.TryGet(searchingDomain, qclass, QType.NS, out ResourceRecord[] cachedNs))
+                    {
                         best.AddRange(cachedNs);
+                        
+                    }
 
                     searchingDomain = GetParentDomain(searchingDomain);
                 } while (searchingDomain != null);
@@ -251,13 +254,30 @@ namespace Arctium.Protocol.DNS.Protocol
                 best.AddRange(sbelt.Where(t => t.Type == QType.NS));
                 state.Set(sbelt);
 
+                // sorting by 'resourcerecord.name.length' descending is very important
+                // servers more close to sname are first
                 best = best
-                    .DistinctBy(t => t.AsRData<RDataNS>().NSDName)
+                    .Distinct() 
                     .OrderByDescending(t => t.Name.Length)
-                    .OrderByDescending(t => (state.TryGetAandAAAA(t.Name, qclass, out addresses) && addresses.Length > 0) ? 1 : 0)
+                    .OrderByDescending(t => {
+                        // order if already have ip (have ip first)
+
+                        string hostName = t.Type == QType.CNAME
+                            ? t.AsRData<RDataCNAME>().CName
+                            : t.AsRData<RDataNS>().NSDName;
+
+                        return (state.TryGetAandAAAA(hostName, qclass, out addresses) && addresses.Length > 0) ? 1 : 0;
+                        })
                     .ToList();
 
-                best.ForEach(nsToAsk.Enqueue);
+                foreach (var nsOrCname in best)
+                {
+                    string hostName = nsOrCname.Type == QType.NS
+                        ? nsOrCname.AsRData<RDataNS>().NSDName
+                        : nsOrCname.AsRData<RDataCNAME>().CName;
+                    
+                    nsToAsk.Enqueue(hostName);
+                }
 
                 // step 3 try to send queries to all server until one responds
                 do
@@ -267,20 +287,20 @@ namespace Arctium.Protocol.DNS.Protocol
                         throw new DnsException("failed to resolve - no more servers to ask (all asked servers failed)");
                     }
 
-                    serverToAsk = nsToAsk.Dequeue().AsRData<RDataNS>();
+                    serverToAskHostName = nsToAsk.Dequeue();
 
                     // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
                     // skip this server
-                    isInfiniteLoop = DnsSerialize.DnsNameEquals(serverToAsk.NSDName, sname);
+                    isInfiniteLoop = DnsSerialize.DnsNameEquals(serverToAskHostName, sname);
 
-                    if (!state.TryGetAandAAAA(serverToAsk.NSDName, qclass, out serverToAskIps) && !isInfiniteLoop)
+                    if (!state.TryGetAandAAAA(serverToAskHostName, qclass, out serverToAskIps) && !isInfiniteLoop)
                     {
                         try
                         {
-                            ResourceRecord[] serverIp4 = await QueryServerAsFullResolver(serverToAsk.NSDName, qclass, QType.A, state);
-                            ResourceRecord[] serverIp6 = await QueryServerAsFullResolver(serverToAsk.NSDName, qclass, QType.AAAA, state);
+                            ResourceRecord[] serverIp4 = await QueryServerAsFullResolver(serverToAskHostName, qclass, QType.A, state);
+                            ResourceRecord[] serverIp6 = await QueryServerAsFullResolver(serverToAskHostName, qclass, QType.AAAA, state);
 
                             serverToAskIps = serverIp4.Union(serverIp6).ToArray();
                         }
