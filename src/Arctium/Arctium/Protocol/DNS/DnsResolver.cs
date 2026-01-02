@@ -1,6 +1,7 @@
 ﻿using Arctium.Protocol.DNS.Model;
 using Arctium.Protocol.DNS.Protocol;
 using Arctium.Shared;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
@@ -52,14 +53,63 @@ namespace Arctium.Protocol.DNS
             return result;
         }
 
-        public string ResolveHostAddressToHostName(IPAddress ipAddress)
+        public string ResolveHostAddressToHostNameAsync(IPAddress dnsServerIp, IPAddress hostToResolveIp)
         {
-            dnsResolverImpl.ResolveHostAddressToHostName(ipAddress);
+            if (dnsServerIp == null) throw new ArgumentNullException("dnsServerIp");
+            if (hostToResolveIp == null) throw new ArgumentNullException("hostToResolveIp");
+
             throw new NotImplementedException();
-            return null;
+            // return ResolveInverseQueryAsync(dnsServerIp, null);
         }
 
-        public Task<ResourceRecord[]> ResolveGeneralLookupFunctionAsync(string hostName, QType qtype, QClass qclass)
+        public async Task<ResourceRecord[]> ResolvePtrReverseResolution(IPAddress dnsServerIp, IPAddress ipAddress)
+        {
+            string hostName;
+            byte[] i;
+            if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
+            {
+                i = ipAddress.GetAddressBytes();
+                hostName = string.Format("{0}.{1}.{2}.{3}.IN-ADDR.ARPA", i[3], i[2], i[1], i[0]);
+                Debugger.Break();
+
+            }
+            else if (ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                i = ipAddress.GetAddressBytes();
+                // reversed as nibbles
+                hostName = string.Format("" +
+                    "{0:X}.{1:X}.{2:X}.{3:X}.{4:X}.{5:X}.{6:X}.{7:X}.{8:X}." + 
+                    "{9:X}.{10:X}.{11:X}.{12:X}.{13:X}.{14:X}.{15:X}.{16:X}." + 
+                    "{17:X}.{18:X}.{19:X}.{20:X}.{21:X}.{22:X}.{23:X}.{24:X}." + 
+                    "{25:X}.{26:X}.{27:X}.{28:X}.{29:X}.{30:X}.{31:X}.ip6.arpa",
+                    (i[15] & 0x0F), ((i[15] >> 4) & 0x0F),
+                    (i[14] & 0x0F), ((i[14] >> 4) & 0x0F),
+                    (i[13] & 0x0F), ((i[13] >> 4) & 0x0F),
+                    (i[12] & 0x0F), ((i[12] >> 4) & 0x0F),
+                    (i[11] & 0x0F), ((i[11] >> 4) & 0x0F),
+                    (i[10] & 0x0F), ((i[10] >> 4) & 0x0F),
+                    (i[09] & 0x0F), ((i[09] >> 4) & 0x0F),
+                    (i[08] & 0x0F), ((i[08] >> 4) & 0x0F),
+                    (i[07] & 0x0F), ((i[07] >> 4) & 0x0F),
+                    (i[06] & 0x0F), ((i[06] >> 4) & 0x0F),
+                    (i[05] & 0x0F), ((i[05] >> 4) & 0x0F),
+                    (i[04] & 0x0F), ((i[04] >> 4) & 0x0F),
+                    (i[03] & 0x0F), ((i[03] >> 4) & 0x0F),
+                    (i[02] & 0x0F), ((i[02] >> 4) & 0x0F),
+                    (i[01] & 0x0F), ((i[01] >> 4) & 0x0F),
+                    (i[00] & 0x0F), ((i[00] >> 4) & 0x0F));
+
+            }
+            else throw new ArgumentException("ipAddress is not ip4 or ip6");
+
+            var result = await ResolveGeneralLookupFunctionAsync(hostName, QClass.IN, QType.PTR).ConfigureAwait(false);
+
+            Debugger.Break();
+
+            throw new NotImplementedException();
+        }
+
+        public Task<ResourceRecord[]> ResolveGeneralLookupFunctionAsync(string hostName, QClass qclass, QType qtype)
         {
             return dnsResolverImpl.QueryServerAsFullResolver(hostName, qclass, qtype);
         }

@@ -27,11 +27,6 @@ namespace Arctium.Protocol.DNS.Protocol
             throw new NotImplementedException();
         }
 
-        internal void ResolveHostAddressToHostName(IPAddress ipAddress)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<ResourceRecord[]> QueryServerAsStubResolver(IPAddress serverIp, string hostName, QType qtype, bool skipCache = false)
         {
             Message clientMessage, serverMessage;
@@ -233,8 +228,6 @@ namespace Arctium.Protocol.DNS.Protocol
             }
         }
 
-        
-
         // RFC-1035 5.3.3. Algorithm
         // todo max recursrion level
         private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
@@ -267,7 +260,6 @@ namespace Arctium.Protocol.DNS.Protocol
                 // * largest 'record.Name' length (best match with sname)
                 // * already cached IP Address
                 // * sbelt as last resort
-
                 searchingDomain = sname;
                 best = new List<ResourceRecord>();
 
@@ -285,12 +277,14 @@ namespace Arctium.Protocol.DNS.Protocol
                 best.AddRange(sbelt.Where(t => t.Type == QType.NS));
                 state.Set(sbelt);
 
-                // sorting by 'resourcerecord.name.length' descending is very important
-                // servers more close to sname are first
+                // sorting is very important,
+                // first must be servers that are most-near searching domain,
+                // means record.Name that has longest suffix must be first
                 best = best
-                    .Distinct() 
-                    .OrderByDescending(t => t.Name.Length)
-                    .OrderByDescending(t => {
+                    .Distinct()
+                    .OrderByDescending(t => sname.EndsWith(t.Name, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                    .ThenByDescending(t => t.Name.Length)
+                    .ThenByDescending(t => {
                         // order if already have ip (have ip first)
 
                         string hostName = t.Type == QType.CNAME
@@ -319,7 +313,6 @@ namespace Arctium.Protocol.DNS.Protocol
                     }
 
                     serverToAskHostName = nsToAsk.Dequeue();
-
                     // e.g. sname = 'ns1.server.com', servertoask='ns1.server.com', asking for 'A/AAAA' records
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip then
                     // need IP address of 'ns1.server.com' so need to query 'ns1.server.com' for ip etc.
@@ -370,12 +363,6 @@ namespace Arctium.Protocol.DNS.Protocol
                     // investigate server response
 
                     if (response == null) continue;
-
-                    Console.WriteLine("response: ");
-                    Console.WriteLine("answer:");
-                    Console.WriteLine(string.Join("\r\n", response.Answer.Select(t => t.RData.ToString()).ToArray()));
-                    Console.WriteLine("authority:");
-                    Console.WriteLine(string.Join("\r\n", response.Answer.Select(t => t.RData.ToString()).ToArray()));
 
                     isDelegation = response.Authority.Any(t => t.Type == QType.NS);
                     exactAnswer = response.Answer

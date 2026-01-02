@@ -5,7 +5,7 @@
         public static bool DnsNameEquals(string name1, string name2)
         {
             if (name1 == name2) return true;
-            if (name1 != null || name2 != null) return false;
+            if (name1 == null || name2 == null) return false;
 
             return string.Compare(name1, name2, true) == 0;
         }
