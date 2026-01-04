@@ -238,14 +238,19 @@ Following list shows all implemented features with links to examples
 |[RFC-3958](https://datatracker.ietf.org/doc/html/rfc3958)|January 2005|Domain-Based Application Service Location Using SRV RRs and the Dynamic Delegation Discovery Service (DDDS)|Docs todo|TODO|
 |[RFC-3915](https://datatracker.ietf.org/doc/html/rfc3915)|September 2004|Domain Registry Grace Period Mapping for the Extensible Provisioning Protocol (EPP)|Docs todo|TODO|
 |[RFC-3901](https://datatracker.ietf.org/doc/html/rfc3901)|September 2004|DNS IPv6 Transport Operational Guidelines|Docs todo|TODO|
+|[RFC-3845](https://datatracker.ietf.org/doc/html/rfc3833)|?|?|-|no (obsoleted)|
 |[RFC-3833](https://datatracker.ietf.org/doc/html/rfc3833)|August 2004|Threat Analysis of the Domain Name System (DNS)|Docs todo|TODO|
 |[RFC-3832](https://datatracker.ietf.org/doc/html/rfc3832)|July 2004|Remote Service Discovery in the Service Location Protocol (SLP) via DNS SRV|Docs todo|TODO|
+|[RFC-3757](https://datatracker.ietf.org/doc/html/rfc3757)|?|?|-|no (obsolete)|
+|[RFC-3755](https://datatracker.ietf.org/doc/html/rfc3755)|?|?|-|no (obsolete)|
 |[RFC-3743](https://datatracker.ietf.org/doc/html/rfc3743)|April 2004|Joint Engineering Team (JET) Guidelines for Internationalized Domain Names (IDN) Registration and Administration for Chinese, Japanese, and Korean|Docs todo|TODO|
 |[RFC-3707](https://datatracker.ietf.org/doc/html/rfc3707)|February 2004|Cross Registry Internet Service Protocol (CRISP) Requirements|Docs todo|TODO|
 |[RFC-3696](https://datatracker.ietf.org/doc/html/rfc3696)|February 2004|Application Techniques for Checking and Transformation of Names|Docs todo|TODO|
 |[RFC-3681](https://datatracker.ietf.org/doc/html/rfc3681)|January 2004|Delegation of E.F.F.3.IP6.ARPA|Docs todo|TODO|
 |[RFC-3675](https://datatracker.ietf.org/doc/html/rfc3675)|February 2004|.sex Considered Dangerous|Docs todo|TODO|
+|[RFC-3665](https://datatracker.ietf.org/doc/html/rfc3665)|?|?|-|no obsolete|
 |[RFC-3663](https://datatracker.ietf.org/doc/html/rfc3663)|December 2003|Domain Administrative Data in Lightweight Directory Access Protocol (LDAP)|Docs todo|TODO|
+|[RFC-3658](https://datatracker.ietf.org/doc/html/rfc3658)|?|?|-|no obsolete|
 |[RFC-3646](https://datatracker.ietf.org/doc/html/rfc3646)|December 2003|DNS Configuration options for Dynamic Host Configuration Protocol for IPv6 (DHCPv6)|Docs todo|TODO|
 |[RFC-3645](https://datatracker.ietf.org/doc/html/rfc3645)|October 2003|Generic Security Service Algorithm for Secret Key Transaction Authentication for DNS (GSS-TSIG)|Docs todo|TODO|
 |[RFC-3632](https://datatracker.ietf.org/doc/html/rfc3632)|November 2003|VeriSign Registry Registrar Protocol (RRP) Version 2.0.0|Docs todo|TODO|
@@ -253,6 +258,7 @@ Following list shows all implemented features with links to examples
 |[RFC-3596](https://datatracker.ietf.org/doc/html/rfc3596)|October 2003|DNS Extensions to Support IP Version 6|Docs todo|TODO|
 |[RFC-3492](https://datatracker.ietf.org/doc/html/rfc3492)|March 2003|Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)|Docs todo|TODO|
 |[RFC-3467](https://datatracker.ietf.org/doc/html/rfc3467)|February 2003|Role of the Domain Name System (DNS)|Docs todo|TODO|
+|[RFC-3445](https://datatracker.ietf.org/doc/html/rfc3445)|?|?|-|no obsolete|
 |[RFC-3425](https://datatracker.ietf.org/doc/html/rfc3425)|November 2002|Obsoleting IQUERY|Docs todo|TODO|
 |[RFC-3405](https://datatracker.ietf.org/doc/html/rfc3405)|October 2002|Dynamic Delegation Discovery System (DDDS) Part Five: URI.ARPA Assignment Procedures|Docs todo|TODO|
 |[RFC-3404](https://datatracker.ietf.org/doc/html/rfc3404)|October 2002|Dynamic Delegation Discovery System (DDDS) Part Four: The Uniform Resource Identifiers (URI)|Docs todo|TODO|
@@ -271,8 +277,10 @@ Following list shows all implemented features with links to examples
 |[RFC-3130](https://datatracker.ietf.org/doc/html/rfc3130)|June 2001|Notes from the State-Of-The-Technology: DNSSEC|Docs todo|TODO|
 |[RFC-3123](https://datatracker.ietf.org/doc/html/rfc3123)|June 2001|A DNS RR Type for Lists of Address Prefixes (APL RR)|Docs todo|TODO|
 |[RFC-3110](https://datatracker.ietf.org/doc/html/rfc3110)|May 2001|RSA/SHA-1 SIGs and RSA KEYs in the Domain Name System (DNS)|Docs todo|TODO|
+|[RFC-3090](https://datatracker.ietf.org/doc/html/rfc3090)|?|?|-|no obsolete|
 |[RFC-3071](https://datatracker.ietf.org/doc/html/rfc3071)|February 2001|Reflections on the DNS, RFC 1591, and Categories of Domains|Docs todo|TODO|
 |[RFC-3026](https://datatracker.ietf.org/doc/html/rfc3026)|January 2001|Liaison to IETF/ISOC on ENUM|Docs todo|TODO|
+|[RFC-3008](https://datatracker.ietf.org/doc/html/rfc3008)|?|?|-|no obsolete|
 |[RFC-3007](https://datatracker.ietf.org/doc/html/rfc3007)|November 2000|Secure Domain Name System (DNS) Dynamic Update|Docs todo|TODO|
 |[RFC-2931](https://datatracker.ietf.org/doc/html/rfc2931)|September 2000|DNS Request and Transaction Signatures ( SIG(0)s )|Docs todo|TODO|
 |[RFC-2930](https://datatracker.ietf.org/doc/html/rfc2930)|September 2000|Secret Key Establishment for DNS (TKEY RR)|Docs todo|TODO|
@@ -287,6 +295,7 @@ Following list shows all implemented features with links to examples
 |[RFC-2540](https://datatracker.ietf.org/doc/html/rfc2540)|March 1999|Detached Domain Name System (DNS) Information|Docs todo|TODO|
 |[RFC-2539](https://datatracker.ietf.org/doc/html/rfc2539)|March 1999|Storage of Diffie-Hellman Keys in the Domain Name System (DNS)|Docs todo|TODO|
 |[RFC-2536](https://datatracker.ietf.org/doc/html/rfc2536)|March 1999|DSA KEYs and SIGs in the Domain Name System (DNS)|Docs todo|TODO|
+|[RFC-2535](https://datatracker.ietf.org/doc/html/rfc2535)|?|?|-|no obsolete|
 |[RFC-2517](https://datatracker.ietf.org/doc/html/rfc2517)|February 1999|Building Directories from DNS: Experiences from WWWSeeker|Docs todo|TODO|
 |[RFC-2352](https://datatracker.ietf.org/doc/html/rfc2352)|May 1998|A Convention For Using Legal Names as Domain Names|Docs todo|TODO|
 |[RFC-2345](https://datatracker.ietf.org/doc/html/rfc2345)|May 1998|Domain Names and Company Name Retrieval|Docs todo|TODO|
@@ -299,6 +308,7 @@ Following list shows all implemented features with links to examples
 |[RFC-2163](https://datatracker.ietf.org/doc/html/rfc2163)|January 1998|Using the Internet DNS to Distribute MIXER Conformant Global Address Mapping (MCGAM)|Docs todo|TODO|
 |[RFC-2146](https://datatracker.ietf.org/doc/html/rfc2146)|May 1997|U.S. Government Internet Domain Names|Docs todo|TODO|
 |[RFC-2136](https://datatracker.ietf.org/doc/html/rfc2136)|April 1997|Dynamic Updates in the Domain Name System (DNS UPDATE)|Docs todo|TODO|
+|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|?|?|-|no obsolete|
 |[RFC-2053](https://datatracker.ietf.org/doc/html/rfc2053)|October 1996|The AM (Armenia) Domain|Docs todo|TODO|
 |[RFC-1996](https://datatracker.ietf.org/doc/html/rfc1996)|August 1996|A Mechanism for Prompt Notification of Zone Changes (DNS NOTIFY)|Docs todo|TODO|
 |[RFC-1995](https://datatracker.ietf.org/doc/html/rfc1995)|August 1996|Incremental Zone Transfer in DNS|Docs todo|TODO|
