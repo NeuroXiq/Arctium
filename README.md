@@ -282,6 +282,7 @@ Following list shows all implemented features with links to examples
 |[RFC-3026](https://datatracker.ietf.org/doc/html/rfc3026)|January 2001|Liaison to IETF/ISOC on ENUM|Docs todo|TODO|
 |[RFC-3008](https://datatracker.ietf.org/doc/html/rfc3008)|?|?|-|no obsolete|
 |[RFC-3007](https://datatracker.ietf.org/doc/html/rfc3007)|November 2000|Secure Domain Name System (DNS) Dynamic Update|Docs todo|TODO|
+|[RFC-3008](https://datatracker.ietf.org/doc/html/rfc2929)|?|?|-|no (obsoleted by 5395)|
 |[RFC-2931](https://datatracker.ietf.org/doc/html/rfc2931)|September 2000|DNS Request and Transaction Signatures ( SIG(0)s )|Docs todo|TODO|
 |[RFC-2930](https://datatracker.ietf.org/doc/html/rfc2930)|September 2000|Secret Key Establishment for DNS (TKEY RR)|Docs todo|TODO|
 |[RFC-2915](https://datatracker.ietf.org/doc/html/rfc2915)|September 2000|The Naming Authority Pointer (NAPTR) DNS Resource Record|Docs todo|TODO|
