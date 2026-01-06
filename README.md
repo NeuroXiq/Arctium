@@ -333,7 +333,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1394](https://datatracker.ietf.org/doc/html/rfc1394)|January 1993|Relationship of Telex Answerback Codes to Internet Domains|Docs todo|TODO|
 |[RFC-1383](https://datatracker.ietf.org/doc/html/rfc1383)|December 1992|An Experiment in DNS Based IP Routing|Docs todo|TODO|
 |[RFC-1279](https://datatracker.ietf.org/doc/html/rfc1279)|November 1991|X.500 and Domains|Docs todo|TODO|
-|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|October 1990|New DNS RR Definitions|Docs todo|TODO|
+|[RFC-1183](https://datatracker.ietf.org/doc/html/rfc1183)|October 1990|New DNS RR Definitions|Docs todo|TODO (AFSDB todo)|
 |[RFC-1101](https://datatracker.ietf.org/doc/html/rfc1101)|April 1989|DNS encoding of network names and other types|Docs todo|no (UNKNOWN)|
 |[RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035)|November 1987|Domain names - implementation and specification|Docs todo|yes|
 |[RFC-1034](https://datatracker.ietf.org/doc/html/rfc1034)|November 1987|Domain names - concepts and facilities|Docs todo|yes|
