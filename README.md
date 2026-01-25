@@ -326,7 +326,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1611](https://datatracker.ietf.org/doc/html/rfc1611)|May 1994|DNS Server MIB Extensions|Docs todo|TODO|
 |[RFC-1591](https://datatracker.ietf.org/doc/html/rfc1591)|March 1994|Domain Name System Structure and Delegation|Docs todo|TODO|
 |[RFC-1536](https://datatracker.ietf.org/doc/html/rfc1536)|October 1993|Common DNS Implementation Errors and Suggested Fixes|Docs todo|TODO|
-|[RFC-1535](https://datatracker.ietf.org/doc/html/rfc1535)|October 1993|A Security Problem and Proposed Correction With Widely Deployed DNS Software|Docs todo|TODO|
+|[RFC-1535](https://datatracker.ietf.org/doc/html/rfc1535)|October 1993|A Security Problem and Proposed Correction With Widely Deployed DNS Software|Docs todo|no (informational)|
 |[RFC-1480](https://datatracker.ietf.org/doc/html/rfc1480)|June 1993|The US Domain|-|no (informational)|
 |[RFC-1464](https://datatracker.ietf.org/doc/html/rfc1464)|May 1993|Using the Domain Name System To Store Arbitrary String Attributes|-|no (existing code do this)|
 |[RFC-1401](https://datatracker.ietf.org/doc/html/rfc1401)|January 1993|Correspondence between the IAB and DISA on the use of DNS|-|no (informational)|
