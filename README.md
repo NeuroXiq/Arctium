@@ -344,7 +344,7 @@ Following list shows all implemented features with links to examples
 |[RFC-0974](https://datatracker.ietf.org/doc/html/rfc0974)|January 1986|Mail routing and the domain system|Docs todo|TODO|
 |[RFC-0952](https://datatracker.ietf.org/doc/html/rfc0952)|October 1985|DoD Internet host table specification|Docs todo|TODO|
 |[RFC-0921](https://datatracker.ietf.org/doc/html/rfc0921)|October 1984|Domain name system implementation schedule|Docs todo|TODO|
-|[RFC-0920](https://datatracker.ietf.org/doc/html/rfc0920)|October 1984|Domain requirements|Docs todo|TODO|
+|[RFC-0920](https://datatracker.ietf.org/doc/html/rfc0920)|October 1984|Domain requirements|-|no (legacy)|
 |[RFC-0897](https://datatracker.ietf.org/doc/html/rfc0897)|February 1984|Domain name system implementation schedule|-|no (legacy)|
 |[RFC-0881](https://datatracker.ietf.org/doc/html/rfc0881)|November 1983|Domain names plan and schedule|-|no (legacy)|
 |[RFC-0819](https://datatracker.ietf.org/doc/html/rfc0819)|August 1982|Domain naming convention for Internet user applications|-|no (legacy)|
