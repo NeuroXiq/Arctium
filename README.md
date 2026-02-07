@@ -347,7 +347,7 @@ Following list shows all implemented features with links to examples
 |[RFC-0920](https://datatracker.ietf.org/doc/html/rfc0920)|October 1984|Domain requirements|Docs todo|TODO|
 |[RFC-0897](https://datatracker.ietf.org/doc/html/rfc0897)|February 1984|Domain name system implementation schedule|Docs todo|TODO|
 |[RFC-0881](https://datatracker.ietf.org/doc/html/rfc0881)|November 1983|Domain names plan and schedule|Docs todo|TODO|
-|[RFC-0819](https://datatracker.ietf.org/doc/html/rfc0819)|August 1982|Domain naming convention for Internet user applications|Docs todo|TODO|
+|[RFC-0819](https://datatracker.ietf.org/doc/html/rfc0819)|August 1982|Domain naming convention for Internet user applications|-|no (legacy)|
 |[RFC-0799](https://datatracker.ietf.org/doc/html/rfc0799)|September 1981|Internet name domains|-|no (legacy)|
 
 
