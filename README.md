@@ -342,7 +342,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1032](https://datatracker.ietf.org/doc/html/rfc1032)|November 1987|Domain administrators guide|Docs todo|TODO|
 |[RFC-1031](https://datatracker.ietf.org/doc/html/rfc1031)|November 1987|MILNET name domain transition|Docs todo|TODO|
 |[RFC-0974](https://datatracker.ietf.org/doc/html/rfc0974)|January 1986|Mail routing and the domain system|Docs todo|TODO|
-|[RFC-0952](https://datatracker.ietf.org/doc/html/rfc0952)|October 1985|DoD Internet host table specification|Docs todo|TODO|
+|[RFC-0952](https://datatracker.ietf.org/doc/html/rfc0952)|October 1985|DoD Internet host table specification|-|no (legacy)|
 |[RFC-0921](https://datatracker.ietf.org/doc/html/rfc0921)|October 1984|Domain name system implementation schedule|-|no (legacy)|
 |[RFC-0920](https://datatracker.ietf.org/doc/html/rfc0920)|October 1984|Domain requirements|-|no (legacy)|
 |[RFC-0897](https://datatracker.ietf.org/doc/html/rfc0897)|February 1984|Domain name system implementation schedule|-|no (legacy)|
