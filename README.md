@@ -339,7 +339,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035)|November 1987|Domain names - implementation and specification|Docs todo|yes|
 |[RFC-1034](https://datatracker.ietf.org/doc/html/rfc1034)|November 1987|Domain names - concepts and facilities|Docs todo|yes|
 |[RFC-1033](https://datatracker.ietf.org/doc/html/rfc1033)|November 1987|Domain Administrators Operations Guide|Docs todo|TODO|
-|[RFC-1032](https://datatracker.ietf.org/doc/html/rfc1032)|November 1987|Domain administrators guide|Docs todo|TODO|
+|[RFC-1032](https://datatracker.ietf.org/doc/html/rfc1032)|November 1987|Domain administrators guide|-|no (legacy)|
 |[RFC-1031](https://datatracker.ietf.org/doc/html/rfc1031)|November 1987|MILNET name domain transition|-|no (legacy)|
 |[RFC-0974](https://datatracker.ietf.org/doc/html/rfc0974)|January 1986|Mail routing and the domain system|-|no (legacy)|
 |[RFC-0952](https://datatracker.ietf.org/doc/html/rfc0952)|October 1985|DoD Internet host table specification|-|no (legacy)|
