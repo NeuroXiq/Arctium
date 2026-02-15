@@ -322,7 +322,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1713](https://datatracker.ietf.org/doc/html/rfc1713)|November 1994|Tools for DNS debugging|Docs todo|TODO|
 |[RFC-1712](https://datatracker.ietf.org/doc/html/rfc1712)|November 1994|DNS Encoding of Geographical Location|Docs todo|TODO|
 |[RFC-1706](https://datatracker.ietf.org/doc/html/rfc1706)|October 1994|DNS NSAP Resource Records|Docs todo|TODO|
-|[RFC-1612](https://datatracker.ietf.org/doc/html/rfc1612)|May 1994|DNS Resolver MIB Extensions|Docs todo|TODO|
+|[RFC-1612](https://datatracker.ietf.org/doc/html/rfc1612)|May 1994|DNS Resolver MIB Extensions|-|no (historic)|
 |[RFC-1611](https://datatracker.ietf.org/doc/html/rfc1611)|May 1994|DNS Server MIB Extensions|-|no (historic)|
 |[RFC-1591](https://datatracker.ietf.org/doc/html/rfc1591)|March 1994|Domain Name System Structure and Delegation|-|no (legacy)|
 |[RFC-1536](https://datatracker.ietf.org/doc/html/rfc1536)|October 1993|Common DNS Implementation Errors and Suggested Fixes|Docs todo|no (informational)|
