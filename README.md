@@ -318,7 +318,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1912](https://datatracker.ietf.org/doc/html/rfc1912)|February 1996|Common DNS Operational and Configuration Errors|Docs todo|TODO|
 |[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|January 1996|A Means for Expressing Location Information in the Domain Name System|Docs todo|TODO|
 |[RFC-1794](https://datatracker.ietf.org/doc/html/rfc1794)|April 1995|DNS Support for Load Balancing|Docs todo|TODO|
-|[RFC-1788](https://datatracker.ietf.org/doc/html/rfc1788)|April 1995|ICMP Domain Name Messages|Docs todo|TODO|
+|[RFC-1788](https://datatracker.ietf.org/doc/html/rfc1788)|April 1995|ICMP Domain Name Messages|-|no (legacy)|
 |[RFC-1713](https://datatracker.ietf.org/doc/html/rfc1713)|November 1994|Tools for DNS debugging|-|no (legacy)|
 |[RFC-1712](https://datatracker.ietf.org/doc/html/rfc1712)|November 1994|DNS Encoding of Geographical Location|-|maybe (legacy)|
 |[RFC-1706](https://datatracker.ietf.org/doc/html/rfc1706)|October 1994|DNS NSAP Resource Records|-|no (legacy)|
