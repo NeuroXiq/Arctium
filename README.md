@@ -313,7 +313,7 @@ Following list shows all implemented features with links to examples
 |[RFC-2053](https://datatracker.ietf.org/doc/html/rfc2053)|October 1996|The AM (Armenia) Domain|Docs todo|TODO|
 |[RFC-1996](https://datatracker.ietf.org/doc/html/rfc1996)|August 1996|A Mechanism for Prompt Notification of Zone Changes (DNS NOTIFY)|Docs todo|TODO|
 |[RFC-1995](https://datatracker.ietf.org/doc/html/rfc1995)|August 1996|Incremental Zone Transfer in DNS|Docs todo|TODO|
-|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|August 1996|Serial Number Arithmetic|Docs todo|TODO|
+|[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|August 1996|Serial Number Arithmetic|-|maybe (proposed)|
 |[RFC-1956](https://datatracker.ietf.org/doc/html/rfc1956)|June 1996|Registration in the MIL Domain|-|no (informational)|
 |[RFC-1912](https://datatracker.ietf.org/doc/html/rfc1912)|February 1996|Common DNS Operational and Configuration Errors|-|no (legacy)|
 |[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|January 1996|A Means for Expressing Location Information in the Domain Name System|-|maybe (legacy)|
