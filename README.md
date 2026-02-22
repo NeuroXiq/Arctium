@@ -315,7 +315,7 @@ Following list shows all implemented features with links to examples
 |[RFC-1995](https://datatracker.ietf.org/doc/html/rfc1995)|August 1996|Incremental Zone Transfer in DNS|Docs todo|TODO|
 |[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|August 1996|Serial Number Arithmetic|Docs todo|TODO|
 |[RFC-1956](https://datatracker.ietf.org/doc/html/rfc1956)|June 1996|Registration in the MIL Domain|Docs todo|TODO|
-|[RFC-1912](https://datatracker.ietf.org/doc/html/rfc1912)|February 1996|Common DNS Operational and Configuration Errors|Docs todo|TODO|
+|[RFC-1912](https://datatracker.ietf.org/doc/html/rfc1912)|February 1996|Common DNS Operational and Configuration Errors|-|no (legacy)|
 |[RFC-1876](https://datatracker.ietf.org/doc/html/rfc1876)|January 1996|A Means for Expressing Location Information in the Domain Name System|-|maybe (legacy)|
 |[RFC-1794](https://datatracker.ietf.org/doc/html/rfc1794)|April 1995|DNS Support for Load Balancing|-|no (informational)|
 |[RFC-1788](https://datatracker.ietf.org/doc/html/rfc1788)|April 1995|ICMP Domain Name Messages|-|no (legacy)|
