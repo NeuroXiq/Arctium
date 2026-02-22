@@ -1,11 +1,13 @@
 ﻿# dns
 RFC-1183
--debuggin tools? (e.g. has glue records, no cname loops etc.?)
-** tdp tabular data protocol sql
-** rdp
-** dhcp
-** tor
-** ssh
+-debuggin tools? (e.g. has glue records, no cname loops etc.?), rfc1912
+
+# tdp tabular data protocol sql
+# rdp
+# dhcp
+# tor
+# ssh
+
 
 
 
