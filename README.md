@@ -311,7 +311,7 @@ Following list shows all implemented features with links to examples
 |[RFC-2136](https://datatracker.ietf.org/doc/html/rfc2136)|April 1997|Dynamic Updates in the Domain Name System (DNS UPDATE)|Docs todo|TODO|
 |[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|?|?|-|no obsolete|
 |[RFC-2053](https://datatracker.ietf.org/doc/html/rfc2053)|October 1996|The AM (Armenia) Domain|Docs todo|TODO|
-|[RFC-1996](https://datatracker.ietf.org/doc/html/rfc1996)|August 1996|A Mechanism for Prompt Notification of Zone Changes (DNS NOTIFY)|Docs todo|TODO|
+|[RFC-1996](https://datatracker.ietf.org/doc/html/rfc1996)|August 1996|A Mechanism for Prompt Notification of Zone Changes (DNS NOTIFY)|-|(todo)|
 |[RFC-1995](https://datatracker.ietf.org/doc/html/rfc1995)|August 1996|Incremental Zone Transfer in DNS|-|(todo)|
 |[RFC-1982](https://datatracker.ietf.org/doc/html/rfc1982)|August 1996|Serial Number Arithmetic|-|maybe (proposed)|
 |[RFC-1956](https://datatracker.ietf.org/doc/html/rfc1956)|June 1996|Registration in the MIL Domain|-|no (informational)|
