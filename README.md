@@ -309,7 +309,7 @@ Following list shows all implemented features with links to examples
 |[RFC-2163](https://datatracker.ietf.org/doc/html/rfc2163)|January 1998|Using the Internet DNS to Distribute MIXER Conformant Global Address Mapping (MCGAM)|Docs todo|TODO|
 |[RFC-2146](https://datatracker.ietf.org/doc/html/rfc2146)|May 1997|U.S. Government Internet Domain Names|Docs todo|TODO|
 |[RFC-2136](https://datatracker.ietf.org/doc/html/rfc2136)|April 1997|Dynamic Updates in the Domain Name System (DNS UPDATE)|Docs todo|TODO|
-|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|?|?|-|no obsolete|
+|[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|January 1997|Domain Name System Security Extensions|-|no (obsoleted) (obsoleted by rfc2535)|
 |[RFC-2053](https://datatracker.ietf.org/doc/html/rfc2053)|October 1996|The AM (Armenia) Domain|-|no (informational)|
 |[RFC-1996](https://datatracker.ietf.org/doc/html/rfc1996)|August 1996|A Mechanism for Prompt Notification of Zone Changes (DNS NOTIFY)|-|(todo)|
 |[RFC-1995](https://datatracker.ietf.org/doc/html/rfc1995)|August 1996|Incremental Zone Transfer in DNS|-|(todo)|
