@@ -21,23 +21,6 @@ namespace Arctium.Protocol.DNS
             dnsResolverImpl = new DnsResolverImpl(options);
         }
 
-        /// <summary>
-        /// Stub resolver, use specific server, send message with 'recursion desired' flag 
-        /// and return response
-        /// </summary>
-        /// <returns></returns>
-        public async Task<IPAddress[]> ResolveHostNameToAddressAsStubAsync(IPAddress serverIp, string hostName)
-        {
-            var recordsIp4 = await dnsResolverImpl.QueryServerAsStubResolver(serverIp, hostName, QType.A);
-            var recordsIp6 = await dnsResolverImpl.QueryServerAsStubResolver(serverIp, hostName, QType.AAAA);
-            var result = recordsIp4
-                .Union(recordsIp6)
-                .Select(DnsResolverImpl.ConvertToIPAddress)
-                .ToArray();
-
-            return result;
-        }
-
         public async Task<IPAddress[]> ResolveHostNameToHostAddressAsync(string hostName)
         {
             ResourceRecord[] ipv4Result = await dnsResolverImpl.QueryServerAsFullResolver(hostName, QClass.IN, QType.A);

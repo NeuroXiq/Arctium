@@ -27,45 +27,6 @@ namespace Arctium.Protocol.DNS.Protocol
             throw new NotImplementedException();
         }
 
-        public async Task<ResourceRecord[]> QueryServerAsStubResolver(IPAddress serverIp, string hostName, QType qtype, bool skipCache = false)
-        {
-            Message clientMessage, serverMessage;
-            ResourceRecord[] records;
-
-            if (skipCache || !TryResolveFromCache(hostName, QClass.IN, qtype, out records))
-            {
-                clientMessage = CreateMessage(hostName, QClass.IN, qtype, true);
-                serverMessage = await SendMessage(clientMessage, serverIp);
-
-                if (serverMessage.Header.RCode == ResponseCode.NoErrorCondition)
-                {
-                    options.Cache.Set(serverMessage.Answer);
-
-                    // resolve cname alias
-                    string cname = hostName;
-                    ResourceRecord r = null;
-                    
-                    for (int i = 0; i < serverMessage.Answer.Length; i++)
-                    {
-                        r = serverMessage.Answer
-                            .Where(t => t.IsNameTypeClassEqual(cname, QClass.IN, QType.CNAME))
-                            .FirstOrDefault();
-
-                        if (r != null) cname = r.AsRData<RDataCNAME>().CName;
-                    }
-
-                    if (r != null) throw new DnsException("cyclic cname");
-
-                    records = serverMessage.Answer
-                        .Where(t => t.IsNameTypeClassEqual(cname, QClass.IN, qtype))
-                        .ToArray();
-                }
-                else throw new DnsException($"ResponseCode is '{serverMessage.Header.RCode}'");
-            }
-
-            return records;
-        }
-
         private async Task<Message> SendMessage(
             Message clientMessage,
             IPAddress ipAddress,

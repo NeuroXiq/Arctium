@@ -11,8 +11,6 @@ namespace Arctium.IntegrationTests.Protocol
     [TestFixture]
     public class DnsResolverIntegrationTests
     {
-        static readonly IPAddress GoogleDnsIp = IPAddress.Parse("8.8.8.8");
-
         #region RFC1035
 
         /// <summary>
@@ -104,11 +102,15 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_StubResolveWillWork()
         {
-            var resolver = CreateResolver();
-            var result1 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.google.com").Result;
-            var result2 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.microsoft.com").Result;
-            var result3 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.gmail.com").Result;
-            var result4 = resolver.ResolveHostNameToAddressAsStubAsync(GoogleDnsIp, "www.youtube.com").Result;
+            var options = DnsResolverOptions.CreateDefault();
+            options.RecursionDesired = true;
+            options.SBeltServers = DnsWellKnownServers.Google8888.AsResourceRecords;
+            var resolver = new DnsResolver();
+
+            var result1 = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
+            var result2 = resolver.ResolveHostNameToHostAddressAsync("www.microsoft.com").Result;
+            var result3 = resolver.ResolveHostNameToHostAddressAsync("www.gmail.com").Result;
+            var result4 = resolver.ResolveHostNameToHostAddressAsync("www.youtube.com").Result;
 
             Assert.That(result1.Any());
             Assert.That(result2.Any());

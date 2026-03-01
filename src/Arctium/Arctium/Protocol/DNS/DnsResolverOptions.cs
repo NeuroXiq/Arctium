@@ -7,7 +7,7 @@ namespace Arctium.Protocol.DNS
         public const int DefaultUdpSocketTimeoutMs = 10000;
         public const int DefaultTcpSocketTimeoutMs = 10000;
 
-        public ResourceRecord[] SBeltServers { get; private set; }
+        public ResourceRecord[] SBeltServers { get; set; }
         
         public IDnsResolverCache Cache { get; private set; }
 
@@ -31,7 +31,7 @@ namespace Arctium.Protocol.DNS
         /// <summary>
         /// Recursion-desired flag
         /// </summary>
-        public readonly bool RecursionDesired;
+        public bool RecursionDesired { get; set; }
 
         /// <summary>
         /// </summary>
@@ -72,19 +72,7 @@ namespace Arctium.Protocol.DNS
 
         public static ResourceRecord[] CreateDefaultSBeltServers()
         {
-            var roots = DnsRootServers.All.SelectMany(t => new ResourceRecord[]
-            {
-                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = "", TTL = 1000, RData = new RDataNS(t.HostName) },
-                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = t.HostName, TTL = 1000, RData = new RDataA(t.IPv4Address.ToString()) },
-                new ResourceRecord() { Class = QClass.IN, Type = QType.AAAA, Name = t.HostName, TTL = 1000, RData = new RDataAAAA(t.IPv6Address.GetAddressBytes()) },
-            }).ToList();
-
-            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 });
-            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.8.8"), TTL = 1000 });
-            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 });
-            roots.Add(new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.4.4"), TTL = 1000 });
-
-            var sbeltServers = roots.ToArray();
+            var sbeltServers = DnsWellKnownServers.GetAllAsRecords();
 
             return sbeltServers;
         }
