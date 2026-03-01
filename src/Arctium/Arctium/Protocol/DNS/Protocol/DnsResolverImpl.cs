@@ -17,16 +17,6 @@ namespace Arctium.Protocol.DNS.Protocol
             this.options = options;
         }
 
-        internal async Task SendDnsMessage(Message message)
-        {
-            return;
-        }
-
-        internal void ResolveGeneralLookupFunction(string hostName, QType qtype, QClass qclass)
-        {
-            throw new NotImplementedException();
-        }
-
         private async Task<Message> SendMessage(
             Message clientMessage,
             IPAddress ipAddress,
