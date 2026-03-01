@@ -8,8 +8,8 @@ namespace Arctium.Protocol.DNS
         public const int DefaultTcpSocketTimeoutMs = 10000;
 
         public ResourceRecord[] SBeltServers { get; set; }
-        
         public IDnsResolverCache Cache { get; private set; }
+        public IDnsClientMessageIO ClientMessageIO { get; set; }
 
         /// <summary>
         /// Max TTL. If TTL from received packet exceed this limit it is dropped.
@@ -23,10 +23,7 @@ namespace Arctium.Protocol.DNS
         /// exception will be thrown
         /// </summary>
         public int MaxRequestCountForResolve { get; private set; }
-        
-        public int UdpSocketRecvTimeoutMs { get; private set; }
-        
-        public int TcpSocketRecvTimeoutMs { get; private set; }
+       
         
         /// <summary>
         /// Recursion-desired flag
@@ -40,8 +37,6 @@ namespace Arctium.Protocol.DNS
             IDnsResolverCache cache,
             int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds,
             int maxRequestCountForResolve = 150,
-            int udpSocketTimeout = DefaultUdpSocketTimeoutMs,
-            int tcpSocketTimeout = DefaultTcpSocketTimeoutMs,
             bool recursionDesired = true)
         {
             if (sbeltDnsServers == null || sbeltDnsServers.Length == 0)
@@ -51,8 +46,6 @@ namespace Arctium.Protocol.DNS
                 throw new ArgumentNullException("cache");
 
             MaxRequestCountForResolve = maxRequestCountForResolve;
-            UdpSocketRecvTimeoutMs = udpSocketTimeout;
-            TcpSocketRecvTimeoutMs = tcpSocketTimeout;
             SBeltServers = sbeltDnsServers;
             Cache = cache;
             RecursionDesired = recursionDesired;

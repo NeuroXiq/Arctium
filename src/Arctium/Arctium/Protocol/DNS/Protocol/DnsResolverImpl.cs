@@ -2,9 +2,6 @@
 using Arctium.Shared;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace Arctium.Protocol.DNS.Protocol
 {
@@ -17,55 +14,12 @@ namespace Arctium.Protocol.DNS.Protocol
             this.options = options;
         }
 
-        private async Task<Message> SendMessage(
-            Message clientMessage,
-            IPAddress ipAddress,
-            bool replyTcpWhenTruncated = true)
+        private Task<Message> SendMessage(Message clientMessage, IPAddress ipAddress)
         {
-            byte[] receiveBuffer;
-            SocketReceiveFromResult sresult;
-            IPEndPoint endpoint = null;
-            Message serverMessage = null, result;
-            DnsSerialize serialize = new DnsSerialize();
-            ByteBuffer bbuf = new ByteBuffer();
-
-            serialize.Encode(clientMessage, bbuf);
-
-            if (bbuf.Length <= DnsConsts.UdpSizeLimit)
-            {
-                receiveBuffer = new byte[DnsConsts.UdpSizeLimit];
-                endpoint = new IPEndPoint(ipAddress, DnsConsts.DefaultServerDnsPort);
-                using var timeout = new CancellationTokenSource(options.UdpSocketRecvTimeoutMs);
-
-                using (Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp))
-                {
-                    await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
-                    sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint, timeout.Token);
-                }
-
-                result = serialize.Decode(new BytesCursor(receiveBuffer, 0, sresult.ReceivedBytes));
-                serverMessage = result;
-
-                if (serverMessage.Header.Id != clientMessage.Header.Id)
-                    throw new DnsException(DnsProtocolError.ClientError, "server header id reply does not match client header ID");
-            }
-
-            if (serverMessage == null || (replyTcpWhenTruncated && serverMessage?.Header.TC == true))
-            {
-                using var timeout = new CancellationTokenSource(options.UdpSocketRecvTimeoutMs);
-
-                throw new NotImplementedException();
-
-                serverMessage = null; //todo
-            }
-
-            if (serverMessage.Header.Id != clientMessage.Header.Id)
-                throw new DnsException(DnsProtocolError.ClientError, "server header id reply does not match client header ID");
-
-            return serverMessage;
+            return options.ClientMessageIO.QueryServerAsync(clientMessage, ipAddress);
         }
 
-        Message CreateMessage(string hostName, QClass qclass, QType qtype, bool rd)
+        Message CreateMessage(string hostName, QClass qclass, QType qtype)
         {
             Header header = new Header
             {
@@ -315,12 +269,12 @@ namespace Arctium.Protocol.DNS.Protocol
                         {
                             state.RequestCounter++;
 
-                            if (state.RequestCounter >= options.MaxRequestCountForResolve)
+                            if (state.RequestCounter > options.MaxRequestCountForResolve)
                             {
                                 throw new DnsException("error, maximum number of requests, operation cancelled");
                             }
 
-                            clientMessage = CreateMessage(sname, qclass, qtype, options.RecursionDesired);
+                            clientMessage = CreateMessage(sname, qclass, qtype);
                             response = await SendMessage(clientMessage, nsIpAddress);
 
                             if (response != null) break;

@@ -18,6 +18,9 @@ namespace Arctium.Protocol.DNS
 
         public DnsResolver(DnsResolverOptions options)
         {
+            if (options.ClientMessageIO == null) throw new ArgumentNullException(nameof(options.ClientMessageIO));
+            if (!(options.SBeltServers.Length > 0)) throw new ArgumentException("SBeltServer null or empty");
+
             dnsResolverImpl = new DnsResolverImpl(options);
         }
 

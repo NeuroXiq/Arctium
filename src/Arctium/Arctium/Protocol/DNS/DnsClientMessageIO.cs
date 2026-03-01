@@ -1,9 +1,10 @@
 ﻿using Arctium.Protocol.DNS.Model;
+using System.Net;
 
 namespace Arctium.Protocol.DNS
 {
-    public abstract class DnsClientMessageIO
+    public interface IDnsClientMessageIO
     {
-        public abstract Task<Message> QueryServer(Message input);
+        Task<Message> QueryServerAsync(Message input, IPAddress serverIpAddress);
     }
 }
