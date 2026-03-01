@@ -29,8 +29,10 @@ namespace Arctium.Protocol.DNS
             return new DnsClientMessageIODefaultRfc1035(5000, 5000, true);
         }
 
-        public async Task<Message> QueryServerAsync(Message clientMessage, IPAddress ipAddress)
+        public async Task<Message> QueryServerAsync(DnsClientMessageIOArg arg)
         {
+            var clientMessage = arg.Message;
+            var ipAddress = arg.IpAddress;
             byte[] receiveBuffer;
             SocketReceiveFromResult sresult;
             IPEndPoint endpoint = null;

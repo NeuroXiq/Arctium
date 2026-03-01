@@ -104,7 +104,7 @@ namespace Arctium.IntegrationTests.Protocol
         {
             var options = DnsResolverOptions.CreateDefault();
             options.RecursionDesired = true;
-            options.SBeltServers = DnsWellKnownServers.Google8888.AsResourceRecords;
+            options.SBeltServers = DnsWellKnownServers.DnsGoogle.AsResourceRecords;
             var resolver = new DnsResolver();
 
             var result1 = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;

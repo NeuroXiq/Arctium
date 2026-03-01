@@ -14,9 +14,9 @@ namespace Arctium.Protocol.DNS.Protocol
             this.options = options;
         }
 
-        private Task<Message> SendMessage(Message clientMessage, IPAddress ipAddress)
+        private Task<Message> SendMessage(string nsdName, Message clientMessage, IPAddress ipAddress)
         {
-            return options.ClientMessageIO.QueryServerAsync(clientMessage, ipAddress);
+            return options.ClientMessageIO.QueryServerAsync(new DnsClientMessageIOArg(nsdName,ipAddress, clientMessage));
         }
 
         Message CreateMessage(string hostName, QClass qclass, QType qtype)
@@ -275,7 +275,7 @@ namespace Arctium.Protocol.DNS.Protocol
                             }
 
                             clientMessage = CreateMessage(sname, qclass, qtype);
-                            response = await SendMessage(clientMessage, nsIpAddress);
+                            response = await SendMessage(serverToAskHostName, clientMessage, nsIpAddress);
 
                             if (response != null) break;
                         }

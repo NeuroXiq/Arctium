@@ -8,5 +8,12 @@ namespace Arctium.Protocol.DNS
         public string NSDName;
         public IPAddress IpAddress;
         public Message Message;
+
+        public DnsClientMessageIOArg(string nsdName, IPAddress ipAddress, Message message)
+        {
+            NSDName = nsdName;
+            IpAddress = ipAddress;
+            Message = message;
+        }
     }
 }

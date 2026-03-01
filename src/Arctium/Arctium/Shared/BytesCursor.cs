@@ -47,6 +47,10 @@ namespace Arctium.Shared
             return CurrentOffset + index;
         }
 
+        public BytesCursor(byte[] buffer) : this(buffer, 0, buffer.Length)
+        {
+        }
+
         public BytesCursor(byte[] buffer, int offset, int length)
         {
             Buffer = buffer;

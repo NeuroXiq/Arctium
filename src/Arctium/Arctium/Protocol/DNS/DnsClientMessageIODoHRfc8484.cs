@@ -1,4 +1,7 @@
 ﻿using Arctium.Protocol.DNS.Model;
+using Arctium.Protocol.DNS.Protocol;
+using Arctium.Shared;
+using System.Diagnostics;
 using System.Net;
 
 namespace Arctium.Protocol.DNS
@@ -9,6 +12,7 @@ namespace Arctium.Protocol.DNS
         public readonly bool HttpsRequired;
         public readonly HttpClient DnsHttpClient;
         public readonly bool RequiredHttps;
+        DnsSerialize dnsSerialize = new DnsSerialize();
 
         public DnsClientMessageIODoHRfc8484(
             Func<DnsClientMessageIOArg, UriMethodResult> uriMethodSelect,
@@ -24,7 +28,7 @@ namespace Arctium.Protocol.DNS
             RequiredHttps = requiredHttps;
         }
 
-        public virtual Task<Message> QueryServerAsync(DnsClientMessageIOArg arg)
+        public virtual async Task<Message> QueryServerAsync(DnsClientMessageIOArg arg)
         {
             UriMethodResult uriMethod = UriMethodSelect(arg);
 
@@ -33,11 +37,34 @@ namespace Arctium.Protocol.DNS
                 throw new DnsException($"configuration require https uri but it is not, current: '{uriMethod.Uri}'");
 
 
+            var b64Message = Base64UrlEncodeMessage(arg.Message);
+
+            DnsHttpClient.DefaultRequestHeaders.Add("Accept", "application/dns-message");
+            var result = await DnsHttpClient.GetAsync($"{uriMethod.Uri}?dns={b64Message}");
+            var body = await result.Content.ReadAsByteArrayAsync();
+
+            var response = dnsSerialize.Decode(new BytesCursor(body));
+
+            Debugger.Break();
+
+            throw new Exception();
+        }
+
+        public string Base64UrlEncodeMessage(Message message)
+        {
+            ByteBuffer msgBytes = new ByteBuffer();
+            dnsSerialize.Encode(message, msgBytes);
+
+            string base64 = Convert.ToBase64String(msgBytes.Buffer, 0, msgBytes.Length);
+            
+            return base64.Replace("+", "-")
+                .Replace("/", "_")
+                .TrimEnd('=');
         }
 
         public static DnsClientMessageIODoHRfc8484 CreateDefault(Func<DnsClientMessageIOArg, UriMethodResult> uriMethodSelect)
         {
-            return new DnsClientMessageIODoHRfc8484(uriMethodSelect);
+            return new DnsClientMessageIODoHRfc8484(uriMethodSelect, new HttpClient(), true);
         }
 
         public struct UriMethodResult
