@@ -246,7 +246,7 @@ namespace Arctium.Protocol.DNS.Protocol
         }
 
         // RFC-1035 5.3.3. Algorithm
-        // todo max recursrion level
+        // todo max recursrion level, cyclic cname
         private async Task<ResourceRecord[]> QueryServerAsFullResolver(string sname, QClass qclass, QType qtype, RequestState state)
         {
             string serverToAskHostName;

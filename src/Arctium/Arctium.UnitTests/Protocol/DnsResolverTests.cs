@@ -50,19 +50,6 @@ namespace Arctium.UnitTests.Protocol
         }
 
         [Test]
-        public void WillResolveHostAddressToDomainName()
-        {
-            // arrange
-            var dnsResolver = new DnsResolver();
-
-            // act
-            var q = dnsResolver.ResolveHostAddressToHostName(IPAddress.Parse("1.2.3.4"));
-
-            // assert
-            Assert.IsTrue(false);
-        }
-
-        [Test]
         public void WillResolveGeneralLookupFunction()
         {
             // arrange

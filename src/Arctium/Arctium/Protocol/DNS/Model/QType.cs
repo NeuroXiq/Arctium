@@ -24,11 +24,13 @@ namespace Arctium.Protocol.DNS.Model
         /// <summary>
         /// 3 a mail destination (obsolete - use MX)
         /// </summary>
+        [Obsolete("rfc-1035")]
         MD = 3,
 
         /// <summary>
         /// 4 a mail forwarder (obsolete - use mx)
         /// </summary>
+        [Obsolete("rfc-1035")]
         MF = 4,
 
         /// <summary>
@@ -104,11 +106,13 @@ namespace Arctium.Protocol.DNS.Model
         /// <summary>
         /// 253 a request for mailbox-related records (mb, mg or mr) (Only in query)
         /// </summary>
+        [Obsolete("not formally obsoleted but unlikely to be used")]
         MAILB = 253,
 
         /// <summary>
         /// 254 a request for mail agent rrs (obsolete - see mx) (Only in query)
         /// </summary>
+        [Obsolete("rfc 973 obsoleted")]
         MAILA = 254,
 
         /// <summary>

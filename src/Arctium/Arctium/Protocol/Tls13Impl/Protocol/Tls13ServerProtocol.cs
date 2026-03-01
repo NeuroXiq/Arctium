@@ -124,14 +124,10 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         private Context context;
         private Tls13ServerConfig config { get { return serverContext.Config; } }
         private Tls13ServerProtocolInstanceContext serverContext;
-        private bool isQuicIntegration;
-        private QUICv1Impl.QuicIntegrationTlsNetworkStream quicIntegration;
 
         public Tls13ServerProtocol(Stream networkStream, Tls13ServerProtocolInstanceContext serverContext)
         {
             this.serverContext = serverContext;
-            isQuicIntegration = networkStream is QUICv1Impl.QuicIntegrationTlsNetworkStream;
-            quicIntegration = networkStream as QUICv1Impl.QuicIntegrationTlsNetworkStream;
 
             validate = new Validate(new Validate.ValidationErrorHandler(SendAlertFatal));
             hsctx = new ByteBuffer();
@@ -730,12 +726,6 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             List<Extension> extensions = new List<Extension>
             {
             };
-
-            // Extension: Quic
-            if (isQuicIntegration)
-            {
-                extensions.Add(quicIntegration.GetQuicTransportParametersServer(clientHello.GetExtension<QuicTransportParametersExtension>(ExtensionType.QuicTransportParameters)));
-            }
 
             // Extension: Server Name
             if (clientHello.TryGetExtension<ServerNameListClientHelloExtension>(ExtensionType.ServerName, out var serverNameExt))

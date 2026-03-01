@@ -1,5 +1,6 @@
 ﻿using Arctium.Cryptography.FileFormats.Exceptions;
 using Arctium.Shared;
+using Arctium.Shared.Exceptions;
 using System;
 using System.IO;
 using System.Linq;
@@ -99,7 +100,7 @@ namespace Arctium.Standards.FileFormat.PEM
 
         private static void Throw(string msg)
         {
-            throw new InvalidFileFormatException($"File is not in correct PEM format: {msg}");
+            throw new ArctiumException($"File is not in correct PEM format: {msg}");
         }
 
         public void Save(string fileName) { throw new NotSupportedException(); }

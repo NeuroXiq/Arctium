@@ -9,7 +9,6 @@ namespace Arctium.Protocol.DNS
 {
     public class DnsResolver
     {
-        private DnsResolverOptions options;
         private DnsResolverImpl dnsResolverImpl;
         
         /// <summary>
@@ -19,7 +18,6 @@ namespace Arctium.Protocol.DNS
 
         public DnsResolver(DnsResolverOptions options)
         {
-            this.options = options;
             dnsResolverImpl = new DnsResolverImpl(options);
         }
 

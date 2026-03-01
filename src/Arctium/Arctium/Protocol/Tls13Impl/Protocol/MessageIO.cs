@@ -16,18 +16,13 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         private Validate validate;
         private ModelDeserialization clientModelDeserialization;
         private ModelSerialization modelSerialization;
-        // private List<KeyValuePair<HandshakeType, byte[]>> handshakeContext;
-
         private byte[] buffer { get { return byteBuffer.Buffer; } }
-        private int currentMessageLength;
         private RecordInfo lastLoadedRecord;
-
 
         public MessageIO(Stream networkStream,
             Validate validate)
         {
-            if (networkStream is QuicIntegrationTlsNetworkStream) recordLayer = new QuicIntegrationRecordLayer(networkStream as QuicIntegrationTlsNetworkStream);
-            else recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
+            recordLayer = new RecordLayer(new BufferForStream(networkStream), validate);
 
             modelSerialization = new ModelSerialization();
 
@@ -135,32 +130,13 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             return (T)result;
         }
 
-        //public void LoadCertificateMessage(CertificateType type)
-        //{
-        //    throw new Exception("need to add to context");
-        //    LoadHandshake();
-        //    clientModelDeserialization.DeserializeCertificate(buffer, 0, type);
-
-        //    int len = (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
-
-        //    // handshakeContext.Add(MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
-
-        //    // HandshakeContextAdd(HandshakeType.Certificate, MemCpy.CopyToNewArray(byteBuffer.Buffer, 0, len + 4));
-        //    HandshakeContextAdd(HandshakeType.Certificate, byteBuffer.Buffer, 0, len);
-
-        //    byteBuffer.TrimStart(len + 4);
-        //}
-
         void HandshakeContextAdd(HandshakeType type, byte[] buffer, long offset, long length) => OnHandshakeReadWrite?.Invoke(buffer, (int)offset, (int)length);
-
-        // void HandshakeContextAdd(HandshakeType type, byte[] rawMessageBytes) => this.handshakeContext.Add(new KeyValuePair<HandshakeType, byte[]>(type, rawMessageBytes));
 
         internal void ChangeRecordLayerWriteCrypto(Crypto crypto, byte[] trafficSecret) => recordLayer.ChangeRecordLayerWriteCrypto(crypto, trafficSecret);
         internal void ChangeRecordLayerReadCrypto(Crypto crypto, byte[] trafficSecret) => recordLayer.ChangeRecordLayerReadCrypto(crypto, trafficSecret);
 
         internal void KeyUpdateForWriting(Crypto crypto) => crypto.DoKeyUpdateForWriting(recordLayer);
         internal void KeyUpdateForReading(Crypto crypto) => crypto.DoKeyUpdateForReading(recordLayer);
-
 
         private void LoadHandshake()
         {
@@ -179,8 +155,6 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             {
                 LoadRecord();
             }
-
-            currentMessageLength = msgLength;
         }
 
         private RecordInfo LoadRecord()

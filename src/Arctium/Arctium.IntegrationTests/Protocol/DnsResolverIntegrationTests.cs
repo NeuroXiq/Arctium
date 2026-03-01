@@ -47,9 +47,14 @@ namespace Arctium.IntegrationTests.Protocol
         /// rfc page 31, However, when performing the general function, the resolver should not pursue aliases when the CNAME RR matches the query type.
         /// </summary>
         [Test]
-        public void Success_NotStandardCase_ResolverWillReturnCNAMERecordWithoutQueryServerAgainIfUserWants()
+        public void Success_GeneralLookupFunction_ReturnsOnlyCNAMEIdAskedForCNAME()
         {
-
+            var resolver = CreateResolver();
+            var result = resolver.ResolveGeneralLookupFunctionAsync("www.amazon.com", QClass.IN, QType.CNAME).Result;
+            
+            Assert.That(result.Any());
+            Assert.That(result.Length == 1);
+            Assert.That(result[0].Type == QType.CNAME);
         }
 
         /// <summary>
@@ -78,9 +83,22 @@ namespace Arctium.IntegrationTests.Protocol
         #region NO-RFC
 
         [Test]
-        public void Success_GeneralLookupFunction()
+        public void Success_GeneralLookupFunction_SomeRecordTypes()
         {
-            Assert.Fail();
+            // arrange
+            DnsResolver resolver = CreateResolver();
+
+            // act
+            var r1 = resolver.ResolveGeneralLookupFunctionAsync("gmail.com", QClass.IN, QType.MX).Result;
+            var r2 = resolver.ResolveGeneralLookupFunctionAsync("www.gmail.com", QClass.IN, QType.TXT).Result;
+            var r3 = resolver.ResolveGeneralLookupFunctionAsync("gmail.com", QClass.IN, QType.AAAA).Result;
+            var r4 = resolver.ResolveGeneralLookupFunctionAsync("gmail.com", QClass.IN, QType.NS).Result;
+
+            // assert
+            Assert.That(r1.Length > 0 && r1.All(t => t.Type == QType.MX));
+            Assert.That(r2.Length > 0 && r2.All(t => t.Type == QType.TXT));
+            Assert.That(r3.Length > 0 && r3.All(t => t.Type == QType.AAAA));
+            Assert.That(r4.Length > 0 && r4.All(t => t.Type == QType.NS));
         }
 
         [Test]
@@ -151,26 +169,6 @@ namespace Arctium.IntegrationTests.Protocol
 
             // assert
             Assert.That(fakeCache.TryGet("www.google.com", QClass.IN, QType.A, out var cachedRrs) && cachedRrs.Length > 0);
-        }
-
-        [Test]
-        public void Success_WillQueryOnlySpecificServer()
-        {
-            // arrange
-
-            // act
-
-            // assert
-            Assert.IsTrue(false);
-        }
-
-        /// <summary>
-        /// rfc 1035, QTYPE
-        /// </summary>
-        [Test]
-        public void Success_WillWorkWithAllQTypes()
-        {
-            Assert.IsTrue(false);
         }
 
         //
