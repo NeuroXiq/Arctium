@@ -6,16 +6,42 @@ namespace Arctium.Protocol.DNS
     public class DnsServerInformational
     {
         public readonly string NSName;
-        public readonly IPAddress IPv4Address;
-        public readonly IPAddress IPv6Address;
+        public readonly IPAddress[] IpAddresses;
         public readonly ResourceRecord[] AsResourceRecords;
 
-        public DnsServerInformational(string name, IPAddress ipv4Address, IPAddress ipv6Address, ResourceRecord[] asResourceRecords)
+        public DnsServerInformational(
+            string name,
+            IPAddress[] ipAddresses,
+            ResourceRecord[] asResourceRecords)
         {
             NSName = name;
-            IPv4Address = ipv4Address;
-            IPv6Address = ipv6Address;
+            IpAddresses = ipAddresses;
             AsResourceRecords = asResourceRecords;
+        }
+    }
+
+    public class DnsServerInformationalDoH
+    {
+        public readonly string Name;
+        public readonly string NSName;
+        public readonly string Uri;
+        public readonly bool HttpPostSupported;
+        public readonly bool HttpGetSupported;
+        public readonly IPAddress[] IpAddresses;
+
+        public DnsServerInformationalDoH(
+            string name,
+            string nsname,
+            string uri,
+            bool httpPostSupported,
+            bool httpGetSupported,
+            IPAddress[] ipAddresses,
+            ResourceRecord[] asResourceRecords)
+        {
+            Uri = uri;
+            HttpPostSupported = httpPostSupported;
+            HttpGetSupported = httpGetSupported;
+            IpAddresses = ipAddresses;
         }
     }
 
@@ -37,46 +63,36 @@ namespace Arctium.Protocol.DNS
 
         public static readonly IReadOnlyList<DnsRootServer> AllRootServers;
 
-        public static readonly DnsServerInformational Google8888;
-        public static readonly DnsServerInformational Google8844;
-
-        public static ResourceRecord[] GetAllAsRecords()
-        {
-            var serversRecords = AllRootServers.SelectMany(t => new ResourceRecord[]
-            {
-                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = "", TTL = 1000, RData = new RDataNS(t.HostName) },
-                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = t.HostName, TTL = 1000, RData = new RDataA(t.IPv4Address.ToString()) },
-                new ResourceRecord() { Class = QClass.IN, Type = QType.AAAA, Name = t.HostName, TTL = 1000, RData = new RDataAAAA(t.IPv6Address.GetAddressBytes()) },
-            }).ToList();
-
-            serversRecords.AddRange(Google8888.AsResourceRecords);
-            serversRecords.AddRange(Google8888.AsResourceRecords);
-
-            return serversRecords.ToArray();
-        }
+        public static readonly DnsServerInformational DnsGoogle;
+        public static readonly DnsServerInformationalDoH DnsGoogleDoH;
 
         static DnsWellKnownServers()
         {
-            // google servers
-            Google8888 = new DnsServerInformational(
-                "dns.google",
-                IPAddress.Parse("8.8.8.8"),
-                null,
-                new ResourceRecord[]
-                {
-                    new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 },
-                    new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.8.8"), TTL = 1000 }
-                });
+            // google
+            ResourceRecord[] dnsGoogleRrs = new ResourceRecord[]
+            {
+                new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 },
+                new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.8.8"), TTL = 1000 },
+                new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.4.4"), TTL = 1000 }
+            };
 
-            Google8844 = new DnsServerInformational(
+            IPAddress[] dnsGoogleIps = new IPAddress[] { IPAddress.Parse("8.8.8.8"), IPAddress.Parse("8.8.4.4") };
+
+            DnsGoogleDoH = new DnsServerInformationalDoH(
+                "",
                 "dns.google",
-                IPAddress.Parse("8.8.4.4"),
-                null,
-                new ResourceRecord[]
-                {
-                    new ResourceRecord() { Class = QClass.IN, Name = "", Type = QType.NS, RData = new RDataNS("dns.google"), TTL = 1000 },
-                    new ResourceRecord() { Class = QClass.IN, Name = "dns.google", Type = QType.A, RData = new RDataA("8.8.4.4"), TTL = 1000 }
-                });
+                "https://dns.google/dns-query",
+                true,
+                true,
+                dnsGoogleIps,
+                dnsGoogleRrs
+                );
+
+            
+            DnsGoogle = new DnsServerInformational(
+                "dns.google",
+                dnsGoogleIps,
+                dnsGoogleRrs);
 
             // root servers
             A = new DnsRootServer(

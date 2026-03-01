@@ -65,9 +65,16 @@ namespace Arctium.Protocol.DNS
 
         public static ResourceRecord[] CreateDefaultSBeltServers()
         {
-            var sbeltServers = DnsWellKnownServers.GetAllAsRecords();
+            var serversRecords = DnsWellKnownServers.AllRootServers.SelectMany(t => new ResourceRecord[]
+           {
+                new ResourceRecord() { Class = QClass.IN, Type = QType.NS, Name = "", TTL = 1000, RData = new RDataNS(t.HostName) },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = t.HostName, TTL = 1000, RData = new RDataA(t.IPv4Address.ToString()) },
+                new ResourceRecord() { Class = QClass.IN, Type = QType.AAAA, Name = t.HostName, TTL = 1000, RData = new RDataAAAA(t.IPv6Address.GetAddressBytes()) },
+           }).ToList();
 
-            return sbeltServers;
+            serversRecords.AddRange(DnsWellKnownServers.DnsGoogle.AsResourceRecords);
+
+            return serversRecords.ToArray();
         }
     }
 }

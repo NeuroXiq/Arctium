@@ -5,6 +5,6 @@ namespace Arctium.Protocol.DNS
 {
     public interface IDnsClientMessageIO
     {
-        Task<Message> QueryServerAsync(Message input, IPAddress serverIpAddress);
+        Task<Message> QueryServerAsync(DnsClientMessageIOArg arg);
     }
 }
