@@ -1,5 +1,5 @@
-﻿using Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
-using Arctium.Shared;
+﻿using Arctium.Shared;
+using Arctium.Shared.Exceptions;
 using System;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
@@ -64,7 +64,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
         /// <param name="length"></param>
         public void MainHashComputation(byte* input, long length)
         {
-            if (length % (r / 8) != 0 || length <= 0 || length % (r/8) != 0) throw new HashFunctionsExceptionInternal("SHA3 invalid r/length","","STATIC_SHA3_Shared");
+            if (length % (r / 8) != 0 || length <= 0 || length % (r/8) != 0) throw new ArctiumException("SHA3 invalid r/length STATIC_SHA3_Shared");
             int inputBytesCount = r / 8;
             for (long i = 0; i < length; i += inputBytesCount)
             {

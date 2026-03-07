@@ -1,5 +1,4 @@
-﻿using Arctium.Cryptography.Exceptions;
-using Arctium.Shared;
+﻿using Arctium.Shared;
 using System;
 using System.Runtime.CompilerServices;
 

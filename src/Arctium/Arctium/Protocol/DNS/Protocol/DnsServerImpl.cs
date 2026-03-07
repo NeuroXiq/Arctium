@@ -70,7 +70,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     var responseMessage = GetResponseMessage(clientMsg).Result;
                     var responseBuffer = new ByteBuffer();
                     responseBuffer.AllocEnd(2);
-                    serializer.Encode(responseMessage, responseBuffer);
+                    serializer.EncodeClassic(responseMessage, responseBuffer);
 
                     if (responseBuffer.Length > ushort.MaxValue)
                         throw new DnsException(DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue);
@@ -113,13 +113,13 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     var res = GetResponseMessage(clientMsg).Result;
                     var responseBytes = new ByteBuffer();
-                    serializer.Encode(res, responseBytes);
+                    serializer.EncodeClassic(res, responseBytes);
 
                     if (responseBytes.Length > DnsConsts.UdpSizeLimit)
                     {
                         res = ConvertToTrunCated(res);
                         responseBytes.Reset();
-                        serializer.Encode(res, responseBytes);
+                        serializer.EncodeClassic(res, responseBytes);
                     }
 
                     udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, clientEndpoint);
@@ -185,7 +185,7 @@ namespace Arctium.Protocol.DNS.Protocol
                 errorResponseMsg.Authority = null;
 
                 ByteBuffer responseBytes = new ByteBuffer();
-                serializer.Encode(errorResponseMsg, responseBytes);
+                serializer.EncodeClassic(errorResponseMsg, responseBytes);
 
                 if (udpClientEndpoint != null)
                 {

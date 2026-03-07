@@ -1,6 +1,6 @@
 ﻿using System;
 using Arctium.Cryptography.Ciphers.BlockCiphers.Algorithms;
-using Arctium.Cryptography.Ciphers.Exceptions;
+using Arctium.Shared.Exceptions;
 
 namespace Arctium.Cryptography.Ciphers.BlockCiphers
 {
@@ -18,7 +18,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
         /// <param name="key">16/24/32 bytes key</param>
         public Camellia(byte[] key) : base(key, 128)
         {
-            if (key == null || (key.Length != 16 && key.Length != 24 && key.Length != 32)) throw new InvalidKeyLengthException("invalid key length");
+            if (key == null || (key.Length != 16 && key.Length != 24 && key.Length != 32)) throw new ArctiumException("invalid key length");
             state = CamelliaAlgorithm.Init(key);
 
             if (key.Length == 16)

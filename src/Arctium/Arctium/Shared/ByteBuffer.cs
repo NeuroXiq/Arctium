@@ -11,8 +11,6 @@ namespace Arctium.Shared
         /// </summary>
         public int Length { get; private set; }
 
-        int freeSpace { get { return Buffer.Length - Length; } }
-
         public ByteBuffer()
         {
             Buffer = new byte[1024];

@@ -4,9 +4,6 @@ namespace Arctium.Protocol.DNS
 {
     public class DnsResolverOptions
     {
-        public const int DefaultUdpSocketTimeoutMs = 10000;
-        public const int DefaultTcpSocketTimeoutMs = 10000;
-
         public ResourceRecord[] SBeltServers { get; set; }
         public IDnsResolverCache Cache { get; private set; }
         public IDnsClientMessageIO ClientMessageIO { get; set; }
@@ -53,7 +50,11 @@ namespace Arctium.Protocol.DNS
 
         public static DnsResolverOptions CreateDefault()
         {
-            return new DnsResolverOptions(CreateDefaultSBeltServers(), CreateDefaultCache());
+            DnsResolverOptions options = new DnsResolverOptions(CreateDefaultSBeltServers(), CreateDefaultCache());
+
+            options.ClientMessageIO = new DnsClientMessageIO_Rfc1035Standard(5000, 5000, true);
+
+            return options;
         }
 
         public static IDnsResolverCache CreateDefaultCache()

@@ -1,4 +1,4 @@
-﻿using Arctium.Cryptography.Ciphers.Exceptions;
+﻿using Arctium.Shared.Exceptions;
 
 namespace Arctium.Cryptography.Ciphers.Helpers
 {
@@ -31,7 +31,7 @@ namespace Arctium.Cryptography.Ciphers.Helpers
 
                 string message = $"$Valid key length for { algorithmName } : { keyLengths} but current value is: " + currentKeyLength;
 
-                throw new InvalidKeyLengthException(message);
+                throw new ArctiumException(message);
             }
         }
 
@@ -41,7 +41,7 @@ namespace Arctium.Cryptography.Ciphers.Helpers
             {
                 string message = $"{cipherName}: Invalid length of the input block. Current length: {currentLength} " +
                     $"but expected to be multiply of{blockLength}";
-                throw new InvalidBlockLengthException(message);
+                throw new ArctiumException(message);
             }
         }
     }

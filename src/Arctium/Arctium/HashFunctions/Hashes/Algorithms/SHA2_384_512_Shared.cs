@@ -1,6 +1,6 @@
 ﻿using System;
-using Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
 using Arctium.Shared;
+using Arctium.Shared.Exceptions;
 
 namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 {
@@ -37,7 +37,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
             long length, 
             ulong[] messageScheduleBuffer)
         {
-            if ((length == 0) || (length % 128) != 0) throw new HashFunctionsExceptionInternal("input length != n*128","","STATIC_SHA2_284_512_Shared");
+            if ((length == 0) || (length % 128) != 0) throw new ArctiumException("input length != n*128 STATIC_SHA2_284_512_Shared");
 
             long blocksCount = length / 128;
             ulong[] w = messageScheduleBuffer;

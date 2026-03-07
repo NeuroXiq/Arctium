@@ -1,5 +1,5 @@
-﻿using Arctium.Cryptography.HashFunctions.Hashes.Exceptions;
-using Arctium.Shared;
+﻿using Arctium.Shared;
+using Arctium.Shared.Exceptions;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using static Arctium.Shared.BinOps;
@@ -200,7 +200,7 @@ namespace Arctium.Cryptography.HashFunctions.Hashes.Algorithms
 
             Stack<TreeNode> stack = state.Stack;
 
-            if (stack.Count == 0) throw new InvalidHashStateInternalException(nameof(BLAKE3Algorithm), "", typeof(BLAKE3Algorithm));
+            if (stack.Count == 0) throw new ArctiumException(nameof(BLAKE3Algorithm) + " " + typeof(BLAKE3Algorithm));
 
             TreeNode t1, t2;
             uint* input = stackalloc uint[16];
