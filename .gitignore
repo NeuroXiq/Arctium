@@ -7,6 +7,7 @@ IGNORE/
 *.suo
 *.userprefs
 *.sln.ide
+.vs/
 src/Arctium/ConsoleAppTest/Program.cs
 src/Arctium/ConsoleAppTest/Tls13Resources.cs
 src/Arctium/.vs/*
