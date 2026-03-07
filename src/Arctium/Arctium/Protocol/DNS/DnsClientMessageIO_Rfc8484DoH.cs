@@ -71,18 +71,6 @@ namespace Arctium.Protocol.DNS
             return response;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="httpsUri">Example: https://dns.google/dns-query?dns={0}</param>
-        public static DnsClientMessageIO_Rfc8484DoH CreateDefault(string httpsUri, HttpMethod method)
-        {
-            HttpClient httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/dns-message");
-
-            return new DnsClientMessageIO_Rfc8484DoH(httpsUri, httpClient, method);
-        }
-
         public enum HttpMethod
         {
             Get = 1,

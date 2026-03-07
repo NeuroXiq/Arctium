@@ -11,6 +11,32 @@ namespace Arctium.IntegrationTests.Protocol
     [TestFixture]
     public class DnsResolverIntegrationTests
     {
+        #region RFC-8484
+
+        public void Success_DoH_WillResolveGoogleHostNameOverHttpsPost_Rfc8484()
+        {
+            var options = DnsResolverOptions.CreateDefault();
+            options.SetClientMessageIO_DoH("https://dns.google/dns-query?dns={0}", DnsClientMessageIO_Rfc8484DoH.HttpMethod.Post);
+            var resolver = new DnsResolver(options);
+
+            var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
+
+            Assert.That(result.Any());
+        }
+
+        public void Success_DoH_WillResolveGoogleHostNameOverHttpsGet_Rfc8484()
+        {
+            var options = DnsResolverOptions.CreateDefault();
+            options.SetClientMessageIO_DoH("https://dns.google/dns-query", DnsClientMessageIO_Rfc8484DoH.HttpMethod.Get);
+            var resolver = new DnsResolver(options);
+            
+            var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
+
+            Assert.That(result.Any());
+        }
+
+        #endregion
+
         #region RFC1035
 
         /// <summary>
@@ -32,7 +58,10 @@ namespace Arctium.IntegrationTests.Protocol
                 new ResourceRecord() { Class = QClass.IN, Type = QType.A, Name = "a.root-servers.net", TTL = 1000, RData = new RDataA("198.41.0.4") },
             };
 
-            var resolver = new DnsResolver(new DnsResolverOptions(sbelt, DnsResolverOptions.CreateDefaultCache()));
+            var options = DnsResolverOptions.CreateDefault();
+            options.SetSBeltServers(sbelt);
+
+            var resolver = new DnsResolver(options);
 
             // act
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
@@ -63,7 +92,8 @@ namespace Arctium.IntegrationTests.Protocol
         {
             // arrange
             var cache = new InMemoryDnsResolverCache();
-            var options = new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), cache);
+            var options = DnsResolverOptions.CreateDefault();
+            options.Cache = cache;
 
             // act
             var resolver = new DnsResolver(options);
@@ -103,6 +133,8 @@ namespace Arctium.IntegrationTests.Protocol
         public void Success_StubResolveWillWork()
         {
             var options = DnsResolverOptions.CreateDefault();
+            
+            // recursion desired then 'stub resolver'
             options.RecursionDesired = true;
             options.SBeltServers = DnsWellKnownServers.DnsGoogle.AsResourceRecords;
             var resolver = new DnsResolver();
@@ -150,7 +182,9 @@ namespace Arctium.IntegrationTests.Protocol
                 }
             });
 
-            DnsResolver resolver = new DnsResolver(new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), fakeCache));
+            var options = DnsResolverOptions.CreateDefault();
+            options.Cache = fakeCache;
+            DnsResolver resolver = new DnsResolver(options);
 
             var result = resolver.ResolveHostNameToHostAddressAsync(domainName).Result;
 
@@ -164,7 +198,9 @@ namespace Arctium.IntegrationTests.Protocol
         {
             // arrange
             InMemoryDnsResolverCache fakeCache = new InMemoryDnsResolverCache(true);
-            DnsResolver resolver = new DnsResolver(new DnsResolverOptions(DnsResolverOptions.CreateDefaultSBeltServers(), fakeCache));
+            var options = DnsResolverOptions.CreateDefault();
+            options.Cache = fakeCache;
+            DnsResolver resolver = new DnsResolver(options);
 
             // act
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;

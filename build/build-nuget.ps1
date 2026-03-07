@@ -1,3 +1,23 @@
-. ./build-utils.ps1
+$ErrorActionPreference = "Stop";
 
-dotnet pack  $arctiumSlnFilePath --configuration Release --output $nuget_output_directory /p:Version=1.0.0.1;
+#$outName = "arctium-$([datetimeoffset]::now.tostring('yyyy_MM_ddTHH_mm_ss'))";
+$projectPath = "$PSScriptRoot/../src/Arctium/Arctium/Arctium.csproj";
+$output = "$PSScriptRoot/build-nuget-artifacts"
+$apiKey = (get-content "$PSScriptRoot/../../../secrets/arctium-nuget-api-key.txt").trim();
+
+if ([system.string]::IsNullOrWhiteSpace($apiKey)) {
+    throw 'no nuget api key'
+}
+
+$curVersion = (get-content "$PSScriptRoot/version.txt").trim().split('.');
+$nextVersion = "$($curVersion[0]).$($curVersion[1]).$([system.int32]::parse($curVersion[2]) + 1)"
+set-content -path "$PSScriptRoot/version.txt" -value $nextVersion
+
+$nupkgFilePath = "$output/Arctium.$nextVersion.nupkg";
+
+$nextVersion;
+$outName;
+$nupkgFilePath;
+
+dotnet pack  $projectPath --configuration Release --output $output /p:Version=$nextVersion;
+dotnet nuget push $nupkgFilePath --api-key $apiKey --source https://api.nuget.org/v3/index.json

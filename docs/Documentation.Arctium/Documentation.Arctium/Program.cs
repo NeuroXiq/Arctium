@@ -1,4 +1,6 @@
-﻿namespace Documentation.Arctium
+﻿using Documentation.Arctium.Protocol;
+
+namespace Documentation.Arctium
 {
     class Program
     {
@@ -8,7 +10,21 @@
             Console.WriteLine("Arctium - Examples");
             Console.WriteLine("=============================================");
 
+            // select example to run
+            ExamplesDnsClient.Startup();
 
+            //
+            // AllExamples();
+        }
+
+
+        static void AllExamples()
+        {
+            //
+            // Check example to run
+            //
+
+            ExamplesDnsClient.Startup();
         }
     }
 }

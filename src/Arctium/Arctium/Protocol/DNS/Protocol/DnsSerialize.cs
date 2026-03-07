@@ -46,6 +46,8 @@ namespace Arctium.Protocol.DNS.Protocol
                 tcpLengthOffset = buffer.AllocEnd(2);
             }
 
+            EncodeRaw(message, buffer);
+
             if (isTcp)
             {
                 int contentLength = buffer.Length - 2;

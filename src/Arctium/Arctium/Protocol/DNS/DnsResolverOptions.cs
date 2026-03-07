@@ -5,7 +5,7 @@ namespace Arctium.Protocol.DNS
     public class DnsResolverOptions
     {
         public ResourceRecord[] SBeltServers { get; set; }
-        public IDnsResolverCache Cache { get; private set; }
+        public IDnsResolverCache Cache { get; set; }
         public IDnsClientMessageIO ClientMessageIO { get; set; }
 
         /// <summary>
@@ -29,37 +29,21 @@ namespace Arctium.Protocol.DNS
 
         /// <summary>
         /// </summary>
-        public DnsResolverOptions(
-            ResourceRecord[] sbeltDnsServers,
-            IDnsResolverCache cache,
-            int maxResponseTTL = DnsConsts.DefaultMaxResponseTTLSeconds,
-            int maxRequestCountForResolve = 150,
-            bool recursionDesired = true)
+        private DnsResolverOptions()
         {
-            if (sbeltDnsServers == null || sbeltDnsServers.Length == 0)
-                throw new ArgumentException("sbeltDnsServers is null or empty");
-
-            if (cache == null)
-                throw new ArgumentNullException("cache");
-
-            MaxRequestCountForResolve = maxRequestCountForResolve;
-            SBeltServers = sbeltDnsServers;
-            Cache = cache;
-            RecursionDesired = recursionDesired;
         }
 
         public static DnsResolverOptions CreateDefault()
         {
-            DnsResolverOptions options = new DnsResolverOptions(CreateDefaultSBeltServers(), CreateDefaultCache());
+            DnsResolverOptions options = new DnsResolverOptions();
 
-            options.ClientMessageIO = new DnsClientMessageIO_Rfc1035Standard(5000, 5000, true);
+            options.ClientMessageIO = new DnsClientMessageIO_Rfc1035Classic(5000, 5000, true);
+            options.SBeltServers = CreateDefaultSBeltServers();
+            options.MaxRequestCountForResolve = 150;
+            options.RecursionDesired = true;
+            options.Cache = new InMemoryDnsResolverCache();
 
             return options;
-        }
-
-        public static IDnsResolverCache CreateDefaultCache()
-        {
-            return new InMemoryDnsResolverCache();
         }
         
         // public static void 
@@ -76,6 +60,34 @@ namespace Arctium.Protocol.DNS
             serversRecords.AddRange(DnsWellKnownServers.DnsGoogle.AsResourceRecords);
 
             return serversRecords.ToArray();
+        }
+
+        /// <summary>
+        /// Will set current message IO to HTTPS (DoH) RFC-8484 <see cref="ClientMessageIO"/>.
+        /// Current message io will be overriden by this new configuration
+        /// </summary>
+        /// <param name="httpsUri"></param>
+        /// <param name="method"></param>
+        public void SetClientMessageIO_DoH(string httpsUri, DnsClientMessageIO_Rfc8484DoH.HttpMethod method)
+        {
+            HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/dns-message");
+
+            ClientMessageIO = new DnsClientMessageIO_Rfc8484DoH(httpsUri, httpClient, method);
+        }
+
+        /// <summary>
+        /// Will set current message IO to class binary format (wire format) RFC-1035 <see cref="ClientMessageIO"/>.
+        /// Current message io will be overriden by this new configuration
+        /// </summary>
+        public void SetClientMessageIO_Classic(int utcSocketReceiveTimeout = 5000, int tcpSocketReceiveTimeout = 5000, bool useTcpIfTrucated = true)
+        {
+            ClientMessageIO = new DnsClientMessageIO_Rfc1035Classic(utcSocketReceiveTimeout, tcpSocketReceiveTimeout, true);
+        }
+
+        public void SetSBeltServers(ResourceRecord[] resourceRecords)
+        {
+            this.SBeltServers = resourceRecords;
         }
     }
 }

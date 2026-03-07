@@ -3,8 +3,12 @@
   "WorkspaceRootPath": "C:\\my-files\\projects\\arctium\\Arctium\\docs\\Documentation.Arctium\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{0306F702-5741-4D65-9F06-021BE495278F}|Documentation.Arctium\\Documentation.Arctium.csproj|c:\\my-files\\projects\\arctium\\arctium\\docs\\documentation.arctium\\documentation.arctium\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0306F702-5741-4D65-9F06-021BE495278F}|Documentation.Arctium\\Documentation.Arctium.csproj|solutionrelative:documentation.arctium\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7A0E4572-5AF2-E627-A6D1-5B86B648AA34}|Documentation.Arctium\\Documentation.Arctium.csproj|c:\\my-files\\projects\\arctium\\arctium\\docs\\documentation.arctium\\documentation.arctium\\protocol\\examplesdnsclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7A0E4572-5AF2-E627-A6D1-5B86B648AA34}|Documentation.Arctium\\Documentation.Arctium.csproj|solutionrelative:documentation.arctium\\protocol\\examplesdnsclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7A0E4572-5AF2-E627-A6D1-5B86B648AA34}|Documentation.Arctium\\Documentation.Arctium.csproj|c:\\my-files\\projects\\arctium\\arctium\\docs\\documentation.arctium\\documentation.arctium\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7A0E4572-5AF2-E627-A6D1-5B86B648AA34}|Documentation.Arctium\\Documentation.Arctium.csproj|solutionrelative:documentation.arctium\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 317,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,15 +30,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\my-files\\projects\\arctium\\Arctium\\docs\\Documentation.Arctium\\Documentation.Arctium\\Program.cs",
               "RelativeDocumentMoniker": "Documentation.Arctium\\Program.cs",
               "ToolTip": "C:\\my-files\\projects\\arctium\\Arctium\\docs\\Documentation.Arctium\\Documentation.Arctium\\Program.cs",
               "RelativeToolTip": "Documentation.Arctium\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-07T10:56:48.075Z",
+              "WhenOpened": "2026-03-07T12:17:30.543Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ExamplesDnsClient.cs",
+              "DocumentMoniker": "C:\\my-files\\projects\\arctium\\Arctium\\docs\\Documentation.Arctium\\Documentation.Arctium\\Protocol\\ExamplesDnsClient.cs",
+              "RelativeDocumentMoniker": "Documentation.Arctium\\Protocol\\ExamplesDnsClient.cs",
+              "ToolTip": "C:\\my-files\\projects\\arctium\\Arctium\\docs\\Documentation.Arctium\\Documentation.Arctium\\Protocol\\ExamplesDnsClient.cs",
+              "RelativeToolTip": "Documentation.Arctium\\Protocol\\ExamplesDnsClient.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-07T12:16:20.246Z",
               "EditorCaption": ""
             }
           ]
