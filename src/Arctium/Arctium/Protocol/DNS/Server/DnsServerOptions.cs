@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,9 +13,6 @@ namespace Arctium.Protocol.DNS.Server
         public IDnsServerRecordsData DnsServerDataSource { get; private set; }
         public IDnsServerRecordsData DnsServerCacheDataSource { get; private set; }
         public IDnsServerMessageIO MessageIO { get; set; }
-
-        public int PortUdp { get; private set; }
-        public int PortTcp { get; private set; }
         public bool RecursionAvailable { get; private set; }
         public IDnsServerRecursionService RecursionService { get; set; }
         public CancellationTokenSource StopServerCancellationTokenSource { get; set; }
@@ -22,7 +20,6 @@ namespace Arctium.Protocol.DNS.Server
         public DnsServerOptions(IDnsServerRecordsData dnsServerDataSource)
         {
             DnsServerDataSource = dnsServerDataSource;
-            PortUdp = DnsConsts.DefaultServerDnsPort;
         }
 
         public static DnsServerOptions CreateDefault(IDnsServerRecordsData dataSource)
@@ -30,8 +27,6 @@ namespace Arctium.Protocol.DNS.Server
             DnsServerOptions options = new DnsServerOptions(dataSource)
             {
                 StopServerCancellationTokenSource = new CancellationTokenSource(),
-                PortTcp = 53,
-                PortUdp = 53,
                 DnsServerCacheDataSource = null,
                 MessageIO = new DnsServerMessageIO()
             };
@@ -53,9 +48,12 @@ namespace Arctium.Protocol.DNS.Server
             DnsServerCacheDataSource = dnsServerCacheDataSource;
         }
 
-        public void AddMessageIO_ClassicTcp(int port = DnsConsts.DefaultServerDnsPort)
+        public void AddMessageIO_ClassicTcp(
+            int port = DnsConsts.DefaultServerDnsPort,
+            int receiveTimeoutMs = DnsConsts.ArctiumDefaultTcpReceiveTimeoutMs,
+            int listenBacklog = DnsConsts.ArctiumDefaultTcpListenBacklog)
         {
-            MessageIO.AddAdapter(new DnsServerMessageIO_TcpClassic(port));
+            MessageIO.AddAdapter(new DnsServerMessageIO_TcpClassic(port, receiveTimeoutMs, listenBacklog));
         }
 
         public void AddMessageIO_ClassicUdp(int port = DnsConsts.DefaultServerDnsPort)
@@ -63,14 +61,28 @@ namespace Arctium.Protocol.DNS.Server
             MessageIO.AddAdapter(new DnsServerMessageIO_UdpClassic(port));
         }
 
-        public void AddMessageIO_DoH()
+        public void AddMessageIO_Custom()
         {
             
         }
 
-        public void AddMessageIO_Custom()
+        /// <summary>
+        /// Consider override kestrel configuration by inheriting from <see cref="DnsServerMessageIO_DoHRfc8484"/>
+        /// </summary>
+        /// <param name="appUrl">e.g. "https://www.localhost.com"</param>
+        /// <param name="getPath">e.g. "/dns-get-path"</param>
+        /// <param name="getPathQueryParamName">e.g. 'dns' to match example: "www.dns-doh.com/dns-get-path?dns=...."</param>
+        /// <param name="postPath"></param>
+        /// <param name="certificate"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        public void AddMessageIO_DoH(
+            string appUrl,
+            string getPath,
+            string getPathQueryParamName,
+            string postPath,
+            X509Certificate2 certificate)
         {
-            
+            MessageIO.AddAdapter(new DnsServerMessageIO_DoHRfc8484(appUrl, getPath, getPathQueryParamName, postPath, certificate));
         }
     }
 }

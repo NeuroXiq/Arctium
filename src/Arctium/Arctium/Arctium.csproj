@@ -12,6 +12,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Remove="HashFunctions\Checksums\**" />
 		<EmbeddedResource Remove="HashFunctions\Checksums\**" />
 		<None Remove="HashFunctions\Checksums\**" />

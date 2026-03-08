@@ -2,8 +2,6 @@
 {
     public static class DnsConsts
     {
-
-
         /// <summary>
         /// rfc-1035 default 1 week in seconds
         /// </summary>
@@ -30,5 +28,9 @@
         public const int UdpSizeLimit = 512;
 
         public const int DefaultServerDnsPort = 53;
+
+        public const int ArctiumDefaultTcpReceiveTimeoutMs = 10000;
+        
+        public const int ArctiumDefaultTcpListenBacklog = 1000;
     }
 }

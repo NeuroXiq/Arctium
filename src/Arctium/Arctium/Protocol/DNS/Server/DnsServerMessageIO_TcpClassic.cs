@@ -16,13 +16,17 @@ namespace Arctium.Protocol.DNS.Server
         private CancellationToken serverStopCancellationToken;
         private Func<Message, Task<Message>> serverProcessMessage;
         private int port;
+        private int receiveTimeoutMs;
+        private int listedBacklog;
         private DnsSerialize serializer = new DnsSerialize();
         private Task task;
         private Socket tcpSocket;
 
-        public DnsServerMessageIO_TcpClassic(int port)
+        public DnsServerMessageIO_TcpClassic(int port, int receiveTimeoutMs, int listedBacklog)
         {
             this.port = port;
+            this.receiveTimeoutMs = receiveTimeoutMs;
+            this.listedBacklog = listedBacklog;
         }
 
         public void Configure(Func<Message, Task<Message>> serverProcessMessage, CancellationToken serverStopCancellationToken)
@@ -35,7 +39,7 @@ namespace Arctium.Protocol.DNS.Server
         {
             tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             tcpSocket.Bind(new IPEndPoint(IPAddress.Any, port));
-            tcpSocket.Listen(100);
+            tcpSocket.Listen(listedBacklog);
 
             task = Task.Run(async () => await OnServerStart2());
         }
@@ -72,9 +76,19 @@ namespace Arctium.Protocol.DNS.Server
                 var buffer = new ByteBuffer();
                 buffer.AllocEnd(2);
 
+                var q = new CancellationTokenSource();
+                
+                var cancelToken = CancellationTokenSource.CreateLinkedTokenSource(serverStopCancellationToken);
+                cancelToken.CancelAfter(receiveTimeoutMs);
+
                 while (toReceive > 0)
                 {
-                    received = await client.ReceiveAsync(new ArraySegment<byte>(buffer.Buffer, offset, toReceive));
+                    cancelToken.Token.ThrowIfCancellationRequested();
+
+                    received = await client.ReceiveAsync(
+                        new ArraySegment<byte>(buffer.Buffer, offset, toReceive),
+                        cancelToken.Token);
+
                     offset += received;
                     toReceive -= received;
 
