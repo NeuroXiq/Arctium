@@ -13,6 +13,7 @@ namespace Arctium.Protocol.DNS.Server
         private DnsSerialize serializer = new DnsSerialize();
         private int port;
         private Task task;
+        private Socket udpSocket;
 
         public DnsServerMessageIO_UdpClassic(int port)
         {
@@ -29,13 +30,13 @@ namespace Arctium.Protocol.DNS.Server
 
         public void OnServerStart()
         {
-            this.task = Task.Run(async () => await OnServerStart2());
+            udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.Bind(new IPEndPoint(IPAddress.Any, port));
+            task = Task.Run(async () => await OnServerStart2(), serverStopCancellationToken);
         }
 
         public async Task OnServerStart2()
         {
-            var udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udpSocket.Bind(new IPEndPoint(IPAddress.Any, port));
             EndPoint clientEndpoint = null;
             BytesCursor clientBytes = null;
 
@@ -50,7 +51,7 @@ namespace Arctium.Protocol.DNS.Server
 
                     clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
 
-                    var recvResult = await udpSocket.ReceiveFromAsync(buf, clientEndpoint);
+                    var recvResult = await udpSocket.ReceiveFromAsync(buf, clientEndpoint, serverStopCancellationToken);
                     int recvLen = recvResult.ReceivedBytes;
                     clientEndpoint = recvResult.RemoteEndPoint;
 
@@ -70,6 +71,7 @@ namespace Arctium.Protocol.DNS.Server
 
                     udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, clientEndpoint);
                 }
+                catch (OperationCanceledException e) { }
                 catch (Exception e)
                 {
                     // fatal exception
@@ -95,7 +97,7 @@ namespace Arctium.Protocol.DNS.Server
 
         public void OnServerStop()
         {
-            throw new NotImplementedException();
+            udpSocket.Close();
         }
     }
 }
