@@ -1,6 +1,6 @@
 ﻿using Arctium.Protocol.DNS.Protocol;
 
-namespace Arctium.Protocol.DNS
+namespace Arctium.Protocol.DNS.Server
 {
     public class DnsServer
     {
@@ -13,5 +13,8 @@ namespace Arctium.Protocol.DNS
 
         public void StartUdp() => dnsServerImpl.StartUdp();
         public void StartTcp() => dnsServerImpl.StartTcp();
+
+        public void Start();
+        public void Stop();
     }
 }

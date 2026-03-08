@@ -4,9 +4,9 @@ using Arctium.Shared;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Arctium.Protocol.DNS
+namespace Arctium.Protocol.DNS.Resolver
 {
-    public class DnsClientMessageIO_Rfc1035Classic : IDnsClientMessageIO
+    public class DnsResolverMessageIO_Rfc1035Classic : IDnsResolverMessageIO
     {
         public readonly int UdpSocketRecvTimeoutMs;
 
@@ -14,7 +14,7 @@ namespace Arctium.Protocol.DNS
         
         public readonly bool ReplyTcpWhenTruncated;
 
-        public DnsClientMessageIO_Rfc1035Classic(
+        public DnsResolverMessageIO_Rfc1035Classic(
             int udpSocketRecvTimeoutMs,
             int tcpSocketRecvTimeoutMs,
             bool replyTcpWhenTruncated)
@@ -24,7 +24,7 @@ namespace Arctium.Protocol.DNS
             ReplyTcpWhenTruncated = replyTcpWhenTruncated;
         }
 
-        public async Task<Message> QueryServerAsync(DnsClientMessageIOArg arg)
+        public async Task<Message> QueryServerAsync(DnsResolverMessageIOArg arg)
         {
             var clientMessage = arg.Message;
             var ipAddress = arg.IpAddress;

@@ -1,10 +1,10 @@
-﻿using Arctium.Protocol.DNS;
-using Arctium.Protocol.DNS.Model;
+﻿using Arctium.Protocol.DNS.Model;
+using Arctium.Protocol.DNS.Protocol;
 using Arctium.Shared;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Arctium.Protocol.DNS.Protocol
+namespace Arctium.Protocol.DNS.Server
 {
     public class DnsServerImpl
     {
@@ -16,10 +16,30 @@ namespace Arctium.Protocol.DNS.Protocol
 
         public DnsServerImpl(DnsServerOptions options)
         {
+            ValidateOptions(options);
+            
             this.options = options;
         }
 
+        private void ValidateOptions(DnsServerOptions options)
+        {
+            if (options.MessageIO == null) throw new ArgumentException("messageio null");
+        }
+
+        public void Start()
+        {
+            options.MessageIO.Configure(OnClientMessageReceived);
+
+            options.MessageIO.OnServerStart();
+        }
+
         public void Stop()
+        {
+            options.StopServerCancellationTokenSource.Cancel();
+            options.MessageIO.OnServerStop();
+        }
+
+        public void Stop2()
         {
             tcpSocket?.Dispose();
             udpSocket?.Dispose();
@@ -67,7 +87,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
                     clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length);
                     var clientMsg = serializer.Decode(clientBytes);
-                    var responseMessage = GetResponseMessage(clientMsg).Result;
+                    var responseMessage = OnClientMessageReceived(clientMsg).Result;
                     var responseBuffer = new ByteBuffer();
                     responseBuffer.AllocEnd(2);
                     serializer.EncodeClassic(responseMessage, responseBuffer);
@@ -111,7 +131,7 @@ namespace Arctium.Protocol.DNS.Protocol
                     clientBytes = new BytesCursor(buf, 0, recvLen);
                     var clientMsg = serializer.Decode(clientBytes);
 
-                    var res = GetResponseMessage(clientMsg).Result;
+                    var res = OnClientMessageReceived(clientMsg).Result;
                     var responseBytes = new ByteBuffer();
                     serializer.EncodeClassic(res, responseBytes);
 
@@ -217,7 +237,7 @@ namespace Arctium.Protocol.DNS.Protocol
             return responseMessage;
         }
 
-        async Task<Message> GetResponseMessage(Message clientMsg)
+        async Task<Message> OnClientMessageReceived(Message clientMsg)
         {
             // algorithm based on rfc1034, page 24 reference algorithm
 

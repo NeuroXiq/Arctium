@@ -1,5 +1,7 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNS.Model;
+using Arctium.Protocol.DNS.Resolver;
+using Arctium.Protocol.DNS.Server;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -13,10 +15,11 @@ namespace Arctium.IntegrationTests.Protocol
     {
         #region RFC-8484
 
+        [Test]
         public void Success_DoH_WillResolveGoogleHostNameOverHttpsPost_Rfc8484()
         {
             var options = DnsResolverOptions.CreateDefault();
-            options.SetClientMessageIO_DoH("https://dns.google/dns-query?dns={0}", DnsClientMessageIO_Rfc8484DoH.HttpMethod.Post);
+            options.SetClientMessageIO_DoH("https://dns.google/dns-query", DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Post);
             var resolver = new DnsResolver(options);
 
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
@@ -24,10 +27,11 @@ namespace Arctium.IntegrationTests.Protocol
             Assert.That(result.Any());
         }
 
+        [Test]
         public void Success_DoH_WillResolveGoogleHostNameOverHttpsGet_Rfc8484()
         {
             var options = DnsResolverOptions.CreateDefault();
-            options.SetClientMessageIO_DoH("https://dns.google/dns-query", DnsClientMessageIO_Rfc8484DoH.HttpMethod.Get);
+            options.SetClientMessageIO_DoH("https://dns.google/dns-query?dns={0}", DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Get);
             var resolver = new DnsResolver(options);
             
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;

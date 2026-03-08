@@ -1,5 +1,6 @@
 ﻿using Arctium.Protocol.DNS.Model;
 using Arctium.Protocol.DNS.Protocol;
+using Arctium.Protocol.DNS.Resolver;
 using Arctium.Shared;
 using System.Diagnostics;
 using System.Net;

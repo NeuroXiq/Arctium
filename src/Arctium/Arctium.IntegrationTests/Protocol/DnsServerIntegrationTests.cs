@@ -1,6 +1,7 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNS.Model;
 using Arctium.Protocol.DNS.Protocol;
+using Arctium.Protocol.DNS.Server;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -40,6 +41,33 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop.Cancel();
             serverStop.Dispose();
         }
+
+        #region RFC-8484
+
+        [Test]
+        public void Success_WillWorkWithTcpAndUdpConnectionsSimultaneusly()
+        {
+            // https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/sockets/socket-services?redirectedfrom=MSDN#create-a-socket-server
+        }
+
+        /// <summary>
+        /// A DoH server MUST be able to process
+        /// "application/dns-message" request messages.
+        /// </summary>
+        [Test]
+        public void Success_DoH_ServerWillBeAbleToProcessApplicationDnsMessage()
+        {
+            Assert.Fail();
+        }
+
+        [Test]
+        public void Succees_DoH_ServerWillWorkWithSimpleQuery()
+        {
+            // check application/dns-message header exists from server
+            Assert.Fail();
+        }
+
+        #endregion
 
         // start of 6.2. Example standard queries [rfc 1034, page 40]
 

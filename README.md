@@ -4,16 +4,13 @@ Download binaries archive: [Release-Link](https://github.com/NeuroXiq/Arctium/re
 
 Nuget:
 ```
-Install-Package Arctium.Shared
-Install-Package Arctium.Cryptography
-Install-Package Arctium.Standards
+Install-Package Arctium
 ```
 - - -
-API Docs: \
-https://dndocs.com/?packageName=Arctium.Shared&packageVersion=1.0.0.1 \
-https://dndocs.com/?packageName=Arctium.Standards&packageVersion=1.0.0.1 \
-https://dndocs.com/?packageName=Arctium.Cryptography&packageVersion=1.0.0.1 
+API Docs: 
 
+For documentation see visual studio solution in 'docs' folder. 
+Solution contains examples and description
 
 Arctium is a simple crypto library, created and maintained for learning purpose. 
 It provides various cryptographic functions, ciphers, connection protocols etc. implemented for better or worse but probably they should works.

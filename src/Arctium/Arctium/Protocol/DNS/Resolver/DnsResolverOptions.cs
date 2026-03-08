@@ -1,12 +1,12 @@
 ﻿using Arctium.Protocol.DNS.Model;
 
-namespace Arctium.Protocol.DNS
+namespace Arctium.Protocol.DNS.Resolver
 {
     public class DnsResolverOptions
     {
         public ResourceRecord[] SBeltServers { get; set; }
         public IDnsResolverCache Cache { get; set; }
-        public IDnsClientMessageIO ClientMessageIO { get; set; }
+        public IDnsResolverMessageIO ClientMessageIO { get; set; }
 
         /// <summary>
         /// Max TTL. If TTL from received packet exceed this limit it is dropped.
@@ -37,7 +37,7 @@ namespace Arctium.Protocol.DNS
         {
             DnsResolverOptions options = new DnsResolverOptions();
 
-            options.ClientMessageIO = new DnsClientMessageIO_Rfc1035Classic(5000, 5000, true);
+            options.ClientMessageIO = new DnsResolverMessageIO_Rfc1035Classic(5000, 5000, true);
             options.SBeltServers = CreateDefaultSBeltServers();
             options.MaxRequestCountForResolve = 150;
             options.RecursionDesired = true;
@@ -68,12 +68,9 @@ namespace Arctium.Protocol.DNS
         /// </summary>
         /// <param name="httpsUri"></param>
         /// <param name="method"></param>
-        public void SetClientMessageIO_DoH(string httpsUri, DnsClientMessageIO_Rfc8484DoH.HttpMethod method)
+        public void SetClientMessageIO_DoH(string httpsUri, DnsResolverMessageIO_Rfc8484DoH.HttpMethod method)
         {
-            HttpClient httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/dns-message");
-
-            ClientMessageIO = new DnsClientMessageIO_Rfc8484DoH(httpsUri, httpClient, method);
+            ClientMessageIO = new DnsResolverMessageIO_Rfc8484DoH(httpsUri, new HttpClient(), method, new Version(2, 0));
         }
 
         /// <summary>
@@ -82,7 +79,7 @@ namespace Arctium.Protocol.DNS
         /// </summary>
         public void SetClientMessageIO_Classic(int utcSocketReceiveTimeout = 5000, int tcpSocketReceiveTimeout = 5000, bool useTcpIfTrucated = true)
         {
-            ClientMessageIO = new DnsClientMessageIO_Rfc1035Classic(utcSocketReceiveTimeout, tcpSocketReceiveTimeout, true);
+            ClientMessageIO = new DnsResolverMessageIO_Rfc1035Classic(utcSocketReceiveTimeout, tcpSocketReceiveTimeout, true);
         }
 
         public void SetSBeltServers(ResourceRecord[] resourceRecords)

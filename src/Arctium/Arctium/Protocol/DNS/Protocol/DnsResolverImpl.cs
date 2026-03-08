@@ -1,4 +1,5 @@
 ﻿using Arctium.Protocol.DNS.Model;
+using Arctium.Protocol.DNS.Resolver;
 using Arctium.Shared;
 using System.Net;
 using System.Net.Sockets;
@@ -16,7 +17,7 @@ namespace Arctium.Protocol.DNS.Protocol
 
         private Task<Message> SendMessage(string nsdName, Message clientMessage, IPAddress ipAddress)
         {
-            return options.ClientMessageIO.QueryServerAsync(new DnsClientMessageIOArg(nsdName,ipAddress, clientMessage));
+            return options.ClientMessageIO.QueryServerAsync(new DnsResolverMessageIOArg(nsdName,ipAddress, clientMessage));
         }
 
         Message CreateMessage(string hostName, QClass qclass, QType qtype)
