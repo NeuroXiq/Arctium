@@ -34,6 +34,7 @@ namespace Arctium.Protocol.DNS.Server
             this.x509Certificate = x509Certificate;
             this.mapGetPath = mapGetPath;
             this.mapPostPath = mapPostPath;
+            this.getPathQueryParamName = getPathQueryParamName;
         }
 
         public void Configure(Func<Message, Task<Message>> serverProcessMessage, CancellationToken serverStopCancellationToken)
@@ -63,7 +64,7 @@ namespace Arctium.Protocol.DNS.Server
 
             if (!string.IsNullOrWhiteSpace(mapGetPath))
             {
-                app.MapGet("/", this.OnGetRequestReceived);
+                app.MapGet("/", OnGetRequestReceived);
             }
 
             if (!string.IsNullOrWhiteSpace(mapGetPath))
@@ -79,14 +80,31 @@ namespace Arctium.Protocol.DNS.Server
             kestrelWebApplication.StopAsync().Wait();
         }
 
-        protected async Task OnPostRequestReceived(HttpContent context)
+        protected async Task OnPostRequestReceived(HttpContext context)
         {
             Debugger.Break();
         }
 
-        protected async Task OnGetRequestReceived(HttpContent context)
+        protected async Task OnGetRequestReceived(HttpContext context)
         {
-            Debugger.Break();
+
+            if (context.Request.Query.TryGetValue(this.getPathQueryParamName, out var values))
+            {
+                context.Response.StatusCode = 200;
+            }
+            else
+            {
+                context.Response.StatusCode = 400;
+                context.Response.ContentType = "text/html";
+                string msg = $"client send invalid request to server. it does not contain required query parameter: '{this.getPathQueryParamName}'";
+                string html = "<html>";
+                html += "<head></head>";
+                html += $"<body>{msg}</body>";
+                html += "<html>";
+                
+                await context.Response.WriteAsync(html);
+            }
+
         }
     }
 }
