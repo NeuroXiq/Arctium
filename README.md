@@ -5,6 +5,7 @@ Download binaries archive: [Release-Link](https://github.com/NeuroXiq/Arctium/re
 Nuget:
 ```
 Install-Package Arctium
+https://www.nuget.org/packages/Arctium/
 ```
 - - -
 API Docs: 
