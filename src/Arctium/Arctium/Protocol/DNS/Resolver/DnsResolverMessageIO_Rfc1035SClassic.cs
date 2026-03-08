@@ -35,7 +35,7 @@ namespace Arctium.Protocol.DNS.Resolver
             DnsSerialize serialize = new DnsSerialize();
             ByteBuffer bbuf = new ByteBuffer();
 
-            serialize.EncodeClassic(clientMessage, bbuf);
+            serialize.Encode_ClassicTcp(clientMessage, bbuf);
 
             if (bbuf.Length <= DnsConsts.UdpSizeLimit)
             {

@@ -11,9 +11,6 @@ namespace Arctium.Protocol.DNS.Server
         DnsServerOptions options;
         DnsSerialize serializer = new DnsSerialize();
 
-        Socket tcpSocket;
-        Socket udpSocket;
-
         public DnsServerImpl(DnsServerOptions options)
         {
             ValidateOptions(options);
@@ -29,7 +26,6 @@ namespace Arctium.Protocol.DNS.Server
         public void Start()
         {
             options.MessageIO.Configure(OnClientMessageReceived, this.options.StopServerCancellationTokenSource.Token);
-
             options.MessageIO.OnServerStart();
         }
 
@@ -37,22 +33,6 @@ namespace Arctium.Protocol.DNS.Server
         {
             options.StopServerCancellationTokenSource.Cancel();
             options.MessageIO.OnServerStop();
-        }
-
-        public void Stop2()
-        {
-            tcpSocket?.Dispose();
-            udpSocket?.Dispose();
-        }
-
-        public void StartTcp()
-        {
-            
-        }
-
-        public void StartUdp()
-        {
-            
         }
 
         public void OnException(BytesCursor clientBytes, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
@@ -107,11 +87,11 @@ namespace Arctium.Protocol.DNS.Server
                 errorResponseMsg.Authority = null;
 
                 ByteBuffer responseBytes = new ByteBuffer();
-                serializer.EncodeClassic(errorResponseMsg, responseBytes);
-
+                //serializer.EncodeClassic(errorResponseMsg, responseBytes);
+                throw new NotImplementedException();
                 if (udpClientEndpoint != null)
                 {
-                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, udpClientEndpoint);
+                    //udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, udpClientEndpoint);
                 }
                 else
                 {

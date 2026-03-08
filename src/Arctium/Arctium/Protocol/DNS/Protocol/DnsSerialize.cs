@@ -32,41 +32,53 @@ namespace Arctium.Protocol.DNS.Protocol
         }
 
         /// <summary>
-        /// encodes as classic rfc1035 for udp or tcp
+        /// encodes for udp transport from rfc 1035.
+        /// includes length check - if exceed max udp length specified in rfc 1035 then throws exception
         /// </summary>
         /// <param name="message"></param>
         /// <param name="buffer"></param>
         /// <param name="isTcp"></param>
-        public void EncodeClassic(Message message, ByteBuffer buffer, bool isTcp = false)
+        public void Encode_ClassicUdp(Message message, ByteBuffer buffer, bool isTcp = false)
         {
-            int tcpLengthOffset = -1;
-
-            if (isTcp)
-            {
-                tcpLengthOffset = buffer.AllocEnd(2);
-            }
-
             EncodeRaw(message, buffer);
 
-            if (isTcp)
-            {
-                int contentLength = buffer.Length - 2;
-
-                if (contentLength > ushort.MaxValue)
-                {
-                    throw new DnsException(DnsProtocolError.Internal, "serialized message length > ushort.maxvalue");
-                }
-
-                MemMap.ToBytes1UShortBE((ushort)contentLength, buffer.Buffer, tcpLengthOffset);
-            }
-            else if (buffer.Length > DnsConsts.UdpSizeLimit)
+            if (buffer.Length > DnsConsts.UdpSizeLimit)
             {
                 throw new DnsException(DnsProtocolError.Internal, "encoded > udp max length");
             }
         }
+        
+        /// <summary>
+        /// Encodes message to bytes for TCP transport. This includes:
+        /// 1.Two byte length prefix
+        /// 2.throws exception if encded length > ushort.maxvalue
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="buffer"></param>
+        /// <param name="isTcp"></param>
+        /// <exception cref="DnsException"></exception>
+        public void Encode_ClassicTcp(Message message, ByteBuffer buffer, bool isTcp = false)
+        {
+            int tcpLengthOffset = buffer.AllocEnd(2);
+
+            EncodeRaw(message, buffer);
+
+            int contentLength = buffer.Length - 2;
+
+            if (contentLength > ushort.MaxValue)
+            {
+                throw new DnsException(
+                    DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue,
+                    "serialized message length > ushort.maxvalue");
+            }
+
+            MemMap.ToBytes1UShortBE((ushort)contentLength, buffer.Buffer, tcpLengthOffset);
+        }
 
         /// <summary>
-        /// directly convert to byte array 
+        /// directly converts to raw byte array. Skips all length checks.
+        /// throws exception only when message properties are invalid/inconsistent with standard
+        /// (e.g. string labels of domain name are too large, encoded length is larger than possible to encode etc.)
         /// </summary>
         public void EncodeRaw(Message message, ByteBuffer buffer)
         {
@@ -195,7 +207,7 @@ namespace Arctium.Protocol.DNS.Protocol
             header.NSCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 8);
             header.ARCount = BinConverter.ToUShortBE(buffer.Buffer, buffer.CurrentOffset + 10);
 
-            buffer.ShiftCurrentOffset(12);
+            buffer.Seek(12);
 
             return header;
         }
@@ -353,7 +365,7 @@ namespace Arctium.Protocol.DNS.Protocol
         {
             if (isTcp)
             {
-                cursor.ShiftCurrentOffset(2);
+                cursor.Seek(2);
             }
 
             Message result = new Message();

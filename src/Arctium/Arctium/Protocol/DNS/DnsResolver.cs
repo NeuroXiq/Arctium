@@ -99,7 +99,7 @@ namespace Arctium.Protocol.DNS
             int recvLength = 0, shouldRecvLength = 2, recv = 0;
             byte[] tempRecvBuffer = new byte[256];
 
-            serialize.EncodeClassic(message, messageBuffer, true);
+            serialize.Encode_ClassicTcp(message, messageBuffer, true);
 
             using (clientSocket = new Socket(ipAddress.AddressFamily,SocketType.Stream, ProtocolType.Tcp))
             {
@@ -147,7 +147,7 @@ namespace Arctium.Protocol.DNS
 
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             IPEndPoint endpoint = new IPEndPoint(ipAddress, port);
-            serialize.EncodeClassic(message, bbuf);
+            serialize.Encode_ClassicUdp(message, bbuf);
             
             await socket.SendToAsync(new ArraySegment<byte>(bbuf.Buffer, 0, bbuf.Length), endpoint);
             var sresult = await socket.ReceiveFromAsync(receiveBuffer, endpoint);

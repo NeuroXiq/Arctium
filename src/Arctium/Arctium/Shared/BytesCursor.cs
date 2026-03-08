@@ -35,7 +35,7 @@ namespace Arctium.Shared
             set { Buffer[GetIndex(index)] = value; }
         }
 
-        public void ShiftCurrentOffset(int relativePosition)
+        public void Seek(int relativePosition)
         {
             CurrentOffset += relativePosition;
         }

@@ -59,13 +59,13 @@ namespace Arctium.Protocol.DNS.Server
 
                     var res = processMessage(clientMsg).Result;
                     var responseBytes = new ByteBuffer();
-                    serializer.EncodeClassic(res, responseBytes);
+                    serializer.EncodeRaw(res, responseBytes);
 
                     if (responseBytes.Length > DnsConsts.UdpSizeLimit)
                     {
                         res = ConvertToTrunCated(res);
                         responseBytes.Reset();
-                        serializer.EncodeClassic(res, responseBytes);
+                        serializer.Encode_ClassicUdp(res, responseBytes);
                     }
 
                     udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, clientEndpoint);

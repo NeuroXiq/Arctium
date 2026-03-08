@@ -70,18 +70,14 @@ namespace Arctium.Protocol.DNS.Server
                         }
                     }
 
-                    clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length);
+                    clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length - 2);
                     var clientMsg = serializer.Decode(clientBytes);
                     var responseMessage = await serverProcessMessage(clientMsg);
                     var responseBuffer = new ByteBuffer();
-                    responseBuffer.AllocEnd(2);
-                    serializer.EncodeClassic(responseMessage, responseBuffer);
+                    serializer.Encode_ClassicTcp(responseMessage, responseBuffer);
 
-                    if (responseBuffer.Length > ushort.MaxValue)
-                        throw new DnsException(DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue);
+                    // var test = serializer.Decode(new BytesCursor(responseBuffer.Buffer, 0, responseBuffer.Length), true);
 
-                    // first 2-bytes are msg length
-                    MemMap.ToBytes1UShortBE((ushort)(responseBuffer.Length - 2), responseBuffer.Buffer, 0);
                     client.Send(responseBuffer.Buffer, 0, responseBuffer.Length, SocketFlags.None);
                 }
                 catch (Exception e)

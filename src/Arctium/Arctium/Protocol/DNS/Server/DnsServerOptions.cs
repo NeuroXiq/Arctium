@@ -55,12 +55,12 @@ namespace Arctium.Protocol.DNS.Server
 
         public void AddMessageIO_ClassicTcp(int port = DnsConsts.DefaultServerDnsPort)
         {
-            
+            MessageIO.AddAdapter(new DnsServerMessageIO_TcpClassic(port));
         }
 
         public void AddMessageIO_ClassicUdp(int port = DnsConsts.DefaultServerDnsPort)
         {
-
+            MessageIO.AddAdapter(new DnsServerMessageIO_UdpClassic(port));
         }
 
         public void AddMessageIO_DoH()
