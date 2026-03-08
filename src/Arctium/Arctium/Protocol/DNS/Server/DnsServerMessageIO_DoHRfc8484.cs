@@ -1,4 +1,6 @@
 ﻿using Arctium.Protocol.DNS.Model;
+using Arctium.Protocol.DNS.Protocol;
+using Arctium.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +22,7 @@ namespace Arctium.Protocol.DNS.Server
         protected string mapGetPath;
         protected string mapPostPath;
         protected string getPathQueryParamName;
+        protected DnsSerialize dnsSerialize;
 
         public DnsServerMessageIO_DoHRfc8484() { }
 
@@ -35,6 +38,7 @@ namespace Arctium.Protocol.DNS.Server
             this.mapGetPath = mapGetPath;
             this.mapPostPath = mapPostPath;
             this.getPathQueryParamName = getPathQueryParamName;
+            this.dnsSerialize = new DnsSerialize();
         }
 
         public void Configure(Func<Message, Task<Message>> serverProcessMessage, CancellationToken serverStopCancellationToken)
@@ -64,12 +68,12 @@ namespace Arctium.Protocol.DNS.Server
 
             if (!string.IsNullOrWhiteSpace(mapGetPath))
             {
-                app.MapGet("/", OnGetRequestReceived);
+                app.MapGet(this.mapGetPath, OnGetRequestReceived);
             }
 
             if (!string.IsNullOrWhiteSpace(mapGetPath))
             {
-                app.MapPost("/", this.OnPostRequestReceived);
+                app.MapPost(this.mapPostPath, this.OnPostRequestReceived);
             }
 
             task = Task.Run(async () => await app.RunAsync());
@@ -87,24 +91,45 @@ namespace Arctium.Protocol.DNS.Server
 
         protected async Task OnGetRequestReceived(HttpContext context)
         {
-
-            if (context.Request.Query.TryGetValue(this.getPathQueryParamName, out var values))
+            try
             {
-                context.Response.StatusCode = 200;
-            }
-            else
-            {
-                context.Response.StatusCode = 400;
-                context.Response.ContentType = "text/html";
-                string msg = $"client send invalid request to server. it does not contain required query parameter: '{this.getPathQueryParamName}'";
-                string html = "<html>";
-                html += "<head></head>";
-                html += $"<body>{msg}</body>";
-                html += "<html>";
-                
-                await context.Response.WriteAsync(html);
-            }
+                if (context.Request.Headers.TryGetValue("accept", out var acceptValues)
+                    && context.Request.Query.TryGetValue(getPathQueryParamName, out var values)
+                    && acceptValues.Count == 1 
+                    && values.Count == 1)
+                {
+                    Message message = dnsSerialize.Decode_DohFromGet(values[0]);
+                    Message resultMessage = await this.serverProcessMessage(message);
+                    ByteBuffer responseBytes = new ByteBuffer();
+                    dnsSerialize.EncodeRaw(resultMessage, responseBytes);
 
+                    context.Response.StatusCode = 200;
+                    context.Response.Headers.Append("content-type", "application/dns-message");
+                    await context.Response.BodyWriter.WriteAsync(
+                        new ReadOnlyMemory<byte>(responseBytes.Buffer, 0, responseBytes.Length),
+                        serverStopCancellationToken);
+                }
+                else
+                {
+                    context.Response.StatusCode = 400;
+                    context.Response.ContentType = "text/html";
+                    string msg =
+                        "client send invalid request to server. it does not contain " +
+                        $"required query parameter: '{this.getPathQueryParamName}' " +
+                        "or parameter count is invalid (should be 1 parameter) or request " + 
+                        "does not have 'accept: application/dns-message header set";
+                    string html = "<html>";
+                    html += "<head></head>";
+                    html += $"<body>{msg}</body>";
+                    html += "<html>";
+
+                    await context.Response.WriteAsync(html, serverStopCancellationToken);
+                }
+            }
+            catch (Exception e)
+            {
+                context.Response.StatusCode = 500;
+            }
         }
     }
 }

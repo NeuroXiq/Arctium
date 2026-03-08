@@ -1,5 +1,6 @@
 ﻿using Arctium.Protocol.DNS.Model;
 using Arctium.Shared;
+using Microsoft.AspNetCore.Authentication;
 using System.Diagnostics;
 using System.Text;
 
@@ -15,6 +16,20 @@ namespace Arctium.Protocol.DNS.Protocol
         public void EncodeDohForPost(Message message, ByteBuffer outputMsgBytes)
         {
             EncodeRaw(message, outputMsgBytes);
+        }
+
+        public Message Decode_DohFromGet(string base64UrlString)
+        {
+            ByteBuffer msgBytes = new ByteBuffer();
+
+            string base64 = Convert.ToBase64String(msgBytes.Buffer, 0, msgBytes.Length);
+
+            string b64Message = base64.Replace("-", "+").Replace("_", "/");
+            byte[] result = Base64UrlTextEncoder.Decode(base64UrlString);
+            Message message = this.Decode(new BytesCursor(result));
+
+
+            return message;
         }
 
         public string EncodeDohForGet(Message message)

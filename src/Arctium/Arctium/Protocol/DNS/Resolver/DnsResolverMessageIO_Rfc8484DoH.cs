@@ -9,6 +9,7 @@ namespace Arctium.Protocol.DNS.Resolver
 {
     public class DnsResolverMessageIO_Rfc8484DoH : IDnsResolverMessageIO
     {
+        private readonly string httpGetQueryParameterName;
         public readonly string HttpsUriFormat;
         public readonly bool HttpsRequired;
         public readonly HttpClient DnsHttpClient;
@@ -19,6 +20,7 @@ namespace Arctium.Protocol.DNS.Resolver
 
         public DnsResolverMessageIO_Rfc8484DoH(
             string httpsUri,
+            string httpGetQueryParameterName,
             HttpClient httpClient,
             HttpMethod method,
             Version httpVersion)
@@ -30,9 +32,9 @@ namespace Arctium.Protocol.DNS.Resolver
             if (!Uri.IsWellFormedUriString(httpsUri, UriKind.Absolute)) throw new ArgumentException("httpsUri is not valid url");
             if (httpVersion == null) throw new ArgumentException("httpversion is null");
 
-            if (method == HttpMethod.Get && !httpsUri.Contains("{0}"))
+            if (method == HttpMethod.Get && string.IsNullOrWhiteSpace(httpGetQueryParameterName))
             {
-                throw new ArgumentException("for get requests https uri must contain format parameter '{0}' to format query string");
+                throw new ArgumentException("for get requests httpGetQueryParameterName must not be empty, e.g. set it to 'dns'");
             }
 
             if (method == HttpMethod.Post && httpsUri.Contains("{0}"))
@@ -41,7 +43,8 @@ namespace Arctium.Protocol.DNS.Resolver
             }
 
             httpClient.DefaultRequestHeaders.Add("Accept", "application/dns-message");
-            
+
+            this.httpGetQueryParameterName = httpGetQueryParameterName;
             HttpsUriFormat = httpsUri;
             DnsHttpClient = httpClient;
             Method = method;
@@ -56,7 +59,7 @@ namespace Arctium.Protocol.DNS.Resolver
             if (Method == HttpMethod.Get)
             {
                 string b64Message = dnsSerialize.EncodeDohForGet(arg.Message);
-                result = await DnsHttpClient.GetAsync(string.Format(HttpsUriFormat, b64Message));
+                result = await DnsHttpClient.GetAsync(string.Format("{0}?{1}={2}", HttpsUriFormat, httpGetQueryParameterName, b64Message));
                 body = await result.Content.ReadAsByteArrayAsync();
             }
             else
