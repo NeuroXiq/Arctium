@@ -376,18 +376,14 @@ namespace Arctium.IntegrationTests.Protocol
             var cancellationToken = cts.Token;
             var itMasterFiles = CreateArctiumDnsMasterFiles();
 
-            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles, cancellationToken);
+            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles);
             var server = new DnsServer(options);
+            server.Start();
 
-            var taskUdp = Task.Run(() => { server.StartUdp(); }, cancellationToken);
-            var taskTcp = Task.Run(() => { server.StartTcp(); }, cancellationToken);
+            // wait to tasks startup
+            Task.Delay(5000).Wait();
 
-            for (int i = 0; i < 5 && (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running); i++)
-            {
-                Task.Delay(500).Wait();
-            }
-
-            if (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running) throw new Exception("failed to run server task");
+            // if (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running) throw new Exception("failed to run server task");
 
             return server;
         }

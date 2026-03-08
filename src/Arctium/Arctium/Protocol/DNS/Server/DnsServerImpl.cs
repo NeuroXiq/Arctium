@@ -28,7 +28,7 @@ namespace Arctium.Protocol.DNS.Server
 
         public void Start()
         {
-            options.MessageIO.Configure(OnClientMessageReceived);
+            options.MessageIO.Configure(OnClientMessageReceived, this.options.StopServerCancellationTokenSource.Token);
 
             options.MessageIO.OnServerStart();
         }
@@ -47,110 +47,12 @@ namespace Arctium.Protocol.DNS.Server
 
         public void StartTcp()
         {
-            tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            tcpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortTcp));
-            tcpSocket.Listen(100);
-            Socket client = null;
-            BytesCursor clientBytes = null;
-
-            while (!options.CancellationToken.IsCancellationRequested)
-            {
-                clientBytes = null;
-                client = null;
-
-                try
-                {
-                    client = tcpSocket.Accept();
-
-                    int offset = 0;
-                    int received = 0;
-                    int toReceive = 2;
-                    var buffer = new ByteBuffer();
-                    buffer.AllocEnd(2);
-
-                    while (toReceive > 0)
-                    {
-                        received = client.Receive(buffer.Buffer, offset, toReceive, SocketFlags.None);
-                        offset += received;
-                        toReceive -= received;
-
-                        if (received == 0) throw new DnsException(DnsProtocolError.ReceivedZeroBytesButExpectedMoreTcp);
-                        
-                        // this 'if' executes only once - loaded first two bytes with msg length
-                        if (offset == 2)
-                        {
-                            // first two bytes are msg length (tcp only)
-                            toReceive = MemMap.ToUShort2BytesBE(buffer.Buffer, 0);
-                            buffer.AllocEnd(toReceive);
-                        }
-                    }
-
-                    clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length);
-                    var clientMsg = serializer.Decode(clientBytes);
-                    var responseMessage = OnClientMessageReceived(clientMsg).Result;
-                    var responseBuffer = new ByteBuffer();
-                    responseBuffer.AllocEnd(2);
-                    serializer.EncodeClassic(responseMessage, responseBuffer);
-
-                    if (responseBuffer.Length > ushort.MaxValue)
-                        throw new DnsException(DnsProtocolError.EncodeResponseMessageTcpExceedUShortMaxValue);
-
-                    // first 2-bytes are msg length
-                    MemMap.ToBytes1UShortBE((ushort)(responseBuffer.Length - 2), responseBuffer.Buffer, 0);
-                    client.Send(responseBuffer.Buffer, 0, responseBuffer.Length, SocketFlags.None);
-                }
-                catch (Exception e)
-                {
-                    OnException(clientBytes, null, client, e);
-                }
-            }
+            
         }
 
         public void StartUdp()
         {
-            udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udpSocket.Bind(new IPEndPoint(IPAddress.Any, options.PortUdp));
-            EndPoint clientEndpoint = null;
-            BytesCursor clientBytes = null;
-
-            while (!options.CancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    clientEndpoint = null;
-                    clientBytes = null;
-
-                    byte[] buf = new byte[512];
-
-                    clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
-
-                    var recvResult = udpSocket.ReceiveFromAsync(buf, clientEndpoint).Result;
-                    int recvLen = recvResult.ReceivedBytes;
-                    clientEndpoint = recvResult.RemoteEndPoint;
-
-                    clientBytes = new BytesCursor(buf, 0, recvLen);
-                    var clientMsg = serializer.Decode(clientBytes);
-
-                    var res = OnClientMessageReceived(clientMsg).Result;
-                    var responseBytes = new ByteBuffer();
-                    serializer.EncodeClassic(res, responseBytes);
-
-                    if (responseBytes.Length > DnsConsts.UdpSizeLimit)
-                    {
-                        res = ConvertToTrunCated(res);
-                        responseBytes.Reset();
-                        serializer.EncodeClassic(res, responseBytes);
-                    }
-
-                    udpSocket.SendTo(responseBytes.Buffer, 0, responseBytes.Length, SocketFlags.None, clientEndpoint);
-                }
-                catch (Exception e)
-                {
-                    if (e is AggregateException) e = e.InnerException;
-
-                    OnException(clientBytes, clientEndpoint, null, e);
-                }
-            }
+            
         }
 
         public void OnException(BytesCursor clientBytes, EndPoint udpClientEndpoint, Socket tcpClientSocket, Exception e)
@@ -222,22 +124,45 @@ namespace Arctium.Protocol.DNS.Server
             }
         }
 
-        Message ConvertToTrunCated(Message responseMessage)
+        async Task<Message> OnClientMessageReceived(Message clientMsg)
         {
-            responseMessage.Header.TC = true;
+            try
+            {
+                var result = await OnClientMessageReceived2(clientMsg);
+                
+                return result;
+            }
+            catch (Exception e)
+            {
+                //temp return internal error
+                var errorResponseMsg = new Message();
+                var h = new Header();
 
-            responseMessage.Additional = null;
-            responseMessage.Answer = null;
-            responseMessage.Authority = null;
+                h.ANCount = 0;
+                h.ARCount = 0;
+                h.NSCount = 0;
+                h.QDCount = 1;
+                h.AA = false;
+                h.RA = false;
+                h.RD = clientMsg.Header.RD;
+                h.TC = false;
+                h.Id = clientMsg.Header.Id;
+                h.Opcode = clientMsg.Header.Opcode;
+                h.QR = QRType.Response;
+                h.RCode = ResponseCode.ServerFailure;
 
-            responseMessage.Header.ANCount = 0;
-            responseMessage.Header.NSCount = 0;
-            responseMessage.Header.ARCount = 0;
+                errorResponseMsg.Header = h;
+                errorResponseMsg.Question = clientMsg.Question;
 
-            return responseMessage;
+                errorResponseMsg.Additional = null;
+                errorResponseMsg.Answer = null;
+                errorResponseMsg.Authority = null;
+
+                return errorResponseMsg;
+            }
         }
 
-        async Task<Message> OnClientMessageReceived(Message clientMsg)
+        async Task<Message> OnClientMessageReceived2(Message clientMsg)
         {
             // algorithm based on rfc1034, page 24 reference algorithm
 

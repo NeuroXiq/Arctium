@@ -21,18 +21,12 @@ namespace Arctium.IntegrationTests.Protocol
             serverStop = new CancellationTokenSource();
             var cancellationToken = serverStop.Token;
 
-            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles, cancellationToken);
+            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles);
             server = new DnsServer(options);
 
-            var taskUdp = Task.Run(() => { server.StartUdp(); }, cancellationToken);
-            var taskTcp = Task.Run(() => { server.StartTcp(); }, cancellationToken);
+            Task.Delay(5000).Wait();
 
-            for (int i = 0; i < 5 && (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running); i++)
-            {
-                Task.Delay(500).Wait();
-            }
-
-            if (taskUdp.Status != TaskStatus.Running || taskTcp.Status != TaskStatus.Running) throw new Exception("failed to run server task");
+            server.Start();
         }
 
         [OneTimeTearDown]
