@@ -1,10 +1,11 @@
 # Arctium - .NET Core Crypto Library
 - - -
-Download binaries archive: [Release-Link](https://github.com/NeuroXiq/Arctium/releases/tag/v0.0.0.9)
+[![Static Badge](https://img.shields.io/badge/API%20Docs-DNDocs-190088?logo=readme&logoColor=white)](https://docs.dndocs.com/n/Arctium/1.0.13/api/index.html)
+[![NuGet Version](https://img.shields.io/nuget/v/Arctium)](https://www.nuget.org/packages/Arctium)
 
 Nuget:
 ```
-Install-Package Arctium
+dotnet add package Arctium
 https://www.nuget.org/packages/Arctium/
 ```
 - - -
