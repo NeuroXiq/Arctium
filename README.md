@@ -9,8 +9,6 @@ dotnet add package Arctium
 https://www.nuget.org/packages/Arctium/
 ```
 - - -
-API Docs: 
-
 For documentation see visual studio solution in 'docs' folder. 
 Solution contains examples and description
 
