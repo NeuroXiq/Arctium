@@ -1,28 +1,22 @@
 # Arctium - .NET Core Crypto Library
 - - -
-Download binaries archive: [Release-Link](https://github.com/NeuroXiq/Arctium/releases/tag/v0.0.0.9)
+[![Static Badge](https://img.shields.io/badge/API%20Docs-DNDocs-190088?logo=readme&logoColor=white)](https://docs.dndocs.com/n/Arctium/1.0.13/api/index.html)
+[![NuGet Version](https://img.shields.io/nuget/v/Arctium)](https://www.nuget.org/packages/Arctium)
 
 Nuget:
 ```
-Install-Package Arctium
+dotnet add package Arctium
+https://www.nuget.org/packages/Arctium/
 ```
 - - -
-API Docs: 
-
 For documentation see visual studio solution in 'docs' folder. 
 Solution contains examples and description
 
 Arctium is a simple crypto library, created and maintained for learning purpose. 
 It provides various cryptographic functions, ciphers, connection protocols etc. implemented for better or worse but probably they should works.
 
-## Projects
-Solution is partitioned into  a following projects, each of them is a set of related algorithms. If you wish to get more informations about specific project, algorithm and examples, see appropriate [docs] folder. Each folder contains more specific informations and examples.
-
 ### ArctiumCLI 
 In the future there may be some console interface utility tool 
-
-### Look up documents
-Following list shows all implemented features with links to examples
 
 ## Protocols
 
@@ -79,7 +73,7 @@ Following list shows all implemented features with links to examples
 |[RFC-8501](https://datatracker.ietf.org/doc/html/rfc8501)|November 2018|Reverse DNS in IPv6 for Internet Service Providers|Docs todo|TODO|
 |[RFC-8499](https://datatracker.ietf.org/doc/html/rfc8499)|January 2019|DNS Terminology|Docs todo|TODO|
 |[RFC-8490](https://datatracker.ietf.org/doc/html/rfc8490)|March 2019|DNS Stateful Operations|Docs todo|TODO|
-|[RFC-8484](https://datatracker.ietf.org/doc/html/rfc8484)|October 2018|DNS Queries over HTTPS (DoH)|Docs todo|TODO|
+|[RFC-8484](https://datatracker.ietf.org/doc/html/rfc8484)|October 2018|DNS Queries over HTTPS (DoH)|in progress|in progress|
 |[RFC-8483](https://datatracker.ietf.org/doc/html/rfc8483)|October 2018|Yeti DNS Testbed|Docs todo|TODO|
 |[RFC-8482](https://datatracker.ietf.org/doc/html/rfc8482)|January 2019|Providing Minimal-Sized Responses to DNS Queries That Have QTYPE=ANY|Docs todo|TODO|
 |[RFC-8467](https://datatracker.ietf.org/doc/html/rfc8467)|October 2018|Padding Policies for Extension Mechanisms for DNS (EDNS(0))|Docs todo|TODO|
@@ -304,8 +298,8 @@ Following list shows all implemented features with links to examples
 |[RFC-2182](https://datatracker.ietf.org/doc/html/rfc2182)|July 1997|Selection and Operation of Secondary DNS Servers|Docs todo|TODO|
 |[RFC-2181](https://datatracker.ietf.org/doc/html/rfc2181)|July 1997|Clarifications to the DNS Specification|Docs todo|TODO|
 |[RFC-2163](https://datatracker.ietf.org/doc/html/rfc2163)|January 1998|Using the Internet DNS to Distribute MIXER Conformant Global Address Mapping (MCGAM)|Docs todo|TODO|
-|[RFC-2146](https://datatracker.ietf.org/doc/html/rfc2146)|May 1997|U.S. Government Internet Domain Names|Docs todo|TODO|
-|[RFC-2137](https://datatracker.ietf.org/doc/html/rfc2137)|April 1997|Secure Domain Name System Dynamic Update|Docs todo|TODO|
+|[RFC-2146](https://datatracker.ietf.org/doc/html/rfc2146)|May 1997|U.S. Government Internet Domain Names|-|no (informational)|
+|[RFC-2137](https://datatracker.ietf.org/doc/html/rfc2137)|April 1997|Secure Domain Name System Dynamic Update|-|no (obsoleted) (obsoleted by rfc-3007)|
 |[RFC-2136](https://datatracker.ietf.org/doc/html/rfc2136)|April 1997|Dynamic Updates in the Domain Name System (DNS UPDATE)|-|(todo)|
 |[RFC-2065](https://datatracker.ietf.org/doc/html/rfc2065)|January 1997|Domain Name System Security Extensions|-|no (obsoleted) (obsoleted by rfc2535)|
 |[RFC-2053](https://datatracker.ietf.org/doc/html/rfc2053)|October 1996|The AM (Armenia) Domain|-|no (informational)|
