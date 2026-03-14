@@ -13,6 +13,12 @@ $curVersion = (get-content "$PSScriptRoot/version.txt").trim().split('.');
 $nextVersion = "$($curVersion[0]).$($curVersion[1]).$([system.int32]::parse($curVersion[2]) + 1)"
 set-content -path "$PSScriptRoot/version.txt" -value $nextVersion
 
+'starting push new version.txt to remote repo'
+
+git add version.txt
+git commit -m 'publish-nuget: updated version.txt to next version'
+git push
+
 $nupkgFilePath = "$output/Arctium.$nextVersion.nupkg";
 
 $nextVersion;
