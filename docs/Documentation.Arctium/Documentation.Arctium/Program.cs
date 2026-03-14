@@ -10,21 +10,16 @@ namespace Documentation.Arctium
             Console.WriteLine("Arctium - Examples");
             Console.WriteLine("=============================================");
 
-            // select example to run
-            ExamplesDnsClient.Startup();
+            // comment/uncomment examples in specific files to run it
 
-            //
-            // AllExamples();
+            AllExamples();
         }
 
 
         static void AllExamples()
         {
-            //
-            // Check example to run
-            //
-
             ExamplesDnsClient.Startup();
+            ExamplesDnsServer.Startup();
         }
     }
 }

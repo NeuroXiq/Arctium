@@ -1,4 +1,5 @@
 ﻿using Arctium.Protocol.DNS;
+using Arctium.Protocol.DNS.Resolver;
 
 namespace Documentation.Arctium.Protocol
 {
@@ -9,8 +10,15 @@ namespace Documentation.Arctium.Protocol
             Console.WriteLine("Examples - DNS Client");
             DnsResolver resolver = new DnsResolver();
 
-            Example1();
-            Example2();
+            AllExamples();
+        }
+
+        static void AllExamples()
+        {
+            // comment/uncomment to run
+
+            // Example1();
+            // Example2();
         }
 
         /// <summary>
@@ -54,7 +62,7 @@ namespace Documentation.Arctium.Protocol
         public static void Example2()
         {
             var options = DnsResolverOptions.CreateDefault();
-            options.SetClientMessageIO_DoH("https://dns.google/dns-query", DnsClientMessageIO_Rfc8484DoH.HttpMethod.Post);
+            options.SetClientMessageIO_DoH("https://dns.google/dns-query", DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Post);
 
             var resolver = new DnsResolver();
             var result = resolver.ResolveHostNameToHostAddressAsync("www.google.com").Result;
