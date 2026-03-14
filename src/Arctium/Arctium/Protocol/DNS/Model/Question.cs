@@ -11,5 +11,14 @@ namespace Arctium.Protocol.DNS.Model
         public string QName;
         public QType QType;
         public QClass QClass;
+
+        public Question() { }
+        
+        public Question(string qname, QType qtype, QClass qclass)
+        {
+            QName = qname;
+            QType = qtype;
+            QClass = qclass;
+        }
     }
 }

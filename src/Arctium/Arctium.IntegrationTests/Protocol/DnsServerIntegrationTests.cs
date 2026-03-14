@@ -3,6 +3,7 @@ using Arctium.Protocol.DNS.Model;
 using Arctium.Protocol.DNS.Protocol;
 using Arctium.Protocol.DNS.Resolver;
 using Arctium.Protocol.DNS.Server;
+using Arctium.Shared;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
@@ -33,13 +34,22 @@ namespace Arctium.IntegrationTests.Protocol
         [Test]
         public void Success_DoH_ServerWillBeAbleToProcessApplicationDnsMessage_Rfc8484()
         {
-            Assert.Fail();
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("accept", "application/dns-message");
+
+            var msg = CreateMessageForA("simple-post.doh");
+            var bytes = MessageEncodeRaw(msg);
+            var content = new ByteArrayContent(bytes.Buffer, 0, bytes.Length);
+            content.Headers.Add("content-type", "application/dns-message");
+            var result = httpClient.PostAsync($"{DoHAppUrl}/{DoHPostPath}", content).Result;
+
+            Assert.That(result.IsSuccessStatusCode);
         }
 
         [Test]
         public void Succees_DoH_ServerWillWorkWithSimpleQuery_Post_Rfc8484()
         {
-            var resolver = CreateResolverForDoH_Rfc8484();
+            var resolver = CreateResolverForDoH_Rfc8484(DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Post);
             var result = resolver.ResolveHostNameToHostAddressAsync("simple-post.doh").Result;
 
             Assert.That(result.Length == 1);
@@ -235,8 +245,7 @@ namespace Arctium.IntegrationTests.Protocol
 
         #endregion
 
-
-        #region Other
+        #region Other - Unspecified
 
         [Test]
         public void Success_Flag_RecursionAvailableWorks()
@@ -475,6 +484,7 @@ namespace Arctium.IntegrationTests.Protocol
         CancellationTokenSource serverStop;
         const string DoHGetPath = "dns-get-path";
         const string DoHPostPath = "dns-post-path";
+        const string DoHAppUrl = "https://localhost";
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
@@ -1002,6 +1012,40 @@ namespace Arctium.IntegrationTests.Protocol
             return result;
         }
 
+        private ByteBuffer MessageEncodeRaw(Message message)
+        {
+            var dnsSerialize = new DnsSerialize();
+            var buffer = new ByteBuffer();
+            dnsSerialize.EncodeRaw(message, buffer);
+
+            return buffer;
+        }
+
+        private Message CreateMessageForA(string qname)
+        {
+            var msg = new Message();
+            msg.Header = new Header()
+            {
+                Id = 0x1234,
+                AA = false,
+                Opcode = Opcode.Query,
+                QR = QRType.Query,
+                RCode = ResponseCode.NoErrorCondition,
+                RA = false,
+                RD = true,
+                TC = false,
+                ANCount = 0,
+                ARCount = 0,
+                NSCount = 0,
+                QDCount = 1,
+            };
+            msg.Question = new Question[]
+            {
+                new Question(qname, QType.A, QClass.IN)
+            };
+
+            return msg;
+        }
     }
 }
 
