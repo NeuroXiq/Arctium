@@ -14,12 +14,12 @@ namespace Arctium.Protocol.DNS.Server
     internal class DnsServerMessageIO_TcpClassic : IDnsServerMessageIOAdapter
     {
         private CancellationToken serverStopCancellationToken;
-        private Func<Message, Task<Message>> serverProcessMessage;
         private int port;
         private int receiveTimeoutMs;
         private int listedBacklog;
         private DnsSerialize serializer = new DnsSerialize();
         private Task task;
+        private OnServerStartParams onServerStartParams;
         private Socket tcpSocket;
 
         public DnsServerMessageIO_TcpClassic(int port, int receiveTimeoutMs, int listedBacklog)
@@ -29,14 +29,10 @@ namespace Arctium.Protocol.DNS.Server
             this.listedBacklog = listedBacklog;
         }
 
-        public void Configure(Func<Message, Task<Message>> serverProcessMessage, CancellationToken serverStopCancellationToken)
+        public void OnServerStart(OnServerStartParams onServerStartParams)
         {
-            this.serverStopCancellationToken = serverStopCancellationToken;
-            this.serverProcessMessage = serverProcessMessage;
-        }
+            this.onServerStartParams = onServerStartParams;
 
-        public void OnServerStart()
-        {
             tcpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             tcpSocket.Bind(new IPEndPoint(IPAddress.Any, port));
             tcpSocket.Listen(listedBacklog);
@@ -105,7 +101,7 @@ namespace Arctium.Protocol.DNS.Server
 
                 var clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length - 2);
                 var clientMsg = serializer.Decode(clientBytes);
-                var responseMessage = await serverProcessMessage(clientMsg);
+                var responseMessage = await onServerStartParams.ProcessMessageAsync(clientMsg);
                 var responseBuffer = new ByteBuffer();
                 serializer.Encode_ClassicTcp(responseMessage, responseBuffer);
 

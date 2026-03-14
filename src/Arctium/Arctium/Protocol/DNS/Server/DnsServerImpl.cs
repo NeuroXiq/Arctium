@@ -25,8 +25,8 @@ namespace Arctium.Protocol.DNS.Server
 
         public void Start()
         {
-            options.MessageIO.Configure(OnClientMessageReceived, this.options.StopServerCancellationTokenSource.Token);
-            options.MessageIO.OnServerStart();
+            OnServerStartParams startParams = new OnServerStartParams(OnClientMessageReceived, options.StopServerCancellationTokenSource.Token);
+            options.MessageIO.OnServerStart(startParams);
         }
 
         public void Stop()

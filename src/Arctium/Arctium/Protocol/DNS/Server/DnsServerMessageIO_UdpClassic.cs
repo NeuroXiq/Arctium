@@ -20,16 +20,11 @@ namespace Arctium.Protocol.DNS.Server
             this.port = port;
         }
 
-        public void Configure(
-            Func<Message, Task<Message>> serverProcessMessage,
-            CancellationToken serverStopCancellationToken)
+        public void OnServerStart(OnServerStartParams onServerStartParams)
         {
-            this.processMessage = serverProcessMessage;
-            this.serverStopCancellationToken = serverStopCancellationToken;
-        }
+            this.processMessage = onServerStartParams.ProcessMessageAsync;
+            this.serverStopCancellationToken = onServerStartParams.ServerStopCancellationToken;
 
-        public void OnServerStart()
-        {
             udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udpSocket.Bind(new IPEndPoint(IPAddress.Any, port));
             task = Task.Run(async () => await OnServerStart2(), serverStopCancellationToken);

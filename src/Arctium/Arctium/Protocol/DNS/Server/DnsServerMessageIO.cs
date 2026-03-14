@@ -7,21 +7,11 @@ namespace Arctium.Protocol.DNS.Server
         private List<IDnsServerMessageIOAdapter> adapters;
         private Func<Message, Task<Message>> onMessageReceived;
         private CancellationToken serverStopCancellationToken;
+        private OnServerStartParams onServerStartParams;
 
         public DnsServerMessageIO()
         {
             adapters = new List<IDnsServerMessageIOAdapter>();
-        }
-
-        public void Configure(Func<Message, Task<Message>> onMessageReceived, CancellationToken serverStopCancellationToken)
-        {
-            this.onMessageReceived = onMessageReceived;
-            this.serverStopCancellationToken = serverStopCancellationToken;
-
-            foreach (var adapter in adapters)
-            {
-                adapter.Configure(OnClientMessageReceived, serverStopCancellationToken);
-            }
         }
 
         public void AddAdapter(IDnsServerMessageIOAdapter adapter)
@@ -29,11 +19,13 @@ namespace Arctium.Protocol.DNS.Server
             adapters.Add(adapter);
         }
 
-        public void OnServerStart()
+        public void OnServerStart(OnServerStartParams onServerStartParams)
         {
+            this.onServerStartParams = onServerStartParams;
+
             foreach (var adapter in adapters)
             {
-                adapter.OnServerStart();
+                adapter.OnServerStart(onServerStartParams);
             }
         }
 
@@ -43,11 +35,6 @@ namespace Arctium.Protocol.DNS.Server
             {
                 adapter.OnServerStop();
             }
-        }
-
-        private Task<Message> OnClientMessageReceived(Message clientMessage)
-        {
-            return onMessageReceived(clientMessage);
         }
     }
 }

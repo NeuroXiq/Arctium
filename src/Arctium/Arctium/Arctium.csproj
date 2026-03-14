@@ -8,7 +8,11 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
+		<Authors>NeuroXiq</Authors>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/NeuroXiq/Arctium</RepositoryUrl>
+  		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/NeuroXiq/Arctium</PackageProjectUrl>
 	</PropertyGroup>
 
 	<ItemGroup>

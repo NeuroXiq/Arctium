@@ -4,53 +4,40 @@ using Arctium.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Arctium.Protocol.DNS.Server
 {
     public class DnsServerMessageIO_DoHRfc8484 : IDnsServerMessageIOAdapter
     {
-        protected Func<Message, Task<Message>> serverProcessMessage;
-        protected CancellationToken serverStopCancellationToken;
-        protected HttpListener httpListener;
         protected Task task;
-        protected WebApplication kestrelWebApplication;
-        protected string appUrl;
-        protected X509Certificate2 x509Certificate;
-        protected string mapGetPath;
-        protected string mapPostPath;
-        protected string getPathQueryParamName;
+        protected WebApplication app;
+        private string appUrl;
+        private string mapGetPath;
+        private string mapPostPath;
+        private X509Certificate2 x509Certificate;
         protected DnsSerialize dnsSerialize;
-
-        public DnsServerMessageIO_DoHRfc8484() { }
+        private OnServerStartParams onServerStartParams;
 
         public DnsServerMessageIO_DoHRfc8484(
             string appUrl,
-            string mapGetPath,
-            string getPathQueryParamName,
-            string mapPostPath,
+            string getUriPath,
+            string postUriPath,
             X509Certificate2 x509Certificate)
         {
             this.appUrl = appUrl;
+            this.mapGetPath = getUriPath;
+            this.mapPostPath = postUriPath;
             this.x509Certificate = x509Certificate;
-            this.mapGetPath = mapGetPath;
-            this.mapPostPath = mapPostPath;
-            this.getPathQueryParamName = getPathQueryParamName;
-            this.dnsSerialize = new DnsSerialize();
+
+            dnsSerialize = new DnsSerialize();
         }
 
-        public void Configure(Func<Message, Task<Message>> serverProcessMessage, CancellationToken serverStopCancellationToken)
-        {
-            this.serverProcessMessage = serverProcessMessage;
-            this.serverStopCancellationToken = serverStopCancellationToken;
-        }
-
-        /// <summary>
-        /// This method should be overriden and then create custom implementation of http server
-        /// </summary>
-        public virtual void OnServerStart()
+        protected virtual WebApplication CreateDefaultKestrelServer()
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -68,38 +55,48 @@ namespace Arctium.Protocol.DNS.Server
 
             if (!string.IsNullOrWhiteSpace(mapGetPath))
             {
-                app.MapGet(this.mapGetPath, OnGetRequestReceived);
+                app.MapGet(mapGetPath, OnGetRequestReceived);
             }
 
             if (!string.IsNullOrWhiteSpace(mapGetPath))
             {
-                app.MapPost(this.mapPostPath, this.OnPostRequestReceived);
+                app.MapPost(mapPostPath, OnPostRequestReceived);
             }
+
+            return app;
+        }
+
+        /// <summary>
+        /// This method should be overriden and then create custom implementation of http server
+        /// </summary>
+        public virtual void OnServerStart(OnServerStartParams onServerStartParams)
+        {
+            this.onServerStartParams = onServerStartParams;
+            app = this.CreateDefaultKestrelServer();
 
             task = Task.Run(async () => await app.RunAsync());
         }
 
         public virtual void OnServerStop()
         {
-            kestrelWebApplication.StopAsync().Wait();
+            app.StopAsync().Wait();
         }
 
-        protected async Task OnPostRequestReceived(HttpContext context)
+        public virtual async Task OnPostRequestReceived(HttpContext context)
         {
-            Debugger.Break();
+            throw new NotImplementedException("todo");
         }
 
-        protected async Task OnGetRequestReceived(HttpContext context)
+        public virtual async Task OnGetRequestReceived(HttpContext context, [FromQuery] string dns)
         {
             try
             {
                 if (context.Request.Headers.TryGetValue("accept", out var acceptValues)
-                    && context.Request.Query.TryGetValue(getPathQueryParamName, out var values)
                     && acceptValues.Count == 1 
-                    && values.Count == 1)
+                    && !string.IsNullOrWhiteSpace(dns))
                 {
-                    Message message = dnsSerialize.Decode_DohFromGet(values[0]);
-                    Message resultMessage = await this.serverProcessMessage(message);
+                    Message message = dnsSerialize.Decode_DohFromGet(dns);
+                    Message resultMessage = await this.onServerStartParams.ProcessMessageAsync(message);
                     ByteBuffer responseBytes = new ByteBuffer();
                     dnsSerialize.EncodeRaw(resultMessage, responseBytes);
 
@@ -107,7 +104,7 @@ namespace Arctium.Protocol.DNS.Server
                     context.Response.Headers.Append("content-type", "application/dns-message");
                     await context.Response.BodyWriter.WriteAsync(
                         new ReadOnlyMemory<byte>(responseBytes.Buffer, 0, responseBytes.Length),
-                        serverStopCancellationToken);
+                         onServerStartParams.ServerStopCancellationToken);
                 }
                 else
                 {
@@ -115,7 +112,7 @@ namespace Arctium.Protocol.DNS.Server
                     context.Response.ContentType = "text/html";
                     string msg =
                         "client send invalid request to server. it does not contain " +
-                        $"required query parameter: '{this.getPathQueryParamName}' " +
+                        $"required query parameter: '?dns=...' " +
                         "or parameter count is invalid (should be 1 parameter) or request " + 
                         "does not have 'accept: application/dns-message header set";
                     string html = "<html>";
@@ -123,7 +120,7 @@ namespace Arctium.Protocol.DNS.Server
                     html += $"<body>{msg}</body>";
                     html += "<html>";
 
-                    await context.Response.WriteAsync(html, serverStopCancellationToken);
+                    await context.Response.WriteAsync(html, onServerStartParams.ServerStopCancellationToken);
                 }
             }
             catch (Exception e)

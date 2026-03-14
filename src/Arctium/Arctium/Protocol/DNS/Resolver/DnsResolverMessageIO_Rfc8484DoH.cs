@@ -9,32 +9,27 @@ namespace Arctium.Protocol.DNS.Resolver
 {
     public class DnsResolverMessageIO_Rfc8484DoH : IDnsResolverMessageIO
     {
-        private readonly string httpGetQueryParameterName;
-        public readonly string HttpsUriFormat;
-        public readonly bool HttpsRequired;
-        public readonly HttpClient DnsHttpClient;
-        public readonly bool RequiredHttps;
-        public readonly HttpMethod Method;
-        public readonly Version HttpVersion;
+        public readonly string httpsUriFormat;
+        public readonly bool httpsRequired;
+        public readonly HttpClient dnsHttpClient;
+        public readonly bool requiredHttps;
+        public readonly HttpMethod method;
         DnsSerialize dnsSerialize = new DnsSerialize();
 
         public DnsResolverMessageIO_Rfc8484DoH(
             string httpsUri,
-            string httpGetQueryParameterName,
-            HttpClient httpClient,
             HttpMethod method,
-            Version httpVersion)
+            HttpClient httpClient) 
         {
             if (string.IsNullOrWhiteSpace(httpsUri) || !httpsUri.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("httpsUri is empty or not start with 'https'");
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
             if (!Enum.IsDefined(method)) throw new ArgumentException("method");
             if (!Uri.IsWellFormedUriString(httpsUri, UriKind.Absolute)) throw new ArgumentException("httpsUri is not valid url");
-            if (httpVersion == null) throw new ArgumentException("httpversion is null");
 
-            if (method == HttpMethod.Get && string.IsNullOrWhiteSpace(httpGetQueryParameterName))
+            if (method == HttpMethod.Get && !httpsUri.Contains("{0}"))
             {
-                throw new ArgumentException("for get requests httpGetQueryParameterName must not be empty, e.g. set it to 'dns'");
+                throw new ArgumentException("for get requests httpsUri must not be empty, and must contain '{0}' format string somewhere");
             }
 
             if (method == HttpMethod.Post && httpsUri.Contains("{0}"))
@@ -42,13 +37,23 @@ namespace Arctium.Protocol.DNS.Resolver
                 throw new ArgumentException("for post requests https uri must not contain format parameter '{0}' to format query string");
             }
 
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/dns-message");
+            this.dnsHttpClient = httpClient;
+            this.method = method;
+            this.httpsUriFormat = httpsUri;
+        }
 
-            this.httpGetQueryParameterName = httpGetQueryParameterName;
-            HttpsUriFormat = httpsUri;
-            DnsHttpClient = httpClient;
-            Method = method;
-            HttpVersion = httpVersion;
+        public DnsResolverMessageIO_Rfc8484DoH(
+            string httpsUri,
+            HttpMethod method) : this(httpsUri, method, CreateDefaultHttpClient())
+        {
+        }
+
+        public static HttpClient CreateDefaultHttpClient()
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Accept", "application/dns-message");
+
+            return client;
         }
 
         public virtual async Task<Message> QueryServerAsync(DnsResolverMessageIOArg arg)
@@ -56,10 +61,11 @@ namespace Arctium.Protocol.DNS.Resolver
             HttpResponseMessage result;
             byte[] body;
 
-            if (Method == HttpMethod.Get)
+            if (method == HttpMethod.Get)
             {
                 string b64Message = dnsSerialize.EncodeDohForGet(arg.Message);
-                result = await DnsHttpClient.GetAsync(string.Format("{0}?{1}={2}", HttpsUriFormat, httpGetQueryParameterName, b64Message));
+                string getUrl = string.Format(httpsUriFormat, b64Message);
+                result = await dnsHttpClient.GetAsync(getUrl);
                 body = await result.Content.ReadAsByteArrayAsync();
             }
             else
@@ -67,15 +73,14 @@ namespace Arctium.Protocol.DNS.Resolver
                 ByteBuffer msgBytes = new ByteBuffer();
                 dnsSerialize.EncodeDohForPost(arg.Message, msgBytes);
 
-                var httpRequest = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, HttpsUriFormat)
+                var httpRequest = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, httpsUriFormat)
                 {
-                    Version = HttpVersion,
                 };
 
                 httpRequest.Content = new ByteArrayContent(msgBytes.Buffer, 0, msgBytes.Length);
                 httpRequest.Content.Headers.Add("content-type", "application/dns-message");
 
-                result = await DnsHttpClient.SendAsync(httpRequest);
+                result = await dnsHttpClient.SendAsync(httpRequest);
             }
 
             result.EnsureSuccessStatusCode();

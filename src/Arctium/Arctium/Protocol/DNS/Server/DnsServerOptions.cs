@@ -78,11 +78,10 @@ namespace Arctium.Protocol.DNS.Server
         public void AddMessageIO_DoH(
             string appUrl,
             string getPath,
-            string getPathQueryParamName,
             string postPath,
             X509Certificate2 certificate)
         {
-            MessageIO.AddAdapter(new DnsServerMessageIO_DoHRfc8484(appUrl, getPath, getPathQueryParamName, postPath, certificate));
+            MessageIO.AddAdapter(new DnsServerMessageIO_DoHRfc8484(appUrl, getPath, postPath, certificate));
         }
     }
 }

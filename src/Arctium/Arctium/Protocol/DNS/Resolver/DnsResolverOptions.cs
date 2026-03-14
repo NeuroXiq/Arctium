@@ -70,10 +70,9 @@ namespace Arctium.Protocol.DNS.Resolver
         /// <param name="method"></param>
         public void SetClientMessageIO_DoH(
             string httpsUri,
-            string httpGetQueryParameterName,
             DnsResolverMessageIO_Rfc8484DoH.HttpMethod method)
         {
-            ClientMessageIO = new DnsResolverMessageIO_Rfc8484DoH(httpsUri, httpGetQueryParameterName, new HttpClient(), method, new Version(2, 0));
+            ClientMessageIO = new DnsResolverMessageIO_Rfc8484DoH(httpsUri, method);
         }
 
         /// <summary>
