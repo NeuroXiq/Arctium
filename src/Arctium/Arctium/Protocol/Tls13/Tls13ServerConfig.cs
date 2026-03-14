@@ -196,7 +196,7 @@ namespace Arctium.Protocol.Tls13
         {
             if (sizeLimit.HasValue)
             {
-                Validation.NumberInRange(sizeLimit.Value,
+                ArctiumValidation.NumberInRange(sizeLimit.Value,
                     Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MinValue,
                     Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MaxValue,
                     nameof(sizeLimit));
@@ -210,8 +210,8 @@ namespace Arctium.Protocol.Tls13
         /// </summary>
         public void ConfigueCipherSuites(CipherSuite[] suites)
         {
-            Validation.NotEmpty(suites, nameof(suites));
-            Validation.EnumValueDefined(suites, nameof(suites));
+            ArctiumValidation.NotEmpty(suites, nameof(suites));
+            ArctiumValidation.EnumValueDefined(suites, nameof(suites));
 
             CipherSuites = suites.Select(s => (Tls13Impl.Model.CipherSuite)s).ToArray();
         }
@@ -221,17 +221,17 @@ namespace Arctium.Protocol.Tls13
         /// </summary>
         public void ConfigueExtensionSupportedGroups(ExtensionServerConfigSupportedGroups config)
         {
-            Validation.NotNull(config, nameof(config));
+            ArctiumValidation.NotNull(config, nameof(config));
 
             ExtensionSupportedGroups = config;
         }
 
         public void ThrowIfInvalidObjectState()
         {
-            Validation.NotEmpty(SignatureSchemes, nameof(SignatureSchemes));
-            Validation.NotNull(ExtensionSupportedGroups, nameof(ExtensionSupportedGroups));
-            Validation.NotEmpty(CipherSuites, nameof(CipherSuites));
-            Validation.NotEmpty(CertificatesWithKeys, nameof(CertificatesWithKeys), "Certificate list cannot be empty");
+            ArctiumValidation.NotEmpty(SignatureSchemes, nameof(SignatureSchemes));
+            ArctiumValidation.NotNull(ExtensionSupportedGroups, nameof(ExtensionSupportedGroups));
+            ArctiumValidation.NotEmpty(CipherSuites, nameof(CipherSuites));
+            ArctiumValidation.NotEmpty(CertificatesWithKeys, nameof(CertificatesWithKeys), "Certificate list cannot be empty");
 
             var configuredSignatures = Crypto.SignaturesInfo.Where(info => SignatureSchemes.Contains(info.SignatureScheme));
             var certsForSignatures = CertificatesWithKeys.Where(cert =>
@@ -249,15 +249,15 @@ namespace Arctium.Protocol.Tls13
                     $"all certificates cannot generate signatures specified in {nameof(SignatureScheme)} list. Change X509Certificate list " +
                     $"or change {SignatureSchemes} to have valid signature-certificate configuration for at least single certificate";
 
-                Validation.Argument(true, nameof(SignatureScheme), msg);
+                ArctiumValidation.Argument(true, nameof(SignatureScheme), msg);
             }
         }
 
         public void ConfigueSupportedSignatureSchemes(SignatureScheme[] schemes)
         {
-            Validation.NotEmpty(schemes, nameof(schemes));
+            ArctiumValidation.NotEmpty(schemes, nameof(schemes));
 
-            foreach (var value in schemes) Validation.EnumValueDefined(value, nameof(schemes));
+            foreach (var value in schemes) ArctiumValidation.EnumValueDefined(value, nameof(schemes));
 
             var internalList = schemes.Select(apiScheme => (SignatureSchemeListExtension.SignatureScheme)apiScheme).ToArray();
 

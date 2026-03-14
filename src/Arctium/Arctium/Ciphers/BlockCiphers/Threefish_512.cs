@@ -7,12 +7,12 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
     {
         public Threefish_512(byte[] key) : base(key)
         {
-            Validation.Length(key, 64, nameof(key));
+            ArctiumValidation.Length(key, 64, nameof(key));
         }
 
         public override void Encrypt(byte[] input, long inputOffset, byte[] output, long outputOffset, byte[] tweak)
         {
-            Validation.Length(tweak, 16, nameof(tweak));
+            ArctiumValidation.Length(tweak, 16, nameof(tweak));
 
             ulong t0, t1;
             t0 = MemMap.ToULong8BytesLE(tweak, 0);
@@ -23,7 +23,7 @@ namespace Arctium.Cryptography.Ciphers.BlockCiphers
 
         public override void Decrypt(byte[] input, long inputOffset, byte[] output, long outputOffset, byte[] tweak)
         {
-            Validation.Length(tweak, 16, nameof(tweak));
+            ArctiumValidation.Length(tweak, 16, nameof(tweak));
 
             ulong t0, t1;
             t0 = MemMap.ToULong8BytesLE(tweak, 0);

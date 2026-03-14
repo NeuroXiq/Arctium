@@ -32,7 +32,7 @@ namespace Arctium.Protocol.Tls13Impl.Model.Extensions
         {
             outProtocol = null;
 
-            Validation.NotNull(bytes, nameof(bytes));
+            ArctiumValidation.NotNull(bytes, nameof(bytes));
 
             bool found = false;
 
@@ -53,7 +53,7 @@ namespace Arctium.Protocol.Tls13Impl.Model.Extensions
 
         public static byte[] GetConstantBytes(Protocol protocol)
         {
-            Validation.EnumValueDefined(protocol, nameof(protocol), "internal");
+            ArctiumValidation.EnumValueDefined(protocol, nameof(protocol), "internal");
 
             var orgBytes = NamedProtocolUtf8Bytes[protocol];
 

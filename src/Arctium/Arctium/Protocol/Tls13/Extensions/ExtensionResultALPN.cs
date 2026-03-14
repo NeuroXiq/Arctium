@@ -22,7 +22,7 @@ namespace Arctium.Protocol.Tls13.Extensions
         /// <param name="selectedByServer"></param>
         internal ExtensionResultALPN(byte[] selectedByServer)
         {
-            Validation.NotEmpty(selectedByServer, nameof(selectedByServer), "this is impossible by specification");
+            ArctiumValidation.NotEmpty(selectedByServer, nameof(selectedByServer), "this is impossible by specification");
             Protocol = selectedByServer;
         }
 

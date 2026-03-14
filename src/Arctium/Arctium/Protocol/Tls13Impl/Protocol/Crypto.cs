@@ -221,7 +221,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 return null;
             }
 
-            Validation.ThrowInternal();
+            ArctiumValidation.ThrowInternal();
             return null;
         }
 
@@ -230,7 +230,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             var info = SignaturesInfo.First(info => info.SignatureScheme == signatureScheme);
             var certPKAlgo = cert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm;
 
-            Validation.ThrowInternal(info.RelatedPublicKeyType != cert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm);
+            ArctiumValidation.ThrowInternal(info.RelatedPublicKeyType != cert.Certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm);
 
             // create data to generate signature (from handshake context and format as specification says
             string contextStr = endpointGeneratingVerify == Endpoint.Client ? ClientCertificateVerifyContextString : "TLS 1.3, server CertificateVerify";
@@ -271,7 +271,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 var ecdsasigval = new EcdsaSigValue(ecsignature);
                 resultSignature = X509Util.ASN1_DerEncodeEcdsaSigValue(ecdsasigval);
             }
-            else Validation.ThrowInternal("something is wrong because certificate doesn't match with selected signaturescheme");
+            else ArctiumValidation.ThrowInternal("something is wrong because certificate doesn't match with selected signaturescheme");
 
             return resultSignature;
         }
@@ -496,7 +496,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                 case HashFunctionId.SHA2_384: return 48;
             }
 
-            Validation.ThrowInternal(); return -1;
+            ArctiumValidation.ThrowInternal(); return -1;
         }
 
         public byte[] GeneratePsk(byte[] resumptionMasterSecretFromPreviousSession, byte[] ticketNonce)
@@ -814,7 +814,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             else if (endpoint == Endpoint.Client && isPostHandshake) baseKey = ClientApplicationTrafficSecret0;
             else if (endpoint == Endpoint.Server && !isPostHandshake) baseKey = ServerHandshakeTrafficSecret;
             else if (endpoint == Endpoint.Server && isPostHandshake) baseKey = ServerApplicationTrafficSecret0;
-            else Validation.ThrowInternal();
+            else ArctiumValidation.ThrowInternal();
 
 
             byte[] finishedKey = HkdfExpandLabel(baseKey, "finished", new byte[0], hashFunction.HashSizeBytes);

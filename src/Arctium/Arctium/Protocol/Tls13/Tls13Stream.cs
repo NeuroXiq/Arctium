@@ -64,7 +64,7 @@ namespace Arctium.Protocol.Tls13
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            Validation.NotNegative(count, nameof(count));
+            ArctiumValidation.NotNegative(count, nameof(count));
 
             if (remainingApplicationData == 0)
             {
@@ -97,7 +97,7 @@ namespace Arctium.Protocol.Tls13
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            Validation.NotNegative(count, nameof(count));
+            ArctiumValidation.NotNegative(count, nameof(count));
 
             protocol.WriteApplicationData(buffer, offset, count);
         }

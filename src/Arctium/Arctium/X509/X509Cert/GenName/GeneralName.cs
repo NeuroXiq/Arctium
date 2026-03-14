@@ -41,7 +41,7 @@ namespace Arctium.Standards.X509.X509Cert.GenName
         public override T Get<T>()
         {
             if (!IsSupported)
-                Validation.NotSupported(
+                ArctiumValidation.NotSupported(
                     "General name is recognied (see ValueKey property of this class) but it is " + 
                     "not supported now. Underlying value cannot be obtained");
             return base.Get<T>();

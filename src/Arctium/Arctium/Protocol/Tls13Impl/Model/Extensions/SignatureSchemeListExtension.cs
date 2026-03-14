@@ -49,7 +49,7 @@ namespace Arctium.Protocol.Tls13Impl.Model.Extensions
         /// <param name="sigAlgoOrSigAlgoCertType"></param>
         public SignatureSchemeListExtension(SignatureScheme[] schemes, ExtensionType sigAlgoOrSigAlgoCertType)
         {
-            Validation.IsInS(sigAlgoOrSigAlgoCertType, nameof(sigAlgoOrSigAlgoCertType), ExtensionType.SignatureAlgorithmsCert, ExtensionType.SignatureAlgorithms);
+            ArctiumValidation.IsInS(sigAlgoOrSigAlgoCertType, nameof(sigAlgoOrSigAlgoCertType), ExtensionType.SignatureAlgorithmsCert, ExtensionType.SignatureAlgorithms);
 
             Schemes = new List<SignatureScheme>(schemes);
             extType = sigAlgoOrSigAlgoCertType;

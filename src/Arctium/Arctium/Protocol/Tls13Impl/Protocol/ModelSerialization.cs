@@ -121,7 +121,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             }
 
             int listLen = tempSerializedExtension.Length - authoritiesLenOffs - 2;
-            Validation.ThrowInternal(listLen > ushort.MaxValue);
+            ArctiumValidation.ThrowInternal(listLen > ushort.MaxValue);
 
             MemMap.ToBytes1UShortBE((ushort)listLen, tempSerializedExtension.Buffer, authoritiesLenOffs);
         }
@@ -160,7 +160,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             foreach (var filter in ext.Filters)
             {
-                Validation.ThrowInternal(
+                ArctiumValidation.ThrowInternal(
                     filter.CertificateExtensionValues.Length > ushort.MaxValue || filter.CertificateExtensionOid.Length > 255,
                     "something wrong with oid filters (exceed max)");
 
@@ -192,7 +192,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         {
             var ext = (ServerNameListClientHelloExtension)obj;
 
-            Validation.ThrowInternal(ext.ServerNameList.Length == 0, "list length > 1 by rfc6066 specification ");
+            ArctiumValidation.ThrowInternal(ext.ServerNameList.Length == 0, "list length > 1 by rfc6066 specification ");
 
             int serverNameListOffs = tempSerializedExtension.AllocEnd(2);
 
@@ -254,7 +254,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             foreach (var binder in ext.Binders)
             {
-                Validation.ThrowInternal(binder.Length < Tls13Const.PreSharedKeyExtension_PskBinderEntryMinLength || binder.Length > Tls13Const.PreSharedKeyExtension_PskBinderEntryMaxLength);
+                ArctiumValidation.ThrowInternal(binder.Length < Tls13Const.PreSharedKeyExtension_PskBinderEntryMinLength || binder.Length > Tls13Const.PreSharedKeyExtension_PskBinderEntryMaxLength);
 
                 tempSerializedExtension.Append((byte)binder.Length);
                 int binderOffs = tempSerializedExtension.AllocEnd(binder.Length);
@@ -269,7 +269,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         {
             PreSharedKeyExchangeModeExtension ext = (PreSharedKeyExchangeModeExtension)obj;
 
-            Validation.ThrowInternal(ext.KeModes.Count < 1 || ext.KeModes.Count > 255);
+            ArctiumValidation.ThrowInternal(ext.KeModes.Count < 1 || ext.KeModes.Count > 255);
 
             tempSerializedExtension.Append((byte)ext.KeModes.Count);
             int offs = tempSerializedExtension.AllocEnd(ext.KeModes.Count);
@@ -322,7 +322,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             int sharesLen = tempSerializedExtension.Length - 2 - clientSharesVectorLenOffs;
 
-            Validation.ThrowInternal(sharesLen > Tls13Const.KeyShareClientHello_ClientSharesVectorMaxLen);
+            ArctiumValidation.ThrowInternal(sharesLen > Tls13Const.KeyShareClientHello_ClientSharesVectorMaxLen);
 
             MemMap.ToBytes1UShortBE((ushort)sharesLen, tempSerializedExtension.Buffer, clientSharesVectorLenOffs);
         }
@@ -380,7 +380,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void AppendVector(byte[] vectorData, int vectorLengthBytesCount, int validateMaxLength)
         {
-            Validation.ThrowInternal(validateMaxLength < vectorData.Length);
+            ArctiumValidation.ThrowInternal(validateMaxLength < vectorData.Length);
 
             int lenOffs = buffer.AllocEnd(vectorLengthBytesCount);
             int vectorLen = vectorData.Length;
@@ -389,7 +389,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             if (vectorLengthBytesCount == 3) Set3Bytes(vectorLen, lenOffs);
             else if (vectorLengthBytesCount == 2) MemMap.ToBytes1UShortBE((ushort)vectorLen, SerializedData, lenOffs);
             else if (vectorLengthBytesCount == 1) SerializedData[lenOffs] = (byte)vectorLen;
-            else Validation.ThrowInternal();
+            else ArctiumValidation.ThrowInternal();
 
             MemCpy.Copy(vectorData, 0, SerializedData, dataOffs, vectorLen);
         }
@@ -403,7 +403,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             int reqContextLen = certReq.CertificateRequestContext.Length;
 
-            Validation.ThrowInternal(reqContextLen > 255);
+            ArctiumValidation.ThrowInternal(reqContextLen > 255);
 
             buffer.Append((byte)reqContextLen);
             int contextOffset = buffer.AllocEnd(reqContextLen);
@@ -416,7 +416,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
             long extLen = SerializedDataLength - extLenOffs - 2;
 
-            Validation.ThrowInternal(extLen > ushort.MaxValue);
+            ArctiumValidation.ThrowInternal(extLen > ushort.MaxValue);
 
             MemMap.ToBytes1UShortBE((ushort)extLen, SerializedData, extLenOffs);
 
@@ -427,7 +427,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
         {
             SignatureSchemeListExtension ext = (SignatureSchemeListExtension)obj;
 
-            Validation.ThrowInternal(ext.Schemes.Count == 0, "spec say min one scheme");
+            ArctiumValidation.ThrowInternal(ext.Schemes.Count == 0, "spec say min one scheme");
 
             int lenOffs = tempSerializedExtension.AllocEnd(2);
 
@@ -586,7 +586,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void Set3Bytes(int v, int offset)
         {
-            if ((0xFF000000 & v) != 0) Validation.ThrowInternal();
+            if ((0xFF000000 & v) != 0) ArctiumValidation.ThrowInternal();
 
             SerializedData[offset + 0] = (byte)((v & 0xFF0000) >> 16);
             SerializedData[offset + 1] = (byte)((v & 0x00FF00) >> 08);

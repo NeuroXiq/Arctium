@@ -79,7 +79,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             public X509CertWithKey SelectedCertificate;
             public SignatureSchemeListExtension.SignatureScheme SelectedSignatureScheme
             {
-                get { if (!selectedSignatureScheme.HasValue) { Validation.ThrowInternal(); } return selectedSignatureScheme.Value; }
+                get { if (!selectedSignatureScheme.HasValue) { ArctiumValidation.ThrowInternal(); } return selectedSignatureScheme.Value; }
                 set { selectedSignatureScheme = value; }
             }
 
@@ -368,8 +368,8 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void Connected_StartPostHandshakeCertificateRequest()
         {
-            if (config.PostHandshakeClientAuthentication == null) Validation.InvalidOperation("Not configured");
-            if (!context.ClientSupportPostHandshakeAuthentication) Validation.InvalidOperation("Client do not support post handshake auth");
+            if (config.PostHandshakeClientAuthentication == null) ArctiumValidation.InvalidOperation("Not configured");
+            if (!context.ClientSupportPostHandshakeAuthentication) ArctiumValidation.InvalidOperation("Client do not support post handshake auth");
 
             context.CommandAfterPostHandshakeProcessingFinished = null;
             State = ServerProtocolState.PostHandshake;

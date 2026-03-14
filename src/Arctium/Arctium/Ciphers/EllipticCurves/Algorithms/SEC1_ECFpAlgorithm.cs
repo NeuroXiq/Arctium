@@ -39,7 +39,7 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
 
             do
             {
-                Validation.ThrowInternal(againCount++ > 15, "this should not happen. Tried 15 times to generate signature and always fail (always zero). Aborting (all params ok?)");
+                ArctiumValidation.ThrowInternal(againCount++ > 15, "this should not happen. Tried 15 times to generate signature and always fail (always zero). Aborting (all params ok?)");
 
                 ECFpPoint R;
                 byte[] kBytes = SEC1_ECFpAlgorithm.EllipticCurveKeyPairGenerationPrimitive(ecparams, out R);
@@ -173,7 +173,7 @@ namespace Arctium.Cryptography.Ciphers.EllipticCurves.Algorithms
                 MemCpy.Copy(octetString, 1, felementBytes, 0, felementBytes.Length);
                 BigInteger xp = Fp_OctetStringToFieldElement(felementBytes);
 
-                Validation.Argument(Y != 0x02 && Y != 0x03, nameof(octetString), "first byte should be 0x02 or 0x03");
+                ArctiumValidation.Argument(Y != 0x02 && Y != 0x03, nameof(octetString), "first byte should be 0x02 or 0x03");
 
                 // BigInteger yp = Y == 0x02 ? 0 : 1;
                 BigInteger yp = 0;

@@ -3,10 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Arctium.Shared
 {
-    public static class Validation
+    public static class ArctiumValidation
     {
         /// <summary>
         /// This exception must never happen
@@ -166,7 +167,7 @@ namespace Arctium.Shared
             var name = assembly.FullName;
             var date = DateTime.Now;
 
-            var arctiumVersion = typeof(Validation).Assembly;
+            var arctiumVersion = typeof(ArctiumValidation).Assembly;
 
             string msg = "This feature is currently not supported by Arctium implementation. (current date: ''{0}'' version: ''{1}'', assembly.name: ''{2}'' )";
             msg = string.Format(msg, date, version ?? "", name ?? "");
@@ -190,6 +191,14 @@ namespace Arctium.Shared
             if (additinalInfo != null) msg = string.Format("{0}. Additional info: {1}", msg, additinalInfo);
 
             throw new ArgumentException(msg, argName);
+        }
+
+        public static void StringNotNullOrEmpty(string stringToCheck, string argName)
+        {
+            if (string.IsNullOrWhiteSpace(stringToCheck))
+            {
+                throw new ArgumentException($"argument '{argName}' is empty or white space");
+            }
         }
 
         public static void NotNull(object referenceTypeToCheckIfNull, string argName, string additionalInfo = null)

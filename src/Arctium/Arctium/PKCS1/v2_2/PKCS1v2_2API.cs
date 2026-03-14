@@ -127,14 +127,14 @@ namespace Arctium.Standards.PKCS1.v2_2
                 ModulusByteCount = Modulus.GetByteCount(true);
                 ModulusBitsCount = BitsCountInModulus(privateKey.Modulus);
 
-                Validation.Argument(PublicExponent.IsZero, nameof(PublicExponent), "is zero");
-                Validation.Argument(PrivateExponent.IsZero, nameof(PrivateExponent), "is zero");
-                Validation.Argument(Prime1.IsZero, nameof(Prime1), "is zero");
-                Validation.Argument(Prime2.IsZero, nameof(Prime2), "is zero");
-                Validation.Argument(Exponent1.IsZero, nameof(Exponent1), "is zero");
-                Validation.Argument(Exponent2.IsZero, nameof(Exponent2), "is zero");
-                Validation.Argument(Modulus.IsZero, nameof(Modulus), "is zero");
-                Validation.Argument(Coefficient.IsZero, nameof(Coefficient), "is zero");
+                ArctiumValidation.Argument(PublicExponent.IsZero, nameof(PublicExponent), "is zero");
+                ArctiumValidation.Argument(PrivateExponent.IsZero, nameof(PrivateExponent), "is zero");
+                ArctiumValidation.Argument(Prime1.IsZero, nameof(Prime1), "is zero");
+                ArctiumValidation.Argument(Prime2.IsZero, nameof(Prime2), "is zero");
+                ArctiumValidation.Argument(Exponent1.IsZero, nameof(Exponent1), "is zero");
+                ArctiumValidation.Argument(Exponent2.IsZero, nameof(Exponent2), "is zero");
+                ArctiumValidation.Argument(Modulus.IsZero, nameof(Modulus), "is zero");
+                ArctiumValidation.Argument(Coefficient.IsZero, nameof(Coefficient), "is zero");
             }
         }
 

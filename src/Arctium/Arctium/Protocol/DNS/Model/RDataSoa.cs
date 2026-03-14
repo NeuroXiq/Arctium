@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Arctium.Shared;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -51,5 +52,21 @@ namespace Arctium.Protocol.DNS.Model
         /// The unsigned 32 bit minimum ttl field that should be exported with any rr from this zonne
         /// </summary>
         public uint Minimum;
+
+        public RDataSOA() { }
+        
+        public RDataSOA(string mname, string rname, uint serial, uint refresh, uint retry, uint expire, uint minimum)
+        {
+            ArctiumValidation.StringNotNullOrEmpty(mname, nameof(mname));
+            ArctiumValidation.StringNotNullOrEmpty(rname, nameof(mname));
+
+            MName = mname;
+            RName = rname;
+            Serial = serial;
+            Refresh = refresh;
+            Retry = retry;
+            Expire = expire;
+            Minimum = minimum;
+        }
     }
 }

@@ -27,7 +27,7 @@ namespace Arctium.Standards.PKCS8.v12
             if (ValueKey == PrivateKeyType.RSAEncryption) return new X509CertPrivateKey(Choice_RSAPrivateKey());
             else if (ValueKey == PrivateKeyType.EllipticCurve) return new X509CertPrivateKey(Choice_EllipticCurvePrivateKey());
 
-            Validation.NotSupported();
+            ArctiumValidation.NotSupported();
 
             return null;
         }

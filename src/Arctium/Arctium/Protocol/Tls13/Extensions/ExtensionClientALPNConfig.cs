@@ -32,19 +32,19 @@ namespace Arctium.Protocol.Tls13.Extensions
         /// </summary>
         private void InternalAdd(byte[] value)
         {
-            Validation.NotEmpty(value, "protocolname", "invalid protocol name, it must not be empty by specification");
-            Validation.Argument(value.Length == 1 && value[0] == 0, "protocolname", "protocol name is just single zero-byte (means empty string that cannot be)");
+            ArctiumValidation.NotEmpty(value, "protocolname", "invalid protocol name, it must not be empty by specification");
+            ArctiumValidation.Argument(value.Length == 1 && value[0] == 0, "protocolname", "protocol name is just single zero-byte (means empty string that cannot be)");
             bool allzeros = true;
             for (int i = 0; i < value.Length; i++) allzeros &= value[i] == 0;
 
-            Validation.Argument(allzeros, "protocolname", "protocol name constsis of all zero bytes, this is not valid or not supported now");
+            ArctiumValidation.Argument(allzeros, "protocolname", "protocol name constsis of all zero bytes, this is not valid or not supported now");
 
             byte[] grease = GREASE.CS_ALPN.FirstOrDefault(grease => MemOps.Memcmp(grease, value));
 
             if (grease != null)
             {
                 string greaseString = BitConverter.ToString(grease);
-                Validation.Argument(true, "protocolname", $"current value is GREASE extension and cannot be configure. Invalid value: {greaseString}");
+                ArctiumValidation.Argument(true, "protocolname", $"current value is GREASE extension and cannot be configure. Invalid value: {greaseString}");
             }
 
             // for safty to be immutable later

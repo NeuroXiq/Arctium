@@ -220,7 +220,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                     case ClientProtocolState.PostHandshake: PostHandshake(); break;
                     case ClientProtocolState.Closed: ThrowEx("Cannot process command because connection is closed"); break;
                     case ClientProtocolState.FatalError: ThrowEx("Cannot process command because encountered fatal error"); break;
-                    default: Validation.ThrowInternal("unrecognized protocol state"); break;
+                    default: ArctiumValidation.ThrowInternal("unrecognized protocol state"); break;
                 }
             }
         }
@@ -531,7 +531,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         private void Handshake_ClientCertificateVerify()
         {
-            Validation.ThrowInternal(context.ClientCertificateHandshakeAuthentication == null);
+            ArctiumValidation.ThrowInternal(context.ClientCertificateHandshakeAuthentication == null);
 
             var clientCertWithKey = context.ClientCertificateHandshakeAuthentication;
 
@@ -902,7 +902,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
             };
 
             var supportedGroups = clientContext.GetExtension_SupportedGroups();
-            Validation.ThrowInternal(supportedGroups == null || supportedGroups.NamedGroupList.Count == 0);
+            ArctiumValidation.ThrowInternal(supportedGroups == null || supportedGroups.NamedGroupList.Count == 0);
             extensions.Add(supportedGroups);
 
             var certAuthorities = clientContext.GetExtension_CertificateAuthorities();

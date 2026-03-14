@@ -13,7 +13,7 @@ namespace Arctium.Standards.X509.X509Cert
         public X509CertWithKey(X509Certificate certificate, X509CertPrivateKey privateKey)
         {
             bool privKeyValid = certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm != privateKey.ValueKey;
-            Validation.Argument(privKeyValid, nameof(privateKey), "private key type does not match public key of the certificate");
+            ArctiumValidation.Argument(privKeyValid, nameof(privateKey), "private key type does not match public key of the certificate");
 
             Certificate = certificate;
             PrivateKey = privateKey;

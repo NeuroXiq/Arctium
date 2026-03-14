@@ -19,11 +19,11 @@ namespace Arctium.Protocol.Tls13.Extensions
         /// 'DistinguishedName authorities<3..2^16-1>'</param>
         public ExtensionClientConfigCertificateAuthorities(byte[][] authorities)
         {
-            Validation.NotEmpty(authorities, nameof(authorities), "list cannot be empty by specification");
+            ArctiumValidation.NotEmpty(authorities, nameof(authorities), "list cannot be empty by specification");
 
             foreach (var b in authorities)
             {
-                Validation.NotEmpty(b, nameof(authorities),
+                ArctiumValidation.NotEmpty(b, nameof(authorities),
                     "one or more byte array in authorities is empty but it cannot be empty by specification. Remove empty arrays");
             }
 

@@ -22,8 +22,8 @@ namespace Arctium.Protocol.Tls13.Extensions
 
         public ExtensionClientConfigSupportedGroups(NamedGroup[] namedGroupsList)
         {
-            Validation.NotEmpty(namedGroupsList, nameof(namedGroupsList));
-            Validation.EnumValueDefined(namedGroupsList, nameof(namedGroupsList));
+            ArctiumValidation.NotEmpty(namedGroupsList, nameof(namedGroupsList));
+            ArctiumValidation.EnumValueDefined(namedGroupsList, nameof(namedGroupsList));
 
             InternalNamedGroups = namedGroupsList
                 .Select(g => (SupportedGroupExtension.NamedGroup)g)

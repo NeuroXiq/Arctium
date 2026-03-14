@@ -50,7 +50,7 @@ namespace Arctium.Standards.ASN1.ObjectSyntax.Types.BuildInTypes
         /// <returns></returns>
         private static long ConvertToLong(byte[] value)
         {
-            Validation.ThrowInternal(value.Length > 8);
+            ArctiumValidation.ThrowInternal(value.Length > 8);
 
             long result = 0;
             

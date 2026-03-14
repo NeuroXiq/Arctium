@@ -32,8 +32,8 @@ namespace Arctium.Cryptography.Ciphers.DiffieHellman.Algorithms
         {
             long groupLenBytes = (parms.P.GetBitLength() + 7) / 8;
 
-            Validation.Length(otherPartyPublicKey.Length, groupLenBytes, nameof(otherPartyPublicKey), "publicKey len invalid, leading zeros shoud not be truncated");
-            Validation.Length(privateKey, groupLenBytes, nameof(privateKey), "invalid priv key, leading zero must not be truncated");
+            ArctiumValidation.Length(otherPartyPublicKey.Length, groupLenBytes, nameof(otherPartyPublicKey), "publicKey len invalid, leading zeros shoud not be truncated");
+            ArctiumValidation.Length(privateKey, groupLenBytes, nameof(privateKey), "invalid priv key, leading zero must not be truncated");
 
             BigInteger privKeyInt = new BigInteger(privateKey, true, true);
             BigInteger otherPartyInt = new BigInteger(otherPartyPublicKey, true, true);

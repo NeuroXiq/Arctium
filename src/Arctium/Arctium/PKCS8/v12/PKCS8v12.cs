@@ -24,9 +24,9 @@ namespace Arctium.Standards.PKCS8.v12
         public static PrivateKeyInfo FromPem(PemFile pemFile, byte[] key = null)
         {
             if (pemFile.BeginLabel == PEMEncryptedBeginLabel)
-                Validation.NotNull(key, nameof(key), "PEM file starts with encrypted label but key is null. Key must be provided");
+                ArctiumValidation.NotNull(key, nameof(key), "PEM file starts with encrypted label but key is null. Key must be provided");
 
-            Validation.Argument(PEMBeginLabel != pemFile.BeginLabel && pemFile.BeginLabel != PEMEncryptedBeginLabel,
+            ArctiumValidation.Argument(PEMBeginLabel != pemFile.BeginLabel && pemFile.BeginLabel != PEMEncryptedBeginLabel,
                 nameof(pemFile),
                 $"Invalid pem file BEGIN label. Only can be: '{PEMBeginLabel}' or '{PEMEncryptedBeginLabel}'");
 

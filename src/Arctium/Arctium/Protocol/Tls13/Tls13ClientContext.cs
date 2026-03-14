@@ -60,7 +60,7 @@ namespace Arctium.Protocol.Tls13
 
         internal ClientConfigHandshakeClientAuthentication.Certificates PostHandshakeClientAuthenticationGetCertificate(CertificateRequest certRequest)
         {
-            if (Config.PostHandshakeClientAuthentication == null) Validation.ThrowInternal();
+            if (Config.PostHandshakeClientAuthentication == null) ArctiumValidation.ThrowInternal();
 
             var certs = Config.PostHandshakeClientAuthentication.GetCertificateToSendToServer(APIModel.APIModelMapper.MapExtensions(certRequest.Extensions));
 

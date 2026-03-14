@@ -430,7 +430,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
                     case ServerCertificateValidionResult.Invalid_CertificateRevoked: alert = AlertDescription.CertificateRevoked; break;
                     case ServerCertificateValidionResult.Invalid_UnsupportedCertificate: alert = AlertDescription.UnsupportedCertificate; break;
                     case ServerCertificateValidionResult.Invalid_BadCertificate: alert = AlertDescription.BadCertificate; break;
-                    default: Validation.NotSupported(); break;
+                    default: ArctiumValidation.NotSupported(); break;
                 }
 
                 AlertFatal(true, alert, "CertificateValidationCallback returned false, certificate is invalid by current configuration.");

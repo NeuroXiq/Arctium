@@ -240,7 +240,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol
 
         public override void SetRecordSizeLimit(ushort maxRecord)
         {
-            Validation.ThrowInternal(maxRecord > Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength);
+            ArctiumValidation.ThrowInternal(maxRecord > Tls13Const.RecordLayer_MaxPlaintextApplicationDataLength);
             configuredMaxPlaintextRecordLength = maxRecord;
         }
 

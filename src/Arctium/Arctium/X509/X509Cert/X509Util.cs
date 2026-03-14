@@ -46,7 +46,7 @@ namespace Arctium.Standards.X509.X509Cert
         public static byte[] X509CertificateToDerEncodedBytes(X509Certificate certificate)
         {
             if (certificate.DerEncodedBytesDeserializedBytes == null)
-                Validation.NotSupported("for now only decoded certificates decoded supported, serialization of created object not supported");
+                ArctiumValidation.NotSupported("for now only decoded certificates decoded supported, serialization of created object not supported");
 
             return certificate.DerEncodedBytesDeserializedBytes;
         }
@@ -55,7 +55,7 @@ namespace Arctium.Standards.X509.X509Cert
         {
             var algorithm = certificate.SubjectPublicKeyInfo.AlgorithmIdentifier;
 
-            Validation.EnumEqualTo(algorithm.Algorithm, PublicKeyAlgorithmIdentifierType.RSAEncryption, "certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm");
+            ArctiumValidation.EnumEqualTo(algorithm.Algorithm, PublicKeyAlgorithmIdentifierType.RSAEncryption, "certificate.SubjectPublicKeyInfo.AlgorithmIdentifier.Algorithm");
 
             var x509PublicKey = certificate.SubjectPublicKeyInfo.PublicKey.Get<RSAPublicKey>();
             var pubExponent = new BigInteger(x509PublicKey.PublicExponent, true, true);
@@ -78,7 +78,7 @@ namespace Arctium.Standards.X509.X509Cert
 
         public static byte[] ASN1_DerEncodeEcdsaSigValue(EcdsaSigValue ecdsaSigValue)
         {
-            Validation.NotSupported(ecdsaSigValue.R.Length > 127 || ecdsaSigValue.S.Length > 127,
+            ArctiumValidation.NotSupported(ecdsaSigValue.R.Length > 127 || ecdsaSigValue.S.Length > 127,
                 "one of byte[] array values are larger than 65 bytes. current implementation does not support encoding " + 
                 "this until asn1 serializer is implemented, only < 66 bytes for both values can be serialized");
 

@@ -8,7 +8,7 @@ namespace Arctium.Standards.PKCS8.v12
         public long Version { get; private set; }
         public PublicKeyAlgorithmIdentifier PrivateKeyAlgorithmIdentifier { get; private set; }
         public PrivateKey PrivateKey { get; private set; }
-        public object[] Attributes_NotSupported { get { Validation.NotSupported(); return null; } }
+        public object[] Attributes_NotSupported { get { ArctiumValidation.NotSupported(); return null; } }
 
         public PrivateKeyInfo(long version, PublicKeyAlgorithmIdentifier privateKeyAlgId, PrivateKey privateKey)
         {

@@ -47,8 +47,8 @@ namespace Arctium.Protocol.Tls13.Extensions
         /// <param name="supportedSchemes">Supported signature schemes that will be sent in client hello to server</param>
         public ExtensionClientConfigSignatureAlgorithmsCert(SignatureScheme[] supportedSchemes)
         {
-            Validation.EnumValueDefined(supportedSchemes, nameof(supportedSchemes));
-            Validation.NotEmpty(supportedSchemes, nameof(supportedSchemes));
+            ArctiumValidation.EnumValueDefined(supportedSchemes, nameof(supportedSchemes));
+            ArctiumValidation.NotEmpty(supportedSchemes, nameof(supportedSchemes));
 
             SupportedSignatureSchemesCert = supportedSchemes.Select(s => (SignatureSchemeListExtension.SignatureScheme)s).ToArray();
         }

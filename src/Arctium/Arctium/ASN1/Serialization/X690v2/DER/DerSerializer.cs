@@ -13,7 +13,7 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
         {
             int start = endoffset;
 
-            if (contentslen > 255) Validation.NotSupported();
+            if (contentslen > 255) ArctiumValidation.NotSupported();
 
             if (contentslen <= 0x7F)
             {
@@ -42,7 +42,7 @@ namespace Arctium.Standards.ASN1.Serialization.X690v2.DER
             //    outputbuf[endoffset] = v;
             //    endoffset--;
             //}
-            if (tagnumber > 31) Validation.NotSupported();
+            if (tagnumber > 31) ArctiumValidation.NotSupported();
 
             byte id = 0;
             id |= (byte)(tagclass << 6);

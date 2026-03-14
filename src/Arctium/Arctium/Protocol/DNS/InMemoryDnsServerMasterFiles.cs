@@ -14,6 +14,12 @@ namespace Arctium.Protocol.DNS
         /// <summary>
         /// Adds IN record type to the the list
         /// </summary>
+        public void AddA(string name, string ipAddress, uint ttl = 1000)
+        {
+            AddIN(name, QType.A, ttl, new RDataA(ipAddress));
+        }
+
+
         public void AddIN(string name, QType qtype, uint ttl, object rdata)
         {
             Add(name, QClass.IN, qtype, ttl, rdata);

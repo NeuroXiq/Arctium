@@ -18,8 +18,8 @@ namespace Arctium.Protocol.Tls13.Extensions
 
         public ExtensionClientConfigKeyShare(NamedGroup[] groups)
         {
-            Validation.NotNull(groups, nameof(groups));
-            Validation.EnumValueDefined(groups, nameof(groups));
+            ArctiumValidation.NotNull(groups, nameof(groups));
+            ArctiumValidation.EnumValueDefined(groups, nameof(groups));
 
             InternalNamedGroups = groups.Select(g => (Tls13Impl.Model.Extensions.SupportedGroupExtension.NamedGroup)g).ToArray();
         }

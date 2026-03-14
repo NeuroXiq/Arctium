@@ -19,9 +19,9 @@ namespace Arctium.Protocol.Tls13.Extensions
         /// 'DistinguishedName authorities<3..2^16-1>'</param>
         public ExtensionServerConfigCertificateAuthorities(byte[][] authorities)
         {
-            Validation.NotEmpty(authorities, nameof(authorities));
+            ArctiumValidation.NotEmpty(authorities, nameof(authorities));
             foreach (var auth in authorities)
-                Validation.NotEmpty(auth, nameof(authorities), "All entries in authorities must not be empty by specificate. Remove empty entires");
+                ArctiumValidation.NotEmpty(auth, nameof(authorities), "All entries in authorities must not be empty by specificate. Remove empty entires");
 
             Authorities = authorities;
         }

@@ -18,8 +18,8 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
 
         public ChaCha20(byte[] key, byte[] nonce) : base(key)
         {
-            Validation.Length(key, 32, nameof(key));
-            Validation.Length(nonce, 12, nameof(nonce));
+            ArctiumValidation.Length(key, 32, nameof(key));
+            ArctiumValidation.Length(nonce, 12, nameof(nonce));
 
             context = ChaCha20Algorithm.Initialize(key, nonce);
             temp = new byte[BlockSize64];

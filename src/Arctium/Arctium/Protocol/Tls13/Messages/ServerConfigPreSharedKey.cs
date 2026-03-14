@@ -18,8 +18,8 @@ namespace Arctium.Protocol.Tls13.Messages
         /// <param name="newSessionTicketsCount">Count of NewSessionTicket to issue for new connection</param>
         public ServerConfigPreSharedKey(PskTicketServerStoreBase serverStore, int newSessionTicketsCount)
         {
-            Validation.NotNull(serverStore, nameof(serverStore));
-            Validation.NumberInRange(newSessionTicketsCount, 0, 1000, nameof(newSessionTicketsCount),
+            ArctiumValidation.NotNull(serverStore, nameof(serverStore));
+            ArctiumValidation.NumberInRange(newSessionTicketsCount, 0, 1000, nameof(newSessionTicketsCount),
                 "max value is 1000 not because of standard but limit by Arctium implementation (it may change in future)");
 
             ServerStore = serverStore;

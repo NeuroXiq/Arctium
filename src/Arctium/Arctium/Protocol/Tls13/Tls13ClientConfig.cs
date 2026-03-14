@@ -156,7 +156,7 @@ namespace Arctium.Protocol.Tls13
         public void ConfigureExtensionServerName(ExtensionClientConfigServerName config)
         {
             if (config != null)
-                Validation.NotEmpty(config.HostName, nameof(config), "list of host names is empty. Provide at least one host name");
+                ArctiumValidation.NotEmpty(config.HostName, nameof(config), "list of host names is empty. Provide at least one host name");
 
             ExtensionClientConfigServerName = config;
         }
@@ -170,7 +170,7 @@ namespace Arctium.Protocol.Tls13
         public void ConfigureExtensionALPN(ExtensionClientALPNConfig alpnConfig)
         {
             if (alpnConfig != null)
-                Validation.NotEmpty(alpnConfig.ProtocolList, nameof(alpnConfig), "protocol list must not be null and have at least one protocol to send to server");
+                ArctiumValidation.NotEmpty(alpnConfig.ProtocolList, nameof(alpnConfig), "protocol list must not be null and have at least one protocol to send to server");
 
             ExtensionALPNConfig = alpnConfig;
         }
@@ -186,7 +186,7 @@ namespace Arctium.Protocol.Tls13
         public void ConfigueExtensionRecordSizeLimit(int? recordSizeLimit)
         {
             if (recordSizeLimit.HasValue)
-                Validation.NumberInRange(
+                ArctiumValidation.NumberInRange(
                     recordSizeLimit.Value,
                     Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MinValue,
                     Tls13Const.Extension_RecordSizeLimit_RecordSizeLimit_MaxValue,
@@ -197,8 +197,8 @@ namespace Arctium.Protocol.Tls13
 
         public void ConfigueCipherSuites(CipherSuite[] suites)
         {
-            Validation.NotEmpty(suites, nameof(suites));
-            Validation.EnumValueDefined(suites, nameof(suites));
+            ArctiumValidation.NotEmpty(suites, nameof(suites));
+            ArctiumValidation.EnumValueDefined(suites, nameof(suites));
 
             CipherSuites = suites.Select(s => (Tls13Impl.Model.CipherSuite)s).ToArray();
         }
@@ -224,8 +224,8 @@ namespace Arctium.Protocol.Tls13
 
         public void ConfigueSupportedSignatureSchemes(SignatureScheme[] schemes)
         {
-            Validation.NotEmpty(schemes, nameof(schemes));
-            Validation.EnumValueDefined(schemes, nameof(schemes));
+            ArctiumValidation.NotEmpty(schemes, nameof(schemes));
+            ArctiumValidation.EnumValueDefined(schemes, nameof(schemes));
 
             var internalList = schemes.Select(apiScheme => (SignatureSchemeListExtension.SignatureScheme)apiScheme).ToArray();
 
@@ -234,8 +234,8 @@ namespace Arctium.Protocol.Tls13
 
         public void ThrowIfInvalidState()
         {
-            Validation.NotEmpty(CipherSuites, nameof(CipherSuites));
-            Validation.NotEmpty(SignatureSchemes, nameof(SignatureSchemes));
+            ArctiumValidation.NotEmpty(CipherSuites, nameof(CipherSuites));
+            ArctiumValidation.NotEmpty(SignatureSchemes, nameof(SignatureSchemes));
 
 
             var keyShareGroups = ExtensionKeyShare.InternalNamedGroups;
@@ -249,7 +249,7 @@ namespace Arctium.Protocol.Tls13
                         $"that is not included in 'SupportedGroupsExtension'. Invalid keyshare group: {keyShare.ToString()}." +
                         " Include this group in 'SupportedGroupsExtension'";
 
-                    Validation.Argument(true, "supported groups configuration", msg);
+                    ArctiumValidation.Argument(true, "supported groups configuration", msg);
                 }
 
             }

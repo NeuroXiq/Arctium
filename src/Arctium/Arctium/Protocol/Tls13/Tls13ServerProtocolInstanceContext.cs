@@ -80,7 +80,7 @@ namespace Arctium.Protocol.Tls13
 
                 if (result.ActionType == ExtensionServerConfigALPN.ResultType.Success)
                 {
-                    Validation.NumberInRange(result.SelectedIndex, 0, protNamesClone.Length - 1, nameof(result.SelectedIndex), "index out of range of possible protocol list");
+                    ArctiumValidation.NumberInRange(result.SelectedIndex, 0, protNamesClone.Length - 1, nameof(result.SelectedIndex), "index out of range of possible protocol list");
                     selectedIndex = -1;
 
                     // find result in original list (before removing grease)
@@ -93,7 +93,7 @@ namespace Arctium.Protocol.Tls13
                         }
                     }
 
-                    Validation.ThrowInternal(selectedIndex == -1);
+                    ArctiumValidation.ThrowInternal(selectedIndex == -1);
 
                     alertFatal = null;
                     ignore = false;
@@ -156,7 +156,7 @@ namespace Arctium.Protocol.Tls13
 
         internal void Event_PostHandshakeClientAuthenticationSuccess(Certificate certMsg)
         {
-            Validation.ThrowInternal(Config.PostHandshakeClientAuthentication == null);
+            ArctiumValidation.ThrowInternal(Config.PostHandshakeClientAuthentication == null);
 
             var certs = certMsg.CertificateList.Select(c => (byte[])c.CertificateEntryRawBytes.Clone()).ToArray();
 

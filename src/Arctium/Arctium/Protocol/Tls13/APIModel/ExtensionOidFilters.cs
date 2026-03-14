@@ -24,7 +24,7 @@ namespace Arctium.Protocol.Tls13.APIModel
 
         internal ExtensionOidFilters(OidFilter[] filters)
         {
-            Validation.NotNull(filters, nameof(filters));
+            ArctiumValidation.NotNull(filters, nameof(filters));
             Filters = filters;
         }
     }

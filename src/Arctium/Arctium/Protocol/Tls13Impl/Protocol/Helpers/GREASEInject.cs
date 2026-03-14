@@ -152,7 +152,7 @@ namespace Arctium.Protocol.Tls13Impl.Protocol.Helpers
 
             else if (msg is CertificateRequest) Server(msg as CertificateRequest, config);
             else if (msg is NewSessionTicket) Server(msg as NewSessionTicket, config);
-            else Validation.ThrowInternal();
+            else ArctiumValidation.ThrowInternal();
         }
 
         private static void Server(CertificateRequest cr, ExtensionServerConfigGREASE config)

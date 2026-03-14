@@ -28,14 +28,14 @@ namespace Arctium.Protocol.Tls13.Extensions
         /// <param name="hostName">Host name where TLS client is willing to connect</param>
         public ExtensionClientConfigServerName(string hostName)
         {
-            Validation.NotEmpty(hostName, nameof(hostName));
+            ArctiumValidation.NotEmpty(hostName, nameof(hostName));
             Constructor(Encoding.ASCII.GetBytes(hostName));
         }
 
         private void Constructor(byte[] hostName)
         {
-            Validation.NotEmpty(hostName, nameof(hostName), "host name cannot be empty");
-            Validation.Argument(hostName.All(b => b == 0), nameof(hostName), "all bytes are zero");
+            ArctiumValidation.NotEmpty(hostName, nameof(hostName), "host name cannot be empty");
+            ArctiumValidation.Argument(hostName.All(b => b == 0), nameof(hostName), "all bytes are zero");
             HostName = hostName;
         }
 

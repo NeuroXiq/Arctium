@@ -27,7 +27,7 @@ namespace Arctium.Standards.RFC
         /// <returns></returns>
         public static AEAD Create_AEAD_AES_128_CCM(byte[] aesKey)
         {
-            Validation.Length(aesKey, 16, nameof(aesKey));
+            ArctiumValidation.Length(aesKey, 16, nameof(aesKey));
             return new CCMMode(new AES(aesKey), 16);
         }
 
@@ -43,13 +43,13 @@ namespace Arctium.Standards.RFC
         /// <returns></returns>
         public static AEAD Create_AEAD_AES_256_GCM(byte[] aesKey)
         {
-            Validation.Length(aesKey, 32, nameof(aesKey));
+            ArctiumValidation.Length(aesKey, 32, nameof(aesKey));
             return new GaloisCounterMode(new AES(aesKey), 16);
         }
 
         public static AEAD Create_AEAD_AES_256_CCM(byte[] aesKey)
         {
-            Validation.Length(aesKey, 32, nameof(aesKey));
+            ArctiumValidation.Length(aesKey, 32, nameof(aesKey));
             return new CCMMode(new AES(aesKey), 16);
         }
 
@@ -59,7 +59,7 @@ namespace Arctium.Standards.RFC
         /// <returns></returns>
         public static AEAD Create_AEAD_AES_128_CCM_8(byte[] aesKey)
         {
-            Validation.Length(aesKey, 16, nameof(aesKey));
+            ArctiumValidation.Length(aesKey, 16, nameof(aesKey));
 
             return new CCMMode(new AES(aesKey), 8);
         }

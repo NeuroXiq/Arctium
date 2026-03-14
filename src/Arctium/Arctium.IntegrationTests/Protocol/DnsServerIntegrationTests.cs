@@ -1,10 +1,12 @@
 ﻿using Arctium.Protocol.DNS;
 using Arctium.Protocol.DNS.Model;
 using Arctium.Protocol.DNS.Protocol;
+using Arctium.Protocol.DNS.Resolver;
 using Arctium.Protocol.DNS.Server;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Arctium.IntegrationTests.Protocol
@@ -12,29 +14,9 @@ namespace Arctium.IntegrationTests.Protocol
     [TestFixture]
     public class DnsServerIntegrationTests
     {
-        DnsServer server;
-        CancellationTokenSource serverStop;
-
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            serverStop = new CancellationTokenSource();
-            var cancellationToken = serverStop.Token;
-
-            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles);
-            server = new DnsServer(options);
-
-            Task.Delay(5000).Wait();
-
-            server.Start();
-        }
-
-        [OneTimeTearDown]
-        public void OntTimeTearDown()
-        {
-            serverStop.Cancel();
-            serverStop.Dispose();
-        }
+        //
+        // tests
+        //
 
         #region RFC-8484
 
@@ -49,19 +31,34 @@ namespace Arctium.IntegrationTests.Protocol
         /// "application/dns-message" request messages.
         /// </summary>
         [Test]
-        public void Success_DoH_ServerWillBeAbleToProcessApplicationDnsMessage()
+        public void Success_DoH_ServerWillBeAbleToProcessApplicationDnsMessage_Rfc8484()
         {
             Assert.Fail();
         }
 
         [Test]
-        public void Succees_DoH_ServerWillWorkWithSimpleQuery()
+        public void Succees_DoH_ServerWillWorkWithSimpleQuery_Post_Rfc8484()
         {
-            // check application/dns-message header exists from server
-            Assert.Fail();
+            var resolver = CreateResolverForDoH_Rfc8484();
+            var result = resolver.ResolveHostNameToHostAddressAsync("simple-post.doh").Result;
+
+            Assert.That(result.Length == 1);
+            Assert.That(result[0].ToString() == "111.0.0.2");
+        }
+
+        [Test]
+        public void Succees_DoH_ServerWillWorkWithSimpleQuery_Get_Rfc8484()
+        {
+            var resolver = CreateResolverForDoH_Rfc8484();
+            var result = resolver.ResolveHostNameToHostAddressAsync("simple-get.doh").Result;
+
+            Assert.That(result.Length == 1);
+            Assert.That(result[0].ToString() == "111.0.0.1");
         }
 
         #endregion
+
+        #region RFC-1035
 
         // start of 6.2. Example standard queries [rfc 1034, page 40]
 
@@ -190,29 +187,20 @@ namespace Arctium.IntegrationTests.Protocol
         // end of 
         // 6.2. Example standard queries [rfc 1034, page 40]
 
-        //
-        // rfc
-        //
-
-        /// <summary>
-        ///  
-        /// </summary>
-
-
         /// <summary>
         /// rfc1035, p. 25, 4.3.3. Wildcards
         /// </summary>
         [Test]
-        public void Success_WildcardDomainsWorks()
+        public void Success_WildcardDomainsWorks_Rfc1035()
         {
-
+            Assert.IsTrue(false);
         }
 
         /// <summary>
         /// rfc1035 page 26
         /// </summary>
         [Test]
-        public void Succeed_WillWorkWithWildcards()
+        public void Succeed_WillWorkWithWildcards_Rfc1035()
         {
             // arrange
 
@@ -222,6 +210,33 @@ namespace Arctium.IntegrationTests.Protocol
             Assert.IsTrue(false);
         }
 
+        /// <summary>
+        /// rfc1035, page 17 | while the additional section might be
+        /// </summary>
+        [Test]
+        public void Success_AdditionalRecords_WillReturnAdditionalARecordsIfAskedForMX_Rfc1035()
+        {
+            Assert.IsTrue(false);
+        }
+
+        /// <summary>
+        /// rfc1035 page 18,  3.7.2. Inverse queries (Optional)
+        /// </summary>
+        [Test]
+        public void Success_WillWorkWithInverseQuery_Rfc1035()
+        {
+            // arrange
+
+            // act
+
+            // assert
+            Assert.IsTrue(false);
+        }
+
+        #endregion
+
+
+        #region Other
 
         [Test]
         public void Success_Flag_RecursionAvailableWorks()
@@ -239,16 +254,7 @@ namespace Arctium.IntegrationTests.Protocol
         {
             Assert.IsTrue(false);
         }
-
-        /// <summary>
-        /// rfc1035, page 17 | while the additional section might be
-        /// </summary>
-        [Test]
-        public void Success_AdditionalRecords_WillReturnAdditionalARecordsIfAskedForMX()
-        {
-            Assert.IsTrue(false);
-        }
-
+        
         [Test]
         public void Success_AXFR_ZoneTranser()
         {
@@ -260,19 +266,7 @@ namespace Arctium.IntegrationTests.Protocol
             Assert.IsTrue(false);
         }
 
-        /// <summary>
-        /// rfc1035 page 18,  3.7.2. Inverse queries (Optional)
-        /// </summary>
-        [Test]
-        public void Success_WillWorkWithInverseQuery()
-        {
-            // arrange
-
-            // act
-
-            // assert
-            Assert.IsTrue(false);
-        }
+        
 
         /// <summary>
         /// ???
@@ -304,7 +298,7 @@ namespace Arctium.IntegrationTests.Protocol
         //
         // non rfc tests
         //
-
+        [Test]
         public void ReturnsError_WillReturnErrorIfSendInvalidDomainName()
         {
             // e.g. domain name:"dsjklg!!#%#%,./+_)" is invalid
@@ -468,6 +462,370 @@ namespace Arctium.IntegrationTests.Protocol
             AssertRecordEqual(current, expected);
         }
 
+        #endregion
+
+        //
+        // setup
+        //
+
+        static InMemoryDnsServerMasterFiles itMasterFiles;
+        static List<ResourceRecord> records;
+
+        DnsServer server;
+        CancellationTokenSource serverStop;
+        const string DoHGetPath = "dns-get-path";
+        const string DoHPostPath = "dns-post-path";
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            serverStop = new CancellationTokenSource();
+            var cancellationToken = serverStop.Token;
+
+            DnsServerOptions options = DnsServerOptions.CreateDefault(itMasterFiles);
+
+            options.AddMessageIO_DoH("https://localhost", DoHGetPath, DoHPostPath, GetCertificate());
+
+            server = new DnsServer(options);
+
+            Task.Delay(5000).Wait();
+
+            server.Start();
+        }
+
+        [OneTimeTearDown]
+        public void OntTimeTearDown()
+        {
+            serverStop.Cancel();
+            serverStop.Dispose();
+        }
+
+        static X509Certificate2 GetCertificate()
+        {
+            using var store = new X509Store(StoreName.My,
+                StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadOnly);
+
+            var cert = store.Certificates.Find(
+                X509FindType.FindBySubjectName,
+                "localhost",
+                validOnly: true)
+            .OfType<X509Certificate2>()
+            .FirstOrDefault();
+
+            if (cert == null)
+            {
+                throw new Exception("missing x509 cert for doh");
+            }
+
+            return cert;
+        }
+
+        static DnsResolver CreateResolverForDoH_Rfc8484(DnsResolverMessageIO_Rfc8484DoH.HttpMethod method = DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Get)
+        {
+            var ropt = DnsResolverOptions.CreateDefault();
+
+            if (method == DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Get)
+            {
+                ropt.SetClientMessageIO_DoH($"https://localhost/{DoHGetPath}" + "?dns={0}", DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Get);
+            }
+            else
+            {
+                ropt.SetClientMessageIO_DoH($"https://localhost/{DoHPostPath}", DnsResolverMessageIO_Rfc8484DoH.HttpMethod.Post);
+            }
+
+            ropt.SBeltServers = new ResourceRecord[]
+            {
+                new ResourceRecord() { Class = QClass.IN, TTL =1, Type = QType.A, Name = "localhost", RData = new RDataA("127.0.0.1")  },
+                new ResourceRecord() { Class = QClass.IN, TTL =1, Type = QType.NS, Name = "", RData = new RDataNS("localhost")  }
+            };
+
+            var resolver = new DnsResolver(ropt);
+
+            return resolver;
+        }
+
+        static DnsServerIntegrationTests()
+        {
+            // current master files will store (both at the same time):
+            // 1. tree structure from rfc 1034 for tests data
+            // 2. custom domain names for other tests
+
+            itMasterFiles = new InMemoryDnsServerMasterFiles();
+            var r = itMasterFiles;
+
+            // doh rfc 8484
+
+            r.AddIN("doh", QType.SOA, 1000, new RDataSOA("DOH.INTEGRATIONTESTS", "IT@DOH.IT.ARCTIUM", 12345, 1234, 123, 123, 123));
+            r.AddA("simple-get.doh", "111.0.0.1");
+            r.AddA("simple-post.doh", "111.0.0.2");
+
+            // rfc 1035
+
+            r.AddIN(string.Empty, QType.SOA, 300, new RDataSOA()
+            {
+                MName = "SRI-NIC.ARPA.",
+                RName = "HOSTMASTER.SRI-NIC.ARPA.",
+                Expire = 604800,
+                Minimum = 86400,
+                Refresh = 1800,
+                Retry = 300,
+                Serial = 870611
+            });
+
+            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "A.ISI.EDU" });
+            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "C.ISI.EDU" });
+            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
+            r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
+            r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "A.ISI.EDU" });
+            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
+            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
+            r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("26.0.0.73"));
+            r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("10.0.0.51"));
+            r.AddIN("SRI-NIC.ARPA", QType.MX, 300, new RDataMX() { Preference = 0, Exchange = "SRI-NIC.ARPA" });
+            r.AddIN("SRI-NIC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
+            r.AddIN("ACC.ARPA", QType.A, 300, new RDataA("26.6.0.65"));
+            r.AddIN("ACC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
+            r.AddIN("ACC.ARPA", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA" });
+            r.AddIN("USC-ISIC.ARPA", QType.CNAME, 300, new RDataCNAME() { CName = "C.ISI.EDU" });
+            r.AddIN("73.0.0.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA" });
+            r.AddIN("65.0.6.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "ACC.ARPA" });
+            r.AddIN("51.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA" });
+            r.AddIN("52.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "C.ISI.EDU" });
+            r.AddIN("103.0.3.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "A.ISI.EDU" });
+            r.AddIN("A.ISI.EDU", QType.A, 300, new RDataA("26.3.0.103"));
+            r.AddIN("C.ISI.EDU", QType.A, 300, new RDataA("10.0.0.52"));
+
+            // other tests
+
+            var t = itMasterFiles;
+
+            t.AddIN("www.all-rrs.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.AddIN("www.all-rrs.pl", QType.NS, 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MD, 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MF, 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.CNAME, 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" });
+            t.AddIN("www.all-rrs.pl", QType.SOA, 1234, new RDataSOA()
+            {
+                Expire = 0x0000005,
+                Minimum = 0x00000004,
+                MName = "www.all-rrs-soa-mname.pl",
+                Refresh = 0x00000006,
+                Retry = 0x00000007,
+                RName = "www.all-rrs-soa-rname.pl",
+                Serial = 0x00000008
+            });
+            t.AddIN("www.all-rrs.pl", QType.MB, 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MG, 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MR, 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" });
+            t.AddIN("www.all-rrs.pl", QType.NULL, 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") });
+            t.AddIN("www.all-rrs.pl", QType.WKS, 1234, new RDataWKS()
+            {
+                Address = 0x332211aa,
+                // powershell not work well (contrary to nslookup) with WKS
+                // not sure why need future investigations. this will work for now (not sure why work)
+                // nslookup shows correct values (maybe powershell need some alignment to 8-16 bytes?)
+                // nslookup -type=wks - 127.0.0.1
+                // (now type into console following:)
+                // > www.all-rrs.pl
+                Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
+                Protocol = 6
+            });
+            t.AddIN("www.all-rrs.pl", QType.PTR, 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" });
+            t.AddIN("www.all-rrs.pl", QType.HINFO, 1234, new RDataHINFO() { CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl" });
+            t.AddIN("www.all-rrs.pl", QType.MINFO, 1234, new RDataMINFO() { EMailbx = "www.all-rrs-minfo-emailbx", RMailbx = "www.all-rrs-minfo-rmailbx" });
+            t.AddIN("www.all-rrs.pl", QType.MX, 1234, new RDataMX() { Preference = 5555, Exchange = "www.all-rrs-exchange" });
+            t.AddIN("www.all-rrs.pl", QType.TXT, 1234, new RDataTXT() { TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" } });
+            t.AddIN("www.all-rrs.pl", QType.AAAA, 1234, new RDataAAAA() { IPv6 = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } });
+
+            // end of all-rrs
+
+            t.AddIN("www.domain-with-dot.pl.", QType.A, 111, new RDataA() { Address = 0xaabbaaaa });
+            t.AddIN("www.domain-with-no-dot-at-the-end.pl", QType.A, 111, new RDataA() { Address = 0x11223344 });
+
+            // min domain name len
+            t.AddIN("a", QType.A, 4123, new RDataA() { Address = 0x11112222 });
+
+            // max domain name
+            t.AddIN(
+                $"{new string('a', 63)}." +
+                $"{new string('b', 63)}." +
+                $"{new string('c', 63)}." +
+                $"{new string('d', 61)}",
+                QType.A, 4123, new RDataA() { Address = 0xbb33dd22 });
+
+            // max txt
+            t.AddIN("www.max-txt.pl", QType.TXT, 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } });
+
+            // tcp large amount of data (txt)
+            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
+            {
+                TxtData = new string[] { new string('a', 255), new string('b', 255), new string('c', 255), new string('d', 255), new string('e', 255) }
+            });
+            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
+            {
+                TxtData = new string[] { new string('f', 255), new string('g', 255), new string('h', 255), new string('i', 255), new string('j', 255) }
+            });
+            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
+            {
+                TxtData = new string[] { new string('k', 255), new string('l', 255), new string('m', 255), new string('n', 255), new string('o', 255) }
+            });
+
+            // multiple parallel
+            //"www.multiple-parralel"
+            t.AddIN("www.multiple-parralel", QType.A, 174, new RDataA() { Address = 0x0a0b0c0d });
+            t.AddIN("www.multiple-parralel", QType.A, 111, new RDataA() { Address = 0x0a1b0c0d });
+            t.AddIN("www.multiple-parralel", QType.A, 7332, new RDataA() { Address = 0x0a2b0c0d });
+            t.AddIN("www.multiple-parralel", QType.A, 8576, new RDataA() { Address = 0x0a3b0c0d });
+
+            t.AddIN("www.exceed-512-bytes.pl", QType.TXT, 9203,
+                new RDataTXT()
+                {
+                    TxtData = new string[] { new string('a', 200), new string('c', 200), new string('b', 200)
+                }
+                });
+
+            t.AddIN("www.test.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.Add("www.test.pl", QClass.HS, QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.Add("www.test.pl", QClass.CS, QType.A, 111, new RDataA() { Address = 0x44332211 });
+            t.Add("www.test.pl", QClass.CH, QType.A, 111, new RDataA() { Address = 0x44332211 });
+
+            t.AddIN("www.google1.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
+
+            records = itMasterFiles.Nodes.SelectMany(t => t.Records).ToList();
+        }
+
+        enum PwshRecordType
+        {
+            UNKNOWN = 0,
+            A_AAAA = 0,
+            A = 1,
+            AAAA = 28,
+            NS = 2,
+            MX = 15,
+            MD = 3,
+            MF = 4,
+            CNAME = 5,
+            SOA = 6,
+            MB = 7,
+            MG = 8,
+            MR = 9,
+            NULL = 10,
+            WKS = 11,
+            PTR = 12,
+            HINFO = 13,
+            MINFO = 14,
+            TXT = 16,
+            RP = 17,
+            AFSDB = 18,
+            X25 = 19,
+            ISDN = 20,
+            RT = 21,
+            SRV = 33,
+            DNAME = 39,
+            OPT = 41,
+            DS = 43,
+            RRSIG = 46,
+            NSEC = 47,
+            DNSKEY = 48,
+            DHCID = 49,
+            NSEC3 = 50,
+            NSEC3PARAM = 51,
+            ANY = 255,
+            ALL = 255,
+        }
+
+        class PwshRecord
+        {
+            public string IP6Address { get; set; }
+            public string IP4Address { get; set; }
+            public string Name { get; set; }
+            public PwshRecordType Type { get; set; }
+
+            /// <summary>
+            /// MB.MADName
+            /// </summary>
+            public string NameHost { get; set; }
+            public int CharacterSet { get; set; }
+            public int Section { get; set; }
+            public int DataLength { get; set; }
+            public int TTL { get; set; }
+            public string Address { get; set; }
+            public string IPAddress { get; set; }
+            public int QueryType { get; set; }
+            public string[] Text { get; set; }
+
+            /// <summary>
+            /// MX.Preference
+            /// </summary>
+            public int Preference { get; set; }
+
+            /// <summary>
+            /// MX.Exchange
+            /// </summary>
+            public string Exchange { get; set; }
+
+            /// <summary>
+            /// MINFO.RMailbx
+            /// </summary>
+            public string NameMailbox { get; set; }
+
+            /// <summary>
+            /// MINFO.EMailbx
+            /// </summary>
+            public string NameErrorsMailbox { get; set; }
+
+            /// <summary>
+            /// MR.NewName
+            /// </summary>
+            public string Server { get; set; }
+
+            /// <summary>
+            /// SOA.MName
+            /// </summary>
+            public string PrimaryServer { get; set; }
+
+            /// <summary>
+            /// SOA.RName
+            /// </summary>
+            public string NameAdministrator { get; set; }
+
+            /// <summary>
+            /// SOA.SerialNumber
+            /// </summary>
+            public uint SerialNumber { get; set; }
+
+            /// <summary>
+            /// SOA.Refresh
+            /// </summary>
+            public int TimeToZoneRefresh { get; set; }
+
+            /// <summary>
+            /// SOA.Retry
+            /// </summary>
+            public int TimeToZoneFailureRetry { get; set; }
+
+            /// <summary>
+            /// SOA.Expire
+            /// </summary>
+            public int TimeToExpiration { get; set; }
+
+            /// <summary>
+            /// SOA.Minimum
+            /// </summary>
+            public int DefaultTTL { get; set; }
+
+            /// <summary>
+            /// WKS.Bitmap
+            /// </summary>
+            public byte[] Bitmask { get; set; }
+
+            /// <summary>
+            /// WKS.Protocol
+            /// </summary>
+            public byte Protocol { get; set; }
+        }
+
         private static void AssertRecordsEqual(IEnumerable<PwshRecord> current, IEnumerable<ResourceRecord> expected)
         {
             Assert.That(current.Count() >= expected.Count());
@@ -481,7 +839,7 @@ namespace Arctium.IntegrationTests.Protocol
             }
         }
 
-        void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
+        private void AssertRecordEqual(PwshRecord current, ResourceRecord expected)
         {
             bool equal = AreRecordEqual(current, expected, out string errorMessage);
             Assert.That(equal, errorMessage);
@@ -644,287 +1002,6 @@ namespace Arctium.IntegrationTests.Protocol
             return result;
         }
 
-        static InMemoryDnsServerMasterFiles itMasterFiles;
-        static List<ResourceRecord> records;
-
-        static DnsServerIntegrationTests()
-        {
-            // current master files will store (both at the same time):
-            // 1. tree structure from rfc 1034 for tests data
-            // 2. custom domain names for other tests
-
-            itMasterFiles = new InMemoryDnsServerMasterFiles();
-            var r = itMasterFiles;
-            // rfc
-
-            r.AddIN(string.Empty, QType.SOA, 300, new RDataSOA()
-            {
-                MName = "SRI-NIC.ARPA.",
-                RName = "HOSTMASTER.SRI-NIC.ARPA.",
-                Expire = 604800,
-                Minimum = 86400,
-                Refresh = 1800,
-                Retry = 300,
-                Serial = 870611
-            });
-
-            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "A.ISI.EDU" });
-            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "C.ISI.EDU" });
-            r.AddIN("A.ISI.EDU", QType.NS, 300, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
-            r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
-            r.AddIN("MIL", QType.NS, 86400, new RDataNS() { NSDName = "A.ISI.EDU" });
-            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "SRI-NIC.ARPA" });
-            r.AddIN("EDU", QType.NS, 86400, new RDataNS() { NSDName = "C.ISI.EDU" });
-            r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("26.0.0.73"));
-            r.AddIN("SRI-NIC.ARPA", QType.A, 300, new RDataA("10.0.0.51"));
-            r.AddIN("SRI-NIC.ARPA", QType.MX, 300, new RDataMX() { Preference = 0, Exchange = "SRI-NIC.ARPA" });
-            r.AddIN("SRI-NIC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "DEC-2060", OS = "TOPS20" });
-            r.AddIN("ACC.ARPA", QType.A, 300, new RDataA("26.6.0.65"));
-            r.AddIN("ACC.ARPA", QType.HINFO, 300, new RDataHINFO() { CPU = "PDP-11/70", OS = "UNIX" });
-            r.AddIN("ACC.ARPA", QType.MX, 300, new RDataMX() { Preference = 10, Exchange = "ACC.ARPA" });
-            r.AddIN("USC-ISIC.ARPA", QType.CNAME, 300, new RDataCNAME() { CName = "C.ISI.EDU" });
-            r.AddIN("73.0.0.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA" });
-            r.AddIN("65.0.6.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "ACC.ARPA" });
-            r.AddIN("51.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "SRI-NIC.ARPA" });
-            r.AddIN("52.0.0.10.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "C.ISI.EDU" });
-            r.AddIN("103.0.3.26.IN-ADDR.ARPA", QType.PTR, 300, new RDataPTR() { PtrDName = "A.ISI.EDU" });
-            r.AddIN("A.ISI.EDU", QType.A, 300, new RDataA("26.3.0.103"));
-            r.AddIN("C.ISI.EDU", QType.A, 300, new RDataA("10.0.0.52"));
-
-            // it tests
-
-            // todo: .AddIN(".pl"), (to have valid dns nodes tree)
-
-
-            var t = itMasterFiles;
-
-            t.AddIN("www.all-rrs.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
-            t.AddIN("www.all-rrs.pl", QType.NS, 1234, new RDataNS() { NSDName = "all-rrs-nsdname.pl" });
-            t.AddIN("www.all-rrs.pl", QType.MD, 1234, new RDataMD() { MADName = "www.all-rrs-mdname.pl" });
-            t.AddIN("www.all-rrs.pl", QType.MF, 1234, new RDataMF() { MADName = "www.all-rrs-mfname.pl" });
-            t.AddIN("www.all-rrs.pl", QType.CNAME, 1234, new RDataCNAME() { CName = "www.all-rrs-cname.pl" });
-            t.AddIN("www.all-rrs.pl", QType.SOA, 1234, new RDataSOA()
-            {
-                Expire = 0x0000005,
-                Minimum = 0x00000004,
-                MName = "www.all-rrs-soa-mname.pl",
-                Refresh = 0x00000006,
-                Retry = 0x00000007,
-                RName = "www.all-rrs-soa-rname.pl",
-                Serial = 0x00000008
-            });
-            t.AddIN("www.all-rrs.pl", QType.MB, 1234, new RDataMB() { MADName = "www.all-rrs-mb.pl" });
-            t.AddIN("www.all-rrs.pl", QType.MG, 1234, new RDataMG() { MGMName = "www.all-rrs-mg.pl" });
-            t.AddIN("www.all-rrs.pl", QType.MR, 433, new RDataMR() { NewName = "www.all-rrs-mr.pl" });
-            t.AddIN("www.all-rrs.pl", QType.NULL, 1234, new RDataNULL() { Anything = Encoding.ASCII.GetBytes("NULL Record - anything") });
-            t.AddIN("www.all-rrs.pl", QType.WKS, 1234, new RDataWKS()
-            {
-                Address = 0x332211aa,
-                // powershell not work well (contrary to nslookup) with WKS
-                // not sure why need future investigations. this will work for now (not sure why work)
-                // nslookup shows correct values (maybe powershell need some alignment to 8-16 bytes?)
-                // nslookup -type=wks - 127.0.0.1
-                // (now type into console following:)
-                // > www.all-rrs.pl
-                Bitmap = new byte[] { 0, 0, 0, (byte)((1 << 6)) },
-                Protocol = 6
-            });
-            t.AddIN("www.all-rrs.pl", QType.PTR, 1234, new RDataPTR() { PtrDName = "www.all-rrs-ptr.pl" });
-            t.AddIN("www.all-rrs.pl", QType.HINFO, 1234, new RDataHINFO() { CPU = "www.all-rrs-cpu.pl", OS = "www.all-rrs-cpu.pl" });
-            t.AddIN("www.all-rrs.pl", QType.MINFO, 1234, new RDataMINFO() { EMailbx = "www.all-rrs-minfo-emailbx", RMailbx = "www.all-rrs-minfo-rmailbx" });
-            t.AddIN("www.all-rrs.pl", QType.MX, 1234, new RDataMX() { Preference = 5555, Exchange = "www.all-rrs-exchange" });
-            t.AddIN("www.all-rrs.pl", QType.TXT, 1234, new RDataTXT() { TxtData = new string[] { "www.all-rrs-txt-1.pl", "www.all-rrs-txt-2" } });
-            t.AddIN("www.all-rrs.pl", QType.AAAA, 1234, new RDataAAAA() { IPv6 = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } });
-
-            // end of all-rrs
-
-            t.AddIN("www.domain-with-dot.pl.", QType.A, 111, new RDataA() { Address = 0xaabbaaaa });
-            t.AddIN("www.domain-with-no-dot-at-the-end.pl", QType.A, 111, new RDataA() { Address = 0x11223344 });
-
-            // min domain name len
-            t.AddIN("a", QType.A, 4123, new RDataA() { Address = 0x11112222 });
-
-            // max domain name
-            t.AddIN(
-                $"{new string('a', 63)}." +
-                $"{new string('b', 63)}." +
-                $"{new string('c', 63)}." +
-                $"{new string('d', 61)}",
-                QType.A, 4123, new RDataA() { Address = 0xbb33dd22 });
-
-            // max txt
-            t.AddIN("www.max-txt.pl", QType.TXT, 111, new RDataTXT() { TxtData = new string[] { new string('a', 255) } });
-
-            // tcp large amount of data (txt)
-            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
-            {
-                TxtData = new string[] { new string('a', 255), new string('b', 255), new string('c', 255), new string('d', 255), new string('e', 255) }
-            });
-            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
-            {
-                TxtData = new string[] { new string('f', 255), new string('g', 255), new string('h', 255), new string('i', 255), new string('j', 255) }
-            });
-            t.AddIN("www.tcp-large-data.pl", QType.TXT, 555, new RDataTXT()
-            {
-                TxtData = new string[] { new string('k', 255), new string('l', 255), new string('m', 255), new string('n', 255), new string('o', 255) }
-            });
-
-            // multiple parallel
-            //"www.multiple-parralel"
-            t.AddIN("www.multiple-parralel", QType.A, 174, new RDataA() { Address = 0x0a0b0c0d });
-            t.AddIN("www.multiple-parralel", QType.A, 111, new RDataA() { Address = 0x0a1b0c0d });
-            t.AddIN("www.multiple-parralel", QType.A, 7332, new RDataA() { Address = 0x0a2b0c0d });
-            t.AddIN("www.multiple-parralel", QType.A, 8576, new RDataA() { Address = 0x0a3b0c0d });
-
-            t.AddIN("www.exceed-512-bytes.pl", QType.TXT, 9203,
-                new RDataTXT()
-                {
-                    TxtData = new string[] { new string('a', 200), new string('c', 200), new string('b', 200)
-                }
-                });
-
-            t.AddIN("www.test.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
-
-
-            t.Add("www.test.pl", QClass.HS, QType.A, 111, new RDataA() { Address = 0x44332211 });
-            t.Add("www.test.pl", QClass.CS, QType.A, 111, new RDataA() { Address = 0x44332211 });
-            t.Add("www.test.pl", QClass.CH, QType.A, 111, new RDataA() { Address = 0x44332211 });
-
-            t.AddIN("www.google1.pl", QType.A, 111, new RDataA() { Address = 0x44332211 });
-
-            records = itMasterFiles.Nodes.SelectMany(t => t.Records).ToList();
-        }
-
-        enum PwshRecordType
-        {
-            UNKNOWN = 0,
-            A_AAAA = 0,
-            A = 1,
-            AAAA = 28,
-            NS = 2,
-            MX = 15,
-            MD = 3,
-            MF = 4,
-            CNAME = 5,
-            SOA = 6,
-            MB = 7,
-            MG = 8,
-            MR = 9,
-            NULL = 10,
-            WKS = 11,
-            PTR = 12,
-            HINFO = 13,
-            MINFO = 14,
-            TXT = 16,
-            RP = 17,
-            AFSDB = 18,
-            X25 = 19,
-            ISDN = 20,
-            RT = 21,
-            SRV = 33,
-            DNAME = 39,
-            OPT = 41,
-            DS = 43,
-            RRSIG = 46,
-            NSEC = 47,
-            DNSKEY = 48,
-            DHCID = 49,
-            NSEC3 = 50,
-            NSEC3PARAM = 51,
-            ANY = 255,
-            ALL = 255,
-        }
-
-        class PwshRecord
-        {
-            public string IP6Address { get; set; }
-            public string IP4Address { get; set; }
-            public string Name { get; set; }
-            public PwshRecordType Type { get; set; }
-
-            /// <summary>
-            /// MB.MADName
-            /// </summary>
-            public string NameHost { get; set; }
-            public int CharacterSet { get; set; }
-            public int Section { get; set; }
-            public int DataLength { get; set; }
-            public int TTL { get; set; }
-            public string Address { get; set; }
-            public string IPAddress { get; set; }
-            public int QueryType { get; set; }
-            public string[] Text { get; set; }
-
-            /// <summary>
-            /// MX.Preference
-            /// </summary>
-            public int Preference { get; set; }
-
-            /// <summary>
-            /// MX.Exchange
-            /// </summary>
-            public string Exchange { get; set; }
-
-            /// <summary>
-            /// MINFO.RMailbx
-            /// </summary>
-            public string NameMailbox { get; set; }
-
-            /// <summary>
-            /// MINFO.EMailbx
-            /// </summary>
-            public string NameErrorsMailbox { get; set; }
-
-            /// <summary>
-            /// MR.NewName
-            /// </summary>
-            public string Server { get; set; }
-
-            /// <summary>
-            /// SOA.MName
-            /// </summary>
-            public string PrimaryServer { get; set; }
-
-            /// <summary>
-            /// SOA.RName
-            /// </summary>
-            public string NameAdministrator { get; set; }
-
-            /// <summary>
-            /// SOA.SerialNumber
-            /// </summary>
-            public uint SerialNumber { get; set; }
-
-            /// <summary>
-            /// SOA.Refresh
-            /// </summary>
-            public int TimeToZoneRefresh { get; set; }
-
-            /// <summary>
-            /// SOA.Retry
-            /// </summary>
-            public int TimeToZoneFailureRetry { get; set; }
-
-            /// <summary>
-            /// SOA.Expire
-            /// </summary>
-            public int TimeToExpiration { get; set; }
-
-            /// <summary>
-            /// SOA.Minimum
-            /// </summary>
-            public int DefaultTTL { get; set; }
-
-            /// <summary>
-            /// WKS.Bitmap
-            /// </summary>
-            public byte[] Bitmask { get; set; }
-
-            /// <summary>
-            /// WKS.Protocol
-            /// </summary>
-            public byte Protocol { get; set; }
-        }
     }
 }
 

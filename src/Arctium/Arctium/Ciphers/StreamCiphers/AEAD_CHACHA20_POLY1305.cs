@@ -45,9 +45,9 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             long authenticationTagOffset,
             out bool authenticationTagValidationResult)
         {
-            Validation.Length(ivLength, 12, nameof(ivLength));
-            Validation.LengthMax(ciphertextLength, uint.MaxValue, nameof(ciphertextLength));
-            Validation.LengthMax(aLength, uint.MaxValue, nameof(aLength));
+            ArctiumValidation.Length(ivLength, 12, nameof(ivLength));
+            ArctiumValidation.LengthMax(ciphertextLength, uint.MaxValue, nameof(ciphertextLength));
+            ArctiumValidation.LengthMax(aLength, uint.MaxValue, nameof(aLength));
 
             Prepare(iv, ivOffset, ivLength);
             byte[] authTag = new byte[16];
@@ -96,9 +96,9 @@ namespace Arctium.Cryptography.Ciphers.StreamCiphers
             byte[] authenticationTagOutput,
             long authenticationTagOutputOffset)
         {
-            Validation.Length(ivLength, 12, nameof(ivLength));
-            Validation.LengthMax(pLength, uint.MaxValue, nameof(pLength));
-            Validation.LengthMax(aLength, uint.MaxValue, nameof(aLength));
+            ArctiumValidation.Length(ivLength, 12, nameof(ivLength));
+            ArctiumValidation.LengthMax(pLength, uint.MaxValue, nameof(pLength));
+            ArctiumValidation.LengthMax(aLength, uint.MaxValue, nameof(aLength));
 
             Prepare(iv, ivOffset, ivLength);
 

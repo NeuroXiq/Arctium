@@ -28,7 +28,7 @@ namespace Arctium.Protocol.Tls13.Extensions
 
             internal Result(ResultType type, int index)
             {
-                Validation.Argument(index == -1 && type == ResultType.Success, nameof(index), "-1 only if not success");
+                ArctiumValidation.Argument(index == -1 && type == ResultType.Success, nameof(index), "-1 only if not success");
 
                 ActionType = type;
                 SelectedIndex = index;
