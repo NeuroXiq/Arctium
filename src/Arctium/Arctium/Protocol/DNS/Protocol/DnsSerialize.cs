@@ -376,6 +376,11 @@ namespace Arctium.Protocol.DNS.Protocol
 
         // decoding
 
+        public Message Decode(byte[] bytes)
+        {
+            return Decode(new BytesCursor(bytes));
+        }
+
         public Message Decode(BytesCursor cursor, bool isTcp = false)
         {
             if (isTcp)

@@ -84,7 +84,25 @@ namespace Arctium.Protocol.DNS.Server
 
         public virtual async Task OnPostRequestReceived(HttpContext context)
         {
-            throw new NotImplementedException("todo");
+            byte[] dnsMessageBytes;
+            Message clientMessage;
+
+            try
+            {
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    await context.Request.Body.CopyToAsync(memoryStream);
+                    dnsMessageBytes = memoryStream.ToArray();
+                }
+
+                clientMessage = dnsSerialize.Decode(dnsMessageBytes);
+
+                await ProcessClientDnsMessageBytes(context, clientMessage);
+            }
+            catch (Exception e)
+            {
+               await OnException(context, e);
+            }
         }
 
         public virtual async Task OnGetRequestReceived(HttpContext context, [FromQuery] string dns)
@@ -95,16 +113,9 @@ namespace Arctium.Protocol.DNS.Server
                     && acceptValues.Count == 1 
                     && !string.IsNullOrWhiteSpace(dns))
                 {
-                    Message message = dnsSerialize.Decode_DohFromGet(dns);
-                    Message resultMessage = await this.onServerStartParams.ProcessMessageAsync(message);
-                    ByteBuffer responseBytes = new ByteBuffer();
-                    dnsSerialize.EncodeRaw(resultMessage, responseBytes);
+                    Message clientMessage = dnsSerialize.Decode_DohFromGet(dns);
 
-                    context.Response.StatusCode = 200;
-                    context.Response.Headers.Append("content-type", "application/dns-message");
-                    await context.Response.BodyWriter.WriteAsync(
-                        new ReadOnlyMemory<byte>(responseBytes.Buffer, 0, responseBytes.Length),
-                         onServerStartParams.ServerStopCancellationToken);
+                    await ProcessClientDnsMessageBytes(context, clientMessage);
                 }
                 else
                 {
@@ -125,7 +136,31 @@ namespace Arctium.Protocol.DNS.Server
             }
             catch (Exception e)
             {
+                await OnException(context, e);
+            }
+        }
+
+        protected virtual async Task ProcessClientDnsMessageBytes(HttpContext context, Message clientMessage)
+        {
+            Message serverMessage = await onServerStartParams.ProcessMessageAsync(clientMessage);
+            ByteBuffer responseBytes = new ByteBuffer();
+
+            dnsSerialize.EncodeRaw(serverMessage, responseBytes);
+
+            context.Response.StatusCode = 200;
+            context.Response.Headers.Append("content-type", "application/dns-message");
+            await context.Response.BodyWriter.WriteAsync(responseBytes.ToReadOnlyMemory());
+        }
+
+        protected virtual async Task OnException(HttpContext context, Exception e)
+        {
+            try
+            {
                 context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("server error");
+            }
+            catch (Exception ignore)
+            {
             }
         }
     }

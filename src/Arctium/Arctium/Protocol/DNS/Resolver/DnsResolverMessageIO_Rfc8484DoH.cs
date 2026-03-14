@@ -25,7 +25,6 @@ namespace Arctium.Protocol.DNS.Resolver
                 throw new ArgumentException("httpsUri is empty or not start with 'https'");
             if (httpClient == null) throw new ArgumentNullException(nameof(httpClient));
             if (!Enum.IsDefined(method)) throw new ArgumentException("method");
-            if (!Uri.IsWellFormedUriString(httpsUri, UriKind.Absolute)) throw new ArgumentException("httpsUri is not valid url");
 
             if (method == HttpMethod.Get && !httpsUri.Contains("{0}"))
             {

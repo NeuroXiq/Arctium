@@ -121,5 +121,10 @@ namespace Arctium.Shared
                 Buffer[Length - 1 - i] = Buffer[Length - prependLength - 1 - i];
             }
         }
+
+        public ReadOnlyMemory<byte> ToReadOnlyMemory()
+        {
+            return new ReadOnlyMemory<byte>(this.Buffer, 0, Length);
+        }
     }
 }
