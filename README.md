@@ -73,7 +73,7 @@ In the future there may be some console interface utility tool
 |[RFC-8501](https://datatracker.ietf.org/doc/html/rfc8501)|November 2018|Reverse DNS in IPv6 for Internet Service Providers|Docs todo|TODO|
 |[RFC-8499](https://datatracker.ietf.org/doc/html/rfc8499)|January 2019|DNS Terminology|Docs todo|TODO|
 |[RFC-8490](https://datatracker.ietf.org/doc/html/rfc8490)|March 2019|DNS Stateful Operations|Docs todo|TODO|
-|[RFC-8484](https://datatracker.ietf.org/doc/html/rfc8484)|October 2018|DNS Queries over HTTPS (DoH)|in progress|in progress|
+|[RFC-8484](https://datatracker.ietf.org/doc/html/rfc8484)|October 2018|DNS Queries over HTTPS (DoH)|[ExampleDnsServer - Example1](docs/Documentation.Arctium/Documentation.Arctium/Protocol/ExamplesDnsServer.cs)|yes|
 |[RFC-8483](https://datatracker.ietf.org/doc/html/rfc8483)|October 2018|Yeti DNS Testbed|Docs todo|TODO|
 |[RFC-8482](https://datatracker.ietf.org/doc/html/rfc8482)|January 2019|Providing Minimal-Sized Responses to DNS Queries That Have QTYPE=ANY|Docs todo|TODO|
 |[RFC-8467](https://datatracker.ietf.org/doc/html/rfc8467)|October 2018|Padding Policies for Extension Mechanisms for DNS (EDNS(0))|Docs todo|TODO|
