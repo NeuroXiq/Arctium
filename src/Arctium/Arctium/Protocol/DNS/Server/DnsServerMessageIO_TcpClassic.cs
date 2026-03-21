@@ -101,7 +101,9 @@ namespace Arctium.Protocol.DNS.Server
 
                 var clientBytes = new BytesCursor(buffer.Buffer, 2, buffer.Length - 2);
                 var clientMsg = serializer.Decode(clientBytes);
-                var responseMessage = await onServerStartParams.ProcessMessageAsync(clientMsg);
+                var dnsRequestContext = new DnsRequestContext(clientMsg);
+                await onServerStartParams.Next.Next(dnsRequestContext);
+                var responseMessage = dnsRequestContext.ServerMessage;
                 var responseBuffer = new ByteBuffer();
                 serializer.Encode_ClassicTcp(responseMessage, responseBuffer);
 

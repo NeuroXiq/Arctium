@@ -142,7 +142,9 @@ namespace Arctium.Protocol.DNS.Server
 
         protected virtual async Task ProcessClientDnsMessageBytes(HttpContext context, Message clientMessage)
         {
-            Message serverMessage = await onServerStartParams.ProcessMessageAsync(clientMessage);
+            var dnsContext = new DnsRequestContext(clientMessage);
+            await onServerStartParams.Next.Next(dnsContext);
+            Message serverMessage = dnsContext.ServerMessage;
             ByteBuffer responseBytes = new ByteBuffer();
 
             dnsSerialize.EncodeRaw(serverMessage, responseBytes);

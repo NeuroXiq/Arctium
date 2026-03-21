@@ -25,7 +25,10 @@ namespace Arctium.Protocol.DNS.Server
 
         public void Start()
         {
-            OnServerStartParams startParams = new OnServerStartParams(OnClientMessageReceived, options.StopServerCancellationTokenSource.Token);
+            OnServerStartParams startParams = new OnServerStartParams(
+                new DnsServerNextDelegate(OnClientMessageReceived),
+                options.StopServerCancellationTokenSource.Token);
+
             options.MessageIO.OnServerStart(startParams);
         }
 
@@ -104,13 +107,14 @@ namespace Arctium.Protocol.DNS.Server
             }
         }
 
-        async Task<Message> OnClientMessageReceived(Message clientMsg)
+        async Task OnClientMessageReceived(DnsRequestContext context)
         {
+            var clientMsg = context.ClientMessage;
             try
             {
-                var result = await OnClientMessageReceived2(clientMsg);
-                
-                return result;
+                context.ServerMessage = await OnClientMessageReceived2(context.ClientMessage);
+
+                return;
             }
             catch (Exception e)
             {
@@ -138,7 +142,7 @@ namespace Arctium.Protocol.DNS.Server
                 errorResponseMsg.Answer = null;
                 errorResponseMsg.Authority = null;
 
-                return errorResponseMsg;
+                context.ServerMessage = errorResponseMsg;
             }
         }
 

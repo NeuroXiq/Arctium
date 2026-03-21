@@ -8,8 +8,7 @@ namespace Arctium.Protocol.DNS.Server
 {
     public class DnsServerMessageIO_UdpClassic : IDnsServerMessageIOAdapter
     {
-        private Func<Message, Task<Message>> processMessage;
-        private CancellationToken serverStopCancellationToken;
+        private OnServerStartParams onServerStartParams;
         private DnsSerialize serializer = new DnsSerialize();
         private int port;
         private Task task;
@@ -22,12 +21,11 @@ namespace Arctium.Protocol.DNS.Server
 
         public void OnServerStart(OnServerStartParams onServerStartParams)
         {
-            this.processMessage = onServerStartParams.ProcessMessageAsync;
-            this.serverStopCancellationToken = onServerStartParams.ServerStopCancellationToken;
+            this.onServerStartParams = onServerStartParams;
 
             udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udpSocket.Bind(new IPEndPoint(IPAddress.Any, port));
-            task = Task.Run(async () => await OnServerStart2(), serverStopCancellationToken);
+            task = Task.Run(async () => await OnServerStart2(), onServerStartParams.ServerStopCancellationToken);
         }
 
         public async Task OnServerStart2()
@@ -35,7 +33,7 @@ namespace Arctium.Protocol.DNS.Server
             EndPoint clientEndpoint = null;
             BytesCursor clientBytes = null;
 
-            while (!serverStopCancellationToken.IsCancellationRequested)
+            while (!this.onServerStartParams.ServerStopCancellationToken.IsCancellationRequested)
             {
                 try
                 {
@@ -46,14 +44,16 @@ namespace Arctium.Protocol.DNS.Server
 
                     clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
 
-                    var recvResult = await udpSocket.ReceiveFromAsync(buf, clientEndpoint, serverStopCancellationToken);
+                    var recvResult = await udpSocket.ReceiveFromAsync(buf, clientEndpoint, onServerStartParams.ServerStopCancellationToken);
                     int recvLen = recvResult.ReceivedBytes;
                     clientEndpoint = recvResult.RemoteEndPoint;
 
                     clientBytes = new BytesCursor(buf, 0, recvLen);
                     var clientMsg = serializer.Decode(clientBytes);
 
-                    var res = processMessage(clientMsg).Result;
+                    var dnsContext = new DnsRequestContext(clientMsg);
+                    this.onServerStartParams.Next.Next(dnsContext).Wait();
+                    var res = dnsContext.ServerMessage;
                     var responseBytes = new ByteBuffer();
                     serializer.EncodeRaw(res, responseBytes);
 
