@@ -297,7 +297,7 @@ In the future there may be some console interface utility tool
 |[RFC-2219](https://datatracker.ietf.org/doc/html/rfc2219)|October 1997|Use of DNS Aliases for Network Services|Docs todo|TODO|
 |[RFC-2182](https://datatracker.ietf.org/doc/html/rfc2182)|July 1997|Selection and Operation of Secondary DNS Servers|Docs todo|TODO|
 |[RFC-2181](https://datatracker.ietf.org/doc/html/rfc2181)|July 1997|Clarifications to the DNS Specification|Docs todo|TODO|
-|[RFC-2163](https://datatracker.ietf.org/doc/html/rfc2163)|January 1998|Using the Internet DNS to Distribute MIXER Conformant Global Address Mapping (MCGAM)|Docs todo|no (old)|
+|[RFC-2163](https://datatracker.ietf.org/doc/html/rfc2163)|January 1998|Using the Internet DNS to Distribute MIXER Conformant Global Address Mapping (MCGAM)|-|no (old)|
 |[RFC-2146](https://datatracker.ietf.org/doc/html/rfc2146)|May 1997|U.S. Government Internet Domain Names|-|no (informational)|
 |[RFC-2137](https://datatracker.ietf.org/doc/html/rfc2137)|April 1997|Secure Domain Name System Dynamic Update|-|no (obsoleted) (obsoleted by rfc-3007)|
 |[RFC-2136](https://datatracker.ietf.org/doc/html/rfc2136)|April 1997|Dynamic Updates in the Domain Name System (DNS UPDATE)|-|(todo)|
